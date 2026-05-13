@@ -10,8 +10,8 @@ from vitrina.classifiers.models import (
     LANGUAGE_CONCEPT_SCHEMA_URI,
 )
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
-from vitrina.datasets.factories import ContactFactory, DatasetFactory
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.factories import ContactFactory, DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
     InformationSystemResourceForm,
@@ -47,8 +47,9 @@ class TestBaseResourceForm:
 
     def test_parent_queryset_excludes_instance(self):
         organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        other_dataset = DatasetFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
+        other_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
 
         form = InformationSystemResourceForm(
             organization=organization,
@@ -96,6 +97,43 @@ class TestBaseResourceForm:
 
 
 class TestInformationSystemResourceForm:
+    def test_parent_queryset_includes_is_dataset_from_same_org(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        matching_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
+
+        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert matching_dataset in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_dataset_from_different_org(self):
+        organization = OrganizationFactory()
+        other_organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        other_org_dataset = DatasetFactory(organization=other_organization, subclass=subclass, is_public=False)
+
+        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert other_org_dataset not in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_dataset_with_service_subclass(self):
+        organization = OrganizationFactory()
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        service_dataset = DatasetFactory(organization=organization, subclass=service_subclass, is_public=False)
+
+        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert service_dataset not in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_public_dataset(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        public_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=True)
+
+        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert public_dataset not in form.fields["parent"].queryset
+
     def test_both_rights_fields_raises_error(self):
         organization = OrganizationFactory()
 
@@ -229,6 +267,43 @@ class TestInformationSystemResourceForm:
 
 
 class TestServiceResourceForm:
+    def test_parent_queryset_includes_is_dataset_from_same_org(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        matching_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
+
+        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert matching_dataset in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_dataset_from_different_org(self):
+        organization = OrganizationFactory()
+        other_organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        other_org_dataset = DatasetFactory(organization=other_organization, subclass=subclass, is_public=False)
+
+        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert other_org_dataset not in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_dataset_with_service_subclass(self):
+        organization = OrganizationFactory()
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        service_dataset = DatasetFactory(organization=organization, subclass=service_subclass, is_public=False)
+
+        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert service_dataset not in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_public_dataset(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        public_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=True)
+
+        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert public_dataset not in form.fields["parent"].queryset
+
     def test_no_agent_no_endpoint_url_raises_error(self):
         organization = OrganizationFactory()
         contact = ContactFactory(organization=organization)
@@ -363,6 +438,43 @@ class TestServiceResourceForm:
 
 
 class TestDatasetResourceForm:
+    def test_parent_queryset_includes_service_dataset_from_same_org(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        matching_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
+
+        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert matching_dataset in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_dataset_from_different_org(self):
+        organization = OrganizationFactory()
+        other_organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        other_org_dataset = DatasetFactory(organization=other_organization, subclass=subclass, is_public=False)
+
+        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert other_org_dataset not in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_dataset_with_is_subclass(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        is_dataset = DatasetFactory(organization=organization, subclass=is_subclass, is_public=False)
+
+        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert is_dataset not in form.fields["parent"].queryset
+
+    def test_parent_queryset_excludes_public_dataset(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        public_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=True)
+
+        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+
+        assert public_dataset not in form.fields["parent"].queryset
+
     def test_temporal_start_after_end_raises_error(self):
         organization = OrganizationFactory()
 

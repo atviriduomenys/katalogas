@@ -1,5 +1,7 @@
 import pytest
 from django.conf import settings
+
+from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.structure import VersionStatus
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -7,7 +9,7 @@ from django_webtest import DjangoTestApp
 
 from vitrina.classifiers.factories import ConceptFactory, LicenceFactory
 from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI
-from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory, DCATResourceSubclassFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.resources.factories import (
@@ -229,7 +231,8 @@ class TestDcatDistributionCreateView:
     def test_post_saves_all_fields(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org, is_public=False)
-        data_service = DatasetServiceFactory(is_public=False)
+        data_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        data_service = DatasetServiceFactory(organization=org, subclass=data_service_subclass, is_public=False)
         licence = LicenceFactory()
         file_format = FileFormat()
         compression_format = CompressionFormatFactory()
@@ -562,7 +565,8 @@ class TestDcatDistributionUpdateView:
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org, is_public=False)
         distribution = DatasetDistributionFactory(dataset=dataset)
-        data_service = DatasetServiceFactory(is_public=False)
+        data_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        data_service = DatasetServiceFactory(organization=org, subclass=data_service_subclass, is_public=False)
         licence = LicenceFactory()
         fmt = FileFormat()
         compression_fmt = CompressionFormatFactory()

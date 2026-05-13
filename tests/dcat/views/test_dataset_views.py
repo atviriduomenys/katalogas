@@ -368,7 +368,7 @@ class TestDcatDatasetCreateView:
     def test_post_saves_dataset_with_parent(self, app: DjangoTestApp):
         org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
-        parent = DatasetFactory(organization=org, subclass=subclass)
+        parent = DatasetFactory(organization=org, subclass=subclass, is_public=False)
         importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
         importance = ConceptFactory(concept_schemas=[importance_schema])
         is_type_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
@@ -926,7 +926,7 @@ class TestDcatDatasetUpdateView:
         importance = ConceptFactory(concept_schemas=[importance_schema])
         is_type_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
         is_type = ConceptFactory(concept_schemas=[is_type_schema])
-        parent = DatasetFactory(organization=org, subclass=subclass, is_public=True)
+        parent = DatasetFactory(organization=org, subclass=subclass, is_public=False)
         dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
         user = UserFactory(is_staff=True)
         app.set_user(user)

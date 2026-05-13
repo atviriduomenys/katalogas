@@ -2,7 +2,6 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
 from django.core.exceptions import ValidationError
-from django.db.models import Case, When, IntegerField
 from django.forms.widgets import URLInput
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm
@@ -11,8 +10,11 @@ from vitrina.classifiers.models import Concept, Licence
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.fields import StringListField
-from vitrina.resources.forms import CODE_ORDER
-from vitrina.resources.models import DatasetDistribution, DISTRIBUTION_STANDARD_URI
+from vitrina.resources.models import (
+    DatasetDistribution,
+    DISTRIBUTION_STANDARD_URI,
+    DISTRIBUTION_AVAILABILITY_SCHEMA_URI,
+)
 
 from django.utils.translation import gettext_lazy as _
 
@@ -87,11 +89,20 @@ class DatasetDistributionForm(TranslatableModelForm):
 
         self.fields["access_url"].required = True
         self.fields["availability"].required = True
+        self.fields["availability"].queryset = Concept.ordered_by_label_objects.filter(
+            concept_schemas__uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI
+        ).prefetch_related("translations")
+        self.fields["availability"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
+
         self.fields["title"].required = True
         self.fields["description"].required = True
 
         self.fields["data_service"].queryset = Dataset.objects.filter(
-            is_public=False, subclass__name=DCATResourceSubclass.SERVICE
+            organization=self.dataset.organization,
+            subclass__name=DCATResourceSubclass.SERVICE,
+            is_public=False,
         ).prefetch_related("translations")
         self.fields["data_service"].required = False
         self.fields["licence"].queryset = self.fields["licence"].queryset.order_by("title")
@@ -99,21 +110,12 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.fields["format"].required = False
         self.fields["compression_format"].queryset = self.fields["compression_format"].queryset.order_by("title")
         self.fields["packaging_format"].queryset = self.fields["packaging_format"].queryset.order_by("title")
-        self.fields["conforms_to"].queryset = Concept.objects.filter(
+        self.fields["conforms_to"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=DISTRIBUTION_STANDARD_URI
         ).prefetch_related("translations")
-        self.fields["status"].queryset = (
-            Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
-            .prefetch_related("translations")
-            .distinct()
-            .order_by(
-                Case(
-                    *[When(code=code, then=pos) for pos, code in enumerate(CODE_ORDER)],
-                    default=len(CODE_ORDER),
-                    output_field=IntegerField(),
-                )
-            )
-        )
+        self.fields["status"].queryset = Concept.ordered_by_label_objects.filter(
+            concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI
+        ).prefetch_related("translations")
         self.fields["status"].label_from_instance = lambda obj: obj.safe_translation_getter("label", any_language=True)
 
         if not self.resource and (default_licence := Licence.objects.filter(is_default=True).first()):

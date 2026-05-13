@@ -20,7 +20,7 @@ from vitrina.datasets.form_helpers import (
     DATA_SERVICE_STANDARD_URI,
     DATASET_STANDARD_URI,
 )
-from vitrina.datasets.models import Dataset, Contact
+from vitrina.datasets.models import Dataset, Contact, DCATResourceSubclass
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
@@ -190,12 +190,16 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         if instance:
             self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
 
+        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
+            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
+        )
+
         self.fields["landing_page"].label = _("Tinklalapis")
         self.fields["landing_page"].help_text = _(
             "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. Atitinka foaf:homepage."
         )
 
-        organization_qs = Organization.objects.all()
+        organization_qs = Organization.objects.all().order_by("title")
         self.fields["information_system_publisher"].queryset = organization_qs
         self.fields["information_system_publisher"].required = True
         self.fields["information_system_publisher"].help_text = _(
@@ -207,20 +211,20 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
         )
 
-        self.fields["information_system_type"].queryset = Concept.objects.filter(
+        self.fields["information_system_type"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["information_system_type"].label_from_instance = lambda obj: str(obj.translated_label)
 
         self.fields["information_system_importance"].required = True
-        self.fields["information_system_importance"].queryset = Concept.objects.filter(
+        self.fields["information_system_importance"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
 
         self.fields["information_system_assessment_url"].required = True
 
-        self.fields["languages"].queryset = Concept.objects.filter(
+        self.fields["languages"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
@@ -254,7 +258,9 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         ),
     )
     conforms_to = forms.ModelChoiceField(
-        Concept.objects.filter(concept_schemas__uri=DATA_SERVICE_STANDARD_URI).prefetch_related("translations"),
+        Concept.ordered_by_label_objects.filter(concept_schemas__uri=DATA_SERVICE_STANDARD_URI).prefetch_related(
+            "translations"
+        ),
         label=_("Atitinka"),
         required=False,
         help_text=_("Nurodo kokį standartą atitinka paslauga. Atitinka dct:conformsTo."),
@@ -303,8 +309,12 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
 
+        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
+            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
+        )
+
         self.fields["service_type"].queryset = (
-            Concept.objects.filter(concept_schemas__uri=Dataset.SERVICE_TYPE_SCHEME_URI)
+            Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.SERVICE_TYPE_SCHEME_URI)
             .prefetch_related("translations")
             .distinct()
         )
@@ -343,7 +353,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         unique=True,
     )
     conforms_to = forms.ModelChoiceField(
-        Concept.objects.filter(concept_schemas__uri=DATASET_STANDARD_URI).prefetch_related("translations"),
+        Concept.ordered_by_label_objects.filter(concept_schemas__uri=DATASET_STANDARD_URI).prefetch_related(
+            "translations"
+        ),
         label=_("Atitinka"),
         required=False,
         help_text=_("Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."),
@@ -392,15 +404,18 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         if instance:
             self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
 
+        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
+            organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
+        )
         self.fields["dataset_type"].queryset = (
-            Concept.objects.filter(concept_schemas__uri=Dataset.DATASET_TYPE_SCHEME_URI)
+            Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.DATASET_TYPE_SCHEME_URI)
             .prefetch_related("translations")
             .distinct()
         )
         self.fields["dataset_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
             "label", any_language=True
         )
-        self.fields["languages"].queryset = Concept.objects.filter(
+        self.fields["languages"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: obj.safe_translation_getter(

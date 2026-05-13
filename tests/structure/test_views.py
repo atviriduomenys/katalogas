@@ -8259,6 +8259,25 @@ def test_model_data_download_invalid_format_no_redirect(app: DjangoTestApp):
 
 
 class TestStructureUMLviews(BaseTestCreateManifest):
+    MANIFEST = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "4,,,,Licence,,,,,,,,,,,,,,\n"
+        "5,,,,,id,integer,,,,,,,,,,,,\n"
+    )
+
+    def _setup_uml(self, app: DjangoTestApp, **uml_kwargs):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        structure = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=self.MANIFEST))
+        )
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        version = create_structure_objects(structure)
+        UMLDiagramFactory(metadata_version=version, **uml_kwargs)
+        return structure, version
+
     def test_uml_initiated(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -8342,7 +8361,7 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         assert response.status_code == 200
         assert mermaid in response.text
         expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
-        assert any(expected_template in t.name for t in response.templates)
+        assert any(expected_template in template.name for template in response.templates)
 
     def test_uml_download_mmd(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
@@ -8372,3 +8391,72 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         expected_filename = structure.dataset.name.split("/")[-1]
         assert response["Content-Disposition"] == f'attachment; filename="{expected_filename}.mmd"'
         assert response.body.decode() == mermaid
+
+    @pytest.mark.parametrize("expanded", [True, False])
+    def test_uml_view_outdated_triggers_regenerate(self, app: DjangoTestApp, expanded: bool):
+        structure, version = self._setup_uml(app, status=UMLDiagramStatus.OUTDATED)
+        url_params = "?expanded" if expanded else ""
+
+        with patch("vitrina.structure.tasks.update_uml_diagram.delay") as mock_task:
+            response = app.get(
+                reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params
+            )
+            mock_task.assert_called_once()
+
+        assert response.status_code == 200
+        expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
+        assert any(expected_template in template.name for template in response.templates)
+        uml_diagram = UMLDiagram.objects.get(metadata_version=version)
+        assert uml_diagram.status == UMLDiagramStatus.PENDING
+
+    @pytest.mark.parametrize("expanded", [True, False])
+    def test_uml_view_pending_does_not_retrigger_regenerate(self, app: DjangoTestApp, expanded: bool):
+        structure, version = self._setup_uml(app, status=UMLDiagramStatus.PENDING)
+        url_params = "?expanded" if expanded else ""
+
+        with patch("vitrina.structure.tasks.update_uml_diagram.delay") as mock_task:
+            response = app.get(
+                reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params
+            )
+            mock_task.assert_not_called()
+
+        assert response.status_code == 200
+        expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
+        assert any(expected_template in template.name for template in response.templates)
+        uml_diagram = UMLDiagram.objects.get(metadata_version=version)
+        assert uml_diagram.status == UMLDiagramStatus.PENDING
+
+    @pytest.mark.parametrize("expanded", [True, False])
+    def test_uml_view_failed_renders_error_message(self, app: DjangoTestApp, expanded: bool):
+        error_message = "klaida generuojant diagramą"
+        structure, version = self._setup_uml(app, status=UMLDiagramStatus.FAILED, error_message=error_message)
+        url_params = "?expanded" if expanded else ""
+
+        response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params)
+
+        assert response.status_code == 200
+        expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
+        assert any(expected_template in template.name for template in response.templates)
+        assert error_message in response.text
+
+    @pytest.mark.parametrize(
+        "status,error_message",
+        [
+            (UMLDiagramStatus.OUTDATED, None),
+            (UMLDiagramStatus.PENDING, None),
+            (UMLDiagramStatus.FAILED, "klaida"),
+        ],
+    )
+    def test_uml_download_mmd_skipped_when_not_up_to_date(
+        self, app: DjangoTestApp, status: str, error_message: str | None
+    ):
+        structure, version = self._setup_uml(app, status=status, error_message=error_message)
+
+        with patch("vitrina.structure.tasks.update_uml_diagram.delay"):
+            response = app.get(
+                reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + "?download=mmd"
+            )
+
+        assert response.status_code == 200
+        assert "text/html" in response["Content-Type"]
+        assert "attachment" not in response.headers.get("Content-Disposition", "")

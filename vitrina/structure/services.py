@@ -172,7 +172,7 @@ def create_structure_objects(structure: DatasetStructure, metadata_version: Vers
                         existing_comments=existing_structure_comments,
                     )
                     _load_prefixes(structure.dataset, state.manifest.prefixes, structure, metadata_version)
-                    metadata_version = _load_datasets(state, structure.dataset, metadata_version)
+                    _load_datasets(state, structure.dataset, metadata_version)
                     structure.dataset.update_level()
 
         for error in errors:
@@ -205,12 +205,8 @@ def create_or_get_uapi_format():
     return format_obj
 
 
-def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version):
+def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version) -> None:
     ct = ContentType.objects.get_for_model(dataset)
-    existing_metadata = list(
-        Metadata.objects.filter(content_type=ct, object_id=dataset.pk, metadata_version=metadata_version)
-    )
-    loaded_metadata = []
     _clean_errors(dataset.current_structure)
     existing_dataset_comments = list(
         Comment.objects.filter(
@@ -228,11 +224,9 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
         else:
             message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“.") % {"expected": main_prefix}
         _create_errors([message], dataset.current_structure)
-        metadata_version.delete()
-        return metadata_version
+        return
 
     manifest_names = list({manifest.name for _, manifest in to_process if manifest.name})
-
     dataset_meta_uuid_by_name: dict[str, uuid.UUID] = {}
     if manifest_names:
         for metadata in Metadata.objects.filter(
@@ -276,16 +270,10 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             )
         if metadata:
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
-            loaded_metadata.append(metadata)
-            metadata_version.delete()
         elif not meta.name.isascii():
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
-            loaded_metadata.append(metadata)
-            metadata_version.delete()
         elif any([ch.isupper() for ch in meta.name]):
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik mažosios raidės.'))
-            loaded_metadata.append(metadata)
-            metadata_version.delete()
         else:
             if not meta.id and (uid := dataset_meta_uuid_by_name.get(meta.name)):
                 meta.id = uid
@@ -312,16 +300,8 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             _load_models(meta, dataset, metadata_version, metadata_cache=metadata_cache)
             _link_distributions(meta, dataset, metadata_version, metadata_cache=metadata_cache)
             _link_models(dataset, meta, metadata_version, metadata_cache=metadata_cache)
-            loaded_metadata.append(metadata)
-
         if errors := meta.errors:
             _create_errors(errors, dataset.current_structure)
-
-    removed_metadata = list(set(existing_metadata) - set(loaded_metadata))
-    for meta in removed_metadata:
-        meta.delete()
-
-    return metadata_version
 
 
 def _get_manifest_datasets_to_process(state: struct.State, dataset: Dataset) -> list[tuple[int, struct.Dataset]]:

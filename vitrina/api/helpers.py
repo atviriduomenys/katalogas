@@ -114,7 +114,7 @@ def render_rdf_response(request: HttpRequest, datasets: QuerySet[Dataset]) -> Ht
         {"datasets": get_datasets_for_rdf(datasets)},
         request=request,
     )
-    content = _encode_xml_control_chars(content)
+    content = _encode_xml_control_chars(content).lstrip()
     return HttpResponse(content, content_type="application/rdf+xml")
 
 

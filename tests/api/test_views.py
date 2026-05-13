@@ -3106,6 +3106,17 @@ class EdpDcatApPublicRdfTests(TestCase):
 
 
 @pytest.mark.django_db
+def test_edp_dcat_ap_rdf_starts_with_xml_declaration(app: DjangoTestApp):
+    Dataset.objects.all().delete()
+    DatasetFactory(access_rights=Dataset.PUBLIC)
+
+    res = app.get("/edp/dcat-ap.rdf")
+
+    assert res.status_code == 200
+    assert res.text.startswith("<?xml")
+
+
+@pytest.mark.django_db
 def test_edp_dcat_ap_rdf_drops_whitespace_uris(app: DjangoTestApp):
     Dataset.objects.all().delete()
     bad = "https://www.migracija.lt, https://migracija.lrv.lt"

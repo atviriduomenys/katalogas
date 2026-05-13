@@ -1,86 +1,18 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html>
-   <head>
-      <meta charset="UTF-8" />
-      <title>{{ current_title }}</title>
-      <style>
-         html, body {
-         margin: 0;
-         height: 100%;
-         overflow: hidden;
-         }
-         #viewport {
-         position: fixed;
-         inset: 0;
-         overflow: hidden;
-         background: #f7f7f7;
-         }
-         #scene {
-         position: absolute;
-         inset: 0;
-         transform-origin: 0 0;
-         cursor: grab;
-         }
-         #scene:active {
-         cursor: grabbing;
-         }
-         #scene svg {
-         display: block;
-         max-width: none;
-         width: auto;
-         height: auto;
-         }
-      </style>
-   </head>
-   <body>
-      <div id="viewport">
-         <div id="scene"></div>
-      </div>
-      <script type="text/mermaid" id="mermaid-source">{{ uml_diagram.mermaid|safe }}</script>
-      <script type="module">
-         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.14.0/dist/mermaid.esm.min.mjs';
-         import Panzoom from 'https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.6.0/+esm';
-
-         const mermaidCode = document.getElementById('mermaid-source').textContent;
-
-         mermaid.initialize({
-           startOnLoad: false,
-           securityLevel: 'loose',
-           useMaxWidth: false,
-           maxTextSize: 100000
-         });
-
-         const viewportElement = document.getElementById('viewport');
-         const sceneElement = document.getElementById('scene');
-
-         const { svg } = await mermaid.render('diagram-1', mermaidCode);
-         sceneElement.innerHTML = svg;
-
-         const panzoom = Panzoom(sceneElement, {
-           maxScale: 100,
-           minScale: 1
-         });
-
-         viewportElement.addEventListener('wheel', panzoom.zoomWithWheel, { passive: false });
-
-         // Prevent clicks when dragging
-         let pointerDownPos = null;
-         let suppressClick = false;
-         sceneElement.addEventListener('pointerdown', (e) => {
-           pointerDownPos = { x: e.clientX, y: e.clientY };
-           suppressClick = false;
-         });
-         sceneElement.addEventListener('pointerup', (e) => {
-           if (pointerDownPos && Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 5) {
-             suppressClick = true;
-           }
-         });
-         sceneElement.addEventListener('click', (e) => {
-           if (suppressClick) {
-             e.preventDefault();
-             e.stopPropagation();
-           }
-         }, true);
-      </script>
-   </body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>{{ current_title }}</title>
+        <link type="text/css" href="{% static 'css/bundle.css' %}" rel="stylesheet" media="screen">
+        <style>
+            html, body {
+                margin: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        {% include "vitrina/structure/uml_canvas.html" with expanded=True %}
+    </body>
 </html>

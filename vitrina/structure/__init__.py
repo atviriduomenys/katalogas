@@ -31,3 +31,4 @@ class UMLDiagramStatus(models.TextChoices):
     OUTDATED = "OUTDATED", "Outdated"
     PENDING = "PENDING", "Pending"
     UP_TO_DATE = "UP_TO_DATE", "Up to date"
+    FAILED = "FAILED", "Failed"

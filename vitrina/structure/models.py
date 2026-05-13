@@ -666,7 +666,7 @@ class UMLDiagram(UUIDBaseModel):
         default=0, editable=False, help_text="Incremented on every structure change to detect stale UML diagrams."
     )
     status = models.CharField(default=UMLDiagramStatus.OUTDATED, choices=UMLDiagramStatus.choices)
-    celery_task_id = models.UUIDField(null=True, editable=False)
+    error_message = models.TextField(null=True, blank=True, editable=False)
     metadata_version = models.OneToOneField(
         Version, null=False, blank=True, on_delete=models.CASCADE, related_name="uml_diagram"
     )
@@ -676,9 +676,9 @@ class UMLDiagram(UUIDBaseModel):
 
         user_id = user.pk if user else None
         self.status = UMLDiagramStatus.PENDING
-        async_result = update_uml_diagram.delay(self.pk, _reversion_user_id=user_id)
-        self.celery_task_id = async_result.id
-        self.save(update_fields=["status", "celery_task_id", "updated_at"])
+        self.error_message = None
+        update_uml_diagram.delay(self.pk, _reversion_user_id=user_id)
+        self.save(update_fields=["status", "error_message", "updated_at"])
 
     def invalidate(self) -> None:
         self.version_counter = F("version_counter") + 1

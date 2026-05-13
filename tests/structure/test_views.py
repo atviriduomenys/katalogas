@@ -6,7 +6,6 @@ from http import HTTPStatus
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-from django.utils.html import escape
 from django_webtest import DjangoTestApp
 from unittest.mock import Mock, patch
 
@@ -8279,18 +8278,14 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         version = create_structure_objects(structure)
         assert not UMLDiagram.objects.filter(metadata_version=version).exists()
 
-        celer_task_id = uuid.uuid4()
-
         with patch("vitrina.structure.tasks.update_uml_diagram.delay") as mock_task:
-            mock_task.return_value = Mock(id=celer_task_id)
             response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]))
             mock_task.assert_called_once()
-        assert response.status_code == 302
+        assert response.status_code == 200
         uml_diagram = UMLDiagram.objects.get(metadata_version=version)
-        assert uml_diagram.celery_task_id == celer_task_id
         assert uml_diagram.status == UMLDiagramStatus.PENDING
 
-    def test_uml_reinitiated(self, app: DjangoTestApp):
+    def test_uml_with_errors(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
         app.set_user(user)
         manifest = (
@@ -8307,21 +8302,17 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)
-        celery_task_id = uuid.uuid4()
-        UMLDiagramFactory(metadata_version=version, status=UMLDiagramStatus.PENDING, celery_task_id=celery_task_id)
+        error_message = "Failed task error message"
+        UMLDiagramFactory(
+            metadata_version=version,
+            status=UMLDiagramStatus.FAILED,
+            error_message=error_message,
+        )
 
-        with (
-            patch("vitrina.structure.tasks.update_uml_diagram.delay") as mock_task,
-            patch("vitrina.structure.views.AsyncResult") as mock_result,
-        ):
-            mock_task.return_value = Mock(id=celery_task_id)
-            mock_result.return_value.state = "FAILURE"
-            mock_result.return_value.successful.return_value = False
-            response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]))
-            mock_task.assert_called_once()
+        response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]))
 
-        assert response.status_code == 302
-        response = response.follow()
+        assert response.status_code == 200
+        assert error_message in response.text
 
     @pytest.mark.parametrize("expanded", (True, False))
     def test_uml_view(self, app: DjangoTestApp, expanded: bool):
@@ -8349,8 +8340,7 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params)
 
         assert response.status_code == 200
-        expected_mermaid = mermaid if expanded else escape(mermaid)
-        assert expected_mermaid in response.text
+        assert mermaid in response.text
         expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
         assert any(expected_template in t.name for t in response.templates)
 

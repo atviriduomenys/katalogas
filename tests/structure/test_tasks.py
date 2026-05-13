@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.conf import settings
 from factory.django import FileField
 from vitrina.structure.factories import UMLDiagramFactory
@@ -66,3 +68,27 @@ id : integer [0..1]
         f"click `datasets/gov/ivpk/adp/Catalog` href "
         f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Catalog/"'
     ) in uml_diagram.mermaid
+
+
+def test_update_uml_diagram_failure_persists_error():
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "4,,,,Licence,,,,,,,,,,,,,,\n"
+        "5,,,,,id,integer,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure)
+    uml_diagram = UMLDiagramFactory(metadata_version=version, status=UMLDiagramStatus.PENDING)
+
+    with patch("vitrina.structure.tasks.generate_mermaid_diagram", side_effect=RuntimeError("klaida")):
+        update_uml_diagram(uml_diagram.pk)
+
+    uml_diagram.refresh_from_db()
+    assert uml_diagram.status == UMLDiagramStatus.FAILED
+    assert uml_diagram.error_message == "klaida"
+    assert uml_diagram.mermaid is None

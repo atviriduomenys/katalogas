@@ -37,8 +37,6 @@ from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from shapely.wkt import loads
 from flags.state import flag_enabled
-from celery import states as celery_states
-from celery.result import AsyncResult
 
 from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
@@ -4400,34 +4398,17 @@ class DatasetStructureUMLView(
         if not self.models:
             messages.warning(request, _("Nerasta struktūra pasirinktai struktūros versijai."))
             return redirect(self.get_structure_url())
-        uml_diagram, _created = UMLDiagram.objects.get_or_create(metadata_version=self.metadata_version)
-        if uml_diagram.status == UMLDiagramStatus.PENDING:
-            result = AsyncResult(str(uml_diagram.celery_task_id))
 
-            if result.state in celery_states.READY_STATES and not result.successful():
-                uml_diagram.initiate_update()
-                messages.warning(
-                    request,
-                    _(
-                        "Įvyko klaida generuojant diagramą. Bandoma diagramą generuoti iš naujo. Jeigu ši klaida kartosis, susisiekite su administracija."
-                    ),
-                )
-            else:
-                messages.info(request, _("Diagrama šiuo metu generuojama, pabandykite vėliau."))
-            return redirect(self.get_structure_url())
+        self.uml_diagram, _created = UMLDiagram.objects.get_or_create(metadata_version=self.metadata_version)
 
-        if uml_diagram.status == UMLDiagramStatus.OUTDATED:
-            uml_diagram.initiate_update()
-            messages.info(request, _("Užfiksuotas struktūros pasikeitimas. Diagrama pergeneruojama."))
-            return redirect(self.get_structure_url())
-
-        if request.GET.get("download") == "mmd":
+        if self.uml_diagram.status == UMLDiagramStatus.OUTDATED:
+            self.uml_diagram.initiate_update()
+        elif request.GET.get("download") == "mmd" and self.uml_diagram.status == UMLDiagramStatus.UP_TO_DATE:
             filename = self.dataset.name.split("/")[-1] or f"uml-{self.dataset.pk}"
-            response = HttpResponse(uml_diagram.mermaid or "", content_type="text/plain; charset=utf-8")
+            response = HttpResponse(self.uml_diagram.mermaid or "", content_type="text/plain; charset=utf-8")
             response["Content-Disposition"] = f'attachment; filename="{filename}.mmd"'
             return response
 
-        self.uml_diagram = uml_diagram
         return super().get(request, *args, **kwargs)
 
     def has_permission(self):

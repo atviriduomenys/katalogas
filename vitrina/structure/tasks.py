@@ -38,11 +38,24 @@ def validate_manifest_task(manifest_id: UUID) -> None:
 def update_uml_diagram(uml_id: UUID) -> None:
     uml_diagram = UMLDiagram.objects.prefetch_related("metadata_version__dataset").get(pk=uml_id)
     current_version = uml_diagram.version_counter
-    mermaid = generate_mermaid_diagram(uml_diagram.metadata_version.dataset, uml_diagram.metadata_version)
+    try:
+        mermaid = generate_mermaid_diagram(uml_diagram.metadata_version.dataset, uml_diagram.metadata_version)
+    except Exception as e:
+        uml_diagram.refresh_from_db()
+        if uml_diagram.version_counter == current_version:
+            uml_diagram.status = UMLDiagramStatus.FAILED
+            uml_diagram.error_message = str(e)
+        else:
+            uml_diagram.status = UMLDiagramStatus.OUTDATED
+            uml_diagram.error_message = None
+        uml_diagram.save(update_fields=["status", "error_message", "updated_at"])
+        return
+
     uml_diagram.refresh_from_db()
     if uml_diagram.version_counter == current_version:
         uml_diagram.mermaid = mermaid
         uml_diagram.status = UMLDiagramStatus.UP_TO_DATE
     else:
         uml_diagram.status = UMLDiagramStatus.OUTDATED
-    uml_diagram.save()
+    uml_diagram.error_message = None
+    uml_diagram.save(update_fields=["mermaid", "status", "error_message", "updated_at"])

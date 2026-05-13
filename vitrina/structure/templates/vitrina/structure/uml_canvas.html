@@ -1,0 +1,194 @@
+{% load i18n %}
+
+{% if uml_diagram.error_message %}
+
+<div class="message is-warning">
+    <div class="message-body">
+        <span>{% translate "Įvyko klaida generuojant diagramą. Susisiekite su administracija." %}</span></br></br>
+        <pre style="border: 1px solid #d0d0d0; border-radius: 4px;"><code>{{ uml_diagram.error_message }}</code></pre>
+    </div>
+</div>
+
+{% else %}
+
+<style>
+    #viewport {
+        position: relative;
+        width: 100%;
+        min-height: 600px;
+        overflow: hidden;
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        background-color: #f5f5f5;
+    }
+
+    #viewport.is-expanded {
+        position: fixed;
+        inset: 0;
+        width: auto;
+        min-height: 0;
+        border: 0;
+        border-radius: 0;
+    }
+
+    #scene {
+        position: relative;
+        z-index: 1;
+    }
+
+    #viewport.is-expanded #scene {
+        position: absolute;
+        inset: 0;
+        transform-origin: 0 0;
+        cursor: grab;
+        z-index: auto;
+    }
+
+    #viewport.is-expanded #scene:active { cursor: grabbing; }
+
+    #viewport.is-expanded #scene svg {
+        display: block;
+        max-width: none;
+        width: auto;
+        height: auto;
+    }
+
+    #fullscreen-link {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 10;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #333;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        font-size: 22px;
+        line-height: 1;
+        pointer-events: auto;
+    }
+
+    .uml-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        width: 100%;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    #viewport.is-expanded .uml-loader { height: 100%; }
+</style>
+
+<div id="viewport"{% if expanded %} class="is-expanded"{% endif %} data-expanded="{{ expanded|yesno:'true,false' }}">
+    {% if uml_diagram.status != "UP_TO_DATE" %}
+        <div class="uml-loader">
+            <progress class="progress is-info is-small" max="100" style="max-width: 200px;"></progress>
+            <p class="m-t-md">{% translate "Generuojama diagrama..." %}</p>
+        </div>
+    {% else %}
+        {% if not expanded %}
+        <a
+            id="fullscreen-link"
+            href="{% url 'dataset-structure-uml-view' dataset.pk selected_version.pk %}?expanded"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open full screen"
+            aria-label="Open full screen"
+        >⛶</a>
+        {% endif %}
+        <div id="scene"></div>
+    {% endif %}
+</div>
+
+{% if uml_diagram.status == "UP_TO_DATE" %}
+<script type="text/mermaid" id="mermaid-source">{{ uml_diagram.mermaid|safe }}</script>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.14.0/dist/mermaid.esm.min.mjs';
+    import Panzoom from 'https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.6.0/+esm';
+
+    const viewportElement = document.getElementById('viewport');
+    const expanded = viewportElement.dataset.expanded === 'true';
+
+    mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'loose',
+        maxTextSize: 100000,
+        ...(expanded && { useMaxWidth: false }),
+    });
+
+    window.addEventListener('load', async () => {
+        const sceneElement = document.getElementById('scene');
+        const mermaidCode = document.getElementById('mermaid-source').textContent;
+
+        const { svg } = await mermaid.render('diagram-1', mermaidCode);
+        sceneElement.innerHTML = svg;
+
+        const downloadButton = document.getElementById('uml-download-button');
+        if (downloadButton) {
+            const mmdUrl = '{% url "dataset-structure-uml-view" dataset.pk selected_version.pk %}?download=mmd';
+            downloadButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                const format = document.getElementById('uml-download-format').value;
+                if (format === 'mmd') {
+                    window.location.href = mmdUrl;
+                    return;
+                }
+                const svgWithNs = svg.includes('xmlns:xlink')
+                    ? svg
+                    : svg.replace('<svg ', '<svg xmlns:xlink="http://www.w3.org/1999/xlink" ');
+                const blob = new Blob([svgWithNs], { type: 'image/svg+xml;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                const rawName = '{{ dataset.name|default:"uml"|escapejs }}';
+                link.download = (rawName.split('/').pop() || 'uml') + '.svg';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        const panzoomInstance = Panzoom(sceneElement, {
+            maxScale: 100,
+            minScale: 1,
+            canvas: !expanded,
+        });
+
+        viewportElement.addEventListener(
+            'wheel',
+            panzoomInstance.zoomWithWheel,
+            expanded ? { passive: false } : undefined,
+        );
+
+        let pointerDownPos = null;
+        let suppressClick = false;
+        sceneElement.addEventListener('pointerdown', (e) => {
+            pointerDownPos = { x: e.clientX, y: e.clientY };
+            suppressClick = false;
+        });
+        sceneElement.addEventListener('pointerup', (e) => {
+            if (pointerDownPos && Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 5) {
+                suppressClick = true;
+            }
+        });
+        sceneElement.addEventListener('click', (e) => {
+            if (suppressClick) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+    });
+</script>
+{% else %}
+<script>setTimeout(() => location.reload(), 5000);</script>
+{% endif %}
+
+{% endif %}

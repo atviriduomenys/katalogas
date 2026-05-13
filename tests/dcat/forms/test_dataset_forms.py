@@ -11,14 +11,23 @@ from vitrina.classifiers.models import (
     LANGUAGE_CONCEPT_SCHEMA_URI,
 )
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
-from vitrina.datasets.factories import ContactFactory, DatasetFactory, DCATResourceSubclassFactory
-from vitrina.datasets.models import Dataset, DCATResourceSubclass
+from vitrina.datasets.factories import (
+    AttributionFactory,
+    ContactFactory,
+    DatasetAttributionFactory,
+    DatasetFactory,
+    DatasetRelationFactory,
+    DCATResourceSubclassFactory,
+    RelationFactory,
+)
+from vitrina.datasets.models import Attribution, Dataset, DCATResourceSubclass, Relation
 from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
     DatasetUpdateForm,
     InformationSystemResourceForm,
     InformationSystemUpdateForm,
     ServiceResourceForm,
+    ServiceUpdateForm,
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.orgs.factories import OrganizationFactory
@@ -716,3 +725,183 @@ class TestDatasetUpdateForm:
         )
 
         assert form.initial["applicable_legislation"] == []
+
+    def test_qualified_attribution_initial_set_from_contributor_attributions(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        contributor = AttributionFactory(name=Attribution.CONTRIBUTOR)
+        org = OrganizationFactory()
+        DatasetAttributionFactory(dataset=dataset, attribution=contributor, organization=org)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert org.pk in form.initial["qualified_attribution"]
+
+    def test_qualified_attribution_initial_excludes_other_attribution_types(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        AttributionFactory(name=Attribution.CONTRIBUTOR)
+        creator = AttributionFactory(name=Attribution.CREATOR)
+        org = OrganizationFactory()
+        DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert org.pk not in form.initial["qualified_attribution"]
+
+    def test_qualified_attribution_initial_empty_when_no_attributions(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert list(form.initial["qualified_attribution"]) == []
+
+
+class TestServiceUpdateForm:
+    def test_serves_datasets_initial_set_from_existing_relations(self):
+        organization = OrganizationFactory()
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        service = DatasetFactory(organization=organization, subclass=service_subclass)
+        served_dataset = DatasetFactory(organization=organization, subclass=dataset_subclass)
+        relation = RelationFactory(name=Relation.SERVICE)
+        DatasetRelationFactory(relation=relation, dataset=service, part_of=served_dataset)
+
+        form = ServiceUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=service,
+        )
+
+        assert served_dataset in form.initial["serves_datasets"]
+
+    def test_serves_datasets_initial_excludes_unrelated_datasets(self):
+        organization = OrganizationFactory()
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        service = DatasetFactory(organization=organization, subclass=service_subclass)
+        unrelated_dataset = DatasetFactory(organization=organization, subclass=dataset_subclass)
+
+        form = ServiceUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=service,
+        )
+
+        assert unrelated_dataset not in form.initial["serves_datasets"]
+
+    def test_serves_datasets_initial_empty_when_no_relations(self):
+        organization = OrganizationFactory()
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        service = DatasetFactory(organization=organization, subclass=service_subclass)
+
+        form = ServiceUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=service,
+        )
+
+        assert not form.initial["serves_datasets"].exists()
+
+
+class TestInformationSystemUpdate:
+    def test_has_part_initial_set_from_existing_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+        catalog_dataset = DatasetFactory(organization=organization, subclass=catalog_subclass)
+        relation = RelationFactory(name=Relation.CATALOG)
+        DatasetRelationFactory(relation=relation, dataset=dataset, part_of=catalog_dataset)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert catalog_dataset in form.initial["has_part"]
+
+    def test_has_part_initial_empty_when_no_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert not form.initial["has_part"].exists()
+
+    def test_relates_to_information_system_initial_set_from_existing_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+        other_is = DatasetFactory(organization=organization, subclass=is_subclass)
+        relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
+        DatasetRelationFactory(relation=relation, dataset=other_is, part_of=dataset)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert other_is in form.initial["relates_to_information_system"]
+
+    def test_relates_to_information_system_initial_empty_when_no_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert not form.initial["relates_to_information_system"].exists()
+
+    def test_related_information_system_initial_set_from_existing_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+        other_is = DatasetFactory(organization=organization, subclass=is_subclass)
+        relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
+        DatasetRelationFactory(relation=relation, dataset=dataset, part_of=other_is)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert other_is in form.initial["related_information_system"]
+
+    def test_related_information_system_initial_empty_when_no_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert not form.initial["related_information_system"].exists()

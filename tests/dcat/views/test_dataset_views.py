@@ -18,8 +18,21 @@ from vitrina.classifiers.factories import (
 )
 from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
-from vitrina.datasets.factories import ContactFactory, DatasetFactory, DCATResourceSubclassFactory
-from vitrina.datasets.models import Dataset, DCATResourceSubclass
+from vitrina.datasets.factories import (
+    AttributionFactory,
+    ContactFactory,
+    DatasetFactory,
+    DCATResourceSubclassFactory,
+    RelationFactory,
+)
+from vitrina.datasets.models import (
+    Attribution,
+    DatasetAttribution,
+    DatasetRelation,
+    Dataset,
+    DCATResourceSubclass,
+    Relation,
+)
 from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
     InformationSystemResourceForm,
@@ -731,6 +744,12 @@ class TestDcatDatasetUpdateView:
         )
         agency = Agency.objects.get(code=Agency.RISR_CODE)
         IdentifierFactory(resource=dataset, scheme_agency=agency, notation="1111")
+        catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+        catalog_dataset = DatasetFactory(organization=org, subclass=catalog_subclass, is_public=False)
+        other_is = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        other_is2 = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        catalog_relation = RelationFactory(name=Relation.CATALOG)
+        rti_relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -753,6 +772,9 @@ class TestDcatDatasetUpdateView:
         form["applicable_legislation"] = "https://example.com/law"
         form["identifier"] = "9999"
         form["languages"] = [str(language.pk)]
+        form["has_part"].force_value([str(catalog_dataset.pk)])
+        form["relates_to_information_system"].force_value([str(other_is.pk)])
+        form["related_information_system"].force_value([str(other_is2.pk)])
 
         with patch("vitrina.datasets.models.update_applicable_legislation_description"):
             form.submit()
@@ -772,6 +794,11 @@ class TestDcatDatasetUpdateView:
         assert dataset.applicable_legislation.filter(url="https://example.com/law").exists()
         assert Identifier.objects.filter(resource=dataset).count() == 1
         assert Identifier.objects.filter(resource=dataset, notation="9999").exists()
+        assert DatasetRelation.objects.filter(
+            relation=catalog_relation, dataset=dataset, part_of=catalog_dataset
+        ).exists()
+        assert DatasetRelation.objects.filter(relation=rti_relation, dataset=other_is, part_of=dataset).exists()
+        assert DatasetRelation.objects.filter(relation=rti_relation, dataset=dataset, part_of=other_is2).exists()
 
     def test_post_service_updates_all_fields(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -782,6 +809,9 @@ class TestDcatDatasetUpdateView:
         licence = LicenceFactory()
         rule = RuleFactory()
         dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False, service=True)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        served_dataset = DatasetFactory(organization=org, subclass=dataset_subclass, is_public=False)
+        service_relation = RelationFactory(name=Relation.SERVICE)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -802,6 +832,7 @@ class TestDcatDatasetUpdateView:
         form["license"] = licence.pk
         form["follows"] = [str(rule.pk)]
         form["service_quality"] = ["https://quality.example.com/updated"]
+        form["serves_datasets"].force_value([str(served_dataset.pk)])
         form.submit()
 
         dataset.refresh_from_db()
@@ -816,6 +847,9 @@ class TestDcatDatasetUpdateView:
         assert dataset.license == licence
         assert dataset.follows.filter(pk=rule.pk).exists()
         assert dataset.service_quality.filter(url="https://quality.example.com/updated").exists()
+        assert DatasetRelation.objects.filter(
+            relation=service_relation, dataset=dataset, part_of=served_dataset
+        ).exists()
 
     def test_post_dataset_updates_all_fields(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -831,6 +865,8 @@ class TestDcatDatasetUpdateView:
         dataset_type = ConceptFactory(concept_schemas=[dataset_type_schema])
         activity = ActivityFactory()
         dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        contributor = AttributionFactory(name=Attribution.CONTRIBUTOR)
+        attribution_org = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -858,6 +894,7 @@ class TestDcatDatasetUpdateView:
         form["provenance"] = [str(provenance.pk)]
         form["dataset_type"] = dataset_type.pk
         form["was_generated_by"] = [str(activity.pk)]
+        form["qualified_attribution"].force_value([str(attribution_org.pk)])
         with patch("vitrina.datasets.models.update_applicable_legislation_description"):
             form.submit()
 
@@ -880,6 +917,9 @@ class TestDcatDatasetUpdateView:
         assert dataset.provenance.filter(pk=provenance.pk).exists()
         assert dataset.dataset_type == dataset_type
         assert dataset.was_generated_by.filter(pk=activity.pk).exists()
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution=contributor, organization=attribution_org
+        ).exists()
 
     def test_post_updates_metadata_title_and_name(self, app: DjangoTestApp):
         org = OrganizationFactory()

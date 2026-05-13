@@ -2129,6 +2129,7 @@ class Relation(TranslatableModel):
     SERIES = "series"
     SERVICE = "service"
     CATALOG = "hasPart"
+    RELATES_TO_INFORMATION_SYSTEM = "relatesToInformationSystem"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
     uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)

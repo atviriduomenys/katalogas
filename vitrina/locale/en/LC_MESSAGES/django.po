@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-08 11:11+0300\n"
+"POT-Creation-Date: 2026-05-13 12:47+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2070,6 +2070,57 @@ msgstr ""
 "Specifies which standard the dataset conforms to. Corresponds to "
 "dct:conformsTo."
 
+msgid "Priklauso duomenų katalogams"
+msgstr "Belongs to data catalog"
+
+msgid ""
+"Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
+"Pildoma, kai institucijos turi nuosavus metaduomenų katalogus. Atitinka "
+"dct:hasPart."
+msgstr ""
+"This property indicates related catalogs that are part of the described catalog. "
+"Filled in when institutions have their own metadata catalogs. Corresponds to dct:hasPart."
+
+msgid "Susijusios informacinės sistemos (teikia duomenis į)"
+msgstr "Related information systems (provides data to)"
+
+msgid ""
+"Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė "
+"sistema. Susijusios sistemos yra tos, kurios turi integracijas ir yra "
+"įvardintos nuostatuose. Atitinka dcataplt:dcataplt:informationSystem."
+msgstr ""
+"Information systems that are of interest or are related to this information system. "
+"Related systems are those that have integrations and are named in the regulations. "
+"Corresponds to dcataplt:dcataplt:informationSystem."
+
+msgid "Susijusios informacinės sistemos (gauna duomenis iš)"
+msgstr "Related information systems (receives data from)"
+
+msgid ""
+"Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos "
+"yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. Atitinka "
+"dcataplt:relatesToInformationSystem."
+msgstr ""
+"Information systems that provide data to this IS. Related systems are those "
+"that have integrations and are named in the regulations. "
+"Corresponds to dcataplt:relatesToInformationSystem."
+
+msgid "Pateikia duomenų rinkinius"
+msgstr "Provides datasets"
+
+msgid ""
+"Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."
+msgstr ""
+"Datasets provided by data services. Corresponds to dct:servesDataset."
+
+msgid "Kvalifikuotas priskyrimas"
+msgstr "Qualified attribution"
+
+msgid ""
+"Organizacija atsakinga už šį duomenų rinkinį. Atitinka "
+"prov:qualifiedAttribution."
+msgstr "Organization responsible for this dataset. Corresponds to prov:qualifiedAttribution."
+
 msgid "Puslapis (dokumentacija)"
 msgstr "Page (documentation)"
 
@@ -2081,6 +2132,19 @@ msgstr "Distribution with this download link already exists."
 
 msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
 msgstr "Checksum value can only include lowercase letters."
+
+#, python-brace-format
+msgid ""
+"Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
+"reikšmė neišsaugota. Susisiekite su administratoriumi."
+msgstr "Field's '{label}' relation '{relation_name}' does not exist. "
+"Field's value is not saved. Contact the administrator."
+
+#, python-brace-format
+msgid ""
+"Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
+"Susisiekite su administratoriumi."
+msgstr "Attribution type '{name}' does not exist. Field's values are not saved. Contact the administrator."
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
 msgstr "Form creation tool cannot be used for this resource subclass"

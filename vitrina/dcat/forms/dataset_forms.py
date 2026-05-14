@@ -474,7 +474,7 @@ class InformationSystemUpdateForm(InformationSystemResourceForm):
         help_text=_(
             "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė sistema. Susijusios "
             "sistemos yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. "
-            "Atitinka dcataplt:dcataplt:informationSystem."
+            "Atitinka dcataplt:informationSystem."
         ),
     )
     relates_to_information_system = forms.ModelMultipleChoiceField(

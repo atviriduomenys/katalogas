@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-08 11:11+0300\n"
+"POT-Creation-Date: 2026-05-14 09:06+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1918,6 +1918,48 @@ msgid ""
 "Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."
 msgstr ""
 
+msgid "Priklauso duomenų katalogams"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
+"Pildoma, kai institucijos turi nuosavus metaduomenų katalogus. Atitinka "
+"dct:hasPart."
+msgstr ""
+
+msgid "Susijusios informacinės sistemos (teikia duomenis į)"
+msgstr ""
+
+msgid ""
+"Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė "
+"sistema. Susijusios sistemos yra tos, kurios turi integracijas ir yra "
+"įvardintos nuostatuose. Atitinka dcataplt:informationSystem."
+msgstr ""
+
+msgid "Susijusios informacinės sistemos (gauna duomenis iš)"
+msgstr ""
+
+msgid ""
+"Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos "
+"yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. Atitinka "
+"dcataplt:relatesToInformationSystem."
+msgstr ""
+
+msgid "Pateikia duomenų rinkinius"
+msgstr ""
+
+msgid ""
+"Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."
+msgstr ""
+
+msgid "Kvalifikuotas priskyrimas"
+msgstr ""
+
+msgid ""
+"Organizacija atsakinga už šį duomenų rinkinį. Atitinka "
+"prov:qualifiedAttribution."
+msgstr ""
+
 msgid "Puslapis (dokumentacija)"
 msgstr ""
 
@@ -1928,6 +1970,18 @@ msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
 msgstr ""
 
 msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
+"reikšmė neišsaugota. Susisiekite su administratoriumi."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
+"Susisiekite su administratoriumi."
 msgstr ""
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"

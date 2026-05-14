@@ -20,7 +20,14 @@ from vitrina.datasets.form_helpers import (
     DATA_SERVICE_STANDARD_URI,
     DATASET_STANDARD_URI,
 )
-from vitrina.datasets.models import Dataset, Contact, DCATResourceSubclass
+from vitrina.datasets.models import (
+    Attribution,
+    Dataset,
+    Contact,
+    DCATResourceSubclass,
+    Relation,
+)
+from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
@@ -44,10 +51,10 @@ class ApplicableLegislationFormMixin(forms.Form):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
-
-        if instance:
-            self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
+        if self.instance.pk:
+            self.initial["applicable_legislation"] = list(
+                self.instance.applicable_legislation.values_list("url", flat=True)
+            )
 
     def clean_applicable_legislation(self) -> list[str]:
         urls = self.cleaned_data.get("applicable_legislation", []) or []
@@ -81,13 +88,13 @@ class ContactFormMixin(forms.Form):
         return None
 
     def _populate_contact_choices(self) -> None:
-        """Populate contact choices grouped by organization."""
         self.fields["contact"].choices = [("", "---------")] + get_contact_form_choices(self.organization)
-        self.fields["contact"].initial = (
-            self.instance.contact.content_object.id
-            if self.instance.contact and self.instance.contact.content_object
-            else None
-        )
+        if self.instance.pk:
+            self.fields["contact"].initial = (
+                self.instance.contact.content_object.id
+                if self.instance.contact and self.instance.contact.content_object
+                else None
+            )
 
 
 class BaseResourceForm(TranslatableModelForm):
@@ -118,7 +125,6 @@ class BaseResourceForm(TranslatableModelForm):
 
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
@@ -130,13 +136,12 @@ class BaseResourceForm(TranslatableModelForm):
 
         if parent_dataset_id:
             self.fields["parent"].initial = parent_dataset_id
-        elif instance:
-            parent = instance.get_parent()
-            self.fields["parent"].initial = parent
-            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=instance.pk)
+        elif self.instance.pk:
+            self.fields["parent"].initial = self.instance.get_parent()
+            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
 
-        if instance and instance.name:
-            self.initial["name"] = instance.name
+        if self.instance.pk and self.instance.name:
+            self.initial["name"] = self.instance.name
 
     def clean_name(self) -> str | None:
         name = self.cleaned_data.get("name")
@@ -186,9 +191,6 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
 
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
-        instance = self.instance if self.instance and self.instance.pk else None
-        if instance:
-            self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
 
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
@@ -400,10 +402,6 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
 
-        instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
-        if instance:
-            self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
-
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
         )
@@ -455,3 +453,111 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
                 "temporal_start",
                 _("Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."),
             )
+
+
+class InformationSystemUpdateForm(InformationSystemResourceForm):
+    has_part = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Priklauso duomenų katalogams"),
+        help_text=_(
+            "Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
+            "Pildoma, kai institucijos turi nuosavus metaduomenų katalogus. Atitinka dct:hasPart."
+        ),
+    )
+    related_information_system = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusios informacinės sistemos (teikia duomenis į)"),
+        help_text=_(
+            "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė sistema. Susijusios "
+            "sistemos yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. "
+            "Atitinka dcataplt:informationSystem."
+        ),
+    )
+    relates_to_information_system = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusios informacinės sistemos (gauna duomenis iš)"),
+        help_text=_(
+            "Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos yra tos, kurios turi "
+            "integracijas ir yra įvardintos nuostatuose. Atitinka dcataplt:relatesToInformationSystem."
+        ),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = InformationSystemResourceForm.Meta.fields + (
+            "has_part",
+            "related_information_system",
+            "relates_to_information_system",
+        )
+        widgets = InformationSystemResourceForm.Meta.widgets
+
+    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
+        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+        self.fields["identifier"].initial = self.instance.identifier or ""
+        if self.instance.pk:
+            self.initial["has_part"] = self.fields["has_part"].queryset.filter(
+                related_datasets__relation__name=Relation.CATALOG,
+                related_datasets__dataset=self.instance,
+            )
+            self.initial["relates_to_information_system"] = self.fields["related_information_system"].queryset.filter(
+                dataset_relations__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
+                dataset_relations__part_of=self.instance,
+            )
+            self.initial["related_information_system"] = self.fields["relates_to_information_system"].queryset.filter(
+                related_datasets__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
+                related_datasets__dataset=self.instance,
+            )
+
+
+class ServiceUpdateForm(ServiceResourceForm):
+    serves_datasets = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Pateikia duomenų rinkinius"),
+        help_text=_("Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = ServiceResourceForm.Meta.fields + ("serves_datasets",)
+        widgets = ServiceResourceForm.Meta.widgets
+
+    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
+        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+        if self.instance.pk:
+            self.initial["serves_datasets"] = self.fields["serves_datasets"].queryset.filter(
+                related_datasets__relation__name=Relation.SERVICE,
+                related_datasets__dataset=self.instance,
+            )
+
+
+class DatasetUpdateForm(DatasetResourceForm):
+    qualified_attribution = forms.ModelMultipleChoiceField(
+        queryset=Organization.objects.all(),
+        widget=OrganizationMultipleWidget(),
+        required=False,
+        label=_("Kvalifikuotas priskyrimas"),
+        help_text=_("Organizacija atsakinga už šį duomenų rinkinį. Atitinka prov:qualifiedAttribution."),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = DatasetResourceForm.Meta.fields + ("qualified_attribution",)
+        widgets = DatasetResourceForm.Meta.widgets
+
+    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
+        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+        self.initial["documentation"] = list(self.instance.documentation.values_list("documentation_link", flat=True))
+        if self.instance.pk:
+            self.initial["qualified_attribution"] = self.instance.datasetattribution_set.filter(
+                attribution__name=Attribution.CONTRIBUTOR
+            ).values_list("organization_id", flat=True)
+
+        self.helper.layout.append(Field("qualified_attribution"))

@@ -23,11 +23,15 @@ from vitrina.datasets.view_helpers import (
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
 )
+from vitrina.dcat.view_helpers import save_dataset_relations, save_dataset_attribution
 from vitrina.dcat.forms.dataset_forms import (
     InformationSystemResourceForm,
     BaseResourceForm,
     ServiceResourceForm,
     DatasetResourceForm,
+    InformationSystemUpdateForm,
+    ServiceUpdateForm,
+    DatasetUpdateForm,
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.orgs.models import Organization
@@ -41,6 +45,12 @@ DCAT_SUBCLASS_FORM_MAP = {
     DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemResourceForm,
     DCATResourceSubclass.SERVICE: ServiceResourceForm,
     DCATResourceSubclass.DATASET: DatasetResourceForm,
+}
+
+DCAT_SUBCLASS_UPDATE_FORM_MAP = {
+    DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemUpdateForm,
+    DCATResourceSubclass.SERVICE: ServiceUpdateForm,
+    DCATResourceSubclass.DATASET: DatasetUpdateForm,
 }
 
 
@@ -253,7 +263,7 @@ class DcatDatasetUpdateView(
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_class(self) -> BaseResourceForm:
-        if (form_class := DCAT_SUBCLASS_FORM_MAP.get(self.subclass.name)) is None:
+        if (form_class := DCAT_SUBCLASS_UPDATE_FORM_MAP.get(self.subclass.name)) is None:
             raise ImproperlyConfigured(_("Nurodytas duomenų ištekliaus poklasis neturi formos."))
 
         return form_class
@@ -386,6 +396,10 @@ class DcatDatasetUpdateView(
                 self.object.add_self_as_root()
             else:
                 self.object.move(selected_parent, "sorted-child")
+            self.object.refresh_from_db()  # Refresh needed after moving tree nodes
+
+        save_dataset_relations(self.request, self.object, form)
+        save_dataset_attribution(self.request, self.object, form)
 
         messages.success(self.request, _("Duomenų išteklius atnaujintas sėkmingai"))
 

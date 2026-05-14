@@ -2501,8 +2501,8 @@ def _generate_mermaid_model_click_links(dataset: Dataset, version: Version) -> s
     model_ids: set[int] = set(
         Model.objects.filter(dataset=dataset, metadata_version=version).values_list("pk", flat=True)
     )
-    for dep in dataset.get_dependent_models(version=version):
-        child_id = dep.get("child_model_id")
+    for dependent_model in dataset.get_dependent_models(version=version):
+        child_id = dependent_model.get("child_model_id")
         if child_id is not None:
             model_ids.add(child_id)
 

@@ -666,7 +666,7 @@ class UMLDiagram(UUIDBaseModel):
         verbose_name_plural = _("UML diagramos")
 
     mermaid = models.TextField(verbose_name=_("UML diagrama mermaid sintaksės formatu."), null=True)
-    version_counter = models.IntegerField(
+    version_counter = models.PositiveIntegerField(
         default=0, editable=False, help_text="Incremented on every structure change to detect stale UML diagrams."
     )
     status = models.CharField(default=UMLDiagramStatus.OUTDATED, choices=UMLDiagramStatus.choices)

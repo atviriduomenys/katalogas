@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-14 14:25+0300\n"
+"POT-Creation-Date: 2026-05-14 14:55+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4201,6 +4201,15 @@ msgstr "public"
 msgid "open"
 msgstr "open"
 
+msgid "Vykdoma"
+msgstr "Pending"
+
+msgid "Aktuali"
+msgstr "Up to date"
+
+msgid "Nepavyko"
+msgstr "Failed"
+
 msgid "Nepasirinkta"
 msgstr "Not selected"
 
@@ -5000,7 +5009,9 @@ msgid "Nauja reikšmė"
 msgstr "New enum value"
 
 msgid "Įvyko klaida generuojant diagramą. Susisiekite su administracija."
-msgstr "An error occurred while generating the diagram. Please contact administration."
+msgstr ""
+"An error occurred while generating the diagram. Please contact "
+"administration."
 
 msgid "Generuojama diagrama..."
 msgstr "Generating diagram..."
@@ -5747,9 +5758,6 @@ msgstr "Disabled"
 
 msgid "Pavyko"
 msgstr "Success"
-
-msgid "Nepavyko"
-msgstr "Failure"
 
 msgid "Nevykdyta"
 msgstr "Not executed"

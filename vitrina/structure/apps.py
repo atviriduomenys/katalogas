@@ -6,4 +6,4 @@ class StructureConfig(AppConfig):
     label = "vitrina_structure"
 
     def ready(self):
-        import vitrina.structure.signals  # noqa
+        import vitrina.structure.signals  # noqa: F401

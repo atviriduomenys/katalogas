@@ -28,7 +28,7 @@ class AccessType(models.IntegerChoices):
 
 
 class UMLDiagramStatus(models.TextChoices):
-    OUTDATED = "OUTDATED", "Outdated"
-    PENDING = "PENDING", "Pending"
-    UP_TO_DATE = "UP_TO_DATE", "Up to date"
-    FAILED = "FAILED", "Failed"
+    OUTDATED = "OUTDATED", _("Pasenusi")
+    PENDING = "PENDING", _("Vykdoma")
+    UP_TO_DATE = "UP_TO_DATE", _("Aktuali")
+    FAILED = "FAILED", _("Nepavyko")

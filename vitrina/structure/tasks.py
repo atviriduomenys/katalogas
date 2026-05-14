@@ -42,12 +42,10 @@ def update_uml_diagram(uml_id: UUID) -> None:
         mermaid = generate_mermaid_diagram(uml_diagram.metadata_version.dataset, uml_diagram.metadata_version)
     except Exception as e:
         uml_diagram.refresh_from_db()
-        if uml_diagram.version_counter == current_version:
-            uml_diagram.status = UMLDiagramStatus.FAILED
-            uml_diagram.error_message = str(e)
-        else:
-            uml_diagram.status = UMLDiagramStatus.OUTDATED
-            uml_diagram.error_message = None
+        uml_diagram.status = (
+            UMLDiagramStatus.FAILED if uml_diagram.version_counter == current_version else UMLDiagramStatus.OUTDATED
+        )
+        uml_diagram.error_message = str(e) if uml_diagram.version_counter == current_version else None
         uml_diagram.save(update_fields=["status", "error_message", "updated_at"])
         return
 

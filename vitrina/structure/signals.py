@@ -57,9 +57,8 @@ def _on_save(
     update_fields: frozenset[str] | None = None,
     **kwargs: Any,
 ) -> None:
-    if sender is Metadata and update_fields is not None:
-        if not METADATA_STRUCTURE_FIELDS.intersection(update_fields):
-            return
+    if sender is Metadata and update_fields is not None and not METADATA_STRUCTURE_FIELDS.intersection(update_fields):
+        return
     _bump_uml_version(instance)
 
 

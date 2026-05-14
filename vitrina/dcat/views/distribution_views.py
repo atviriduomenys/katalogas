@@ -67,6 +67,9 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         if "conforms_to" in form.changed_data:
             distribution.conforms_to.set(form.cleaned_data["conforms_to"])
 
+        if "languages" in form.changed_data:
+            distribution.languages.set(form.cleaned_data["languages"])
+
         messages.success(self.request, _("Pateiktis sukurta sėkmingai!"))
         return HttpResponseRedirect(
             reverse(
@@ -146,6 +149,9 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
         if "conforms_to" in form.changed_data:
             distribution.conforms_to.set(form.cleaned_data["conforms_to"])
+
+        if "languages" in form.changed_data:
+            distribution.languages.set(form.cleaned_data["languages"])
 
         messages.success(self.request, _("Pateiktis atnaujinta sėkmingai!"))
         return HttpResponseRedirect(

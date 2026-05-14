@@ -4069,6 +4069,9 @@ msgstr ""
 "License under which the data service is distributed. Corresponds to "
 "dct:license."
 
+msgid "Kalbos"
+msgstr "Languages"
+
 msgid "Ši savybė nurodo pateikties kalbą. Atitinka dct:language."
 msgstr ""
 "This property specifies distribution language. Corresponds to dct:language."

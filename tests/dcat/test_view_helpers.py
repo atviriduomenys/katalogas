@@ -6,11 +6,12 @@ from vitrina.datasets.factories import (
     AttributionFactory,
     DatasetAttributionFactory,
     DatasetFactory,
+    DatasetQualifiedRelationFactory,
     DatasetRelationFactory,
     RelationFactory,
 )
-from vitrina.datasets.models import Attribution, DatasetAttribution, DatasetRelation, Relation
-from vitrina.dcat.view_helpers import save_dataset_attribution, save_dataset_relations
+from vitrina.datasets.models import Attribution, DatasetAttribution, DatasetQualifiedRelation, DatasetRelation, Relation
+from vitrina.dcat.view_helpers import save_dataset_attribution, save_dataset_qualified_relations, save_dataset_relations
 from vitrina.orgs.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db
@@ -195,3 +196,54 @@ class TestSaveDatasetAttribution:
         save_dataset_attribution(Mock(), dataset, form)
 
         assert DatasetAttribution.objects.filter(pk=creator_da.pk).exists()
+
+
+class TestSaveDatasetQualifiedRelations:
+    def test_skips_field_not_in_changed_data(self):
+        dataset = DatasetFactory()
+        form = make_form(
+            cleaned_data={"qualified_relation": ["https://example.com/rel"]},
+            changed_data=[],
+        )
+
+        save_dataset_qualified_relations(dataset, form)
+
+        assert DatasetQualifiedRelation.objects.filter(dataset=dataset).count() == 0
+
+    def test_creates_relation_for_each_url(self):
+        dataset = DatasetFactory()
+        form = make_form(
+            cleaned_data={"qualified_relation": ["https://example.com/rel1", "https://example.com/rel2"]},
+            changed_data=["qualified_relation"],
+        )
+
+        save_dataset_qualified_relations(dataset, form)
+
+        assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/rel1").exists()
+        assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/rel2").exists()
+
+    def test_deletes_old_relations_before_creating_new(self):
+        dataset = DatasetFactory()
+        old = DatasetQualifiedRelationFactory(dataset=dataset, url="https://example.com/old")
+        form = make_form(
+            cleaned_data={"qualified_relation": ["https://example.com/new"]},
+            changed_data=["qualified_relation"],
+        )
+
+        save_dataset_qualified_relations(dataset, form)
+
+        assert not DatasetQualifiedRelation.objects.filter(pk=old.pk).exists()
+        assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/new").exists()
+
+    def test_empty_list_deletes_all_relations(self):
+        dataset = DatasetFactory()
+        DatasetQualifiedRelationFactory(dataset=dataset)
+        DatasetQualifiedRelationFactory(dataset=dataset)
+        form = make_form(
+            cleaned_data={"qualified_relation": []},
+            changed_data=["qualified_relation"],
+        )
+
+        save_dataset_qualified_relations(dataset, form)
+
+        assert DatasetQualifiedRelation.objects.filter(dataset=dataset).count() == 0

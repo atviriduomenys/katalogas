@@ -23,7 +23,7 @@ from vitrina.datasets.view_helpers import (
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
 )
-from vitrina.dcat.view_helpers import save_dataset_relations, save_dataset_attribution
+from vitrina.dcat.view_helpers import save_dataset_relations, save_dataset_attribution, save_dataset_qualified_relations
 from vitrina.dcat.forms.dataset_forms import (
     InformationSystemResourceForm,
     BaseResourceForm,
@@ -195,6 +195,8 @@ class DcatDatasetCreateView(
         if documentation_urls := form.cleaned_data.get("documentation"):
             self.object.update_documentation(documentation_urls)
 
+        save_dataset_qualified_relations(self.object, form)
+
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
 
@@ -337,6 +339,8 @@ class DcatDatasetUpdateView(
 
         if "documentation" in form.changed_data:
             self.object.update_documentation(form.cleaned_data.get("documentation"))
+
+        save_dataset_qualified_relations(self.object, form)
 
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])

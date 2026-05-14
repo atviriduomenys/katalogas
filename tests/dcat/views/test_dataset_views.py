@@ -28,6 +28,7 @@ from vitrina.datasets.factories import (
 from vitrina.datasets.models import (
     Attribution,
     DatasetAttribution,
+    DatasetQualifiedRelation,
     DatasetRelation,
     Dataset,
     DCATResourceSubclass,
@@ -351,6 +352,8 @@ class TestDcatDatasetCreateView:
         form["provenance"] = [str(provenance.pk)]
         form["dataset_type"] = dataset_type.pk
         form["was_generated_by"] = [str(activity.pk)]
+        form["qualified_relation"] = "https://example.com/relation"
+        form["version_notes"] = "Initial version"
         form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Dataset All Fields").first()
@@ -380,6 +383,8 @@ class TestDcatDatasetCreateView:
         assert dataset.dataset_type == dataset_type
         assert dataset.was_generated_by.filter(pk=activity.pk).exists()
         assert Metadata.objects.get(dataset=dataset).name == f"{org.name}datasetallfields"
+        assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/relation").exists()
+        assert dataset.version_notes == "Initial version"
 
     def test_post_saves_dataset_with_parent(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -895,6 +900,8 @@ class TestDcatDatasetUpdateView:
         form["dataset_type"] = dataset_type.pk
         form["was_generated_by"] = [str(activity.pk)]
         form["qualified_attribution"].force_value([str(attribution_org.pk)])
+        form["qualified_relation"] = "https://example.com/relation"
+        form["version_notes"] = "Updated version notes"
         with patch("vitrina.datasets.models.update_applicable_legislation_description"):
             form.submit()
 
@@ -920,6 +927,8 @@ class TestDcatDatasetUpdateView:
         assert DatasetAttribution.objects.filter(
             dataset=dataset, attribution=contributor, organization=attribution_org
         ).exists()
+        assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/relation").exists()
+        assert dataset.version_notes == "Updated version notes"
 
     def test_post_updates_metadata_title_and_name(self, app: DjangoTestApp):
         org = OrganizationFactory()

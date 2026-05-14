@@ -363,6 +363,15 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         help_text=_("Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."),
         widget=Select2Widget,
     )
+    qualified_relation = StringListField(
+        label=_("Kvalifikuotas ryšys"),
+        help_text=_(
+            "Nuoroda į susijusį dokumentą, kuriame aprašytas šis duomenų rinkinys. "
+            "Įprastai IS techninė specifikacija. Atitinka dcat:qualifiedRelation."
+        ),
+        required=False,
+        unique=True,
+    )
 
     class Meta:
         model = Dataset
@@ -381,10 +390,12 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "landing_page",
             "contact",
             "languages",
+            "qualified_relation",
             "provenance",
             "spatial_resolution",
             "temporal_resolution",
             "dataset_type",
+            "version_notes",
             "was_generated_by",
             "applicable_legislation",
         )
@@ -437,13 +448,23 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             Field("contact"),
             Field("landing_page"),
             Field("languages"),
+            Field("qualified_relation"),
             Field("provenance"),
             Field("spatial_resolution"),
             Field("temporal_resolution"),
             Field("dataset_type"),
+            Field("version_notes"),
             Field("was_generated_by"),
             Field("applicable_legislation"),
         )
+
+    def clean_qualified_relation(self) -> list[str]:
+        urls = self.cleaned_data.get("qualified_relation", []) or []
+        item_errors = validate_urls(urls)
+        if any(item_errors):
+            self.fields["qualified_relation"].widget.validation_errors = item_errors
+            raise ValidationError(_("Yra klaidų sąraše."))
+        return [url for url in urls if url]
 
     def clean(self) -> None:
         start = self.cleaned_data.get("temporal_start")
@@ -555,6 +576,7 @@ class DatasetUpdateForm(DatasetResourceForm):
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
         self.initial["documentation"] = list(self.instance.documentation.values_list("documentation_link", flat=True))
+        self.initial["qualified_relation"] = list(self.instance.qualified_relations.values_list("url", flat=True))
         if self.instance.pk:
             self.initial["qualified_attribution"] = self.instance.datasetattribution_set.filter(
                 attribution__name=Attribution.CONTRIBUTOR

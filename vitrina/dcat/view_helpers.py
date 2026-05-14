@@ -5,7 +5,14 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.datasets.models import Attribution, Dataset, DatasetAttribution, DatasetRelation, Relation
+from vitrina.datasets.models import (
+    Attribution,
+    Dataset,
+    DatasetAttribution,
+    DatasetQualifiedRelation,
+    DatasetRelation,
+    Relation,
+)
 
 if TYPE_CHECKING:
     from vitrina.dcat.forms.dataset_forms import BaseResourceForm
@@ -76,4 +83,14 @@ def save_dataset_attribution(request: WSGIRequest, dataset: Dataset, form: "Base
     DatasetAttribution.objects.filter(dataset=dataset, attribution=attribution).delete()
     for organization in selected_organizations:
         DatasetAttribution.objects.create(dataset=dataset, attribution=attribution, organization=organization)
+    dataset.save()
+
+
+@transaction.atomic
+def save_dataset_qualified_relations(dataset: Dataset, form: "BaseResourceForm") -> None:
+    if "qualified_relation" not in form.cleaned_data or "qualified_relation" not in form.changed_data:
+        return
+    DatasetQualifiedRelation.objects.filter(dataset=dataset).delete()
+    for url in form.cleaned_data["qualified_relation"]:
+        DatasetQualifiedRelation.objects.get_or_create(dataset=dataset, url=url)
     dataset.save()

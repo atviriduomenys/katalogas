@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-14 11:26+0300\n"
+"POT-Creation-Date: 2026-05-15 08:06+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1153,6 +1153,12 @@ msgstr ""
 msgid "Informacinės sistemos valdytojas"
 msgstr ""
 
+msgid "Versijos pastabos"
+msgstr ""
+
+msgid "Versijos skirtumų aprašymas. Atitinka adms:versionNotes."
+msgstr ""
+
 msgid "Laiko skiriamoji geba (sekundėmis)"
 msgstr ""
 
@@ -1263,6 +1269,17 @@ msgid "Duomenų rinkinių ryšys"
 msgstr ""
 
 msgid "Duomenų rinkinių ryšiai"
+msgstr ""
+
+msgid ""
+"Nuoroda į susijusį dokumentą, kuriame aprašytas šis duomenų rinkinys. "
+"Įprastai IS techninė specifikacija. Atitinka dcat:qualifiedRelation."
+msgstr ""
+
+msgid "Kvalifikuotas ryšys"
+msgstr ""
+
+msgid "Kvalifikuoti ryšiai"
 msgstr ""
 
 msgid "Vardas Pavardė"

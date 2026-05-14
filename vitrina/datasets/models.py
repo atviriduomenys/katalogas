@@ -534,6 +534,11 @@ class Dataset(Resource):
         blank=True,
         verbose_name=_("Informacinės sistemos valdytojas"),
     )
+    version_notes = models.TextField(
+        null=True,
+        verbose_name=_("Versijos pastabos"),
+        help_text=_("Versijos skirtumų aprašymas. Atitinka adms:versionNotes."),
+    )
 
     temporal_resolution = models.CharField(
         max_length=255,
@@ -2166,6 +2171,26 @@ class DatasetRelation(models.Model):
         db_table = "dataset_relation"
         verbose_name = _("Duomenų rinkinių ryšys")
         verbose_name_plural = _("Duomenų rinkinių ryšiai")
+
+
+class DatasetQualifiedRelation(UUIDBaseModel):
+    dataset = models.ForeignKey(
+        Dataset,
+        on_delete=models.CASCADE,
+        verbose_name=_("Duomenų rinkinys"),
+        related_name="qualified_relations",
+    )
+    url = models.URLField(
+        verbose_name=_("Nuoroda"),
+        help_text=_(
+            "Nuoroda į susijusį dokumentą, kuriame aprašytas šis duomenų rinkinys. "
+            "Įprastai IS techninė specifikacija. Atitinka dcat:qualifiedRelation."
+        ),
+    )
+
+    class Meta:
+        verbose_name = _("Kvalifikuotas ryšys")
+        verbose_name_plural = _("Kvalifikuoti ryšiai")
 
 
 class DataServiceType(models.Model):

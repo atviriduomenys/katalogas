@@ -273,7 +273,7 @@ class TestDcatDistributionCreateView:
         form["checksum_algorithm"] = "MD5"
         form["issued"] = "2024-01-15"
         form["date_modified"] = "2024-06-01"
-        form["language"] = language.pk
+        form["languages"] = [language.pk]
         form["conforms_to"] = [conforms_to_concept.pk]
         form["documentation"] = "https://example.com/doc"
         form.submit()
@@ -301,7 +301,7 @@ class TestDcatDistributionCreateView:
         assert distribution.checksum_algorithm == "MD5"
         assert distribution.issued == "2024-01-15"
         assert str(distribution.date_modified) == "2024-06-01"
-        assert distribution.language == language
+        assert language in distribution.languages.all()
         assert conforms_to_concept in distribution.conforms_to.all()
         assert distribution.documentation.filter(documentation_link="https://example.com/doc").exists()
 
@@ -611,7 +611,7 @@ class TestDcatDistributionUpdateView:
         form["checksum_algorithm"] = "SHA256"
         form["issued"] = "2024-03-10"
         form["date_modified"] = "2024-09-01"
-        form["language"] = language.pk
+        form["languages"] = [language.pk]
         form["conforms_to"] = [conforms_to_concept.pk]
         form["documentation"] = "https://example.com/updated-doc"
         form.submit()
@@ -637,6 +637,6 @@ class TestDcatDistributionUpdateView:
         assert distribution.checksum_algorithm == "SHA256"
         assert distribution.issued == "2024-03-10"
         assert str(distribution.date_modified) == "2024-09-01"
-        assert distribution.language == language
+        assert language in distribution.languages.all()
         assert conforms_to_concept in distribution.conforms_to.all()
         assert distribution.documentation.filter(documentation_link="https://example.com/updated-doc").exists()

@@ -47,7 +47,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             "checksum_algorithm",
             "issued",
             "date_modified",
-            "language",
+            "languages",
             "conforms_to",
             "documentation",
             "conditions",
@@ -72,7 +72,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             "status": Select2Widget,
             "issued": forms.TextInput(attrs={"type": "date"}),
             "date_modified": forms.TextInput(attrs={"type": "date"}),
-            "language": Select2Widget,
+            "languages": Select2MultipleWidget,
             "conforms_to": Select2MultipleWidget,
         }
 

@@ -284,12 +284,10 @@ class DatasetDistribution(TranslatableModel):
         related_name="dataset_distributions",
         blank=True,
     )
-    language = models.ForeignKey(
+    languages = models.ManyToManyField(
         Concept,
-        on_delete=models.PROTECT,
         blank=True,
-        null=True,
-        verbose_name=_("Kalba"),
+        verbose_name=_("Kalbos"),
         help_text=_("Ši savybė nurodo pateikties kalbą. Atitinka dct:language."),
         limit_choices_to={"concept_schemas__uri": LANGUAGE_CONCEPT_SCHEMA_URI},
     )
@@ -327,6 +325,8 @@ class DatasetDistribution(TranslatableModel):
     status = models.ForeignKey(
         Concept,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="dataset_distributions",
         verbose_name=_("Statusas"),
         help_text=_("Nurodomas pateikties brandos lygmuo. Atitinka adms:status."),

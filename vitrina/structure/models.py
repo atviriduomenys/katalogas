@@ -661,6 +661,10 @@ class ManifestValidationEntry(UUIDBaseModel):
 
 
 class UMLDiagram(UUIDBaseModel):
+    class Meta:
+        verbose_name = _("UML diagrama")
+        verbose_name_plural = _("UML diagramos")
+
     mermaid = models.TextField(verbose_name=_("UML diagrama mermaid sintaksės formatu."), null=True)
     version_counter = models.IntegerField(
         default=0, editable=False, help_text="Incremented on every structure change to detect stale UML diagrams."

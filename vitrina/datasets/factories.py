@@ -19,6 +19,7 @@ from vitrina.datasets.models import (
     DatasetRelation,
     Attribution,
     DatasetAttribution,
+    DatasetQualifiedRelation,
     Contact,
     DCATResourceSubclass,
     DatasetGroupCategoryUri,
@@ -161,6 +162,14 @@ class DatasetAttributionFactory(DjangoModelFactory):
     dataset = factory.SubFactory(DatasetFactory)
     attribution = factory.SubFactory(AttributionFactory)
     organization = factory.SubFactory(OrganizationFactory)
+
+
+class DatasetQualifiedRelationFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetQualifiedRelation
+
+    dataset = factory.SubFactory(DatasetFactory)
+    url = factory.Faker("url")
 
 
 class DatasetStructureFactory(DjangoModelFactory):

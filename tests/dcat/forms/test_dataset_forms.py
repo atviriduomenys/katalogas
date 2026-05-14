@@ -16,6 +16,7 @@ from vitrina.datasets.factories import (
     ContactFactory,
     DatasetAttributionFactory,
     DatasetFactory,
+    DatasetQualifiedRelationFactory,
     DatasetRelationFactory,
     DCATResourceSubclassFactory,
     RelationFactory,
@@ -519,6 +520,18 @@ class TestDatasetResourceForm:
         assert not form.is_valid()
         assert "temporal_start" not in form.errors
 
+    def test_invalid_qualified_relation_url_raises_error(self):
+        organization = OrganizationFactory()
+
+        form = DatasetResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={"qualified_relation": ["not-a-url"]},
+        )
+
+        assert not form.is_valid()
+        assert "qualified_relation" in form.errors
+
     def test_documentation_initial_empty_when_no_instance(self):
         organization = OrganizationFactory()
 
@@ -768,6 +781,35 @@ class TestDatasetUpdateForm:
         )
 
         assert list(form.initial["qualified_attribution"]) == []
+
+    def test_qualified_relation_initial_set_from_instance(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        DatasetQualifiedRelationFactory(dataset=dataset, url="https://example.com/rel1")
+        DatasetQualifiedRelationFactory(dataset=dataset, url="https://example.com/rel2")
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert set(form.initial["qualified_relation"]) == {
+            "https://example.com/rel1",
+            "https://example.com/rel2",
+        }
+
+    def test_qualified_relation_initial_empty_when_no_relations(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert list(form.initial["qualified_relation"]) == []
 
 
 class TestServiceUpdateForm:

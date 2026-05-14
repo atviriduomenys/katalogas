@@ -76,5 +76,4 @@ def save_dataset_attribution(request: WSGIRequest, dataset: Dataset, form: "Base
     DatasetAttribution.objects.filter(dataset=dataset, attribution=attribution).delete()
     for organization in selected_organizations:
         DatasetAttribution.objects.create(dataset=dataset, attribution=attribution, organization=organization)
-        organization.save()
     dataset.save()

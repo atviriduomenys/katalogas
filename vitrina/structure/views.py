@@ -3,7 +3,7 @@ import datetime
 import uuid
 import json
 from io import StringIO
-from typing import List, Union
+from typing import Any, List, Union
 from urllib import parse
 from urllib.parse import unquote, urlencode, urlparse
 from flags.decorators import flag_required
@@ -4382,19 +4382,19 @@ class DatasetStructureUMLView(
     plan_url_name = "dataset-plans"
     breadcrumb_title = _("UML diagrama")
 
-    def get_template_names(self):
+    def get_template_names(self) -> str:
         if "expanded" in self.request.GET:
             return "vitrina/structure/uml_diagram_expanded.html"
         return "vitrina/structure/uml_diagram.html"
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         if not self.has_permission():
             return self.handle_no_permission()
 
         return super().dispatch(request, *args, **kwargs)
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if not self.models:
             messages.warning(request, _("Nerasta struktūra pasirinktai struktūros versijai."))
             return redirect(self.get_structure_url())
@@ -4411,10 +4411,10 @@ class DatasetStructureUMLView(
 
         return super().get(request, *args, **kwargs)
 
-    def has_permission(self):
+    def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, self.object)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("'{0}' struktūros UML diagrama").format(self.dataset)
         context["publish_button"] = flag_enabled("publish_button", request=self.request)
@@ -4434,7 +4434,7 @@ class DatasetStructureUMLView(
         context["has_structure"] = self.models.exists()
         return context
 
-    def get_structure_url(self):
+    def get_structure_url(self) -> str:
         if self.metadata_version:
             return reverse(
                 "dataset-structure",

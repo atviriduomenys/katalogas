@@ -1,0 +1,20 @@
+{% load static %}
+
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>{{ current_title }}</title>
+        <link type="text/css" href="{% static 'css/bundle.css' %}" rel="stylesheet" media="screen">
+        <style>
+            html, body {
+                margin: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        {% include "vitrina/structure/uml_canvas.html" with expanded=True %}
+    </body>
+</html>

@@ -3,7 +3,7 @@ import datetime
 import uuid
 import json
 from io import StringIO
-from typing import List, Union
+from typing import Any, List, Union
 from urllib import parse
 from urllib.parse import unquote, urlencode, urlparse
 from flags.decorators import flag_required
@@ -70,6 +70,8 @@ from vitrina.structure.models import (
     StatusCode,
     VersionStatus,
     Prefix,
+    UMLDiagram,
+    UMLDiagramStatus,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -237,9 +239,7 @@ class DatasetStructureView(
                 )
 
         if self.metadata_version:
-            self.breadcrumb_title = (
-                self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
-            )
+            self.breadcrumb_title = self.metadata_version.title
 
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         self.models = Model.objects.filter(dataset=self.object, metadata_version=self.metadata_version)
@@ -288,6 +288,7 @@ class DatasetStructureView(
         context["models"] = self.models
         context["version"] = dataset.dataset_version.filter(deployed__isnull=False).order_by("-deployed").first()
         context["version_id"] = self.metadata_version.pk if self.metadata_version else None
+        context["has_structure"] = self.models.exists()
         return context
 
     def get_structure_url(self):
@@ -4371,3 +4372,98 @@ class VersionDetailView(
                 "pk": self.dataset.pk,
             },
         )
+
+
+class DatasetStructureUMLView(
+    DatasetBreadcrumbsMixin, PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, PlanMixin, TemplateView
+):
+    detail_url_name = "dataset-detail"
+    history_url_name = "dataset-structure-history"
+    plan_url_name = "dataset-plans"
+    breadcrumb_title = _("UML diagrama")
+
+    def get_template_names(self) -> str:
+        if "expanded" in self.request.GET:
+            return "vitrina/structure/uml_diagram_expanded.html"
+        return "vitrina/structure/uml_diagram.html"
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        if not self.has_permission():
+            return self.handle_no_permission()
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not self.models:
+            messages.warning(request, _("Nerasta struktūra pasirinktai struktūros versijai."))
+            return redirect(self.get_structure_url())
+
+        self.uml_diagram, _created = UMLDiagram.objects.get_or_create(metadata_version=self.metadata_version)
+
+        if self.uml_diagram.status == UMLDiagramStatus.OUTDATED:
+            self.uml_diagram.initiate_update()
+        elif request.GET.get("download") == "mmd" and self.uml_diagram.status == UMLDiagramStatus.UP_TO_DATE:
+            filename = self.dataset.name.split("/")[-1] or f"uml-{self.dataset.pk}"
+            response = HttpResponse(self.uml_diagram.mermaid or "", content_type="text/plain; charset=utf-8")
+            response["Content-Disposition"] = f'attachment; filename="{filename}.mmd"'
+            return response
+
+        return super().get(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, self.object)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["current_title"] = _("'{0}' struktūros UML diagrama").format(self.dataset)
+        context["publish_button"] = flag_enabled("publish_button", request=self.request)
+        context["selected_version"] = self.metadata_version
+        context["is_disabled"] = not self.metadata_version.is_draft() if self.metadata_version else True
+        context["versions"] = _Version.objects.filter(dataset=self.dataset).order_by("version")
+        context["dataset"] = self.dataset
+        context["can_view_members"] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        context["can_manage_structure"] = self.can_manage_structure
+        context["version_id"] = self.metadata_version.pk if self.metadata_version else None
+        context["uml_diagram"] = self.uml_diagram
+        context["has_structure"] = self.models.exists()
+        return context
+
+    def get_structure_url(self) -> str:
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure",
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse(
+                "dataset-structure-no-version",
+                kwargs={
+                    "pk": self.dataset.pk,
+                },
+            )
+
+    def get_history_url(self) -> str:
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure-history",
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse(
+                "dataset-structure-history-no-version",
+                kwargs={
+                    "pk": self.dataset.pk,
+                },
+            )
+
+    def get_breadcrumbs(self) -> List[Crumb]:
+        crumbs = self.dataset_hierarchy(self.dataset)
+        crumbs.append(Crumb(title=self.metadata_version.title, url=self.get_structure_url()))
+        crumbs.append(Crumb(title=self.breadcrumb_title, url=None, is_current=True))
+        return crumbs

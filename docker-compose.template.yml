@@ -23,6 +23,8 @@ services:
       - SPINTA_SERVER_URL=https://test.data.gov.lt
       - SPINTA_SERVER_NAME='Test Data Gov'
       - USE_OTP_VALIDATION=False
+      - META_SITE_PROTOCOL=https
+      - META_SITE_DOMAIN=${BRANCH}.branch-test.data.gov.lt
     networks:
       katalogas:
         aliases:
@@ -87,6 +89,8 @@ services:
       - SPINTA_SERVER_URL=https://test.data.gov.lt
       - SPINTA_SERVER_NAME='Test Data Gov'
       - USE_OTP_VALIDATION=False
+      - META_SITE_PROTOCOL=https
+      - META_SITE_DOMAIN=${BRANCH}.branch-test.data.gov.lt
     depends_on:
       - katalogas-${BRANCH}-redis
       - katalogas-${BRANCH}-database

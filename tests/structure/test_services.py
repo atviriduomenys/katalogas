@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
@@ -28,7 +29,11 @@ from vitrina.structure.models import (
     Property,
     PropertyList,
 )
-from vitrina.structure.services import create_structure_objects
+from vitrina.structure.services import (
+    create_structure_objects,
+    generate_mermaid_diagram,
+    _generate_mermaid_model_click_links,
+)
 from vitrina.users.factories import UserFactory
 
 
@@ -3158,3 +3163,88 @@ def test_resolvable_ref_does_not_create_structure_error_comment(app: DjangoTestA
 
     content_type_model = ContentType.objects.get_for_model(Model)
     assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR, content_type=content_type_model).count() == 0
+
+
+def test_generate_mermaid(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "4,,,,Licence,,,,,,,,,,,,,,\n"
+        "5,,,,,id,integer,,,,,,,,,,,,\n"
+        "6,,,,,catalog,ref,Catalog,,,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+        "7,,,,Catalog,,,,,,,,,,,,,,\n"
+        "8,,,,,id,integer,,,,,,,,,,,,\n"
+    )
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(title="Title", description="Description"),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure)
+    mermaid = generate_mermaid_diagram(structure.dataset, version)
+    assert (
+        """
+classDiagram
+namespace `datasets/gov/ivpk/adp` {
+class `datasets/gov/ivpk/adp/Licence`["Licence"]:::Entity {
+«optional»
+id : integer [0..1]
+}
+class `datasets/gov/ivpk/adp/Catalog`["Catalog"]:::Entity {
+«optional»
+id : integer [0..1]
+}
+}
+`datasets/gov/ivpk/adp/Licence` --> "[0..1]" `datasets/gov/ivpk/adp/Catalog` : catalog<br/>«optional»
+"""
+        in mermaid
+    )
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
+    dataset_pk = structure.dataset.pk
+    version_pk = version.pk
+    assert (
+        f"click `datasets/gov/ivpk/adp/Licence` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Licence/"'
+    ) in mermaid
+    assert (
+        f"click `datasets/gov/ivpk/adp/Catalog` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Catalog/"'
+    ) in mermaid
+
+
+@pytest.mark.django_db
+def test_generate_mermaid_model_click_links(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "4,,,,Licence,,,,,,,,,,,,,,\n"
+        "5,,,,,id,integer,,,,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+        "7,,,,Catalog,,,,,,,,,,,,,,\n"
+        "8,,,,,id,integer,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure)
+
+    result = _generate_mermaid_model_click_links(structure.dataset, version)
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
+    dataset_pk = structure.dataset.pk
+    version_pk = version.pk
+    assert (
+        f"click `datasets/gov/ivpk/adp/Licence` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Licence/"'
+    ) in result
+    assert (
+        f"click `datasets/gov/ivpk/adp/Catalog` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Catalog/"'
+    ) in result

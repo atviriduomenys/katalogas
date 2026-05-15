@@ -16,6 +16,7 @@ import vitrina.datasets.structure as struct
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext, gettext_lazy as _, get_language
 
 from vitrina import settings
@@ -53,6 +54,10 @@ from vitrina.structure.models import (
 )
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
+from spinta.core.context import create_context
+from spinta.manifests.mermaid.helpers import write_mermaid_manifest
+from spinta.manifests.components import ManifestPath
+from spinta.cli.manifest import _read_and_return_manifest
 
 logger = logging.getLogger(__name__)
 
@@ -2470,3 +2475,60 @@ def get_allowed_visibilities(
             allowed_visibilities.add(visibility)
 
     return allowed_visibilities
+
+
+def generate_mermaid_diagram(dataset: Dataset, version: Version) -> str:
+    context = create_context("cli")
+
+    stream = _export_dataset_structure_to_stringio(dataset, version)
+    manifest_path = ManifestPath(type="tabular", path=None, file=stream)
+    manifest = _read_and_return_manifest(
+        context,
+        [manifest_path],
+        external=True,
+        format_names=False,
+        order_by=None,
+        rename_duplicates=False,
+        verbose=False,
+        check_config=False,
+    )
+    mermaid = write_mermaid_manifest(context, manifest, dataset.name)
+    mermaid_click_links = _generate_mermaid_model_click_links(dataset, version)
+    return mermaid + "\n" + mermaid_click_links
+
+
+def _generate_mermaid_model_click_links(dataset: Dataset, version: Version) -> str:
+    model_ids: set[int] = set(
+        Model.objects.filter(dataset=dataset, metadata_version=version).values_list("pk", flat=True)
+    )
+    for dependent_model in dataset.get_dependent_models(version=version):
+        child_id = dependent_model.get("child_model_id")
+        if child_id is not None:
+            model_ids.add(child_id)
+
+    if not model_ids:
+        return ""
+
+    models = (
+        Model.objects.filter(pk__in=model_ids)
+        .select_related("dataset", "metadata_version")
+        .prefetch_related("metadata")
+    )
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
+
+    click_lines: list[str] = []
+    for model in models:
+        full_name = model.full_name
+        basename = model.name
+        path = reverse(
+            "model-structure",
+            kwargs={
+                "pk": model.dataset_id,
+                "version_id": model.metadata_version_id,
+                "model": basename,
+            },
+        )
+        click_lines.append(f'click `{full_name}` href "{base_url}{path}"')
+
+    return "\n".join(click_lines)

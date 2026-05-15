@@ -4,7 +4,14 @@ Changes
 v 1.21.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2563
 
+- Add UML class-diagram generation and viewing for dataset structures, rendered with Mermaid.
+- Add `UMLDiagram` model that persists the generated mermaid source, generation status (`OUTDATED`, `PENDING`, `UP_TO_DATE`, `FAILED`) and the error message for failed generations.
+- Generate diagrams asynchronously via a new `update_uml_diagram` Celery task; on failure, persist the exception message to `UMLDiagram.error_message` so it can be surfaced in the UI.
+- Auto-invalidate diagrams via `post_save` / `post_delete` signals on structure-related models, bumping a version counter so the next view request triggers regeneration.
+- Add `DatasetStructureUMLView` with embedded and `?expanded` fullscreen variants.
+- Add `.mmd` (server-side) and `.svg` (client-side from the rendered SVG) download options.
 
 v 1.20.0 (2026-05-12)
 ==================

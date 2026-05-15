@@ -37,6 +37,7 @@ from vitrina.structure.views import ObjectDataTableView
 from vitrina.structure.views import get_object_data
 from vitrina.structure.views import get_property_data
 from vitrina.structure.views import PropertyGraphView
+from vitrina.structure.views import DatasetStructureUMLView
 
 urlpatterns = [
     path(
@@ -239,4 +240,9 @@ urlpatterns = [
         name="version-detail",
     ),
     path("datasets/<int:pk>/examples/upload/", YamlFileImportView.as_view(), name="file_upload"),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/structure/uml/",
+        DatasetStructureUMLView.as_view(),
+        name="dataset-structure-uml-view",
+    ),
 ]

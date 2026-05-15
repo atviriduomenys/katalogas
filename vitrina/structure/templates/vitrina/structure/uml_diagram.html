@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags util_tags %}
+
+{% block current_title %}
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span>{% translate "Duomenų ištekliaus struktūros UML diagrama" %}</span>
+        {% if versions %}
+            {% include "version_picker.html" with url_name="dataset-structure" dataset=dataset versions=versions selected_version=selected_version %}
+        {% endif %}
+    </div>
+{% endblock %}
+{% block parent_links %}
+    {% include "component/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/datasets/tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column">
+        {% if errors %}
+        <div class="message is-danger">
+            <div class="message-body">
+                {% for error in errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if uml_diagram.status == "UP_TO_DATE"%}
+            <div class="field has-addons has-addons-right">
+                <p class="control">
+                    <a href="#" id="uml-download-button"
+                        class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% translate "Atsisiųsti" %}
+                    </a>
+                </p>
+                <p class="control">
+                    <span class="select">
+                        <select id="uml-download-format" aria-label="{% translate 'Atsisiuntimo formatas' %}">
+                            <option value="mmd">Mermaid</option>
+                            <option value="svg">SVG</option>
+                        </select>
+                    </span>
+                </p>
+            </div>
+        {% endif %}
+
+        {% include "vitrina/structure/uml_canvas.html" with expanded=False %}
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.show-model-delete-form').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modelId = button.dataset.modelId;
+            document.getElementById(`delete-model-modal-${modelId}`).classList.add('is-active');
+        });
+    });
+
+    document.querySelectorAll('.close-model-delete-modal').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modelId = button.dataset.modelId;
+            document.getElementById(`delete-model-modal-${modelId}`).classList.remove('is-active');
+        });
+    });
+
+    document.querySelectorAll('.model-delete-confirm').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modelId = button.dataset.modelId;
+            const deleteUrl = button.dataset.deleteUrl;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`delete-model-modal-${modelId}`).classList.remove('is-active');
+                    location.reload();
+                } else {
+                    alert('Nepavyko ištrinti modelio');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Klaida');
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -25,3 +25,10 @@ class AccessType(models.IntegerChoices):
     PROTECTED = 1, _("protected")
     PUBLIC = 2, _("public")
     OPEN = 3, _("open")
+
+
+class UMLDiagramStatus(models.TextChoices):
+    OUTDATED = "OUTDATED", _("Pasenusi")
+    PENDING = "PENDING", _("Vykdoma")
+    UP_TO_DATE = "UP_TO_DATE", _("Aktuali")
+    FAILED = "FAILED", _("Nepavyko")

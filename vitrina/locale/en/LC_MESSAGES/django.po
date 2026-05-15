@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-07 13:50+0300\n"
+"POT-Creation-Date: 2026-05-14 14:55+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -114,9 +114,11 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -227,21 +229,27 @@ msgstr "Applicable legislation"
 msgid "Teisiniai pagrindai"
 msgstr "Applicable legislation"
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -4193,6 +4201,15 @@ msgstr "public"
 msgid "open"
 msgstr "open"
 
+msgid "Vykdoma"
+msgstr "Pending"
+
+msgid "Aktuali"
+msgstr "Up to date"
+
+msgid "Nepavyko"
+msgstr "Failed"
+
 msgid "Nepasirinkta"
 msgstr "Not selected"
 
@@ -4832,6 +4849,15 @@ msgstr "Valid"
 msgid "Invalid"
 msgstr "Invalid"
 
+msgid "UML diagrama"
+msgstr "UML diagram"
+
+msgid "UML diagramos"
+msgstr "UML diagrams"
+
+msgid "UML diagrama mermaid sintaksės formatu."
+msgstr "UML diagram in mermaid syntax format."
+
 msgid ""
 "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
 msgstr "Ensure, that it exists and has a confirmed (stable) version."
@@ -4856,8 +4882,8 @@ msgstr "Received invalid data format from Storage"
 msgid "Užklausa"
 msgstr "Request"
 
-msgid "Duomenų rinkinio struktūra"
-msgstr "Dataset structure"
+msgid "Duomenų ištekliaus struktūra"
+msgstr "Resource structure"
 
 msgid "Eksportuoti OpenAPI"
 msgstr "Export OpenAPI"
@@ -4867,6 +4893,9 @@ msgstr "Import"
 
 msgid "Publikuoti versiją"
 msgstr "Publish version"
+
+msgid "UML Diagrama"
+msgstr "UML Diagram"
 
 msgid "Keitimų žurnalas"
 msgstr "Changes"
@@ -4978,6 +5007,17 @@ msgstr "No enum ."
 
 msgid "Nauja reikšmė"
 msgstr "New enum value"
+
+msgid "Įvyko klaida generuojant diagramą. Susisiekite su administracija."
+msgstr ""
+"An error occurred while generating the diagram. Please contact "
+"administration."
+
+msgid "Generuojama diagrama..."
+msgstr "Generating diagram..."
+
+msgid "Duomenų ištekliaus struktūros UML diagrama"
+msgstr "Resource structure's UML diagram"
 
 msgid "Keitimai"
 msgstr "Changes"
@@ -5102,6 +5142,13 @@ msgstr "Field {0} must be published, because field {1} has a reference to it."
 msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
 msgstr ""
 "Field {0} has a reference to an unpublished field in a different dataset."
+
+msgid "Nerasta struktūra pasirinktai struktūros versijai."
+msgstr "Structure not found for the selected structure version."
+
+#, python-brace-format
+msgid "'{0}' struktūros UML diagrama"
+msgstr "'{0}' structure's UML diagram"
 
 msgid "Vyr. koordinatorius"
 msgstr "Senior coordinator"
@@ -5711,9 +5758,6 @@ msgstr "Disabled"
 
 msgid "Pavyko"
 msgstr "Success"
-
-msgid "Nepavyko"
-msgstr "Failure"
 
 msgid "Nevykdyta"
 msgstr "Not executed"

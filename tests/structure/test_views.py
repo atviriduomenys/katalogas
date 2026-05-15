@@ -7616,6 +7616,8 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Model Dataset,Dataset that defines base model.",
+            "2,,,,Animal,,,,,,,,,0,completed,public,,,,,",
             "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
             "2,,,datasets/gov/ivpk/example/Animal,,,,,,,,,,,,,,,,,",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",

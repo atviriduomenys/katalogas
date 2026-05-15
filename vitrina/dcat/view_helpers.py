@@ -87,6 +87,29 @@ def save_dataset_attribution(request: WSGIRequest, dataset: Dataset, form: "Base
 
 
 @transaction.atomic
+def save_dataset_creator(request: WSGIRequest, dataset: Dataset, form: "BaseResourceForm") -> None:
+    if "creator" not in form.cleaned_data or "creator" not in form.changed_data:
+        return
+
+    try:
+        attribution = Attribution.objects.get(name=Attribution.CREATOR)
+    except Attribution.DoesNotExist:
+        messages.warning(
+            request,
+            _(
+                "Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
+                "Susisiekite su administratoriumi."
+            ).format(name=Attribution.CREATOR),
+        )
+        return
+
+    DatasetAttribution.objects.filter(dataset=dataset, attribution=attribution).delete()
+    if organization := form.cleaned_data["creator"]:
+        DatasetAttribution.objects.create(dataset=dataset, attribution=attribution, organization=organization)
+    dataset.save()
+
+
+@transaction.atomic
 def save_dataset_qualified_relations(dataset: Dataset, form: "BaseResourceForm") -> None:
     if "qualified_relation" not in form.cleaned_data or "qualified_relation" not in form.changed_data:
         return

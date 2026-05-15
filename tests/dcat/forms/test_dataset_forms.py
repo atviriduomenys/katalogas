@@ -811,6 +811,65 @@ class TestDatasetUpdateForm:
 
         assert list(form.initial["qualified_relation"]) == []
 
+    def test_creator_initial_set_from_first_creator_attribution(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        creator = Attribution.objects.get(name=Attribution.CREATOR)
+        org = OrganizationFactory()
+        DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.initial["creator"] == org.pk
+
+    def test_creator_initial_uses_first_record_when_multiple_exist(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        creator = Attribution.objects.get(name=Attribution.CREATOR)
+        org1 = OrganizationFactory()
+        org2 = OrganizationFactory()
+        first_da = DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org1)
+        DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org2)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.initial["creator"] == first_da.organization_id
+
+    def test_creator_initial_not_set_when_no_creator_attribution(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert "creator" not in form.initial
+
+    def test_creator_initial_excludes_other_attribution_types(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        contributor = AttributionFactory(name=Attribution.CONTRIBUTOR)
+        org = OrganizationFactory()
+        DatasetAttributionFactory(dataset=dataset, attribution=contributor, organization=org)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert "creator" not in form.initial
+
 
 class TestServiceUpdateForm:
     def test_serves_datasets_initial_set_from_existing_relations(self):

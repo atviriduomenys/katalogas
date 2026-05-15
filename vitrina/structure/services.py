@@ -211,6 +211,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
         Metadata.objects.filter(content_type=ct, object_id=dataset.pk, metadata_version=metadata_version)
     )
     loaded_metadata = []
+    has_errors = False
     _clean_errors(dataset.current_structure)
     existing_dataset_comments = list(
         Comment.objects.filter(
@@ -274,13 +275,10 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             )
         if metadata:
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
-            loaded_metadata.append(metadata)
         elif not meta.name.isascii():
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
-            loaded_metadata.append(metadata)
         elif any([ch.isupper() for ch in meta.name]):
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik mažosios raidės.'))
-            loaded_metadata.append(metadata)
         else:
             if not meta.id and (uid := dataset_meta_uuid_by_name.get(meta.name)):
                 meta.id = uid
@@ -311,7 +309,9 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
 
         if errors := meta.errors:
             _create_errors(errors, dataset.current_structure)
+            has_errors = True
 
+    if not has_errors:
         removed_metadata = list(set(existing_metadata) - set(loaded_metadata))
         for meta in removed_metadata:
             meta.delete()

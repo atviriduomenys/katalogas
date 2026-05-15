@@ -2278,6 +2278,50 @@ def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_import_structure_with_errors_preserves_draft_metadata(app: DjangoTestApp):
+    valid_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp/test,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=valid_manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    initial_version = create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(Dataset)
+    assert Metadata.objects.filter(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+        metadata_version=initial_version,
+    ).exists()
+
+    broken_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp/ššš,,,,,,,,,,,,,,,,,\n"
+    )
+    broken_structure = DatasetStructureFactory(
+        dataset=structure.dataset,
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=broken_manifest)),
+    )
+    broken_structure.dataset.current_structure = broken_structure
+    broken_structure.dataset.save()
+    create_structure_objects(broken_structure)
+
+    assert Metadata.objects.filter(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+        metadata_version=initial_version,
+    ).exists()
+
+    comments = Comment.objects.filter(
+        content_type=ContentType.objects.get_for_model(broken_structure),
+        object_id=broken_structure.pk,
+    )
+    assert comments.count() == 1
+    assert "kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės." in comments[0].body
+
+
+@pytest.mark.django_db
 def test_structure_resource__resource_title(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"

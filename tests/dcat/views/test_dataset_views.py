@@ -328,6 +328,8 @@ class TestDcatDatasetCreateView:
         dataset_type_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.DATASET_TYPE_SCHEME_URI)
         dataset_type = ConceptFactory(concept_schemas=[dataset_type_schema])
         activity = ActivityFactory()
+        creator_attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        creator_org = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -356,6 +358,7 @@ class TestDcatDatasetCreateView:
         form["was_generated_by"] = [str(activity.pk)]
         form["qualified_relation"] = "https://example.com/relation"
         form["version_notes"] = "Initial version"
+        form["creator"].force_value(str(creator_org.pk))
         form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Dataset All Fields").first()
@@ -387,6 +390,9 @@ class TestDcatDatasetCreateView:
         assert Metadata.objects.get(dataset=dataset).name == f"{org.name}datasetallfields"
         assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/relation").exists()
         assert dataset.version_notes == "Initial version"
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution=creator_attribution, organization=creator_org
+        ).exists()
 
     def test_post_saves_dataset_with_parent(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -874,6 +880,8 @@ class TestDcatDatasetUpdateView:
         dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
         contributor = AttributionFactory(name=Attribution.CONTRIBUTOR)
         attribution_org = OrganizationFactory()
+        creator_attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        creator_org = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -904,6 +912,7 @@ class TestDcatDatasetUpdateView:
         form["qualified_attribution"].force_value([str(attribution_org.pk)])
         form["qualified_relation"] = "https://example.com/relation"
         form["version_notes"] = "Updated version notes"
+        form["creator"].force_value(str(creator_org.pk))
         with patch("vitrina.datasets.models.update_applicable_legislation_description"):
             form.submit()
 
@@ -931,6 +940,9 @@ class TestDcatDatasetUpdateView:
         ).exists()
         assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/relation").exists()
         assert dataset.version_notes == "Updated version notes"
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution=creator_attribution, organization=creator_org
+        ).exists()
 
     def test_post_updates_metadata_title_and_name(self, app: DjangoTestApp):
         org = OrganizationFactory()

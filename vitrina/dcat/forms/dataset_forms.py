@@ -368,6 +368,13 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         help_text=_("Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."),
         widget=Select2Widget,
     )
+    creator = forms.ModelChoiceField(
+        Organization.objects.all(),
+        required=False,
+        label=_("Atsakingas subjektas"),
+        help_text=_("Organizacija, atsakinga už duomenų rinkinio sukūrimą. Atitinka dct:creator."),
+        widget=OrganizationSingleWidget,
+    )
     qualified_relation = StringListField(
         label=_("Kvalifikuotas ryšys"),
         help_text=_(
@@ -391,6 +398,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "temporal_end",
             "access_rights",
             "conforms_to",
+            "creator",
             "documentation",
             "frequency",
             "landing_page",
@@ -455,6 +463,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             ),
             Field("access_rights"),
             Field("conforms_to"),
+            Field("creator"),
             Field("documentation"),
             Field("frequency"),
             Field("contact"),
@@ -593,5 +602,10 @@ class DatasetUpdateForm(DatasetResourceForm):
             self.initial["qualified_attribution"] = self.instance.datasetattribution_set.filter(
                 attribution__name=Attribution.CONTRIBUTOR
             ).values_list("organization_id", flat=True)
+            creator_attribution = self.instance.datasetattribution_set.filter(
+                attribution__name=Attribution.CREATOR
+            ).first()
+            if creator_attribution:
+                self.initial["creator"] = creator_attribution.organization_id
 
         self.helper.layout.append(Field("qualified_attribution"))

@@ -282,6 +282,7 @@ class TestDcatDatasetCreateView:
         form["title"] = "Service All Fields"
         form["name"] = f"{org.name}serviceallfields"
         form["tags"] = "svcTag"
+        form["organization"].force_value(str(org.pk))
         form["contact"] = contact.pk
         form["endpoint_url"] = "https://api.example.com"
         form["endpoint_description"] = "https://api.example.com/spec"
@@ -296,13 +297,13 @@ class TestDcatDatasetCreateView:
         assert dataset is not None
 
         # Automatically set fields
-        assert dataset.organization == org
         assert dataset.subclass == subclass
         assert dataset.is_public is False
         assert dataset.service is True
         assert dataset.catalog == Catalog.objects.get(identifier=Catalog.IDENTIFIER_ISRIS)
 
         # Form set fields
+        assert dataset.organization == org
         assert dataset.title == "Service All Fields"
         assert dataset.endpoint_url == "https://api.example.com"
         assert dataset.endpoint_description == "https://api.example.com/spec"
@@ -347,6 +348,7 @@ class TestDcatDatasetCreateView:
         form["temporal_resolution"] = "P1D"
         form["contact"] = contact.pk
         form["tags"] = "dataTag"
+        form["organization"].force_value(str(org.pk))
         form["conforms_to"] = conforms_to_concept.pk
         form["languages"] = [str(language.pk)]
         form["provenance"] = [str(provenance.pk)]
@@ -360,12 +362,12 @@ class TestDcatDatasetCreateView:
         assert dataset is not None
 
         # Automatically set fields
-        assert dataset.organization == org
         assert dataset.subclass == subclass
         assert dataset.is_public is False
         assert dataset.catalog == Catalog.objects.get(identifier=Catalog.IDENTIFIER_ISRIS)
 
         # Form set fields
+        assert dataset.organization == org
         assert dataset.title == "Dataset All Fields"
         assert dataset.description == "Dataset description"
         assert dataset.access_rights == Dataset.RESTRICTED

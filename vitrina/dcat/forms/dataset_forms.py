@@ -27,7 +27,7 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
-from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget
+from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget, OrganizationSingleWidget
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
@@ -288,6 +288,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "endpoint_description",
             "endpoint_description_type",  # Not in DCAT
             "tags",
+            "organization",
             "access_rights",
             "conforms_to",
             "description",
@@ -302,6 +303,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "agent": Select2Widget,
             "endpoint_type": Select2Widget,
             "endpoint_description_type": Select2Widget,
+            "organization": OrganizationSingleWidget,
             "access_rights": Select2Widget,
             "follows": Select2MultipleWidget,
             "license": Select2Widget,
@@ -314,6 +316,9 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
         )
+
+        self.fields["organization"].label = _("Duomenų teikėjas")
+        self.fields["organization"].help_text = _("Duomenų teikėjas. Atitinka dct:publisher.")
 
         self.fields["service_type"].queryset = (
             Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.SERVICE_TYPE_SCHEME_URI)
@@ -381,6 +386,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "description",
             "title",
             "tags",
+            "organization",
             "temporal_start",
             "temporal_end",
             "access_rights",
@@ -400,6 +406,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "applicable_legislation",
         )
         widgets = {
+            "organization": OrganizationSingleWidget,
             "temporal_start": forms.TextInput(attrs={"type": "date"}),
             "temporal_end": forms.TextInput(attrs={"type": "date"}),
             "access_rights": Select2Widget,
@@ -416,6 +423,10 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
         )
+
+        self.fields["organization"].label = _("Duomenų skelbėjas")
+        self.fields["organization"].help_text = _("Duomenų skelbėjas. Atitinka dct:publisher.")
+
         self.fields["dataset_type"].queryset = (
             Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.DATASET_TYPE_SCHEME_URI)
             .prefetch_related("translations")
@@ -437,6 +448,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             Field("description"),
             Field("title"),
             Field("tags"),
+            Field("organization"),
             inline_fields(
                 Field("temporal_start"),
                 Field("temporal_end"),

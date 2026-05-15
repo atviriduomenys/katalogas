@@ -135,7 +135,6 @@ class DcatDatasetCreateView(
 
         self.object = form.save(commit=False)
         self.object.set_current_language(language)
-        self.object.organization = self.organization
         self.object.subclass = self.subclass
         self.object.is_public = False
         self.object.catalog = self.catalog
@@ -147,6 +146,7 @@ class DcatDatasetCreateView(
             Dataset.add_root(instance=self.object)
 
         if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
+            self.object.organization = self.organization
             self.object.access_rights = Dataset.CONFIDENTIAL
             self.object.frequency = Frequency.objects.filter(code=Frequency.CODE_UNKNOWN).first()
             if identifier := form.cleaned_data.get("identifier"):

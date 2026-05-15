@@ -241,9 +241,9 @@ def test_check_dataset_access_raises_with_no_user_no_role(app: DjangoTestApp):
 @pytest.mark.parametrize(
     "organization_role, is_information_system, expected",
     [
-        (next(iter(Representative.OPEN_DATA_ROLE_KEYS)), True, False),
-        (next(iter(Representative.OPEN_DATA_ROLE_KEYS)), False, False),
-        (next(iter(Representative.RESOURCE_ROLE_KEYS)), True, False),
+        (Representative.OPEN_DATA_COORDINATOR, True, False),
+        (Representative.OPEN_DATA_COORDINATOR, False, False),
+        (Representative.RESOURCE_MANAGER, True, False),
         (None, True, False),
     ],
 )

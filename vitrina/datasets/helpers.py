@@ -73,7 +73,7 @@ def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -
     return f"{base_name}_{max_index}"
 
 
-def validate_name_prefix(
+def get_name_prefixes(
     name: str,
     organization: Organization | None,
     dataset_instance: Dataset | None = None,

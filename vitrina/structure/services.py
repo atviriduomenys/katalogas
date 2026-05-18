@@ -22,7 +22,7 @@ from django.utils.translation import gettext, gettext_lazy as _, get_language
 from vitrina import settings
 from vitrina.classifiers.models import Status
 from vitrina.comments.models import Comment
-from vitrina.datasets.helpers import validate_name_prefix
+from vitrina.datasets.helpers import get_name_prefixes
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.helpers import none_to_string, get_encoding
@@ -365,7 +365,7 @@ def _get_manifest_datasets_to_import(
     main_prefix, whitelisted = "", []
     for order, meta in enumerate(datasets, 1):
         is_last = order == len(datasets)
-        matched_prefix, main_prefix, whitelisted = validate_name_prefix(meta.name, dataset.organization, dataset)
+        matched_prefix, main_prefix, whitelisted = get_name_prefixes(meta.name, dataset.organization, dataset)
         if meta.name == dataset.name or (matched_prefix and is_last):
             result.append((order, meta))
     return result, main_prefix, whitelisted

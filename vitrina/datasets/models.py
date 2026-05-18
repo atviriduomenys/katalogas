@@ -518,13 +518,12 @@ class Dataset(Resource):
         verbose_name=_("Laikotarpio pabaigos data"),
         help_text=_("Ši savybė nurodo pabaigos datą, kurią apima duomenų rinkinys. Atitinka dct:temporal."),
     )
-    information_system_publisher = models.ForeignKey(
+    information_system_publishers = models.ManyToManyField(
         Organization,
-        related_name="information_system_publisher",
-        on_delete=models.PROTECT,
-        null=True,
+        related_name="information_system_publisher_datasets",
         blank=True,
-        verbose_name=_("Informacinės sistemos tvarkytojas"),
+        verbose_name=_("Informacinės sistemos tvarkytojai"),
+        help_text=_("Ši savybė nurodo subjektus (organizacijas), atsakingas už IS prieinamumą. Atitinka dct:publisher"),
     )
     version_notes = models.TextField(
         null=True,

@@ -190,7 +190,7 @@ class TestDcatDatasetCreateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         response = form.submit()
@@ -230,7 +230,7 @@ class TestDcatDatasetCreateView:
         form["name"] = f"{org.name}isallfields"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = publisher_org.pk
+        form["information_system_publishers"] = [str(publisher_org.pk)]
         form["creator"].force_value(str(creator_org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form["landing_page"] = "https://example.com/landing"
@@ -255,7 +255,7 @@ class TestDcatDatasetCreateView:
         assert dataset.description == "IS description"
         assert dataset.information_system_importance == importance
         assert dataset.information_system_type == is_type
-        assert dataset.information_system_publisher == publisher_org
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
         assert DatasetAttribution.objects.filter(
             dataset=dataset, attribution__name=Attribution.CREATOR, organization=creator_org
         ).exists()
@@ -420,7 +420,7 @@ class TestDcatDatasetCreateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
@@ -451,7 +451,7 @@ class TestDcatDatasetCreateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
@@ -724,7 +724,7 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         response = form.submit()
@@ -755,7 +755,7 @@ class TestDcatDatasetUpdateView:
             is_public=False,
             information_system_importance=old_importance,
             information_system_type=old_is_type,
-            information_system_publisher=org,
+            information_system_publishers=[org],
         )
         DatasetAttributionFactory(
             dataset=dataset,
@@ -783,7 +783,7 @@ class TestDcatDatasetUpdateView:
         form["name"] = f"{org.name}updateis"
         form["information_system_importance"] = new_importance.pk
         form["information_system_type"] = new_is_type.pk
-        form["information_system_publisher"] = publisher_org.pk
+        form["information_system_publishers"] = [str(publisher_org.pk)]
         form["creator"].force_value(str(creator_org.pk))
         form["information_system_assessment_url"] = "https://example.com/updated-assessment"
         form["landing_page"] = "https://example.com/updated"
@@ -804,7 +804,7 @@ class TestDcatDatasetUpdateView:
         assert dataset.description == "Updated IS description"
         assert dataset.information_system_importance == new_importance
         assert dataset.information_system_type == new_is_type
-        assert dataset.information_system_publisher == publisher_org
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
         assert DatasetAttribution.objects.filter(
             dataset=dataset, attribution__name=Attribution.CREATOR, organization=creator_org
         ).exists()
@@ -966,7 +966,7 @@ class TestDcatDatasetUpdateView:
             is_public=False,
             information_system_importance=importance,
             information_system_type=is_type,
-            information_system_publisher=org,
+            information_system_publishers=[org],
         )
         DatasetAttributionFactory(
             dataset=dataset,
@@ -987,7 +987,7 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
@@ -1021,7 +1021,7 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form["parent"] = parent.pk
@@ -1054,7 +1054,7 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form["parent"].force_value("")
@@ -1149,7 +1149,7 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
         form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()

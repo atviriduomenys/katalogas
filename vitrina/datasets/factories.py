@@ -112,6 +112,14 @@ class DatasetFactory(DjangoModelFactory):
         return dataset
 
     @factory.post_generation
+    def information_system_publishers(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for publisher in extracted:
+                self.information_system_publishers.add(publisher)
+
+    @factory.post_generation
     def tags(self, create, extracted, **kwargs):
         if not create:
             return

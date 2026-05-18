@@ -178,7 +178,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "information_system_assessment_url",
             "description",
             "identifier",
-            "information_system_publisher",
+            "information_system_publishers",
             "title",
             "landing_page",
             "languages",
@@ -190,7 +190,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         widgets = {
             "information_system_importance": Select2Widget,
             "information_system_type": Select2Widget,
-            "information_system_publisher": Select2Widget,
+            "information_system_publishers": Select2MultipleWidget,
             "languages": Select2MultipleWidget,
         }
 
@@ -207,11 +207,8 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         )
 
         organization_qs = Organization.objects.all().order_by("title")
-        self.fields["information_system_publisher"].queryset = organization_qs
-        self.fields["information_system_publisher"].required = True
-        self.fields["information_system_publisher"].help_text = _(
-            "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
-        )
+        self.fields["information_system_publishers"].queryset = organization_qs
+        self.fields["information_system_publishers"].required = True
         self.fields["creator"].queryset = organization_qs
 
         self.fields["information_system_type"].queryset = Concept.ordered_by_label_objects.filter(

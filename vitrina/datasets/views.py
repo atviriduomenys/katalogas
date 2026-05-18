@@ -861,6 +861,7 @@ class DatasetCreateView(
         self.object.save()
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
         self.object.save()
 
         for file in form.cleaned_data.get("files", []):
@@ -1093,6 +1094,7 @@ class DatasetUpdateView(
         self.object: Dataset = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
         if ("endpoint_url" in form.changed_data) or (self.object.is_public and not self.object.published):
             if self.object.is_public and not self.object.published:

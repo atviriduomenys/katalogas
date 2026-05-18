@@ -1231,7 +1231,7 @@ class TestDatasetUpdateView:
             subclass=subclass,
             information_system_type=information_system_type_concept,
             information_system_importance=information_system_importance_concept,
-            information_system_publisher=organization,
+            information_system_publishers=[organization],
         )
         DatasetAttributionFactory(
             dataset=dataset,
@@ -1283,7 +1283,7 @@ class TestDatasetUpdateView:
             subclass=subclass,
             information_system_type=information_system_type_concept,
             information_system_importance=information_system_importance_concept,
-            information_system_publisher=organization,
+            information_system_publishers=[organization],
         )
         DatasetAttributionFactory(
             dataset=dataset,
@@ -1413,7 +1413,7 @@ class TestDatasetUpdateView:
             "landing_page": "https://www.test.test",
             "information_system_type": information_system_type_concept.pk,
             "information_system_importance": information_system_importance_concept.pk,
-            "information_system_publisher": organization.pk,
+            "information_system_publishers": [organization.pk],
             "creator": organization.pk,
         }
         response = app.post(url, data)
@@ -1432,7 +1432,7 @@ class TestDatasetUpdateView:
         assert dataset.landing_page == "https://www.test.test"
         assert dataset.information_system_type == information_system_type_concept
         assert dataset.information_system_importance == information_system_importance_concept
-        assert dataset.information_system_publisher == organization
+        assert dataset.information_system_publishers.filter(pk=organization.pk).exists()
         assert DatasetAttribution.objects.filter(
             dataset=dataset, attribution__name=Attribution.CREATOR, organization=organization
         ).exists()
@@ -1820,7 +1820,7 @@ class TestDatasetCreateView:
             "landing_page": "https://www.test.test",
             "information_system_type": information_system_type_concept.pk,
             "information_system_importance": information_system_importance_concept.pk,
-            "information_system_publisher": organization.pk,
+            "information_system_publishers": [organization.pk],
             "creator": organization.pk,
         }
         response = app.post(url, data)
@@ -1839,7 +1839,7 @@ class TestDatasetCreateView:
         assert dataset.landing_page == "https://www.test.test"
         assert dataset.information_system_type == information_system_type_concept
         assert dataset.information_system_importance == information_system_importance_concept
-        assert dataset.information_system_publisher == organization
+        assert dataset.information_system_publishers.filter(pk=organization.pk).exists()
         assert DatasetAttribution.objects.filter(
             dataset=dataset, attribution__name=Attribution.CREATOR, organization=organization
         ).exists()
@@ -1954,7 +1954,7 @@ class TestDatasetCreateView:
         form["information_system_type"] = information_system_type_concept.pk
         form["information_system_importance"] = information_system_importance_concept.pk
         form["creator"].force_value(str(organization.pk))
-        form["information_system_publisher"] = organization.pk
+        form["information_system_publishers"] = [str(organization.pk)]
         form.submit()
         added_dataset = Dataset.objects.filter(translations__title="Test dataset")
         assert added_dataset.first().is_public is True

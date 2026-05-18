@@ -169,6 +169,7 @@ class DcatDatasetCreateView(
         self.object.save()
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
         dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
             self.object.organization, self.object
@@ -314,6 +315,7 @@ class DcatDatasetUpdateView(
         self.object = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
         if "endpoint_url" in form.changed_data:
             if self.object.datasetdistribution_set.exists() or (self.object.service and self.object.endpoint_url):

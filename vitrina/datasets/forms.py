@@ -7,7 +7,7 @@ from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2Widget, Select2Widget
+from django_select2.forms import ModelSelect2Widget, Select2MultipleWidget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -462,13 +462,13 @@ class InformationSystemResourceForm(CatalogResourceForm):
             "landing_page",
             "information_system_type",
             "information_system_importance",
-            "information_system_publisher",
+            "information_system_publishers",
             "applicable_legislation",
             "conditions",
             "rights_relation",
         )
         widgets = {
-            "information_system_publisher": Select2Widget,
+            "information_system_publishers": Select2MultipleWidget,
         }
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -495,7 +495,7 @@ class InformationSystemResourceForm(CatalogResourceForm):
             Field("organization"),
             Field("information_system_type"),
             Field("information_system_importance"),
-            Field("information_system_publisher"),
+            Field("information_system_publishers"),
             Field("creator"),
             Field("parent"),
             Field("applicable_legislation"),
@@ -508,11 +508,8 @@ class InformationSystemResourceForm(CatalogResourceForm):
             "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. Atitinka foaf:homepage."
         )
         organization_qs = Organization.objects.all().order_by("title")
-        self.fields["information_system_publisher"].queryset = organization_qs
-        self.fields["information_system_publisher"].required = True
-        self.fields["information_system_publisher"].help_text = _(
-            "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
-        )
+        self.fields["information_system_publishers"].queryset = organization_qs
+        self.fields["information_system_publishers"].required = True
         self.fields["creator"].queryset = organization_qs
 
         self.fields["information_system_type"].queryset = Concept.objects.filter(

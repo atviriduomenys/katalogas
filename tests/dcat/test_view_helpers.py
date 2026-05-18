@@ -13,7 +13,6 @@ from vitrina.datasets.factories import (
 from vitrina.datasets.models import Attribution, DatasetAttribution, DatasetQualifiedRelation, DatasetRelation, Relation
 from vitrina.dcat.view_helpers import (
     save_dataset_attribution,
-    save_dataset_creator,
     save_dataset_qualified_relations,
     save_dataset_relations,
 )
@@ -201,75 +200,6 @@ class TestSaveDatasetAttribution:
         save_dataset_attribution(Mock(), dataset, form)
 
         assert DatasetAttribution.objects.filter(pk=creator_da.pk).exists()
-
-
-class TestSaveDatasetCreator:
-    def test_skips_field_not_in_changed_data(self):
-        dataset = DatasetFactory()
-        form = make_form(
-            cleaned_data={"creator": OrganizationFactory()},
-            changed_data=[],
-        )
-
-        save_dataset_creator(Mock(), dataset, form)
-
-        assert DatasetAttribution.objects.filter(dataset=dataset).count() == 0
-
-    def test_creates_attribution_for_selected_organization(self):
-        dataset = DatasetFactory()
-        attribution = Attribution.objects.get(name=Attribution.CREATOR)
-        org = OrganizationFactory()
-        form = make_form(
-            cleaned_data={"creator": org},
-            changed_data=["creator"],
-        )
-
-        save_dataset_creator(Mock(), dataset, form)
-
-        assert DatasetAttribution.objects.filter(dataset=dataset, attribution=attribution, organization=org).exists()
-
-    def test_deletes_old_creator_attributions(self):
-        dataset = DatasetFactory()
-        attribution = Attribution.objects.get(name=Attribution.CREATOR)
-        old_da = DatasetAttributionFactory(dataset=dataset, attribution=attribution)
-        form = make_form(
-            cleaned_data={"creator": None},
-            changed_data=["creator"],
-        )
-
-        save_dataset_creator(Mock(), dataset, form)
-
-        assert not DatasetAttribution.objects.filter(pk=old_da.pk).exists()
-
-    def test_replaces_old_creator_with_new_organization(self):
-        dataset = DatasetFactory()
-        attribution = Attribution.objects.get(name=Attribution.CREATOR)
-        old_da = DatasetAttributionFactory(dataset=dataset, attribution=attribution)
-        new_org = OrganizationFactory()
-        form = make_form(
-            cleaned_data={"creator": new_org},
-            changed_data=["creator"],
-        )
-
-        save_dataset_creator(Mock(), dataset, form)
-
-        assert not DatasetAttribution.objects.filter(pk=old_da.pk).exists()
-        assert DatasetAttribution.objects.filter(
-            dataset=dataset, attribution=attribution, organization=new_org
-        ).exists()
-
-    def test_does_not_delete_other_attribution_types(self):
-        dataset = DatasetFactory()
-        contributor_attribution = AttributionFactory(name=Attribution.CONTRIBUTOR)
-        contributor_da = DatasetAttributionFactory(dataset=dataset, attribution=contributor_attribution)
-        form = make_form(
-            cleaned_data={"creator": None},
-            changed_data=["creator"],
-        )
-
-        save_dataset_creator(Mock(), dataset, form)
-
-        assert DatasetAttribution.objects.filter(pk=contributor_da.pk).exists()
 
 
 class TestSaveDatasetQualifiedRelations:

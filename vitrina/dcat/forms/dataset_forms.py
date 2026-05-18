@@ -160,6 +160,13 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         required=True,
         help_text=_("RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."),
     )
+    creator = forms.ModelChoiceField(
+        Organization.objects.all(),
+        required=True,
+        label=_("Valdytojas"),
+        help_text=_("Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."),
+        widget=OrganizationSingleWidget,
+    )
 
     class Meta:
         model = Dataset
@@ -172,7 +179,6 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "description",
             "identifier",
             "information_system_publisher",
-            "information_system_creator",
             "title",
             "landing_page",
             "languages",
@@ -185,7 +191,6 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "information_system_importance": Select2Widget,
             "information_system_type": Select2Widget,
             "information_system_publisher": Select2Widget,
-            "information_system_creator": Select2Widget,
             "languages": Select2MultipleWidget,
         }
 
@@ -207,11 +212,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         self.fields["information_system_publisher"].help_text = _(
             "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
         )
-        self.fields["information_system_creator"].queryset = organization_qs
-        self.fields["information_system_creator"].required = True
-        self.fields["information_system_creator"].help_text = _(
-            "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
-        )
+        self.fields["creator"].queryset = organization_qs
 
         self.fields["information_system_type"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
@@ -555,6 +556,11 @@ class InformationSystemUpdateForm(InformationSystemResourceForm):
                 related_datasets__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
                 related_datasets__dataset=self.instance,
             )
+            creator_attribution = self.instance.datasetattribution_set.filter(
+                attribution__name=Attribution.CREATOR
+            ).first()
+            if creator_attribution:
+                self.initial["creator"] = creator_attribution.organization_id
 
 
 class ServiceUpdateForm(ServiceResourceForm):

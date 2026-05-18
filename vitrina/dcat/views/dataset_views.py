@@ -22,11 +22,11 @@ from vitrina.datasets.view_helpers import (
     create_tasks_and_notify_subscribers_about_dataset_creation,
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
+    save_dataset_creator,
 )
 from vitrina.dcat.view_helpers import (
     save_dataset_relations,
     save_dataset_attribution,
-    save_dataset_creator,
     save_dataset_qualified_relations,
 )
 from vitrina.dcat.forms.dataset_forms import (

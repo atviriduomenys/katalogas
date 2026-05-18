@@ -51,6 +51,7 @@ from vitrina.datasets.view_helpers import (
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
 )
+from vitrina.datasets.view_helpers import save_dataset_creator
 from vitrina.structure.models import Version as _Version
 from vitrina.api.helpers import render_rdf_response
 from vitrina.api.models import ApiKey
@@ -99,6 +100,7 @@ from vitrina.datasets.services import (
     DatasetRepresentativeService,
 )
 from vitrina.datasets.models import (
+    Attribution,
     Dataset,
     DatasetStructure,
     DatasetGroup,
@@ -535,6 +537,11 @@ class DatasetDetailView(
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
+            "creator": (
+                da.organization
+                if (da := dataset.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first())
+                else None
+            ),
             "data_maturity": dataset.metadata_set.average_level(),
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
@@ -895,6 +902,7 @@ class DatasetCreateView(
                     )
 
         create_dataset_representative_and_attribution(self.object)
+        save_dataset_creator(self.request, self.object, form)
 
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             self.object.update_applicable_legislation(applicable_legislation_urls)
@@ -1123,6 +1131,8 @@ class DatasetUpdateView(
 
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
+
+        save_dataset_creator(self.request, self.object, form)
 
         self.object.save()
 

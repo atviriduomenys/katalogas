@@ -49,6 +49,7 @@ from vitrina.orgs.forms import (
 )
 
 from vitrina.datasets.models import (
+    Attribution,
     Dataset,
     DatasetStructure,
     DatasetGroup,
@@ -437,6 +438,13 @@ class CatalogResourceForm(BaseResourceForm):
 
 class InformationSystemResourceForm(CatalogResourceForm):
     identifier = forms.CharField(label=_("Identifikatorius"), required=False)
+    creator = forms.ModelChoiceField(
+        Organization.objects.all(),
+        required=True,
+        label=_("Atsakingas subjektas"),
+        help_text=_("Subjektas, atsakingas už IS parengimą. Atitinka dct:creator."),
+        widget=Select2Widget,
+    )
 
     class Meta:
         model = Dataset
@@ -455,14 +463,12 @@ class InformationSystemResourceForm(CatalogResourceForm):
             "information_system_type",
             "information_system_importance",
             "information_system_publisher",
-            "information_system_creator",
             "applicable_legislation",
             "conditions",
             "rights_relation",
         )
         widgets = {
             "information_system_publisher": Select2Widget,
-            "information_system_creator": Select2Widget,
         }
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -470,6 +476,9 @@ class InformationSystemResourceForm(CatalogResourceForm):
         instance = self.instance if self.instance and self.instance.pk else None
         if instance:
             self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
+            da = instance.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first()
+            if da:
+                self.fields["creator"].initial = da.organization_id
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
@@ -487,7 +496,7 @@ class InformationSystemResourceForm(CatalogResourceForm):
             Field("information_system_type"),
             Field("information_system_importance"),
             Field("information_system_publisher"),
-            Field("information_system_creator"),
+            Field("creator"),
             Field("parent"),
             Field("applicable_legislation"),
             Field("conditions"),
@@ -504,11 +513,7 @@ class InformationSystemResourceForm(CatalogResourceForm):
         self.fields["information_system_publisher"].help_text = _(
             "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
         )
-        self.fields["information_system_creator"].queryset = organization_qs
-        self.fields["information_system_creator"].required = True
-        self.fields["information_system_creator"].help_text = _(
-            "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
-        )
+        self.fields["creator"].queryset = organization_qs
 
         self.fields["information_system_type"].queryset = Concept.objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI

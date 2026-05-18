@@ -526,14 +526,6 @@ class Dataset(Resource):
         blank=True,
         verbose_name=_("Informacinės sistemos tvarkytojas"),
     )
-    information_system_creator = models.ForeignKey(
-        Organization,
-        related_name="information_system_creator",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        verbose_name=_("Informacinės sistemos valdytojas"),
-    )
     version_notes = models.TextField(
         null=True,
         verbose_name=_("Versijos pastabos"),

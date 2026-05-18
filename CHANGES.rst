@@ -13,6 +13,11 @@ https://github.com/atviriduomenys/katalogas/issues/2563
 - Add `DatasetStructureUMLView` with embedded and `?expanded` fullscreen variants.
 - Add `.mmd` (server-side) and `.svg` (client-side from the rendered SVG) download options.
 
+https://github.com/atviriduomenys/katalogas/issues/2485
+
+- Strip leading newline from DCAT-AP RDF response
+- Sanitize whitespace URIs in DCAT-AP RDF export
+
 v 1.20.0 (2026-05-12)
 ==================
 

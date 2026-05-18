@@ -18,6 +18,10 @@ https://github.com/atviriduomenys/katalogas/issues/2485
 - Strip leading newline from DCAT-AP RDF response
 - Sanitize whitespace URIs in DCAT-AP RDF export
 
+https://github.com/atviriduomenys/katalogas/issues/2260
+
+- Fix SPINTA data_last_updated to use :changes/-1 and aggregate all dataset models
+
 v 1.20.0 (2026-05-12)
 ==================
 

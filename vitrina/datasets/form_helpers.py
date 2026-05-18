@@ -5,15 +5,14 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Concept
-from vitrina.datasets.helpers import validate_name_prefix
+from vitrina.datasets.helpers import get_name_prefixes
 from vitrina.datasets.models import Dataset, Contact
 from vitrina.identifiers.models import Agency
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization
 from vitrina.resources.models import Format
 from vitrina.structure.models import Metadata
 from vitrina.uapi.models import Agent
@@ -38,33 +37,7 @@ def validate_dataset_name(name: str | None, dataset: Dataset | None, organizatio
         if any(ch.isupper() for ch in name):
             raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
 
-        _matched, main_prefix, whitelisted = validate_name_prefix(name, organization, dataset)
-        allowed_prefixes = [main_prefix] + list(whitelisted)
-
-        representatives = Representative.objects.filter(
-            (Q(organization=organization) | Q(user__organization=organization))
-            & Q(role=Representative.OPEN_DATA_PUBLISHER)
-        )
-        dataset_ct = ContentType.objects.get_for_model(Dataset)
-        organization_ct = ContentType.objects.get_for_model(organization)
-        for rep in representatives:
-            if (
-                rep.content_type == dataset_ct
-                and rep.content_object.organization
-                and rep.content_object.organization.name
-                and rep.content_object.organization.name not in allowed_prefixes
-            ):
-                allowed_prefixes.append(rep.content_object.organization.name)
-                whitelisted.append(rep.content_object.organization.name)
-            elif (
-                rep.content_type == organization_ct
-                and rep.content_object.name
-                and rep.content_object.name not in allowed_prefixes
-            ):
-                allowed_prefixes.append(rep.content_object.name)
-                whitelisted.append(rep.content_object.name)
-
-        matched_prefix = next((prefix for prefix in allowed_prefixes if name.startswith(prefix)), None)
+        matched_prefix, main_prefix, whitelisted = get_name_prefixes(name, organization, dataset)
         if not matched_prefix:
             if whitelisted:
                 message = _(

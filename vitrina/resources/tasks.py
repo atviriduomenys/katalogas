@@ -94,9 +94,9 @@ def _fetch_spinta_last_modified(distribution: DatasetDistribution) -> datetime |
 
     latest: datetime | None = None
     for model in models:
-        model_latest = _fetch_model_last_modified(model.full_name, distribution.pk)
-        if model_latest and (latest is None or model_latest > latest):
-            latest = model_latest
+        latest_model_datetime = _fetch_model_last_modified(model.full_name, distribution.pk)
+        if latest_model_datetime and (latest is None or latest_model_datetime > latest):
+            latest = latest_model_datetime
     return latest
 
 

@@ -21,7 +21,7 @@ DCAT_AP_RDF_TEMPLATE_NAME = "vitrina/api/edp/dcat_ap_rdf.html"
 _URI_WHITESPACE_RE = re.compile(r"\s")
 
 
-def _safe_uri(value: Optional[str]) -> Optional[str]:
+def _safe_uri(value: str | None) -> str | None:
     if not value:
         return None
     value = str(value).strip()
@@ -30,7 +30,7 @@ def _safe_uri(value: Optional[str]) -> Optional[str]:
     return value
 
 
-def _get_org_for_rdf(org: Optional[Organization]):
+def _get_org_for_rdf(org: Organization | None) -> dict | None:
     if org is None:
         return None
     return {

@@ -92,34 +92,44 @@ def _fetch_spinta_last_modified(distribution: DatasetDistribution) -> datetime |
         logger.debug("Distribution %d dataset has no models, skipping.", distribution.pk)
         return None
 
-    model = models.first()
-    data = get_data_from_spinta(
-        f"{model.full_name}/:changes/:format/json",
-        query="select(_created)&sort(-_created)&limit(1)",
-        timeout=15,
-    )
+    latest: datetime | None = None
+    for model in models:
+        latest_model_datetime = _fetch_model_last_modified(model.full_name, distribution.pk)
+        if latest_model_datetime and (latest is None or latest_model_datetime > latest):
+            latest = latest_model_datetime
+    return latest
+
+
+def _fetch_model_last_modified(model_full_name: str, distribution_pk: int) -> datetime | None:
+    data = get_data_from_spinta(model_full_name, ":changes/-1/", timeout=15)
 
     if not data:
         return None
 
     if "errors" in data:
         logger.warning(
-            "SPINTA returned errors for distribution %d: %s",
-            distribution.pk,
+            "SPINTA returned errors for distribution %d model %s: %s",
+            distribution_pk,
+            model_full_name,
             data["errors"],
         )
         return None
 
     items = data.get("_data", [])
     if not items:
-        logger.debug("Distribution %d SPINTA response has no _data items, skipping.", distribution.pk)
+        logger.debug(
+            "Distribution %d model %s SPINTA response has no _data items, skipping.",
+            distribution_pk,
+            model_full_name,
+        )
         return None
 
     serializer = SpintaChangeSerializer(data=items[0])
     if not serializer.is_valid():
         logger.warning(
-            "Invalid SPINTA change entry for distribution %d: %s",
-            distribution.pk,
+            "Invalid SPINTA change entry for distribution %d model %s: %s",
+            distribution_pk,
+            model_full_name,
             serializer.errors,
         )
         return None

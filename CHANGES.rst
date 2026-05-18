@@ -1,7 +1,12 @@
 Changes
 #######
 
-v 1.21.0 (current)
+v 1.22.0 (current)
+==================
+
+
+
+v 1.21.0 (2026-05-18)
 ==================
 
 https://github.com/atviriduomenys/katalogas/issues/2563

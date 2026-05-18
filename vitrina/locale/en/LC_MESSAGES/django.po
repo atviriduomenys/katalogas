@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-14 14:55+0300\n"
+"POT-Creation-Date: 2026-05-18 11:01+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -898,6 +898,14 @@ msgstr "Detailed description of the metadata catalog"
 msgid "Užpildykite tik vieną teisių deklaracijų lauką."
 msgstr "Please fill in only one field for rights."
 
+msgid "Atsakingas subjektas"
+msgstr "Responsible entity"
+
+msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator."
+msgstr ""
+"The entity responsible for the creation of the information system (IS). "
+"Corresponds to dct:creator."
+
 msgid "Informacinės sistemos pavadinimas"
 msgstr "Information system name"
 
@@ -919,18 +927,6 @@ msgid ""
 msgstr ""
 "This property indicates the web page that is the main page of the catalog. "
 "Corresponds to foaf:homepage."
-
-msgid ""
-"Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. "
-"Atitinka dct:publisher"
-msgstr ""
-"This property indicates the entity (organization) responsible for providing "
-"access to the information system (IS). Corresponds to dct:publisher"
-
-msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
-msgstr ""
-"The entity responsible for the creation of the information system (IS). "
-"Corresponds to dct:creator"
 
 msgid "Laikotarpio pradžia"
 msgstr "Period start"
@@ -1260,11 +1256,15 @@ msgstr ""
 "This property indicates the end date covered by the dataset. Corresponds to "
 "dct:temporal."
 
-msgid "Informacinės sistemos tvarkytojas"
-msgstr "Information system publisher"
+msgid "Informacinės sistemos tvarkytojai"
+msgstr "Information system publishers"
 
-msgid "Informacinės sistemos valdytojas"
-msgstr "Information system creator"
+msgid ""
+"Ši savybė nurodo subjektus (organizacijas), atsakingas už IS prieinamumą. "
+"Atitinka dct:publisher"
+msgstr ""
+"This property indicates the entities (organizations) responsible for providing "
+"access to the information system (IS). Corresponds to dct:publisher"
 
 msgid "Versijos pastabos"
 msgstr "Version notes"
@@ -1400,9 +1400,9 @@ msgid ""
 "Nuoroda į susijusį dokumentą, kuriame aprašytas šis duomenų rinkinys. "
 "Įprastai IS techninė specifikacija. Atitinka dcat:qualifiedRelation."
 msgstr ""
-"An URL to a related document that describes this dataset. Typically "
-"a technical specification of the information system. "
-"Corresponds to dcat:qualifiedRelation."
+"An URL to a related document that describes this dataset. Typically a "
+"technical specification of the information system. Corresponds to "
+"dcat:qualifiedRelation."
 
 msgid "Kvalifikuotas ryšys"
 msgstr "Qualified relation"
@@ -1566,6 +1566,9 @@ msgstr "Harvested"
 
 msgid "Atlikto darbo būsena"
 msgstr "Harvesting status"
+
+msgid "Informacinės sistemos valdytojas"
+msgstr "Information system creator"
 
 msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
 msgstr ""
@@ -1943,6 +1946,14 @@ msgstr "Resources"
 msgid "Istorija"
 msgstr "History"
 
+#, python-brace-format
+msgid ""
+"Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
+"Susisiekite su administratoriumi."
+msgstr ""
+"Attribution type '{name}' does not exist. Field's values are not saved. "
+"Contact the administrator."
+
 msgid "Duomenų ištekliaus būsena"
 msgstr "Resource status"
 
@@ -2091,11 +2102,32 @@ msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
 msgstr ""
 "RISR (registrai.lt) IS identification code. Corresponds to dct:identifier."
 
+msgid "Valdytojas"
+msgstr "Creator"
+
+msgid "Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."
+msgstr "Organization, that is the creator of the IS. Corresponds to dct:creator."
+
+msgid "Duomenų teikėjas"
+msgstr "Data provider"
+
+msgid "Duomenų teikėjas. Atitinka dct:publisher."
+msgstr "Data provider. Corresponds to dct:publisher."
+
 msgid ""
 "Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."
 msgstr ""
 "Specifies which standard the dataset conforms to. Corresponds to "
 "dct:conformsTo."
+
+msgid ""
+"Organizacija, atsakinga už duomenų rinkinio sukūrimą. Atitinka dct:creator."
+msgstr ""
+"Organization responsible for creation of this dataset. Corresponds to "
+"dct:creator."
+
+msgid "Duomenų skelbėjas. Atitinka dct:publisher."
+msgstr "Data publisher. Corresponds to dct:publisher."
 
 msgid "Priklauso duomenų katalogams"
 msgstr "Belongs to data catalog"
@@ -2169,14 +2201,6 @@ msgid ""
 msgstr ""
 "Field's '{label}' relation '{relation_name}' does not exist. Field's value "
 "is not saved. Contact the administrator."
-
-#, python-brace-format
-msgid ""
-"Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
-"Susisiekite su administratoriumi."
-msgstr ""
-"Attribution type '{name}' does not exist. Field's values are not saved. "
-"Contact the administrator."
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
 msgstr "Form creation tool cannot be used for this resource subclass"

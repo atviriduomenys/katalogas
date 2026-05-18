@@ -4472,12 +4472,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
                 </dct:license>
-                <dcat:mediaType>
-                    <dct:MediaType rdf:about=""/>
-                </dcat:mediaType>
-                <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about=""/>
-                </dct:format>
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>

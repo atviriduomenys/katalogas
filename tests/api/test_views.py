@@ -3106,6 +3106,52 @@ class EdpDcatApPublicRdfTests(TestCase):
 
 
 @pytest.mark.django_db
+def test_edp_dcat_ap_rdf_starts_with_xml_declaration(app: DjangoTestApp):
+    Dataset.objects.all().delete()
+    DatasetFactory(access_rights=Dataset.PUBLIC)
+
+    res = app.get("/edp/dcat-ap.rdf")
+
+    assert res.status_code == 200
+    assert res.text.startswith("<?xml")
+
+
+@pytest.mark.django_db
+def test_edp_dcat_ap_rdf_drops_whitespace_uris(app: DjangoTestApp):
+    Dataset.objects.all().delete()
+    bad = "https://www.migracija.lt, https://migracija.lrv.lt"
+    DatasetFactory(
+        access_rights=Dataset.PUBLIC,
+        organization=OrganizationFactory(
+            title="Migracija",
+            email="info@example.com",
+            website=bad,
+        ),
+        landing_page=bad,
+        endpoint_url=bad,
+        endpoint_description=bad,
+    )
+
+    res = app.get("/edp/dcat-ap.rdf")
+
+    assert res.status_code == 200
+    # bad URI must never appear inside an rdf:resource/rdf:about attribute
+    assert bad not in res.text
+    # whitespace inside an attribute is the actual parser failure mode
+    for line in res.text.splitlines():
+        for attr in ("rdf:resource", "rdf:about"):
+            marker = f'{attr}="'
+            start = line.find(marker)
+            if start == -1:
+                continue
+            value_start = start + len(marker)
+            value_end = line.find('"', value_start)
+            assert value_end != -1
+            value = line[value_start:value_end]
+            assert not any(c.isspace() for c in value), f"whitespace in {attr}: {value!r}"
+
+
+@pytest.mark.django_db
 def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     Dataset.objects.all().delete()
     hvd_group = DatasetGroupFactory(name="hvd")

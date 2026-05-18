@@ -180,7 +180,7 @@ class TestInformationSystemResourceForm:
                 "name": "testis",
                 "information_system_importance": importance.pk,
                 "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "creator": organization.pk,
                 "identifier": "not-four-digits",
             },
         )
@@ -203,7 +203,7 @@ class TestInformationSystemResourceForm:
                 "name": "testis",
                 "information_system_importance": importance.pk,
                 "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "creator": organization.pk,
                 "identifier": "1234",
             },
         )
@@ -237,7 +237,7 @@ class TestInformationSystemResourceForm:
                 "name": "testis",
                 "information_system_importance": importance.pk,
                 "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "creator": organization.pk,
             },
         )
 
@@ -272,7 +272,7 @@ class TestInformationSystemResourceForm:
                 "name": "testis",
                 "information_system_importance": importance.pk,
                 "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "creator": organization.pk,
                 "information_system_assessment_url": "https://example.com/assessment",
             },
         )

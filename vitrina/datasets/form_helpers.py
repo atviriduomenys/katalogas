@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Concept
-from vitrina.datasets.helpers import get_name_prefixes
+from vitrina.datasets.helpers import get_name_prefixes, match_name_prefix
 from vitrina.datasets.models import Dataset, Contact
 from vitrina.identifiers.models import Agency
 from vitrina.orgs.models import Organization
@@ -39,7 +39,8 @@ def validate_dataset_name(name: str | None, dataset: Dataset | None, organizatio
         if any(ch.isupper() for ch in name):
             raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
 
-        matched_prefix, main_prefix, whitelisted = get_name_prefixes(name, organization, dataset)
+        main_prefix, whitelisted = get_name_prefixes(organization, dataset)
+        matched_prefix = match_name_prefix(name, [main_prefix] + whitelisted)
         if not matched_prefix:
             if whitelisted:
                 message = _(

@@ -315,6 +315,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
         )
 
+        self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų teikėjas")
         self.fields["organization"].help_text = _("Duomenų teikėjas. Atitinka dct:publisher.")
 
@@ -430,6 +431,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
         )
 
+        self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų skelbėjas")
         self.fields["organization"].help_text = _("Duomenų skelbėjas. Atitinka dct:publisher.")
 

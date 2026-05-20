@@ -460,6 +460,65 @@ class TestDcatDatasetCreateView:
         assert dataset is not None
         assert dataset.get_parent() is None
 
+    def test_post_service_redirects_to_instance_organization(self, app: DjangoTestApp):
+        url_org = OrganizationFactory()
+        form_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create",
+            kwargs={"organization_id": url_org.pk, "subclass_uuid": subclass.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Service Redirect Test"
+        form["name"] = f"{url_org.name}svcredirect"
+        form["tags"] = "tag1"
+        form["organization"].force_value(str(form_org.pk))
+        form["endpoint_url"] = "https://api.example.com"
+        form["endpoint_description"] = "https://api.example.com/spec"
+        response = form.submit()
+
+        dataset = Dataset.objects.filter(translations__title="Service Redirect Test").first()
+        assert dataset is not None
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": form_org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
+
+    def test_post_dataset_redirects_to_instance_organization(self, app: DjangoTestApp):
+        url_org = OrganizationFactory()
+        form_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        frequency = FrequencyFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create",
+            kwargs={"organization_id": url_org.pk, "subclass_uuid": subclass.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Dataset Redirect Test"
+        form["description"] = "Test description"
+        form["name"] = f"{url_org.name}dsredirect"
+        form["organization"].force_value(str(form_org.pk))
+        form["frequency"] = frequency.pk
+        form["version_notes"] = "v1"
+        response = form.submit()
+
+        dataset = Dataset.objects.filter(translations__title="Dataset Redirect Test").first()
+        assert dataset is not None
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": form_org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
+
 
 class TestDcatDatasetUpdateView:
     def test_unauthenticated_redirects_to_login(self, app: DjangoTestApp):
@@ -733,6 +792,66 @@ class TestDcatDatasetUpdateView:
         expected_url = reverse(
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
+
+    def test_post_service_redirects_to_instance_organization(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        new_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=subclass,
+            is_public=False,
+            service=True,
+            endpoint_url="https://api.example.com",
+            endpoint_description="https://api.example.com/spec",
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Service Update Redirect"
+        form["name"] = f"{org.name}svcupdredir"
+        form["tags"] = "tag1"
+        form["organization"].force_value(str(new_org.pk))
+        response = form.submit()
+
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": new_org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
+
+    def test_post_dataset_redirects_to_instance_organization(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        new_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Dataset Update Redirect"
+        form["description"] = "Dataset description"
+        form["name"] = f"{org.name}dsupdredir"
+        form["organization"].force_value(str(new_org.pk))
+        form["version_notes"] = "v1"
+        response = form.submit()
+
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": new_org.pk, "dataset_id": dataset.pk},
         )
         assert response.location == expected_url
 

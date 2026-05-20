@@ -527,6 +527,7 @@ class Dataset(Resource):
     )
     version_notes = models.TextField(
         null=True,
+        blank=True,
         verbose_name=_("Versijos pastabos"),
         help_text=_("Versijos skirtumų aprašymas. Atitinka adms:versionNotes."),
     )

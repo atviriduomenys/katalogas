@@ -450,6 +450,24 @@ class TestServiceResourceForm:
         assert "agent" in form.errors
         assert "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu." in form.errors["agent"][0]
 
+    def test_organization_required(self):
+        organization = OrganizationFactory()
+
+        form = ServiceResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "title": "Test Service",
+                "name": "testservice",
+                "tags": "tag1",
+                "endpoint_url": "http://example.com",
+                "endpoint_description": "http://example.com/spec",
+            },
+        )
+
+        assert not form.is_valid()
+        assert "organization" in form.errors
+
 
 class TestDatasetResourceForm:
     def test_parent_queryset_includes_service_dataset_from_same_org(self):
@@ -583,6 +601,22 @@ class TestDatasetResourceForm:
 
         assert matching_concept in form.fields["dataset_type"].queryset
         assert other_concept not in form.fields["dataset_type"].queryset
+
+    def test_organization_required(self):
+        organization = OrganizationFactory()
+
+        form = DatasetResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "title": "Test Dataset",
+                "description": "Test description",
+                "name": "testdataset",
+            },
+        )
+
+        assert not form.is_valid()
+        assert "organization" in form.errors
 
     def test_conforms_to_languages_provenance_dataset_type_was_generated_by_not_required(self):
         organization = OrganizationFactory()

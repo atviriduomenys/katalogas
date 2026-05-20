@@ -523,7 +523,7 @@ class Dataset(Resource):
         related_name="information_system_publisher_datasets",
         blank=True,
         verbose_name=_("Informacinės sistemos tvarkytojai"),
-        help_text=_("Ši savybė nurodo subjektus (organizacijas), atsakingas už IS prieinamumą. Atitinka dct:publisher"),
+        help_text=_("Ši savybė nurodo subjektus (organizacijas), atsakingus už IS prieinamumą. Atitinka dct:publisher"),
     )
     version_notes = models.TextField(
         null=True,

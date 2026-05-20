@@ -24,6 +24,7 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     DatasetGroupCategoryUri,
 )
+from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 
 MANIFEST = """\
@@ -112,7 +113,7 @@ class DatasetFactory(DjangoModelFactory):
         return dataset
 
     @factory.post_generation
-    def information_system_publishers(self, create, extracted, **kwargs):
+    def information_system_publishers(self, create: bool, extracted: list[Organization], **kwargs) -> None:
         if not create:
             return
         if extracted:

@@ -476,9 +476,9 @@ class InformationSystemResourceForm(CatalogResourceForm):
         instance = self.instance if self.instance and self.instance.pk else None
         if instance:
             self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
-            da = instance.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first()
-            if da:
-                self.fields["creator"].initial = da.organization_id
+            dataset_attribution = instance.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first()
+            if dataset_attribution:
+                self.fields["creator"].initial = dataset_attribution.organization_id
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),

@@ -538,8 +538,12 @@ class DatasetDetailView(
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
             "creator": (
-                da.organization
-                if (da := dataset.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first())
+                dataset_attribution.organization
+                if (
+                    dataset_attribution := dataset.datasetattribution_set.filter(
+                        attribution__name=Attribution.CREATOR
+                    ).first()
+                )
                 else None
             ),
             "data_maturity": dataset.metadata_set.average_level(),

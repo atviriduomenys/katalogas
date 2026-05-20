@@ -1260,7 +1260,7 @@ msgid "Informacinės sistemos tvarkytojai"
 msgstr "Information system publishers"
 
 msgid ""
-"Ši savybė nurodo subjektus (organizacijas), atsakingas už IS prieinamumą. "
+"Ši savybė nurodo subjektus (organizacijas), atsakingus už IS prieinamumą. "
 "Atitinka dct:publisher"
 msgstr ""
 "This property indicates the entities (organizations) responsible for providing "

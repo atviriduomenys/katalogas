@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 related_name="information_system_publisher_datasets",
                 to="vitrina_orgs.organization",
                 verbose_name="Informacinės sistemos tvarkytojai",
-                help_text="Ši savybė nurodo subjektus (organizacijas), atsakingas už IS prieinamumą. Atitinka dct:publisher"
+                help_text="Ši savybė nurodo subjektus (organizacijas), atsakingus už IS prieinamumą. Atitinka dct:publisher"
             ),
         ),
         migrations.RunPython(migrate_publisher_to_m2m, migrations.RunPython.noop),

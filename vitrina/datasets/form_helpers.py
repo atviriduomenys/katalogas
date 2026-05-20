@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Concept
-from vitrina.datasets.helpers import get_name_prefixes
+from vitrina.datasets.helpers import get_name_prefixes, match_name_prefix
 from vitrina.datasets.models import Dataset, Contact
 from vitrina.identifiers.models import Agency
 from vitrina.orgs.models import Organization
@@ -19,6 +19,8 @@ from vitrina.users.models import User
 
 
 DATA_SERVICE_STANDARD_URI = "https://data.gov.lt/id/non-standard/DataServiceStandard"
+DATASET_STANDARD_URI = "https://data.gov.lt/id/non-standard/DatasetStandard"
+
 UAPI_CONCEPT_CODE = "UAPI"
 JSON_FORMAT = "JSON"
 OPENAPI_FORMAT = "OpenAPI"
@@ -34,7 +36,8 @@ def validate_dataset_name(name: str | None, dataset: Dataset | None, organizatio
         if any(ch.isupper() for ch in name):
             raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
 
-        matched_prefix, main_prefix, whitelisted = get_name_prefixes(name, organization, dataset)
+        main_prefix, whitelisted = get_name_prefixes(organization, dataset)
+        matched_prefix = match_name_prefix(name, [main_prefix] + whitelisted)
         if not matched_prefix:
             if whitelisted:
                 message = _(
@@ -67,7 +70,7 @@ def validate_dataset_name(name: str | None, dataset: Dataset | None, organizatio
             )
 
 
-def validate_applicable_legislation(urls: list[str]) -> list[str | None]:
+def validate_urls(urls: list[str]) -> list[str | None]:
     validator = URLValidator()
     item_errors = []
 
@@ -113,12 +116,12 @@ def set_default_agent_endpoint_fields(cleaned_data: dict[str, Any]) -> dict[str,
 
     if not cleaned_data.get("endpoint_description_type"):
         if not (openapi_format := Format.objects.filter(title=OPENAPI_FORMAT).first()):
-            raise ValidationError(error_template.format(JSON_FORMAT))
+            raise ValidationError(error_template.format(OPENAPI_FORMAT))
         cleaned_data["endpoint_description_type"] = openapi_format
 
     if not cleaned_data.get("conforms_to"):
         if not (uapi_concept := Concept.objects.filter(code=UAPI_CONCEPT_CODE).first()):
-            raise ValidationError(error_template.format(JSON_FORMAT))
+            raise ValidationError(error_template.format(UAPI_CONCEPT_CODE))
         cleaned_data["conforms_to"] = uapi_concept
 
     return cleaned_data

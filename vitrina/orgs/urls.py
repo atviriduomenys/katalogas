@@ -62,6 +62,12 @@ from vitrina.orgs.views import (
     OrganizationCreateSearchUpdateView,
     OrganizationProjectsView,
 )
+from vitrina.dcat.views.wizard_views import (
+    OrganizationWizardView,
+    OrganizationWizardTreeView,
+    OrganizationWizardCreateRedirectView,
+    OrganizationWizardNodesView,
+)
 
 
 urlpatterns = [
@@ -326,4 +332,12 @@ urlpatterns = [
         name="create-remote-organization",
     ),
     path("orgs/remote-organization-check/", check_organization, name="check-organization"),
+    path("orgs/<int:pk>/wizard/", OrganizationWizardView.as_view(), name="organization-wizard"),
+    path("orgs/<int:pk>/wizard/tree/", OrganizationWizardTreeView.as_view(), name="organization-wizard-tree"),
+    path("orgs/<int:pk>/wizard/nodes/", OrganizationWizardNodesView.as_view(), name="organization-wizard-nodes"),
+    path(
+        "orgs/<int:pk>/wizard/create/",
+        OrganizationWizardCreateRedirectView.as_view(),
+        name="organization-wizard-create",
+    ),
 ]

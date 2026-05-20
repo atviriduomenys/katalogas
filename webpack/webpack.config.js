@@ -7,6 +7,7 @@ module.exports = {
   entry: {
     bundle: path.resolve(__dirname, './src/index.js'),
     jquery: path.resolve(__dirname, './src/jquery.js'),
+    wizard: path.resolve(__dirname, './src/wizard.js'),
   },
   output: {
     path: path.resolve(__dirname, '../static'),

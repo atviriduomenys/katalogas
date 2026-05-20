@@ -19,10 +19,12 @@ from vitrina.datasets.models import (
     DatasetRelation,
     Attribution,
     DatasetAttribution,
+    DatasetQualifiedRelation,
     Contact,
     DCATResourceSubclass,
     DatasetGroupCategoryUri,
 )
+from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 
 MANIFEST = """\
@@ -111,6 +113,14 @@ class DatasetFactory(DjangoModelFactory):
         return dataset
 
     @factory.post_generation
+    def information_system_publishers(self, create: bool, extracted: list[Organization], **kwargs) -> None:
+        if not create:
+            return
+        if extracted:
+            for publisher in extracted:
+                self.information_system_publishers.add(publisher)
+
+    @factory.post_generation
     def tags(self, create, extracted, **kwargs):
         if not create:
             return
@@ -161,6 +171,14 @@ class DatasetAttributionFactory(DjangoModelFactory):
     dataset = factory.SubFactory(DatasetFactory)
     attribution = factory.SubFactory(AttributionFactory)
     organization = factory.SubFactory(OrganizationFactory)
+
+
+class DatasetQualifiedRelationFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetQualifiedRelation
+
+    dataset = factory.SubFactory(DatasetFactory)
+    url = factory.Faker("url")
 
 
 class DatasetStructureFactory(DjangoModelFactory):

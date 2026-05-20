@@ -1,0 +1,37 @@
+{% load i18n crispy_forms_tags %}
+<form id="wizard-fragment-form"
+      method="post"
+      enctype="multipart/form-data"
+      novalidate
+      hx-post="{{ wizard_create_post_url }}"
+      hx-target="#wizard-main-pane"
+      hx-swap="innerHTML"
+      hx-headers='{"X-Wizard-Request": "true"}'>
+    {% csrf_token %}
+
+    <nav class="wizard-crumbs mb-4">
+        {% for crumb in breadcrumb_ancestors %}
+        <div class="is-flex is-align-items-flex-end" style="gap:.5rem;">
+            <div class="wizard-crumb">
+                <span class="wizard-crumb-label">{{ crumb.type_label }}</span>
+                <span class="wizard-crumb-title">{{ crumb.title }}</span>
+            </div>
+            <span class="wizard-crumb-sep">&rsaquo;</span>
+        </div>
+        {% endfor %}
+        <div class="wizard-crumb is-current">
+            <span class="wizard-crumb-label">{% translate "Pateiktis" %}</span>
+            <span class="wizard-crumb-title">{% translate "Nauja" %}</span>
+        </div>
+    </nav>
+
+    <div class="mb-4">
+        <p class="is-size-5 has-text-weight-semibold">{% translate "Nauja Pateiktis" %}</p>
+        <p class="has-text-grey is-size-7 mt-1">{% translate "Pildykite pateiktį" %}</p>
+    </div>
+
+    {% include "vitrina/dcat/_wizard_messages.html" %}
+    {% include "vitrina/dcat/_wizard_form_errors.html" %}
+
+    {% crispy form %}
+</form>

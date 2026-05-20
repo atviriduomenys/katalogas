@@ -1,14 +1,23 @@
+from typing import TYPE_CHECKING
+
+from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.contenttypes.models import ContentType
+from django.core.handlers.wsgi import WSGIRequest
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.datasets.models import Dataset, Attribution, DatasetAttribution
 from vitrina.helpers import get_current_domain, email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative
 from vitrina.tasks.models import Task
+
+if TYPE_CHECKING:
+    from vitrina.dcat.forms.dataset_forms import BaseResourceForm
 
 
 def create_tasks_and_notify_subscribers_about_dataset_creation(request: HttpRequest, dataset: Dataset) -> None:
@@ -110,7 +119,7 @@ def create_dataset_representative_and_attribution(dataset: Dataset) -> None:
     if not (attribution := Attribution.objects.filter(name=Attribution.CREATOR).first()):
         return
 
-    if not dataset.name or dataset.name.startswith(dataset.organization.name):
+    if not dataset.name or (dataset.organization.name and dataset.name.startswith(dataset.organization.name)):
         DatasetAttribution.objects.create(dataset=dataset, attribution=attribution, organization=dataset.organization)
     else:
         creator = Organization.objects.filter(
@@ -118,3 +127,26 @@ def create_dataset_representative_and_attribution(dataset: Dataset) -> None:
         ).first()
         if creator:
             DatasetAttribution.objects.create(dataset=dataset, attribution=attribution, organization=creator)
+
+
+@transaction.atomic
+def save_dataset_creator(request: WSGIRequest, dataset: Dataset, form: "BaseResourceForm") -> None:
+    if "creator" not in form.cleaned_data or "creator" not in form.changed_data:
+        return
+
+    try:
+        attribution = Attribution.objects.get(name=Attribution.CREATOR)
+    except Attribution.DoesNotExist:
+        messages.warning(
+            request,
+            _(
+                "Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
+                "Susisiekite su administratoriumi."
+            ).format(name=Attribution.CREATOR),
+        )
+        return
+
+    DatasetAttribution.objects.filter(dataset=dataset, attribution=attribution).delete()
+    if organization := form.cleaned_data["creator"]:
+        DatasetAttribution.objects.create(dataset=dataset, attribution=attribution, organization=organization)
+    dataset.save()

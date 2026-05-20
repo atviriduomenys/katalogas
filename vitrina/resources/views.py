@@ -21,6 +21,7 @@ from vitrina.plans.models import Plan
 from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.view_helpers import get_default_distribution_name
 from vitrina.structure.models import Version
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
@@ -110,27 +111,8 @@ class ResourceCreateView(
         resource.dataset = self.dataset
         resource.save()
 
-        name = form.cleaned_data.get("name")
-        if not name:
-            latest_name = (
-                DatasetDistribution.objects.filter(
-                    dataset=self.dataset,
-                    name__iregex=r"resource[0-9]+",
-                )
-                .order_by("name")
-                .values_list("name", flat=True)
-                .last()
-            )
-            if not latest_name:
-                name = "resource1"
-            else:
-                duplicate_name_suffix = latest_name.replace("resource", "")
-                try:
-                    duplicate_name_suffix = int(duplicate_name_suffix)
-                except ValueError:
-                    duplicate_name_suffix = 0
-                duplicate_name_suffix += 1
-                name = f"resource{duplicate_name_suffix}"
+        if not (name := form.cleaned_data.get("name")):
+            name = get_default_distribution_name(self.dataset)
         resource.name = name
 
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():

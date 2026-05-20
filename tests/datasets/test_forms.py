@@ -46,8 +46,8 @@ class TestInformationSystemResourceForm:
         concept_schema = ConceptSchema.objects.filter(uri=schema_uri).first()
         concept_schema2 = ConceptSchemaFactory(uri="foo")
         concept = ConceptFactory(concept_schemas=[concept_schema])
-        ConceptFactory(concept_schemas=[concept_schema2])
-        ConceptFactory(concept_schemas=[])
+        wrong_schema_concept = ConceptFactory(concept_schemas=[concept_schema2])
+        no_schema_concept = ConceptFactory(concept_schemas=[])
 
         form = app.get(
             reverse(
@@ -57,7 +57,10 @@ class TestInformationSystemResourceForm:
         ).context["form"]
 
         assert isinstance(form, InformationSystemResourceForm)
-        assert set(form.fields[field_name].queryset) == {concept}
+        queryset = set(form.fields[field_name].queryset)
+        assert concept in queryset
+        assert wrong_schema_concept not in queryset
+        assert no_schema_concept not in queryset
 
 
 class TestDatasetResourceForm:

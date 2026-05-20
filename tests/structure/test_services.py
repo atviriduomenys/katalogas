@@ -3248,3 +3248,114 @@ def test_generate_mermaid_model_click_links(app: DjangoTestApp):
         f"click `datasets/gov/ivpk/adp/Catalog` href "
         f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Catalog/"'
     ) in result
+
+
+@pytest.mark.django_db
+def test_generate_mermaid_with_base_chain_across_datasets(app: DjangoTestApp):
+    grandparent_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "40,datasets/gov/grand/dataset,,,,,,,,,,,,,,,,,\n"
+        "41,,,,GrandparentModel,,,id,,,,,,,,,,,\n"
+        "42,,,,,id,integer,,,,,,,,,,,,\n"
+    )
+    grandparent_structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=grandparent_manifest)),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["datasets/gov/grand/"]),
+        ),
+    )
+    grandparent_structure.dataset.current_structure = grandparent_structure
+    grandparent_structure.dataset.save()
+    grandparent_version = create_structure_objects(grandparent_structure)
+    grandparent_version.status = VersionStatus.STABLE
+    grandparent_version.save()
+
+    parent_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "30,datasets/gov/parent/dataset,,,,,,,,,,,,,,,,,\n"
+        "31,,,datasets/gov/grand/dataset/GrandparentModel,,,,,,,,,,,,,,,\n"
+        "32,,,,ParentModel,,,id,,,,,,,,,,,\n"
+        "33,,,,,id,integer,,,,,,,,,,,,\n"
+        ",,,/,,,,,,,,,,,,,,,\n"
+    )
+    parent_structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=parent_manifest)),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["datasets/gov/parent/"]),
+        ),
+    )
+    parent_structure.dataset.current_structure = parent_structure
+    parent_structure.dataset.save()
+    parent_version = create_structure_objects(parent_structure)
+    parent_version.status = VersionStatus.STABLE
+    parent_version.save()
+
+    main_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+        "2,,,datasets/gov/parent/dataset/ParentModel,,,,,,,,,,,,,,,\n"
+        "3,,,,ChildModel,,,id,,,,,,,,,,,\n"
+        "4,,,,,id,integer,,,,,,,,,,,,\n"
+        ",,,/,,,,,,,,,,,,,,,\n"
+    )
+    main_structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=main_manifest)),
+        dataset=DatasetFactory(
+            title="Main",
+            description="Root",
+            organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]),
+        ),
+    )
+    main_structure.dataset.current_structure = main_structure
+    main_structure.dataset.save()
+    main_version = create_structure_objects(main_structure)
+
+    mermaid = generate_mermaid_diagram(main_structure.dataset, main_version)
+
+    assert (
+        """
+classDiagram
+namespace `datasets/gov/grand/dataset` {
+class `datasets/gov/grand/dataset/GrandparentModel`["GrandparentModel"]:::Entity {
+«optional»
+id : integer [0..1]
+}
+}
+namespace `datasets/gov/parent/dataset` {
+class `datasets/gov/parent/dataset/ParentModel`["ParentModel"]:::Entity {
+«optional»
+id : integer [0..1]
+}
+}
+namespace `datasets/gov/main/dataset` {
+class `datasets/gov/main/dataset/ChildModel`["ChildModel"]:::Entity {
+«optional»
+id : integer [0..1]
+}
+}
+`datasets/gov/main/dataset/ChildModel` --|> `datasets/gov/parent/dataset/ParentModel`
+`datasets/gov/parent/dataset/ParentModel` --|> `datasets/gov/grand/dataset/GrandparentModel`
+"""
+        in mermaid
+    )
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
+    child_url = reverse(
+        "model-structure",
+        kwargs={"pk": main_structure.dataset.pk, "version_id": main_version.pk, "model": "ChildModel"},
+    )
+    parent_url = reverse(
+        "model-structure",
+        kwargs={"pk": parent_structure.dataset.pk, "version_id": parent_version.pk, "model": "ParentModel"},
+    )
+    grandparent_url = reverse(
+        "model-structure",
+        kwargs={
+            "pk": grandparent_structure.dataset.pk,
+            "version_id": grandparent_version.pk,
+            "model": "GrandparentModel",
+        },
+    )
+    assert f'click `datasets/gov/main/dataset/ChildModel` href "{base_url}{child_url}"' in mermaid
+    assert f'click `datasets/gov/parent/dataset/ParentModel` href "{base_url}{parent_url}"' in mermaid
+    assert f'click `datasets/gov/grand/dataset/GrandparentModel` href "{base_url}{grandparent_url}"' in mermaid

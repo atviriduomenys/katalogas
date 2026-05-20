@@ -27,6 +27,13 @@ https://github.com/atviriduomenys/katalogas/issues/2260
 
 - Fix SPINTA data_last_updated to use :changes/-1 and aggregate all dataset models
 
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2620
+
+ - Fixed an issue where base models were not exported as dependencies from another manifest, which also propagated to it not being displayed on UML diagarms.
+
+
 v 1.20.0 (2026-05-12)
 ==================
 

@@ -61,7 +61,7 @@ from vitrina.utils import RevisionComment, RevisionSource
 class BaseTestCreateManifest:
     def _create_manifest(
         self, manifest: str, title: str = "", description: str = "", whitelisted_names: list[str] | None = None
-    ):
+    ) -> Dataset:
         dataset = DatasetFactory(
             title=title,
             description=description,
@@ -7616,6 +7616,8 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Model Dataset,Dataset that defines base model.",
+            "2,,,,Animal,,,,,,,,,0,completed,public,,,,,",
             "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
             "2,,,datasets/gov/ivpk/example/Animal,,,,,,,,,,,,,,,,,",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
@@ -8150,6 +8152,125 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         lines = resp.text.split("\r\n")
         no_pk_model_line = [line for line in lines if "NoPkModel" in line][0]
         assert no_pk_model_line == "11,,,,NoPkModel,,,,,,,,,,develop,,,,,,"
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models__base_then_pk_ref(self, app: DjangoTestApp):
+        """Recursion must continue from a base hop: our model -> base in DS2 -> DS2 model
+        has a PK property referencing DS3 -> DS3 model is also exported as a dependency."""
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        leaf_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "30,datasets/gov/leaf/dataset,,,,,,,,,,,,,,,,,\n"
+            "31,,,,LeafModel,,,id,,,,,,,,,,,\n"
+            "32,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+        )
+        leaf_dataset = self._create_manifest(
+            leaf_manifest,
+            "Leaf Dataset",
+            "Reached transitively via base + PK ref",
+            whitelisted_names=["datasets/gov/leaf/"],
+        )
+        leaf_version = leaf_dataset.latest_version()
+        leaf_version.status = VersionStatus.STABLE
+        leaf_version.save()
+
+        base_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "20,datasets/gov/base/dataset,,,,,,,,,,,,,,,,,\n"
+            '21,,,,BaseModel,,,"id, leaf",,,,,,,,,,,\n'
+            "22,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+            "23,,,,,leaf,ref,/datasets/gov/leaf/dataset/LeafModel,,,5,,,open,dct:leaf,,,,\n"
+        )
+        base_dataset = self._create_manifest(
+            base_manifest,
+            "Base Dataset",
+            "Used as base by main dataset's model",
+            whitelisted_names=["datasets/gov/base/"],
+        )
+        base_version = base_dataset.latest_version()
+        base_version.status = VersionStatus.STABLE
+        base_version.save()
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,,datasets/gov/base/dataset/BaseModel,,,,,,,,,,,,,,,\n"
+            "3,,,,MainModel,,,id,,,,,,,,,,,\n"
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+            ",,,/,,,,,,,,,,,,,,,\n"
+        )
+        main_dataset = self._create_manifest(
+            main_manifest, "Main Dataset", "Root", whitelisted_names=["datasets/gov/main/"]
+        )
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+
+        assert "datasets/gov/base/dataset" in resp.text
+        assert "BaseModel" in resp.text
+        assert "datasets/gov/leaf/dataset" in resp.text
+        assert "LeafModel" in resp.text
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models__base_of_a_base(self, app: DjangoTestApp):
+        """Two base hops compose: our model -> base in DS2 -> that DS2 model has its own
+        base in DS3 -> DS3 model is exported as a transitive dependency."""
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        grandparent_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "40,datasets/gov/grand/dataset,,,,,,,,,,,,,,,,,\n"
+            "41,,,,GrandparentModel,,,id,,,,,,,,,,,\n"
+            "42,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+        )
+        grandparent_dataset = self._create_manifest(
+            grandparent_manifest,
+            "Grandparent Dataset",
+            "Base of the base; must still appear",
+            whitelisted_names=["datasets/gov/grand/"],
+        )
+        grandparent_version = grandparent_dataset.latest_version()
+        grandparent_version.status = VersionStatus.STABLE
+        grandparent_version.save()
+
+        parent_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "30,datasets/gov/parent/dataset,,,,,,,,,,,,,,,,,\n"
+            "31,,,datasets/gov/grand/dataset/GrandparentModel,,,,,,,,,,,,,,,\n"
+            "32,,,,ParentModel,,,id,,,,,,,,,,,\n"
+            "33,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+            ",,,/,,,,,,,,,,,,,,,\n"
+        )
+        parent_dataset = self._create_manifest(
+            parent_manifest,
+            "Parent Dataset",
+            "Used as base by main dataset's model",
+            whitelisted_names=["datasets/gov/parent/"],
+        )
+        parent_version = parent_dataset.latest_version()
+        parent_version.status = VersionStatus.STABLE
+        parent_version.save()
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,,datasets/gov/parent/dataset/ParentModel,,,,,,,,,,,,,,,\n"
+            "3,,,,ChildModel,,,id,,,,,,,,,,,\n"
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+            ",,,/,,,,,,,,,,,,,,,\n"
+        )
+        main_dataset = self._create_manifest(
+            main_manifest, "Main Dataset", "Root", whitelisted_names=["datasets/gov/main/"]
+        )
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+
+        assert "datasets/gov/parent/dataset" in resp.text
+        assert "ParentModel" in resp.text
+        assert "datasets/gov/grand/dataset" in resp.text
+        assert "GrandparentModel" in resp.text
 
 
 @pytest.mark.django_db

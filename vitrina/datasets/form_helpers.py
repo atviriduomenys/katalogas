@@ -1,7 +1,6 @@
 import re
 from typing import Any
 
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -19,9 +18,7 @@ from vitrina.uapi.models import Agent
 from vitrina.users.models import User
 
 
-DATA_SERVICE_STANDARD_URI = (
-    f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}/id/non-standard/DataServiceStandard"
-)
+DATA_SERVICE_STANDARD_URI = "https://data.gov.lt/id/non-standard/DataServiceStandard"
 UAPI_CONCEPT_CODE = "UAPI"
 JSON_FORMAT = "JSON"
 OPENAPI_FORMAT = "OpenAPI"

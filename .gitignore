@@ -31,6 +31,12 @@
 # Directories needed to run scripts
 /scripts/files_to_replace/
 /scripts/replaced_files/
+# oa
+.vscode/
+.kilo/
+.aider*
+GEMINI.md
+.coverage
 
 # pytest-profiling
 /prof/

@@ -31,8 +31,11 @@ Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2620
 
- - Fixed an issue where base models were not exported as dependencies from another manifest, which also propagated to it not being displayed on UML diagarms.
+ - Fixed an issue where base models were not exported as dependencies from another manifest, which also propagated to it not being displayed on UML diagrams.
 
+https://github.com/atviriduomenys/katalogas/issues/2607
+
+ - Fixed an issue where importing a structure with name errors deletes the draft version.
 
 v 1.20.0 (2026-05-12)
 ==================

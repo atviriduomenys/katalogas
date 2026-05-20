@@ -1,0 +1,55 @@
+{% load i18n %}
+{# Recursive wizard tree node partial. Expects `node` = dict from _build_wizard_tree. #}
+<li class="wizard-tree-node"
+    data-node-key="{{ node.key }}"
+    {% if node.children %}x-data="{ open: false }"{% endif %}>
+    <div class="wizard-tree-row is-flex is-align-items-center"
+         :class="selected && selected.key === '{{ node.key }}' && mode === 'detail' ? 'is-active' : ''"
+         {% if node.fragment_url %}
+         hx-get="{{ node.fragment_url }}"
+         hx-target="#wizard-main-pane"
+         hx-swap="innerHTML"
+         hx-headers='{"X-Wizard-Request": "true"}'
+         {% endif %}
+         @click.stop="select('{{ node.key }}'){% if node.children %}; open = !open{% endif %}">
+        {% if node.children %}
+            <span class="wizard-tree-caret has-text-grey">
+                <i class="fas fa-xs" :class="open ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+            </span>
+        {% else %}
+            <span class="wizard-tree-caret"></span>
+        {% endif %}
+        <span class="wizard-tree-label has-text-dark" title="{{ node.title }}">
+            {{ node.title }}
+        </span>
+        <div class="wizard-tree-actions is-flex is-align-items-center">
+            {% if node.children %}
+                <span class="wizard-tree-count"
+                      title="{% blocktranslate count counter=node.children|length %}{{ counter }} tiesioginis vaikas{% plural %}{{ counter }} tiesioginių vaikų{% endblocktranslate %}">
+                    {{ node.children|length }}
+                </span>
+            {% endif %}
+            {% if node.allowed_children %}
+                <button type="button"
+                        class="button is-small is-text wizard-tree-add"
+                        title="{% translate 'Pridėti naują elementą' %}"
+                        @click.stop="select('{{ node.key }}', 'create')">
+                    <span class="icon is-small"><i class="fas fa-plus"></i></span>
+                </button>
+            {% endif %}
+        </div>
+    </div>
+    {% if node.children %}
+        <ul class="wizard-tree-children" x-show="open" x-cloak>
+            {% regroup node.children by type as child_groups %}
+            {% for group in child_groups %}
+                <li class="wizard-tree-group" aria-hidden="true">
+                    {{ group.list.0.type_label_plural }}
+                </li>
+                {% for child in group.list %}
+                    {% include "vitrina/orgs/_wizard_tree_node.html" with node=child %}
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+</li>

@@ -74,14 +74,12 @@ def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -
 
 
 def get_name_prefixes(
-    name: str,
     organization: Organization | None,
     dataset_instance: Dataset | None = None,
-) -> tuple[str | None, str, list[str]]:
+) -> tuple[str, list[str]]:
     resolved_organization = organization or (dataset_instance.organization if dataset_instance else None)
     whitelisted = getattr(resolved_organization, "whitelisted_names", [])
     main_prefix = getattr(resolved_organization, "name", "")
-    allowed_prefixes = [main_prefix] + list(whitelisted)
 
     if resolved_organization:
         representatives = Representative.objects.filter(
@@ -95,17 +93,20 @@ def get_name_prefixes(
                 rep.content_type == dataset_ct
                 and rep.content_object.organization
                 and rep.content_object.organization.name
-                and rep.content_object.organization.name not in allowed_prefixes
+                and rep.content_object.organization.name not in whitelisted
             ):
-                allowed_prefixes.append(rep.content_object.organization.name)
                 whitelisted.append(rep.content_object.organization.name)
             elif (
                 rep.content_type == organization_ct
                 and rep.content_object.name
-                and rep.content_object.name not in allowed_prefixes
+                and rep.content_object.name not in whitelisted
             ):
-                allowed_prefixes.append(rep.content_object.name)
                 whitelisted.append(rep.content_object.name)
 
-    matched_prefix = next((prefix for prefix in allowed_prefixes if prefix and name.startswith(prefix)), None)
-    return matched_prefix, main_prefix, whitelisted
+    return main_prefix, whitelisted
+
+
+def match_name_prefix(name: str | None, all_prefixes: list[str]) -> str | None:
+    if not name:
+        return None
+    return next((prefix for prefix in all_prefixes if prefix and name.startswith(prefix)), None)

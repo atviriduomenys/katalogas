@@ -1,10 +1,14 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _, get_language
+from parler.managers import TranslatableManager
 
 from parler.models import TranslatableModel, TranslatedFields
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
+from vitrina.classifiers.managers import ConceptOrderedByLabelManager
 from vitrina.models import UUIDBaseModel
+
+LANGUAGE_CONCEPT_SCHEMA_URI = "http://publications.europa.eu/resource/authority/language"
 
 
 class Category(MP_Node):
@@ -75,6 +79,8 @@ class Licence(models.Model):
 
 
 class Frequency(models.Model):
+    CODE_UNKNOWN = "UNKNOWN"
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -241,6 +247,9 @@ class Concept(TranslatableModel, UUIDBaseModel):
         description=models.TextField(verbose_name=_("Aprašymas")),
     )
 
+    objects = TranslatableManager()
+    ordered_by_label_objects = ConceptOrderedByLabelManager()
+
     class Meta:
         verbose_name = _("Sąvoka")
         verbose_name_plural = _("Sąvokos")
@@ -263,3 +272,140 @@ class ApplicableLegislation(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.description or self.url
+
+
+class Rule(TranslatableModel, UUIDBaseModel):
+    RULE_TYPE_CONCEPT_SCHEMA_URI = "dcataplt:RuleType"
+
+    identifier = models.CharField(
+        max_length=255,
+        verbose_name=_("Identifikatorius"),
+        help_text=_(
+            "Naudojamas taisyklės identifikatorius. "
+            "Jei nenaudojamas - nurodomas skaičius, pvz. 1. Atitinka dct:identifier."
+        ),
+    )
+    rule_type = models.ManyToManyField(
+        Concept,
+        related_name="rules_by_type",
+        verbose_name=_("Tipas"),
+        blank=True,
+        help_text=_("Nurodo taisyklės tipą. Atitinka dct:type."),
+        limit_choices_to={"concept_schemas__uri": RULE_TYPE_CONCEPT_SCHEMA_URI},
+    )
+    implements = models.ManyToManyField(
+        ApplicableLegislation,
+        related_name="rules",
+        verbose_name=_("Įgyvendina"),
+        blank=True,
+        help_text=_("Nurodo teisės aktą, kurį įgyvendina taisyklė. Atitinka cpsv:implements."),
+    )
+    language = models.ManyToManyField(
+        Concept,
+        related_name="rules_by_language",
+        verbose_name=_("Kalba"),
+        blank=True,
+        help_text=_("Nurodo taisyklės kalbą. Atitinka dct:language."),
+        limit_choices_to={"concept_schemas__uri": LANGUAGE_CONCEPT_SCHEMA_URI},
+    )
+
+    translations = TranslatedFields(
+        title=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
+        description=models.TextField(verbose_name=_("Aprašymas")),
+    )
+
+    class Meta:
+        verbose_name = _("Taisyklė")
+        verbose_name_plural = _("Taisyklės")
+
+    def __str__(self) -> str:
+        return self.translated_label
+
+    @property
+    def translated_label(self) -> str:
+        return self.safe_translation_getter("title", language_code=self.get_current_language()) or self.identifier
+
+
+class ServiceQualityPage(UUIDBaseModel):
+    url = models.CharField(max_length=1024, blank=True, unique=True)
+
+    class Meta:
+        verbose_name = _("Paslaugos kokybės puslapis")
+        verbose_name_plural = _("Paslaugos kokybės puslapiai")
+
+    def __str__(self) -> str:
+        return self.url
+
+
+class ProvenanceStatement(UUIDBaseModel):
+    description = models.CharField(max_length=255, verbose_name=_("Pavadinimas"), blank=True)
+    url = models.URLField(max_length=255, verbose_name=_("Nuoroda"))
+
+    class Meta:
+        verbose_name = _("Kilmė")
+        verbose_name_plural = _("Kilmės")
+
+    def __str__(self) -> str:
+        return self.description or self.url
+
+
+class Activity(UUIDBaseModel):
+    title = models.CharField(max_length=255, verbose_name=_("Pavadinimas"))
+
+    class Meta:
+        verbose_name = _("Veikla")
+        verbose_name_plural = _("Veiklos")
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class FormFieldHelpText(TranslatableModel):
+    DCAT_INFORMATION_SYSTEM = "dcat_information_system"
+    DCAT_SERVICE = "dcat_service"
+    DCAT_DATASET = "dcat_dataset"
+    DCAT_DISTRIBUTION = "dcat_distribution"
+    DCAT_IS_RELATIONSHIPS = "dcat_is_relationships"
+    DCAT_SERVICE_RELATIONSHIPS = "dcat_service_relationships"
+    DCAT_DATASET_RELATIONSHIPS = "dcat_dataset_relationships"
+
+    FORM_NAME_CHOICES = [
+        (DCAT_INFORMATION_SYSTEM, _("DCAT: Informacinė sistema")),
+        (DCAT_SERVICE, _("DCAT: Paslauga")),
+        (DCAT_DATASET, _("DCAT: Duomenų rinkinys")),
+        (DCAT_DISTRIBUTION, _("DCAT: Pateiktis")),
+        (DCAT_IS_RELATIONSHIPS, _("DCAT: IS ryšiai")),
+        (DCAT_SERVICE_RELATIONSHIPS, _("DCAT: Paslaugos ryšiai")),
+        (DCAT_DATASET_RELATIONSHIPS, _("DCAT: Duomenų rinkinio ryšiai")),
+    ]
+
+    form_name = models.CharField(
+        max_length=255,
+        choices=FORM_NAME_CHOICES,
+        verbose_name=_("Formos pavadinimas"),
+    )
+    field_name = models.CharField(
+        max_length=255,
+        verbose_name=_("Lauko pavadinimas"),
+    )
+    translations = TranslatedFields(
+        help_text=models.TextField(
+            verbose_name=_("Pagalbinis tekstas"),
+            blank=True,
+        ),
+        extended_help_text=models.TextField(
+            verbose_name=_("Išplėstinis pagalbinis tekstas"),
+            help_text=_(
+                "Išplėstinis pagalbinis tekstas bus rodomas kaip iššokantis paspaudus 'i' ikonėlę, jei forma tai palaiko"
+            ),
+            blank=True,
+        ),
+    )
+
+    class Meta:
+        unique_together = [("form_name", "field_name")]
+        verbose_name = _("Formos lauko pagalbinis tekstas")
+        verbose_name_plural = _("Formų laukų pagalbiniai tekstai")
+
+    def __str__(self) -> str:
+        return f"{self.form_name} / {self.field_name}"

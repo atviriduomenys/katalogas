@@ -169,6 +169,8 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
+        self.fields["status"].required = True
+        self.fields["status"].empty_label = None
         self.fields["status"].queryset = (
             Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
             .distinct()

@@ -4,6 +4,11 @@ Changes
 v 1.22.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/pull/2640
+
+- Add single-page DCAT data-filling wizard ("Atidaryti formų valdymą") accessible from the Organisation detail page, replacing the previous multi-page navigation flow for building out an organisation's hierarchy.
+- Wizard includes: sidebar tree reflecting the live treebeard hierarchy; inline Organisation form; create/edit forms for Information Systems, Services, Datasets, and Distributions; relationship panels per node type; dynamic breadcrumbs derived from treebeard ancestors.
+
 <No Ticket>
 
 - Update ``django-allauth`` to 65.18.x. The new version reverses ``account_login`` (unguarded) while rendering the

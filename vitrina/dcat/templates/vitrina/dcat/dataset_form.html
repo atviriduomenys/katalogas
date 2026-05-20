@@ -1,0 +1,21 @@
+{% extends "base_form.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    {% include 'vitrina/datasets/resource_information.html' %}
+    <form method="post" id="dataset-form" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="columns">
+            <div class="column is-half">
+                {% crispy form %}
+            </div>
+            {% if relationship_form %}
+            <div class="column">
+                {% crispy relationship_form %}
+            </div>
+            {% endif %}
+        </div>
+        {% include 'vitrina/datasets/resource_form_buttons.html' %}
+    </form>
+{% endblock %}

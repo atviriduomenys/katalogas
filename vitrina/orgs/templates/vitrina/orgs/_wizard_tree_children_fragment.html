@@ -1,0 +1,18 @@
+{% load i18n %}
+{% if wizard_tree %}
+    {% regroup wizard_tree by type as root_groups %}
+    {% for group in root_groups %}
+        <li class="wizard-tree-group" aria-hidden="true">
+            {{ group.list.0.type_label_plural }}
+        </li>
+        {% for node in group.list %}
+            {% include "vitrina/orgs/_wizard_tree_node.html" with node=node %}
+        {% endfor %}
+    {% endfor %}
+{% else %}
+    <li>
+        <div class="has-text-grey is-size-7 ml-5 mt-2">
+            {% translate "Šioje organizacijoje dar nėra turinio." %}
+        </div>
+    </li>
+{% endif %}

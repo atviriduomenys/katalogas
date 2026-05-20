@@ -5,13 +5,13 @@ from crispy_forms.layout import Layout, Field
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from django.shortcuts import get_object_or_404
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm, TranslatedField
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Concept, LANGUAGE_CONCEPT_SCHEMA_URI
 from vitrina.datasets.form_helpers import (
-    validate_dataset_name,
     validate_urls,
     validate_identifier,
     get_contact_form_choices,
@@ -20,6 +20,7 @@ from vitrina.datasets.form_helpers import (
     DATA_SERVICE_STANDARD_URI,
     DATASET_STANDARD_URI,
 )
+from vitrina.datasets.helpers import match_name_prefix
 from vitrina.datasets.models import (
     Attribution,
     Dataset,
@@ -27,6 +28,7 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
+from vitrina.dcat.form_helpers import get_available_dcat_name_prefixes
 from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget, OrganizationSingleWidget
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
@@ -98,14 +100,26 @@ class ContactFormMixin(forms.Form):
 
 
 class BaseResourceForm(TranslatableModelForm):
+    name_prefix = forms.ChoiceField(
+        required=False,
+        widget=Select2Widget,
+        label=_("Kodinio pavadinimo prefiksas"),
+        help_text=_(
+            "Kodinio pavadinimo prefiksas, kuris naudojamas kartu su kodiniu pavadinimu sudaro pilną "
+            "ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas automatiškai pagal pasirinktą "
+            "tėvinį išteklių arba organizaciją."
+        ),
+    )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
         help_text=_("Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."),
         required=True,
         validators=[
             RegexValidator(
-                "([a-z]+\/?)+",
-                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių",
+                r"^([a-z]+\/?)+$",
+                message=_(
+                    "Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
+                ),
             )
         ],
     )
@@ -123,7 +137,7 @@ class BaseResourceForm(TranslatableModelForm):
         widget=forms.TextInput(),
     )
 
-    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -134,24 +148,78 @@ class BaseResourceForm(TranslatableModelForm):
         if self.language_code == "en":
             self.fields["description"].required = False
 
-        if parent_dataset_id:
-            self.fields["parent"].initial = parent_dataset_id
+        if url_parent:
+            self.fields["parent"].initial = url_parent.pk
         elif self.instance.pk:
             self.fields["parent"].initial = self.instance.get_parent()
             self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
 
-        if self.instance.pk and self.instance.name:
-            self.initial["name"] = self.instance.name
+        instance_name = self.instance.name if self.instance.pk else None
+        prefix_source_dataset = self._resolve_prefix_source_dataset(url_parent)
+        available_prefixes = get_available_dcat_name_prefixes(prefix_source_dataset, self.organization)
+        self._setup_name_prefix_field(available_prefixes, url_parent, instance_name)
+        self._setup_name_field(available_prefixes, instance_name)
 
-    def clean_name(self) -> str | None:
-        name = self.cleaned_data.get("name")
-        validate_dataset_name(
-            name=name,
-            dataset=self.instance,
-            organization=self.organization,
-        )
+    def _resolve_prefix_source_dataset(self, url_parent: Dataset | None) -> Dataset | None:
+        """Resolves what parent dataset to use when checking available prefixes"""
+        if self.data:
+            # If form data is being submitted - use value from "parent" field. Even if it's empty
+            if submitted_parent_id := self.data.get(self.add_prefix("parent")):
+                return get_object_or_404(Dataset, id=submitted_parent_id)
+            return None
+        if self.instance and self.instance.pk:
+            # If form has existing dataset instance - use instance parent
+            return self.instance.get_parent()
 
-        return name
+        # Otherwise use dataset parent given via URL. It may also be None
+        return url_parent
+
+    def _setup_name_prefix_field(
+        self, available_prefixes: list[str], url_parent: Dataset | None, instance_name: str | None
+    ) -> None:
+        self.fields["name_prefix"].choices = [(p, p) for p in available_prefixes]
+        if not available_prefixes:
+            return
+
+        initial_prefix = None
+        if instance_name:
+            initial_prefix = match_name_prefix(instance_name, available_prefixes)
+        elif url_parent and url_parent.name:
+            initial_prefix = match_name_prefix(url_parent.name, available_prefixes)
+
+        self.fields["name_prefix"].initial = initial_prefix or available_prefixes[0]
+
+    def _setup_name_field(self, available_prefixes: list[str], instance_name: str | None) -> None:
+        if instance_name and available_prefixes:
+            prefix = match_name_prefix(instance_name, available_prefixes)
+            suffix = instance_name[len(prefix) :] if prefix else instance_name
+            self.initial["name"] = suffix.strip("/")
+
+    def get_dataset_name(self) -> str:
+        return f"{self.cleaned_data['name_prefix'].removesuffix('/')}/{self.cleaned_data['name']}"
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+
+        available_name_prefixes = get_available_dcat_name_prefixes(cleaned_data.get("parent"), self.organization)
+        if not available_name_prefixes:
+            raise ValidationError(
+                _(
+                    "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
+                    "pavadinimą organizacijai ir bandykit iš naujo"
+                )
+            )
+
+        if (name_prefix := cleaned_data.get("name_prefix")) and name_prefix not in available_name_prefixes:
+            self.add_error(
+                "name_prefix",
+                _("Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}").format(
+                    prefixes=", ".join(available_name_prefixes)
+                ),
+            )
+            return cleaned_data
+
+        return cleaned_data
 
 
 class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResourceForm):
@@ -172,6 +240,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         model = Dataset
         fields = (
             "parent",
+            "name_prefix",
             "name",
             "information_system_importance",
             "information_system_type",
@@ -194,8 +263,8 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "languages": Select2MultipleWidget,
         }
 
-    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
-        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
 
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
@@ -229,12 +298,14 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
 
-    def clean(self) -> None:
-        rights_relation = self.cleaned_data.get("rights_relation")
-        conditions = self.cleaned_data.get("conditions")
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        rights_relation = cleaned_data.get("rights_relation")
+        conditions = cleaned_data.get("conditions")
         if rights_relation and conditions:
             self.add_error("conditions", _("Užpildykite tik vieną teisių deklaracijų lauką."))
             self.add_error("rights_relation", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+        return cleaned_data
 
     def clean_identifier(self) -> str:
         identifier = self.cleaned_data.get("identifier")
@@ -277,6 +348,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         model = Dataset
         fields = (
             "parent",
+            "name_prefix",
             "name",
             "title",
             "agent",  # Either "agent" or "endpoint_url" is required
@@ -308,8 +380,8 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "service_type": Select2MultipleWidget,
         }
 
-    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
-        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
 
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
@@ -388,6 +460,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         model = Dataset
         fields = (
             "parent",
+            "name_prefix",
             "name",
             "description",
             "title",
@@ -424,8 +497,8 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "was_generated_by": Select2MultipleWidget,
         }
 
-    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
-        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
 
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
@@ -452,6 +525,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
 
         self.helper.layout = Layout(
             Field("parent"),
+            Field("name_prefix"),
             Field("name"),
             Field("description"),
             Field("title"),
@@ -487,14 +561,16 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             raise ValidationError(_("Yra klaidų sąraše."))
         return [url for url in urls if url]
 
-    def clean(self) -> None:
-        start = self.cleaned_data.get("temporal_start")
-        end = self.cleaned_data.get("temporal_end")
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        start = cleaned_data.get("temporal_start")
+        end = cleaned_data.get("temporal_end")
         if start and end and start > end:
             self.add_error(
                 "temporal_start",
                 _("Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."),
             )
+        return cleaned_data
 
 
 class InformationSystemUpdateForm(InformationSystemResourceForm):
@@ -539,8 +615,8 @@ class InformationSystemUpdateForm(InformationSystemResourceForm):
         )
         widgets = InformationSystemResourceForm.Meta.widgets
 
-    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
-        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
         self.fields["identifier"].initial = self.instance.identifier or ""
         if self.instance.pk:
             self.initial["has_part"] = self.fields["has_part"].queryset.filter(
@@ -576,8 +652,8 @@ class ServiceUpdateForm(ServiceResourceForm):
         fields = ServiceResourceForm.Meta.fields + ("serves_datasets",)
         widgets = ServiceResourceForm.Meta.widgets
 
-    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
-        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
         if self.instance.pk:
             self.initial["serves_datasets"] = self.fields["serves_datasets"].queryset.filter(
                 related_datasets__relation__name=Relation.SERVICE,
@@ -599,8 +675,8 @@ class DatasetUpdateForm(DatasetResourceForm):
         fields = DatasetResourceForm.Meta.fields + ("qualified_attribution",)
         widgets = DatasetResourceForm.Meta.widgets
 
-    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
-        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
         self.initial["documentation"] = list(self.instance.documentation.values_list("documentation_link", flat=True))
         self.initial["qualified_relation"] = list(self.instance.qualified_relations.values_list("url", flat=True))
         if self.instance.pk:

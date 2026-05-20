@@ -31,33 +31,51 @@ from vitrina.dcat.forms.dataset_forms import (
     ServiceUpdateForm,
 )
 from vitrina.identifiers.models import Agency, Identifier
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, WhitelistedCodeNameFactory
 from vitrina.uapi.factories import AgentFactory
 
 pytestmark = pytest.mark.django_db
 
 
 class TestBaseResourceForm:
-    def test_parent_initial_value_set_when_parent_dataset_id_given(self):
+    def test_parent_initial_value_set_when_url_parent_given(self):
         organization = OrganizationFactory()
         parent_dataset = DatasetFactory()
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=parent_dataset.pk,
+            url_parent=parent_dataset,
         )
 
         assert form.fields["parent"].initial == parent_dataset.pk
 
-    def test_parent_initial_not_set_when_no_parent_dataset_id(self):
+    def test_parent_initial_not_set_when_no_url_parent(self):
         organization = OrganizationFactory()
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
         )
 
         assert form.fields["parent"].initial is None
+
+    def test_parent_initial_set_from_instance_parent_when_no_url_parent(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        parent_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
+        child_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
+
+        child_dataset.move(parent_dataset, "sorted-child")
+        child_dataset.refresh_from_db()
+        parent_dataset.refresh_from_db()
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=child_dataset,
+        )
+
+        assert form.fields["parent"].initial == parent_dataset
 
     def test_parent_queryset_excludes_instance(self):
         organization = OrganizationFactory()
@@ -67,7 +85,7 @@ class TestBaseResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -80,7 +98,7 @@ class TestBaseResourceForm:
         with translation_override("en"):
             form = InformationSystemResourceForm(
                 organization=organization,
-                parent_dataset_id=None,
+                url_parent=None,
             )
 
         assert form.fields["description"].required is False
@@ -91,7 +109,7 @@ class TestBaseResourceForm:
         with translation_override("lt"):
             form = InformationSystemResourceForm(
                 organization=organization,
-                parent_dataset_id=None,
+                url_parent=None,
             )
 
         assert form.fields["description"].required is True
@@ -101,13 +119,286 @@ class TestBaseResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={"name": f"{organization.name}ąčę"},
         )
 
         assert not form.is_valid()
         assert "name" in form.errors
-        assert "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės." in form.errors["name"]
+        assert (
+            "Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
+            in form.errors["name"]
+        )
+
+    def test_name_prefix_create_form_choices_initial_from_organization_and_whitelist(self):
+        organization = OrganizationFactory()
+        WhitelistedCodeNameFactory(organization=organization, code_name="test/path/")
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == [organization.name, "datasets/gov/ivpk/", "test/path/"]
+        assert form.fields["name_prefix"].initial == organization.name
+
+    def test_name_prefix_create_form_choices_initial_when_organization_has_no_name_but_has_whitelist(self):
+        organization = OrganizationFactory(name="")
+        WhitelistedCodeNameFactory(organization=organization, code_name="test/path/")
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == ["datasets/gov/ivpk/", "test/path/"]
+        assert form.fields["name_prefix"].initial == "datasets/gov/ivpk/"
+
+    def test_name_prefix_create_form_choices_initial_when_organization_has_no_name_nor_whitelist(self):
+        organization = OrganizationFactory(name="")
+        organization.whitelisted_code_names.all().delete()
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+        )
+
+        assert form.fields["name_prefix"].choices == []
+        assert form.fields["name_prefix"].initial is None
+
+    def test_name_prefix_create_form_choices_initial_with_url_parent_from_parent(self):
+        organization = OrganizationFactory()
+        parent_dataset = DatasetFactory(metadata=f"{organization.name}/myparent")
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=parent_dataset,
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == [parent_dataset.name]
+        assert form.fields["name_prefix"].initial == parent_dataset.name
+
+    def test_name_prefix_create_form_choices_initial_change_when_submitting_data_with_different_parent(self):
+        organization = OrganizationFactory(name="dataset")
+        url_parent = DatasetFactory(metadata=f"{organization.name}/urlparent")
+        different_parent = DatasetFactory(metadata=f"{organization.name}/otherparent")
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=url_parent,
+            data={"parent": different_parent.pk},
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == [different_parent.name]
+        assert form.fields["name_prefix"].initial == different_parent.name
+
+    def test_name_prefix_update_form_choices_initial_from_instance_parent(self):
+        organization = OrganizationFactory()
+        parent_dataset = DatasetFactory(metadata=f"{organization.name}/myparent")
+        child_dataset = DatasetFactory(
+            organization=organization,
+            metadata=f"{organization.name}/myparent/child",
+        )
+        child_dataset.move(parent_dataset, "sorted-child")
+        child_dataset.refresh_from_db()
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=child_dataset,
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == [parent_dataset.name]
+        assert form.fields["name_prefix"].initial == parent_dataset.name
+
+    def test_name_prefix_update_form_choices_initial_from_organization_and_whitelist_if_instance_parent_does_not_exist(
+        self,
+    ):
+        organization = OrganizationFactory()
+        WhitelistedCodeNameFactory(organization=organization, code_name="test/path/")
+        dataset = DatasetFactory(organization=organization)
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == [organization.name, "datasets/gov/ivpk/", "test/path/"]
+        assert form.fields["name_prefix"].initial == organization.name
+
+    def test_name_prefix_update_form_choices_initial_when_organization_has_no_name_but_has_whitelist(self):
+        organization = OrganizationFactory(name="")
+        WhitelistedCodeNameFactory(organization=organization, code_name="test/path/")
+        dataset = DatasetFactory(organization=organization)
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == ["datasets/gov/ivpk/", "test/path/"]
+        assert form.fields["name_prefix"].initial == "datasets/gov/ivpk/"
+
+    def test_name_prefix_update_form_choices_initial_when_organization_has_no_name_or_whitelist(self):
+        organization = OrganizationFactory(name="")
+        organization.whitelisted_code_names.all().delete()
+        dataset = DatasetFactory(organization=organization, metadata=False)
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert form.fields["name_prefix"].choices == []
+        assert form.fields["name_prefix"].initial is None
+
+    def test_name_prefix_update_form_choices_initial_change_when_submitting_data_with_different_parent(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization, metadata=f"{organization.name}/myservice")
+        different_parent = DatasetFactory(metadata=f"{organization.name}/otherparent")
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+            data={"parent": different_parent.pk},
+        )
+
+        choice_values = [value for value, _ in form.fields["name_prefix"].choices]
+        assert choice_values == [different_parent.name]
+        assert form.fields["name_prefix"].initial == different_parent.name
+
+    def test_name_prefix_initial_none_when_no_available_prefixes_exist(self):
+        organization = OrganizationFactory(name="")
+        organization.whitelisted_code_names.all().delete()
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+        )
+
+        assert form.fields["name_prefix"].initial is None
+
+    def test_create_form_raise_error_when_url_parent_that_has_no_metadata_name(self):
+        organization = OrganizationFactory(name="")
+        organization.whitelisted_code_names.all().delete()
+        url_parent = DatasetFactory(metadata=False)
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=url_parent,
+            data={"name": "myservice"},
+        )
+
+        error_msg = (
+            "Organizacija neturi nurodyto kodinio pavadinimo. "
+            "Priskirkite kodinį pavadinimą organizacijai ir bandykit iš naujo"
+        )
+        assert not form.is_valid()
+        assert error_msg in form.non_field_errors()
+
+    def test_update_form_raise_error_when_parent_has_no_metadata_name(self):
+        organization = OrganizationFactory(name="")
+        organization.whitelisted_code_names.all().delete()
+        dataset = DatasetFactory(organization=organization, metadata=False)
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+            data={"name": "myservice"},
+        )
+
+        error_msg = (
+            "Organizacija neturi nurodyto kodinio pavadinimo. "
+            "Priskirkite kodinį pavadinimą organizacijai ir bandykit iš naujo"
+        )
+        assert not form.is_valid()
+        assert error_msg in form.non_field_errors()
+
+    def test_do_not_show_initial_name_for_create_form(self):
+        organization = OrganizationFactory()
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+        )
+
+        assert "name" not in form.initial
+
+    def test_show_initial_name_without_prefix_for_update_form(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=organization,
+            metadata=f"{organization.name}/myservice",
+        )
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert form.initial["name"] == "myservice"
+
+    def test_show_initial_name_without_slashes_stripped_for_update_form(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=organization,
+            metadata=f"{organization.name}/myservice/",
+        )
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert form.initial["name"] == "myservice"
+
+    def test_get_dataset_name_joins_prefix_and_name(self):
+        organization = OrganizationFactory()
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
+        form.cleaned_data = {"name_prefix": "gov", "name": "myservice"}
+
+        assert form.get_dataset_name() == "gov/myservice"
+
+    def test_get_dataset_name_separates_prefix_and_name_with_single_slash(self):
+        organization = OrganizationFactory()
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
+        form.cleaned_data = {"name_prefix": "gov/", "name": "myservice"}
+
+        assert form.get_dataset_name() == "gov/myservice"
+
+    def test_name_prefix_not_in_available_prefixes_raises_error(self):
+        organization = OrganizationFactory()
+        parent = DatasetFactory(metadata=f"{organization.name}/myparent")
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            data={
+                "parent": parent.pk,
+                "name_prefix": organization.name,
+                "name": "myservice",
+            },
+        )
+
+        assert not form.is_valid()
+        assert "name_prefix" in form.errors
+        assert form.errors["name_prefix"] == [
+            f"Nurodykite tinkamą reikšmę. {organization.name} nėra galimas pasirinkimas."
+        ]
 
 
 class TestInformationSystemResourceForm:
@@ -116,7 +407,7 @@ class TestInformationSystemResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         matching_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
 
-        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
 
         assert matching_dataset in form.fields["parent"].queryset
 
@@ -126,7 +417,7 @@ class TestInformationSystemResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         other_org_dataset = DatasetFactory(organization=other_organization, subclass=subclass, is_public=False)
 
-        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
 
         assert other_org_dataset not in form.fields["parent"].queryset
 
@@ -135,7 +426,7 @@ class TestInformationSystemResourceForm:
         service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         service_dataset = DatasetFactory(organization=organization, subclass=service_subclass, is_public=False)
 
-        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
 
         assert service_dataset not in form.fields["parent"].queryset
 
@@ -144,7 +435,7 @@ class TestInformationSystemResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         public_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=True)
 
-        form = InformationSystemResourceForm(organization=organization, parent_dataset_id=None)
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
 
         assert public_dataset not in form.fields["parent"].queryset
 
@@ -153,7 +444,7 @@ class TestInformationSystemResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "rights_relation": "https://example.com",
                 "conditions": "Some conditions",
@@ -173,7 +464,7 @@ class TestInformationSystemResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test IS",
                 "description": "Test description",
@@ -196,7 +487,7 @@ class TestInformationSystemResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test IS",
                 "description": "Test description",
@@ -216,7 +507,7 @@ class TestInformationSystemResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={"applicable_legislation": ["not-a-url"]},
         )
 
@@ -230,7 +521,7 @@ class TestInformationSystemResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test IS",
                 "description": "Test description",
@@ -252,7 +543,7 @@ class TestInformationSystemResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
         )
 
         assert language_concept in form.fields["languages"].queryset
@@ -265,7 +556,7 @@ class TestInformationSystemResourceForm:
 
         form = InformationSystemResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test IS",
                 "description": "Test description",
@@ -286,7 +577,7 @@ class TestServiceResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         matching_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
 
-        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+        form = ServiceResourceForm(organization=organization, url_parent=None)
 
         assert matching_dataset in form.fields["parent"].queryset
 
@@ -296,7 +587,7 @@ class TestServiceResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         other_org_dataset = DatasetFactory(organization=other_organization, subclass=subclass, is_public=False)
 
-        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+        form = ServiceResourceForm(organization=organization, url_parent=None)
 
         assert other_org_dataset not in form.fields["parent"].queryset
 
@@ -305,7 +596,7 @@ class TestServiceResourceForm:
         service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         service_dataset = DatasetFactory(organization=organization, subclass=service_subclass, is_public=False)
 
-        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+        form = ServiceResourceForm(organization=organization, url_parent=None)
 
         assert service_dataset not in form.fields["parent"].queryset
 
@@ -314,7 +605,7 @@ class TestServiceResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         public_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=True)
 
-        form = ServiceResourceForm(organization=organization, parent_dataset_id=None)
+        form = ServiceResourceForm(organization=organization, url_parent=None)
 
         assert public_dataset not in form.fields["parent"].queryset
 
@@ -324,7 +615,7 @@ class TestServiceResourceForm:
 
         form = ServiceResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Service",
                 "name": "testservice",
@@ -346,7 +637,7 @@ class TestServiceResourceForm:
 
         form = ServiceResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Service",
                 "name": "testservice",
@@ -367,7 +658,7 @@ class TestServiceResourceForm:
 
         form = ServiceResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Service",
                 "name": "testservice",
@@ -390,7 +681,7 @@ class TestServiceResourceForm:
 
         form = ServiceResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Service",
                 "name": "testservice",
@@ -412,7 +703,7 @@ class TestServiceResourceForm:
 
         form = ServiceResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Service",
                 "name": "testservice",
@@ -434,7 +725,7 @@ class TestServiceResourceForm:
 
         form = ServiceResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Service",
                 "name": "testservice",
@@ -475,7 +766,7 @@ class TestDatasetResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         matching_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=False)
 
-        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+        form = DatasetResourceForm(organization=organization, url_parent=None)
 
         assert matching_dataset in form.fields["parent"].queryset
 
@@ -485,7 +776,7 @@ class TestDatasetResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         other_org_dataset = DatasetFactory(organization=other_organization, subclass=subclass, is_public=False)
 
-        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+        form = DatasetResourceForm(organization=organization, url_parent=None)
 
         assert other_org_dataset not in form.fields["parent"].queryset
 
@@ -494,7 +785,7 @@ class TestDatasetResourceForm:
         is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         is_dataset = DatasetFactory(organization=organization, subclass=is_subclass, is_public=False)
 
-        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+        form = DatasetResourceForm(organization=organization, url_parent=None)
 
         assert is_dataset not in form.fields["parent"].queryset
 
@@ -503,7 +794,7 @@ class TestDatasetResourceForm:
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         public_dataset = DatasetFactory(organization=organization, subclass=subclass, is_public=True)
 
-        form = DatasetResourceForm(organization=organization, parent_dataset_id=None)
+        form = DatasetResourceForm(organization=organization, url_parent=None)
 
         assert public_dataset not in form.fields["parent"].queryset
 
@@ -512,7 +803,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "temporal_start": "2025-08-20",
                 "temporal_end": "2025-08-10",
@@ -528,7 +819,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "temporal_start": "2025-01-01",
                 "temporal_end": "2025-12-31",
@@ -543,7 +834,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={"qualified_relation": ["not-a-url"]},
         )
 
@@ -555,7 +846,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
         )
 
         assert "documentation" not in form.initial
@@ -568,7 +859,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
         )
 
         assert matching_concept in form.fields["conforms_to"].queryset
@@ -582,7 +873,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
         )
 
         assert language_concept in form.fields["languages"].queryset
@@ -596,7 +887,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
         )
 
         assert matching_concept in form.fields["dataset_type"].queryset
@@ -623,7 +914,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "temporal_start": "2025-01-01",
                 "temporal_end": "2025-12-31",
@@ -660,7 +951,7 @@ class TestInformationSystemUpdateForm:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -673,7 +964,7 @@ class TestInformationSystemUpdateForm:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -689,7 +980,7 @@ class TestInformationSystemUpdateForm:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -705,7 +996,7 @@ class TestInformationSystemUpdateForm:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -722,7 +1013,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -737,7 +1028,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -752,7 +1043,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -767,7 +1058,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -782,7 +1073,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -798,7 +1089,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -810,7 +1101,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -824,7 +1115,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -839,7 +1130,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -854,7 +1145,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -871,7 +1162,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -883,7 +1174,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -898,7 +1189,7 @@ class TestDatasetUpdateForm:
 
         form = DatasetUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -917,7 +1208,7 @@ class TestServiceUpdateForm:
 
         form = ServiceUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=service,
         )
 
@@ -932,7 +1223,7 @@ class TestServiceUpdateForm:
 
         form = ServiceUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=service,
         )
 
@@ -945,7 +1236,7 @@ class TestServiceUpdateForm:
 
         form = ServiceUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=service,
         )
 
@@ -964,7 +1255,7 @@ class TestInformationSystemUpdate:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -977,7 +1268,7 @@ class TestInformationSystemUpdate:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -993,7 +1284,7 @@ class TestInformationSystemUpdate:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -1006,7 +1297,7 @@ class TestInformationSystemUpdate:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -1022,7 +1313,7 @@ class TestInformationSystemUpdate:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 
@@ -1035,7 +1326,7 @@ class TestInformationSystemUpdate:
 
         form = InformationSystemUpdateForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             instance=dataset,
         )
 

@@ -186,7 +186,7 @@ class TestDcatDatasetCreateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Test Redirect"
         form["description"] = "Test redirect description"
-        form["name"] = f"{org.name}testredirect"
+        form["name"] = "testredirect"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
@@ -227,7 +227,7 @@ class TestDcatDatasetCreateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "IS All Fields"
         form["description"] = "IS description"
-        form["name"] = f"{org.name}isallfields"
+        form["name"] = "isallfields"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publishers"] = [str(publisher_org.pk)]
@@ -283,7 +283,7 @@ class TestDcatDatasetCreateView:
         )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Service All Fields"
-        form["name"] = f"{org.name}serviceallfields"
+        form["name"] = "serviceallfields"
         form["tags"] = "svcTag"
         form["organization"].force_value(str(org.pk))
         form["contact"] = contact.pk
@@ -343,7 +343,7 @@ class TestDcatDatasetCreateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Dataset All Fields"
         form["description"] = "Dataset description"
-        form["name"] = f"{org.name}datasetallfields"
+        form["name"] = "datasetallfields"
         form["access_rights"] = Dataset.RESTRICTED
         form["frequency"] = frequency.pk
         form["landing_page"] = "https://example.com/dataset"
@@ -416,7 +416,7 @@ class TestDcatDatasetCreateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Child Dataset"
         form["description"] = "Child description"
-        form["name"] = f"{org.name}child"
+        form["name"] = "child"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
@@ -447,7 +447,7 @@ class TestDcatDatasetCreateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Test Dataset"
         form["description"] = "Dataset description"
-        form["name"] = f"{org.name}dataset"
+        form["name"] = "dataset"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
@@ -779,7 +779,7 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Redirect Test"
         form["description"] = "Redirect description"
-        form["name"] = f"{org.name}redirect"
+        form["name"] = "redirect"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
@@ -899,7 +899,7 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Updated IS Title"
         form["description"] = "Updated IS description"
-        form["name"] = f"{org.name}updateis"
+        form["name"] = "updateis"
         form["information_system_importance"] = new_importance.pk
         form["information_system_type"] = new_is_type.pk
         form["information_system_publishers"] = [str(publisher_org.pk)]
@@ -962,7 +962,7 @@ class TestDcatDatasetUpdateView:
         )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Updated Service Title"
-        form["name"] = f"{org.name}updatesvc"
+        form["name"] = "updatesvc"
         form["tags"] = "updatedSvcTag"
         form["contact"] = contact.pk
         form["endpoint_url"] = "https://api.updated.com"
@@ -1020,7 +1020,7 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Updated Dataset Title"
         form["description"] = "Updated dataset description"
-        form["name"] = f"{org.name}updateds"
+        form["name"] = "updateds"
         form["access_rights"] = Dataset.RESTRICTED
         form["frequency"] = frequency.pk
         form["landing_page"] = "https://example.com/updated-ds"
@@ -1102,7 +1102,7 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "New Title"
         form["description"] = "New description"
-        form["name"] = f"{org.name}newname"
+        form["name"] = "newname"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
@@ -1136,7 +1136,8 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "IS Title"
         form["description"] = "IS description"
-        form["name"] = f"{org.name}updateis"
+        form["name_prefix"].force_value(f"{parent.name}")
+        form["name"] = "updateis"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
@@ -1169,7 +1170,8 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "IS Title"
         form["description"] = "IS description"
-        form["name"] = f"{org.name}updateis"
+        form["name_prefix"].force_value(f"{org.name}")
+        form["name"] = "updateis"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
@@ -1202,7 +1204,7 @@ class TestDcatDatasetUpdateView:
         )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Service Title"
-        form["name"] = f"{org.name}updatesvc"
+        form["name"] = "updatesvc"
         form["tags"] = "svcTag"
         form["contact"] = contact.pk
         form["endpoint_url"] = "https://api.new.com"
@@ -1233,7 +1235,7 @@ class TestDcatDatasetUpdateView:
         )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Service Title"
-        form["name"] = f"{org.name}updatesvc"
+        form["name"] = "updatesvc"
         form["tags"] = "svcTag"
         form["contact"] = contact.pk
         form["endpoint_url"] = "https://api.new.com"
@@ -1264,7 +1266,7 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "IS Title"
         form["description"] = "IS description"
-        form["name"] = f"{org.name}updateis"
+        form["name"] = "updateis"
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk

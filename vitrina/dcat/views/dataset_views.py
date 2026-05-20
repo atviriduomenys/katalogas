@@ -229,7 +229,7 @@ class DcatDatasetCreateView(
                 "dcat-dataset-update",
                 kwargs={
                     "dataset_id": self.object.pk,
-                    "organization_id": self.organization.pk,
+                    "organization_id": self.object.organization_id,
                 },
             )
         )
@@ -421,7 +421,7 @@ class DcatDatasetUpdateView(
                 "dcat-dataset-update",
                 kwargs={
                     "dataset_id": self.object.pk,
-                    "organization_id": self.organization.pk,
+                    "organization_id": self.object.organization_id,
                 },
             )
         )

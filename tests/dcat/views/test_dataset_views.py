@@ -473,7 +473,7 @@ class TestDcatDatasetCreateView:
         )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Service Redirect Test"
-        form["name"] = f"{url_org.name}svcredirect"
+        form["name"] = "redirect"
         form["tags"] = "tag1"
         form["organization"].force_value(str(form_org.pk))
         form["endpoint_url"] = "https://api.example.com"
@@ -504,7 +504,7 @@ class TestDcatDatasetCreateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Dataset Redirect Test"
         form["description"] = "Test description"
-        form["name"] = f"{url_org.name}dsredirect"
+        form["name"] = "redirect"
         form["organization"].force_value(str(form_org.pk))
         form["frequency"] = frequency.pk
         form["version_notes"] = "v1"
@@ -816,7 +816,7 @@ class TestDcatDatasetUpdateView:
         )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Service Update Redirect"
-        form["name"] = f"{org.name}svcupdredir"
+        form["name"] = "redrect"
         form["tags"] = "tag1"
         form["organization"].force_value(str(new_org.pk))
         response = form.submit()
@@ -843,7 +843,7 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Dataset Update Redirect"
         form["description"] = "Dataset description"
-        form["name"] = f"{org.name}dsupdredir"
+        form["name"] = "redirect"
         form["organization"].force_value(str(new_org.pk))
         form["version_notes"] = "v1"
         response = form.submit()

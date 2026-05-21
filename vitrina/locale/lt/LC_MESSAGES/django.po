@@ -1941,7 +1941,7 @@ msgid "Kodinio pavadinimo prefiksas"
 msgstr ""
 
 msgid ""
-"Kodinio pavadinimo prefiksas, kuris naudojamas kartu su kodiniu pavadinimu "
+"Kodinio pavadinimo prefiksas, kuris kartu su kodiniu pavadinimu "
 "sudaro pilną ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas "
 "automatiškai pagal pasirinktą tėvinį išteklių arba organizaciją."
 msgstr ""
@@ -1953,7 +1953,7 @@ msgstr ""
 
 msgid ""
 "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
-"pavadinimą organizacijai ir bandykit iš naujo"
+"pavadinimą organizacijai ir bandykite iš naujo"
 msgstr ""
 
 #, python-brace-format

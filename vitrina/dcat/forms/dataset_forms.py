@@ -105,7 +105,7 @@ class BaseResourceForm(TranslatableModelForm):
         widget=Select2Widget,
         label=_("Kodinio pavadinimo prefiksas"),
         help_text=_(
-            "Kodinio pavadinimo prefiksas, kuris naudojamas kartu su kodiniu pavadinimu sudaro pilną "
+            "Kodinio pavadinimo prefiksas, kuris kartu su kodiniu pavadinimu sudaro pilną "
             "ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas automatiškai pagal pasirinktą "
             "tėvinį išteklių arba organizaciją."
         ),
@@ -206,7 +206,7 @@ class BaseResourceForm(TranslatableModelForm):
             raise ValidationError(
                 _(
                     "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
-                    "pavadinimą organizacijai ir bandykit iš naujo"
+                    "pavadinimą organizacijai ir bandykite iš naujo"
                 )
             )
 

@@ -11,7 +11,11 @@ from vitrina.datasets.factories import (
     RelationFactory,
 )
 from vitrina.datasets.models import Attribution, DatasetAttribution, DatasetQualifiedRelation, DatasetRelation, Relation
-from vitrina.dcat.view_helpers import save_dataset_attribution, save_dataset_qualified_relations, save_dataset_relations
+from vitrina.dcat.view_helpers import (
+    save_dataset_attribution,
+    save_dataset_qualified_relations,
+    save_dataset_relations,
+)
 from vitrina.orgs.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db

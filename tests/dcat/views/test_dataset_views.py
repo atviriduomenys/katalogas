@@ -21,6 +21,7 @@ from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
 from vitrina.datasets.factories import (
     AttributionFactory,
     ContactFactory,
+    DatasetAttributionFactory,
     DatasetFactory,
     DCATResourceSubclassFactory,
     RelationFactory,
@@ -189,8 +190,8 @@ class TestDcatDatasetCreateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         response = form.submit()
 
@@ -229,8 +230,8 @@ class TestDcatDatasetCreateView:
         form["name"] = f"{org.name}isallfields"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = publisher_org.pk
-        form["information_system_creator"] = creator_org.pk
+        form["information_system_publishers"] = [str(publisher_org.pk)]
+        form["creator"].force_value(str(creator_org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form["landing_page"] = "https://example.com/landing"
         form["conditions"] = "Some conditions text"
@@ -254,8 +255,10 @@ class TestDcatDatasetCreateView:
         assert dataset.description == "IS description"
         assert dataset.information_system_importance == importance
         assert dataset.information_system_type == is_type
-        assert dataset.information_system_publisher == publisher_org
-        assert dataset.information_system_creator == creator_org
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution__name=Attribution.CREATOR, organization=creator_org
+        ).exists()
         assert dataset.information_system_assessment_url == "https://example.com/assessment"
         assert dataset.landing_page == "https://example.com/landing"
         assert dataset.conditions == "Some conditions text"
@@ -282,6 +285,7 @@ class TestDcatDatasetCreateView:
         form["title"] = "Service All Fields"
         form["name"] = f"{org.name}serviceallfields"
         form["tags"] = "svcTag"
+        form["organization"].force_value(str(org.pk))
         form["contact"] = contact.pk
         form["endpoint_url"] = "https://api.example.com"
         form["endpoint_description"] = "https://api.example.com/spec"
@@ -296,13 +300,13 @@ class TestDcatDatasetCreateView:
         assert dataset is not None
 
         # Automatically set fields
-        assert dataset.organization == org
         assert dataset.subclass == subclass
         assert dataset.is_public is False
         assert dataset.service is True
         assert dataset.catalog == Catalog.objects.get(identifier=Catalog.IDENTIFIER_ISRIS)
 
         # Form set fields
+        assert dataset.organization == org
         assert dataset.title == "Service All Fields"
         assert dataset.endpoint_url == "https://api.example.com"
         assert dataset.endpoint_description == "https://api.example.com/spec"
@@ -327,6 +331,8 @@ class TestDcatDatasetCreateView:
         dataset_type_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.DATASET_TYPE_SCHEME_URI)
         dataset_type = ConceptFactory(concept_schemas=[dataset_type_schema])
         activity = ActivityFactory()
+        creator_attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        creator_org = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -347,6 +353,7 @@ class TestDcatDatasetCreateView:
         form["temporal_resolution"] = "P1D"
         form["contact"] = contact.pk
         form["tags"] = "dataTag"
+        form["organization"].force_value(str(org.pk))
         form["conforms_to"] = conforms_to_concept.pk
         form["languages"] = [str(language.pk)]
         form["provenance"] = [str(provenance.pk)]
@@ -354,18 +361,19 @@ class TestDcatDatasetCreateView:
         form["was_generated_by"] = [str(activity.pk)]
         form["qualified_relation"] = "https://example.com/relation"
         form["version_notes"] = "Initial version"
+        form["creator"].force_value(str(creator_org.pk))
         form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Dataset All Fields").first()
         assert dataset is not None
 
         # Automatically set fields
-        assert dataset.organization == org
         assert dataset.subclass == subclass
         assert dataset.is_public is False
         assert dataset.catalog == Catalog.objects.get(identifier=Catalog.IDENTIFIER_ISRIS)
 
         # Form set fields
+        assert dataset.organization == org
         assert dataset.title == "Dataset All Fields"
         assert dataset.description == "Dataset description"
         assert dataset.access_rights == Dataset.RESTRICTED
@@ -385,6 +393,9 @@ class TestDcatDatasetCreateView:
         assert Metadata.objects.get(dataset=dataset).name == f"{org.name}datasetallfields"
         assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/relation").exists()
         assert dataset.version_notes == "Initial version"
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution=creator_attribution, organization=creator_org
+        ).exists()
 
     def test_post_saves_dataset_with_parent(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -409,8 +420,8 @@ class TestDcatDatasetCreateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 
@@ -440,14 +451,73 @@ class TestDcatDatasetCreateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Test Dataset").first()
         assert dataset is not None
         assert dataset.get_parent() is None
+
+    def test_post_service_redirects_to_instance_organization(self, app: DjangoTestApp):
+        url_org = OrganizationFactory()
+        form_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create",
+            kwargs={"organization_id": url_org.pk, "subclass_uuid": subclass.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Service Redirect Test"
+        form["name"] = f"{url_org.name}svcredirect"
+        form["tags"] = "tag1"
+        form["organization"].force_value(str(form_org.pk))
+        form["endpoint_url"] = "https://api.example.com"
+        form["endpoint_description"] = "https://api.example.com/spec"
+        response = form.submit()
+
+        dataset = Dataset.objects.filter(translations__title="Service Redirect Test").first()
+        assert dataset is not None
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": form_org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
+
+    def test_post_dataset_redirects_to_instance_organization(self, app: DjangoTestApp):
+        url_org = OrganizationFactory()
+        form_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        frequency = FrequencyFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create",
+            kwargs={"organization_id": url_org.pk, "subclass_uuid": subclass.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Dataset Redirect Test"
+        form["description"] = "Test description"
+        form["name"] = f"{url_org.name}dsredirect"
+        form["organization"].force_value(str(form_org.pk))
+        form["frequency"] = frequency.pk
+        form["version_notes"] = "v1"
+        response = form.submit()
+
+        dataset = Dataset.objects.filter(translations__title="Dataset Redirect Test").first()
+        assert dataset is not None
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": form_org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
 
 
 class TestDcatDatasetUpdateView:
@@ -713,8 +783,8 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         response = form.submit()
 
@@ -722,6 +792,66 @@ class TestDcatDatasetUpdateView:
         expected_url = reverse(
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
+
+    def test_post_service_redirects_to_instance_organization(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        new_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=subclass,
+            is_public=False,
+            service=True,
+            endpoint_url="https://api.example.com",
+            endpoint_description="https://api.example.com/spec",
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Service Update Redirect"
+        form["name"] = f"{org.name}svcupdredir"
+        form["tags"] = "tag1"
+        form["organization"].force_value(str(new_org.pk))
+        response = form.submit()
+
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": new_org.pk, "dataset_id": dataset.pk},
+        )
+        assert response.location == expected_url
+
+    def test_post_dataset_redirects_to_instance_organization(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        new_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Dataset Update Redirect"
+        form["description"] = "Dataset description"
+        form["name"] = f"{org.name}dsupdredir"
+        form["organization"].force_value(str(new_org.pk))
+        form["version_notes"] = "v1"
+        response = form.submit()
+
+        assert response.status_code == 302
+        expected_url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": new_org.pk, "dataset_id": dataset.pk},
         )
         assert response.location == expected_url
 
@@ -744,8 +874,12 @@ class TestDcatDatasetUpdateView:
             is_public=False,
             information_system_importance=old_importance,
             information_system_type=old_is_type,
-            information_system_publisher=org,
-            information_system_creator=org,
+            information_system_publishers=[org],
+        )
+        DatasetAttributionFactory(
+            dataset=dataset,
+            attribution=Attribution.objects.get(name=Attribution.CREATOR),
+            organization=org,
         )
         agency = Agency.objects.get(code=Agency.RISR_CODE)
         IdentifierFactory(resource=dataset, scheme_agency=agency, notation="1111")
@@ -768,8 +902,8 @@ class TestDcatDatasetUpdateView:
         form["name"] = f"{org.name}updateis"
         form["information_system_importance"] = new_importance.pk
         form["information_system_type"] = new_is_type.pk
-        form["information_system_publisher"] = publisher_org.pk
-        form["information_system_creator"] = creator_org.pk
+        form["information_system_publishers"] = [str(publisher_org.pk)]
+        form["creator"].force_value(str(creator_org.pk))
         form["information_system_assessment_url"] = "https://example.com/updated-assessment"
         form["landing_page"] = "https://example.com/updated"
         form["conditions"] = "Updated conditions"
@@ -789,8 +923,10 @@ class TestDcatDatasetUpdateView:
         assert dataset.description == "Updated IS description"
         assert dataset.information_system_importance == new_importance
         assert dataset.information_system_type == new_is_type
-        assert dataset.information_system_publisher == publisher_org
-        assert dataset.information_system_creator == creator_org
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution__name=Attribution.CREATOR, organization=creator_org
+        ).exists()
         assert dataset.information_system_assessment_url == "https://example.com/updated-assessment"
         assert dataset.landing_page == "https://example.com/updated"
         assert dataset.conditions == "Updated conditions"
@@ -872,6 +1008,8 @@ class TestDcatDatasetUpdateView:
         dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
         contributor = AttributionFactory(name=Attribution.CONTRIBUTOR)
         attribution_org = OrganizationFactory()
+        creator_attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        creator_org = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -902,6 +1040,7 @@ class TestDcatDatasetUpdateView:
         form["qualified_attribution"].force_value([str(attribution_org.pk)])
         form["qualified_relation"] = "https://example.com/relation"
         form["version_notes"] = "Updated version notes"
+        form["creator"].force_value(str(creator_org.pk))
         with patch("vitrina.datasets.models.update_applicable_legislation_description"):
             form.submit()
 
@@ -929,6 +1068,9 @@ class TestDcatDatasetUpdateView:
         ).exists()
         assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/relation").exists()
         assert dataset.version_notes == "Updated version notes"
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution=creator_attribution, organization=creator_org
+        ).exists()
 
     def test_post_updates_metadata_title_and_name(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -943,8 +1085,12 @@ class TestDcatDatasetUpdateView:
             is_public=False,
             information_system_importance=importance,
             information_system_type=is_type,
-            information_system_publisher=org,
-            information_system_creator=org,
+            information_system_publishers=[org],
+        )
+        DatasetAttributionFactory(
+            dataset=dataset,
+            attribution=Attribution.objects.get(name=Attribution.CREATOR),
+            organization=org,
         )
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -960,8 +1106,8 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 
@@ -994,8 +1140,8 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form["parent"] = parent.pk
         form.submit()
@@ -1027,8 +1173,8 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form["parent"].force_value("")
         form.submit()
@@ -1122,8 +1268,8 @@ class TestDcatDatasetUpdateView:
         form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
-        form["information_system_publisher"] = org.pk
-        form["information_system_creator"] = org.pk
+        form["information_system_publishers"] = [str(org.pk)]
+        form["creator"].force_value(str(org.pk))
         form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 

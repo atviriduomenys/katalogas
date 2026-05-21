@@ -51,6 +51,7 @@ from vitrina.datasets.view_helpers import (
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
 )
+from vitrina.datasets.view_helpers import save_dataset_creator
 from vitrina.structure.models import Version as _Version
 from vitrina.api.helpers import render_rdf_response
 from vitrina.api.models import ApiKey
@@ -99,6 +100,7 @@ from vitrina.datasets.services import (
     DatasetRepresentativeService,
 )
 from vitrina.datasets.models import (
+    Attribution,
     Dataset,
     DatasetStructure,
     DatasetGroup,
@@ -535,6 +537,15 @@ class DatasetDetailView(
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
+            "creator": (
+                dataset_attribution.organization
+                if (
+                    dataset_attribution := dataset.datasetattribution_set.filter(
+                        attribution__name=Attribution.CREATOR
+                    ).first()
+                )
+                else None
+            ),
             "data_maturity": dataset.metadata_set.average_level(),
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
@@ -854,6 +865,7 @@ class DatasetCreateView(
         self.object.save()
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
         self.object.save()
 
         for file in form.cleaned_data.get("files", []):
@@ -895,6 +907,7 @@ class DatasetCreateView(
                     )
 
         create_dataset_representative_and_attribution(self.object)
+        save_dataset_creator(self.request, self.object, form)
 
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             self.object.update_applicable_legislation(applicable_legislation_urls)
@@ -1085,6 +1098,7 @@ class DatasetUpdateView(
         self.object: Dataset = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
         if ("endpoint_url" in form.changed_data) or (self.object.is_public and not self.object.published):
             if self.object.is_public and not self.object.published:
@@ -1123,6 +1137,8 @@ class DatasetUpdateView(
 
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
+
+        save_dataset_creator(self.request, self.object, form)
 
         self.object.save()
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-15 08:06+0300\n"
+"POT-Creation-Date: 2026-05-18 11:01+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -817,6 +817,12 @@ msgstr ""
 msgid "Užpildykite tik vieną teisių deklaracijų lauką."
 msgstr ""
 
+msgid "Atsakingas subjektas"
+msgstr ""
+
+msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator."
+msgstr ""
+
 msgid "Informacinės sistemos pavadinimas"
 msgstr ""
 
@@ -835,14 +841,6 @@ msgstr ""
 msgid ""
 "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. "
 "Atitinka foaf:homepage."
-msgstr ""
-
-msgid ""
-"Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. "
-"Atitinka dct:publisher"
-msgstr ""
-
-msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
 msgstr ""
 
 msgid "Laikotarpio pradžia"
@@ -1147,10 +1145,12 @@ msgid ""
 "dct:temporal."
 msgstr ""
 
-msgid "Informacinės sistemos tvarkytojas"
+msgid "Informacinės sistemos tvarkytojai"
 msgstr ""
 
-msgid "Informacinės sistemos valdytojas"
+msgid ""
+"Ši savybė nurodo subjektus (organizacijas), atsakingus už IS prieinamumą. "
+"Atitinka dct:publisher"
 msgstr ""
 
 msgid "Versijos pastabos"
@@ -1425,6 +1425,9 @@ msgid "Atliktas darbas"
 msgstr ""
 
 msgid "Atlikto darbo būsena"
+msgstr ""
+
+msgid "Informacinės sistemos valdytojas"
 msgstr ""
 
 msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
@@ -1785,6 +1788,12 @@ msgstr ""
 msgid "Istorija"
 msgstr ""
 
+#, python-brace-format
+msgid ""
+"Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
+"Susisiekite su administratoriumi."
+msgstr ""
+
 msgid "Duomenų ištekliaus būsena"
 msgstr ""
 
@@ -1931,8 +1940,27 @@ msgstr ""
 msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
 msgstr ""
 
+msgid "Valdytojas"
+msgstr ""
+
+msgid "Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."
+msgstr ""
+
+msgid "Duomenų teikėjas"
+msgstr ""
+
+msgid "Duomenų teikėjas. Atitinka dct:publisher."
+msgstr ""
+
 msgid ""
 "Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."
+msgstr ""
+
+msgid ""
+"Organizacija, atsakinga už duomenų rinkinio sukūrimą. Atitinka dct:creator."
+msgstr ""
+
+msgid "Duomenų skelbėjas. Atitinka dct:publisher."
 msgstr ""
 
 msgid "Priklauso duomenų katalogams"
@@ -1993,12 +2021,6 @@ msgstr ""
 msgid ""
 "Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
 "reikšmė neišsaugota. Susisiekite su administratoriumi."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Priskyrimo tipas '{name}' nerastas, todėl priskyrimo reikšmė neišsaugota. "
-"Susisiekite su administratoriumi."
 msgstr ""
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"

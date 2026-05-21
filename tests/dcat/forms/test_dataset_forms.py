@@ -179,8 +179,8 @@ class TestInformationSystemResourceForm:
                 "description": "Test description",
                 "name": "testis",
                 "information_system_importance": importance.pk,
-                "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "information_system_publishers": [organization.pk],
+                "creator": organization.pk,
                 "identifier": "not-four-digits",
             },
         )
@@ -202,8 +202,8 @@ class TestInformationSystemResourceForm:
                 "description": "Test description",
                 "name": "testis",
                 "information_system_importance": importance.pk,
-                "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "information_system_publishers": [organization.pk],
+                "creator": organization.pk,
                 "identifier": "1234",
             },
         )
@@ -236,8 +236,8 @@ class TestInformationSystemResourceForm:
                 "description": "Test description",
                 "name": "testis",
                 "information_system_importance": importance.pk,
-                "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "information_system_publishers": [organization.pk],
+                "creator": organization.pk,
             },
         )
 
@@ -271,8 +271,8 @@ class TestInformationSystemResourceForm:
                 "description": "Test description",
                 "name": "testis",
                 "information_system_importance": importance.pk,
-                "information_system_publisher": organization.pk,
-                "information_system_creator": organization.pk,
+                "information_system_publishers": [organization.pk],
+                "creator": organization.pk,
                 "information_system_assessment_url": "https://example.com/assessment",
             },
         )
@@ -450,6 +450,24 @@ class TestServiceResourceForm:
         assert "agent" in form.errors
         assert "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu." in form.errors["agent"][0]
 
+    def test_organization_required(self):
+        organization = OrganizationFactory()
+
+        form = ServiceResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "title": "Test Service",
+                "name": "testservice",
+                "tags": "tag1",
+                "endpoint_url": "http://example.com",
+                "endpoint_description": "http://example.com/spec",
+            },
+        )
+
+        assert not form.is_valid()
+        assert "organization" in form.errors
+
 
 class TestDatasetResourceForm:
     def test_parent_queryset_includes_service_dataset_from_same_org(self):
@@ -583,6 +601,22 @@ class TestDatasetResourceForm:
 
         assert matching_concept in form.fields["dataset_type"].queryset
         assert other_concept not in form.fields["dataset_type"].queryset
+
+    def test_organization_required(self):
+        organization = OrganizationFactory()
+
+        form = DatasetResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "title": "Test Dataset",
+                "description": "Test description",
+                "name": "testdataset",
+            },
+        )
+
+        assert not form.is_valid()
+        assert "organization" in form.errors
 
     def test_conforms_to_languages_provenance_dataset_type_was_generated_by_not_required(self):
         organization = OrganizationFactory()
@@ -810,6 +844,65 @@ class TestDatasetUpdateForm:
         )
 
         assert list(form.initial["qualified_relation"]) == []
+
+    def test_creator_initial_set_from_first_creator_attribution(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        creator = Attribution.objects.get(name=Attribution.CREATOR)
+        org = OrganizationFactory()
+        DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.initial["creator"] == org.pk
+
+    def test_creator_initial_uses_first_record_when_multiple_exist(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        creator = Attribution.objects.get(name=Attribution.CREATOR)
+        org1 = OrganizationFactory()
+        org2 = OrganizationFactory()
+        first_da = DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org1)
+        DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org2)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.initial["creator"] == first_da.organization_id
+
+    def test_creator_initial_not_set_when_no_creator_attribution(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert "creator" not in form.initial
+
+    def test_creator_initial_excludes_other_attribution_types(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        contributor = AttributionFactory(name=Attribution.CONTRIBUTOR)
+        org = OrganizationFactory()
+        DatasetAttributionFactory(dataset=dataset, attribution=contributor, organization=org)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert "creator" not in form.initial
 
 
 class TestServiceUpdateForm:

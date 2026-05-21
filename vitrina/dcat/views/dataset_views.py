@@ -22,8 +22,13 @@ from vitrina.datasets.view_helpers import (
     create_tasks_and_notify_subscribers_about_dataset_creation,
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
+    save_dataset_creator,
 )
-from vitrina.dcat.view_helpers import save_dataset_relations, save_dataset_attribution, save_dataset_qualified_relations
+from vitrina.dcat.view_helpers import (
+    save_dataset_relations,
+    save_dataset_attribution,
+    save_dataset_qualified_relations,
+)
 from vitrina.dcat.forms.dataset_forms import (
     InformationSystemResourceForm,
     BaseResourceForm,
@@ -135,7 +140,6 @@ class DcatDatasetCreateView(
 
         self.object = form.save(commit=False)
         self.object.set_current_language(language)
-        self.object.organization = self.organization
         self.object.subclass = self.subclass
         self.object.is_public = False
         self.object.catalog = self.catalog
@@ -147,6 +151,7 @@ class DcatDatasetCreateView(
             Dataset.add_root(instance=self.object)
 
         if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
+            self.object.organization = self.organization
             self.object.access_rights = Dataset.CONFIDENTIAL
             self.object.frequency = Frequency.objects.filter(code=Frequency.CODE_UNKNOWN).first()
             if identifier := form.cleaned_data.get("identifier"):
@@ -164,6 +169,7 @@ class DcatDatasetCreateView(
         self.object.save()
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
         dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
             self.object.organization, self.object
@@ -196,6 +202,7 @@ class DcatDatasetCreateView(
             self.object.update_documentation(documentation_urls)
 
         save_dataset_qualified_relations(self.object, form)
+        save_dataset_creator(self.request, self.object, form)
 
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
@@ -222,7 +229,7 @@ class DcatDatasetCreateView(
                 "dcat-dataset-update",
                 kwargs={
                     "dataset_id": self.object.pk,
-                    "organization_id": self.organization.pk,
+                    "organization_id": self.object.organization_id,
                 },
             )
         )
@@ -308,6 +315,7 @@ class DcatDatasetUpdateView(
         self.object = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
+        self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
         if "endpoint_url" in form.changed_data:
             if self.object.datasetdistribution_set.exists() or (self.object.service and self.object.endpoint_url):
@@ -404,6 +412,7 @@ class DcatDatasetUpdateView(
 
         save_dataset_relations(self.request, self.object, form)
         save_dataset_attribution(self.request, self.object, form)
+        save_dataset_creator(self.request, self.object, form)
 
         messages.success(self.request, _("Duomenų išteklius atnaujintas sėkmingai"))
 
@@ -412,7 +421,7 @@ class DcatDatasetUpdateView(
                 "dcat-dataset-update",
                 kwargs={
                     "dataset_id": self.object.pk,
-                    "organization_id": self.organization.pk,
+                    "organization_id": self.object.organization_id,
                 },
             )
         )

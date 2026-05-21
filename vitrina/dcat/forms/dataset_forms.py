@@ -27,7 +27,7 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
-from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget
+from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget, OrganizationSingleWidget
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
@@ -160,6 +160,13 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         required=True,
         help_text=_("RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."),
     )
+    creator = forms.ModelChoiceField(
+        Organization.objects.all(),
+        required=True,
+        label=_("Valdytojas"),
+        help_text=_("Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."),
+        widget=OrganizationSingleWidget,
+    )
 
     class Meta:
         model = Dataset
@@ -171,8 +178,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "information_system_assessment_url",
             "description",
             "identifier",
-            "information_system_publisher",
-            "information_system_creator",
+            "information_system_publishers",
             "title",
             "landing_page",
             "languages",
@@ -184,8 +190,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         widgets = {
             "information_system_importance": Select2Widget,
             "information_system_type": Select2Widget,
-            "information_system_publisher": Select2Widget,
-            "information_system_creator": Select2Widget,
+            "information_system_publishers": Select2MultipleWidget,
             "languages": Select2MultipleWidget,
         }
 
@@ -202,16 +207,9 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         )
 
         organization_qs = Organization.objects.all().order_by("title")
-        self.fields["information_system_publisher"].queryset = organization_qs
-        self.fields["information_system_publisher"].required = True
-        self.fields["information_system_publisher"].help_text = _(
-            "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
-        )
-        self.fields["information_system_creator"].queryset = organization_qs
-        self.fields["information_system_creator"].required = True
-        self.fields["information_system_creator"].help_text = _(
-            "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
-        )
+        self.fields["information_system_publishers"].queryset = organization_qs
+        self.fields["information_system_publishers"].required = True
+        self.fields["creator"].queryset = organization_qs
 
         self.fields["information_system_type"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
@@ -288,6 +286,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "endpoint_description",
             "endpoint_description_type",  # Not in DCAT
             "tags",
+            "organization",
             "access_rights",
             "conforms_to",
             "description",
@@ -302,6 +301,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "agent": Select2Widget,
             "endpoint_type": Select2Widget,
             "endpoint_description_type": Select2Widget,
+            "organization": OrganizationSingleWidget,
             "access_rights": Select2Widget,
             "follows": Select2MultipleWidget,
             "license": Select2Widget,
@@ -314,6 +314,10 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
         )
+
+        self.fields["organization"].required = True
+        self.fields["organization"].label = _("Duomenų teikėjas")
+        self.fields["organization"].help_text = _("Duomenų teikėjas. Atitinka dct:publisher.")
 
         self.fields["service_type"].queryset = (
             Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.SERVICE_TYPE_SCHEME_URI)
@@ -363,6 +367,13 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         help_text=_("Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."),
         widget=Select2Widget,
     )
+    creator = forms.ModelChoiceField(
+        Organization.objects.all(),
+        required=False,
+        label=_("Atsakingas subjektas"),
+        help_text=_("Organizacija, atsakinga už duomenų rinkinio sukūrimą. Atitinka dct:creator."),
+        widget=OrganizationSingleWidget,
+    )
     qualified_relation = StringListField(
         label=_("Kvalifikuotas ryšys"),
         help_text=_(
@@ -381,10 +392,12 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "description",
             "title",
             "tags",
+            "organization",
             "temporal_start",
             "temporal_end",
             "access_rights",
             "conforms_to",
+            "creator",
             "documentation",
             "frequency",
             "landing_page",
@@ -400,6 +413,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "applicable_legislation",
         )
         widgets = {
+            "organization": OrganizationSingleWidget,
             "temporal_start": forms.TextInput(attrs={"type": "date"}),
             "temporal_end": forms.TextInput(attrs={"type": "date"}),
             "access_rights": Select2Widget,
@@ -416,6 +430,11 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
         )
+
+        self.fields["organization"].required = True
+        self.fields["organization"].label = _("Duomenų skelbėjas")
+        self.fields["organization"].help_text = _("Duomenų skelbėjas. Atitinka dct:publisher.")
+
         self.fields["dataset_type"].queryset = (
             Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.DATASET_TYPE_SCHEME_URI)
             .prefetch_related("translations")
@@ -437,12 +456,14 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             Field("description"),
             Field("title"),
             Field("tags"),
+            Field("organization"),
             inline_fields(
                 Field("temporal_start"),
                 Field("temporal_end"),
             ),
             Field("access_rights"),
             Field("conforms_to"),
+            Field("creator"),
             Field("documentation"),
             Field("frequency"),
             Field("contact"),
@@ -534,6 +555,11 @@ class InformationSystemUpdateForm(InformationSystemResourceForm):
                 related_datasets__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
                 related_datasets__dataset=self.instance,
             )
+            creator_attribution = self.instance.datasetattribution_set.filter(
+                attribution__name=Attribution.CREATOR
+            ).first()
+            if creator_attribution:
+                self.initial["creator"] = creator_attribution.organization_id
 
 
 class ServiceUpdateForm(ServiceResourceForm):
@@ -581,5 +607,10 @@ class DatasetUpdateForm(DatasetResourceForm):
             self.initial["qualified_attribution"] = self.instance.datasetattribution_set.filter(
                 attribution__name=Attribution.CONTRIBUTOR
             ).values_list("organization_id", flat=True)
+            creator_attribution = self.instance.datasetattribution_set.filter(
+                attribution__name=Attribution.CREATOR
+            ).first()
+            if creator_attribution:
+                self.initial["creator"] = creator_attribution.organization_id
 
         self.helper.layout.append(Field("qualified_attribution"))

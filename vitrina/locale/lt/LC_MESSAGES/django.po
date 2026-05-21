@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-18 11:01+0300\n"
+"POT-Creation-Date: 2026-05-21 08:21+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1937,6 +1937,29 @@ msgstr ""
 msgid "vaikiniai duomenų ištekliai"
 msgstr ""
 
+msgid "Kodinio pavadinimo prefiksas"
+msgstr ""
+
+msgid ""
+"Kodinio pavadinimo prefiksas, kuris naudojamas kartu su kodiniu pavadinimu "
+"sudaro pilną ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas "
+"automatiškai pagal pasirinktą tėvinį išteklių arba organizaciją."
+msgstr ""
+
+msgid ""
+"Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali "
+"turėti pasvirųjų brūkšnių"
+msgstr ""
+
+msgid ""
+"Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
+"pavadinimą organizacijai ir bandykit iš naujo"
+msgstr ""
+
+#, python-brace-format
+msgid "Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}"
+msgstr ""
+
 msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
 msgstr ""
 
@@ -2029,10 +2052,15 @@ msgstr ""
 msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
 msgstr ""
 
+#, python-brace-format
+msgid "Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}"
+msgstr ""
+
 msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
 msgstr ""
 
-msgid "Duomenų išteklius atnaujintas sėkmingai"
+#, python-brace-format
+msgid "Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}"
 msgstr ""
 
 msgid "Nauja duomenų rinkinio pateiktis"
@@ -4207,6 +4235,15 @@ msgstr ""
 msgid "open"
 msgstr ""
 
+msgid "Vykdoma"
+msgstr ""
+
+msgid "Aktuali"
+msgstr ""
+
+msgid "Nepavyko"
+msgstr ""
+
 msgid "Nepasirinkta"
 msgstr ""
 
@@ -4772,6 +4809,15 @@ msgstr ""
 msgid "Invalid"
 msgstr ""
 
+msgid "UML diagrama"
+msgstr ""
+
+msgid "UML diagramos"
+msgstr ""
+
+msgid "UML diagrama mermaid sintaksės formatu."
+msgstr ""
+
 msgid ""
 "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
 msgstr ""
@@ -4794,7 +4840,7 @@ msgstr ""
 msgid "Užklausa"
 msgstr ""
 
-msgid "Duomenų rinkinio struktūra"
+msgid "Duomenų ištekliaus struktūra"
 msgstr ""
 
 msgid "Eksportuoti OpenAPI"
@@ -4804,6 +4850,9 @@ msgid "Importuoti"
 msgstr ""
 
 msgid "Publikuoti versiją"
+msgstr ""
+
+msgid "UML Diagrama"
 msgstr ""
 
 msgid "Keitimų žurnalas"
@@ -4915,6 +4964,15 @@ msgid "Galimos reikšmės neapibrėžtos."
 msgstr ""
 
 msgid "Nauja reikšmė"
+msgstr ""
+
+msgid "Įvyko klaida generuojant diagramą. Susisiekite su administracija."
+msgstr ""
+
+msgid "Generuojama diagrama..."
+msgstr ""
+
+msgid "Duomenų ištekliaus struktūros UML diagrama"
 msgstr ""
 
 msgid "Keitimai"
@@ -5037,6 +5095,13 @@ msgstr ""
 
 #, python-brace-format
 msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
+msgstr ""
+
+msgid "Nerasta struktūra pasirinktai struktūros versijai."
+msgstr ""
+
+#, python-brace-format
+msgid "'{0}' struktūros UML diagrama"
 msgstr ""
 
 msgid "Vyr. koordinatorius"
@@ -5618,9 +5683,6 @@ msgid "Išjungta"
 msgstr ""
 
 msgid "Pavyko"
-msgstr ""
-
-msgid "Nepavyko"
 msgstr ""
 
 msgid "Nevykdyta"

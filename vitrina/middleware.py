@@ -6,7 +6,23 @@ from django.utils.deprecation import MiddlewareMixin
 from django.utils.timezone import now
 from django.http import HttpRequest
 import reversion
+from vitrina.log_context import reset_log_context, set_log_context
 from vitrina.utils import RevisionComment, RevisionSource
+
+
+class LogContextMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if user and user.is_authenticated:
+            token = set_log_context(user_id=user.pk)
+            try:
+                return self.get_response(request)
+            finally:
+                reset_log_context(token)
+        return self.get_response(request)
 
 
 class NoAutoLocaleMiddleware(MiddlewareMixin):

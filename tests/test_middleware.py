@@ -2,7 +2,8 @@ from unittest.mock import Mock, patch
 
 from django.test import RequestFactory
 
-from vitrina.middleware import AutoRevisionCommentMiddleware
+from vitrina.log_context import get_log_context
+from vitrina.middleware import AutoRevisionCommentMiddleware, LogContextMiddleware
 from vitrina.utils import RevisionComment, RevisionSource
 
 
@@ -73,3 +74,33 @@ def test_sets_comment(rf: RequestFactory):
     (comment_json,) = set_comment_mock.call_args.args
 
     assert comment_json == revision_comment.to_json()
+
+
+def test_log_context_middleware_sets_user_id_during_request(rf: RequestFactory):
+    request = rf.get("/")
+    request.user = Mock(is_authenticated=True, pk=1)
+    captured = {}
+
+    def get_response(_request):
+        captured.update(get_log_context())
+        return "ok"
+
+    response = LogContextMiddleware(get_response)(request)
+
+    assert response == "ok"
+    assert captured.get("user_id") == 1
+    assert get_log_context() == {}
+
+
+def test_log_context_middleware_ignores_anonymous_user(rf: RequestFactory):
+    request = rf.get("/")
+    request.user = Mock(is_authenticated=False)
+    captured = {}
+
+    def get_response(_request):
+        captured.update(get_log_context())
+        return "ok"
+
+    LogContextMiddleware(get_response)(request)
+
+    assert "user_id" not in captured

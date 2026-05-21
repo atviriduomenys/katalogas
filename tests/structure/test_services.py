@@ -787,7 +787,7 @@ def test_structure_with_enums(app: DjangoTestApp):
         "6,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         "7,,,,,size,Size,,,,5,,,open,dct:size,,,,\n"
         "8,,,,,type,string,,,,5,,,open,dct:type,,,,\n"
-        '9,,,,,,enum,Type,,"""CREATED""",,,,,,,,,\n'
+        '9,,,,,,enum,,,"""CREATED""",,,,,,,,,\n'
         '10,,,,,,,,,"""MODIFIED""",,,,,,,,,\n'
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -804,7 +804,7 @@ def test_structure_with_enums(app: DjangoTestApp):
     prop = Property.objects.get(metadata__uuid="8")
     prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
     assert prop_enum.count() == 1
-    assert prop_enum[0].name == "Type"
+    assert prop_enum[0].name == ""
     assert list(prop_enum[0].enumitem_set.values_list("metadata__prepare", flat=True)) == ['"CREATED"', '"MODIFIED"']
 
 
@@ -816,7 +816,7 @@ def test_structure_with_enum_and_null_value(app: DjangoTestApp):
         ",,,,,,prefix,dct,,,,,,,http://www.purl.org/dc/terms/,,,,\n"
         ",,,,City,,,,,,,,,,,,,,\n"
         "1,,,,,type,string,,,,5,,,open,dct:type,,,,\n"
-        ',,,,,,enum,Type,,"""CREATED""",,,,,,,,,\n'
+        ',,,,,,enum,,,"""CREATED""",,,,,,,,,\n'
         ',,,,,,,,,"""null""",,,,,,,,,\n'
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -827,7 +827,7 @@ def test_structure_with_enum_and_null_value(app: DjangoTestApp):
     prop = Property.objects.get(metadata__uuid="1")
     prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
     assert prop_enum.count() == 1
-    assert prop_enum[0].name == "Type"
+    assert prop_enum[0].name == ""
     assert list(prop_enum[0].enumitem_set.values_list("metadata__prepare", flat=True)) == ['"CREATED"', '"null"']
 
 
@@ -866,7 +866,7 @@ def test_structure_with_enum_without_prepare_value_adds_comment_about_error(app:
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,City,,,,,,,,,,,,,,\n"
         "1,,,,,type,integer,,,,5,,,,,,,,\n"
-        ",,,,,,enum,Type,one,,,,,,,,,,\n"
+        ",,,,,,enum,,one,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
@@ -876,11 +876,36 @@ def test_structure_with_enum_without_prepare_value_adds_comment_about_error(app:
     prop = Property.objects.get(metadata__uuid="1")
     prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
     assert prop_enum.count() == 1
-    assert prop_enum[0].name == "Type"
+    assert prop_enum[0].name == ""
     assert not prop_enum[0].enumitem_set.exists()
     assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
         'Reikšmė "" turi būti integer tipo.',
         'Duomenų reikšmė (source: "one") privalo turėti nurodytą "prepare" stulpelį.',
+    ]
+
+
+@pytest.mark.django_db
+def test_structure_with_property_enum_ref_value_adds_comment_about_error(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,,,,\n"
+        "1,,,,,type,integer,,,,5,,,,,,,,\n"
+        ",,,,,,enum,SomeName,,1,,,,,,,,,\n"
+        ",,,,,,,,,2,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    prop = Property.objects.get(metadata__uuid="1")
+    prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
+    assert prop_enum.count() == 1
+    assert prop_enum[0].name == ""
+    assert list(prop_enum[0].enumitem_set.values_list("metadata__prepare", flat=True)) == ["1", "2"]
+    assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
+        'Reikšmių sąrašas "SomeName" negali turėtį pavadinimo (ref), kai yra deklaruojamas savybės dimensijoje.',
     ]
 
 
@@ -958,7 +983,7 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
         "10,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
         "11,,,,,size,Size,,,,5,,,open,dct:size,,,,\n"
         "12,,,,,type,string,,,,5,,,open,dct:type,,,,\n"
-        '13,,,,,,enum,Type,,"""CREATED""",,,,,,,,,\n'
+        '13,,,,,,enum,,,"""CREATED""",,,,,,,,,\n'
         '14,,,,,,,,,"""MODIFIED""",,,,,,,,,\n'
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -966,7 +991,7 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     structure.dataset.save()
     metadata_version = create_structure_objects(structure)
     assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 15
-    assert list(Enum.objects.values_list("name", flat=True)) == ["Size", "Deprecated", "Type"]
+    assert list(Enum.objects.values_list("name", flat=True)) == ["Size", "Deprecated", ""]
     assert list(EnumItem.objects.filter(enum__name="Size").values_list("metadata__prepare", flat=True)) == [
         '"SMALL"',
         '"MEDIUM"',
@@ -977,7 +1002,7 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
         '"MEDIUM"',
         '"BIG"',
     ]
-    assert list(EnumItem.objects.filter(enum__name="Type").values_list("metadata__prepare", flat=True)) == [
+    assert list(EnumItem.objects.filter(enum__name="").values_list("metadata__prepare", flat=True)) == [
         '"CREATED"',
         '"MODIFIED"',
     ]
@@ -993,17 +1018,17 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
         "10,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
         "11,,,,,size,Size,,,,5,,,open,dct:size,,,,\n"
         "12,,,,,type,string,,,,5,,,open,dct:type,,,,\n"
-        '13,,,,,,enum,Type,,"""CREATED""",,,,,,,,,\n'
+        '13,,,,,,enum,,,"""CREATED""",,,,,,,,,\n'
     )
     structure.file = FilerFileFactory(file=FileField(filename="file.csv", data=new_manifest))
     metadata_version = create_structure_objects(structure, metadata_version)
     assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 10
-    assert list(Enum.objects.values_list("name", flat=True)) == ["Size", "Type"]
+    assert list(Enum.objects.values_list("name", flat=True)) == ["Size", ""]
     assert list(EnumItem.objects.filter(enum__name="Size").values_list("metadata__prepare", flat=True)) == [
         '"SMALL"',
         '"BIG"',
     ]
-    assert list(EnumItem.objects.filter(enum__name="Type").values_list("metadata__prepare", flat=True)) == ['"CREATED"']
+    assert list(EnumItem.objects.filter(enum__name="").values_list("metadata__prepare", flat=True)) == ['"CREATED"']
 
 
 @pytest.mark.django_db
@@ -2161,7 +2186,7 @@ def test_structure_export__enums(app: DjangoTestApp, use_version):
         "8,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
         "9,,,,,size,Size,,,,,5,,,open,dct:size,,,\n"
         "10,,,,,type,string,,,,,5,,,open,dct:type,,,\n"
-        "11,,,,,,enum,Type,,'''CREATED''',,,,,,,,,\n"
+        "11,,,,,,enum,,,'''CREATED''',,,,,,,,,\n"
         "12,,,,,,,,,'''MODIFIED''',,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(
@@ -2185,7 +2210,7 @@ def test_structure_export__enums(app: DjangoTestApp, use_version):
         "8,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
         "9,,,,,size,Size,,,,,,,5,develop,,open,dct:size,,,\r\n"
         "10,,,,,type,string,,,,,,,5,develop,,open,dct:type,,,\r\n"
-        "11,,,,,,enum,Type,,,'''CREATED''',,,,develop,,,,,,\r\n"
+        "11,,,,,,enum,,,,'''CREATED''',,,,develop,,,,,,\r\n"
         "12,,,,,,,,,,'''MODIFIED''',,,,develop,,,,,,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )

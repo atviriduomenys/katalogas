@@ -1615,6 +1615,48 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_property_enum_item_create__enum_name_is_empty(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        metadata_version=version,
+    )
+
+    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
+    form["value"] = "test"
+    form["source"] = "TEST"
+    form["access"] = Metadata.OPEN
+    form.submit()
+
+    enum = Enum.objects.get(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
+    assert enum.name == ""
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize("integer_value", [-1, 0, 1])
 def test_property_enum_item_create__integer(app: DjangoTestApp, integer_value: int):
     user = UserFactory(is_staff=True)
@@ -5142,7 +5184,7 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
+        ",,,,,,enum,,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(
@@ -5154,7 +5196,7 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
     version = create_structure_objects(structure)
     version.status = status
     version.save()
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small", metadata_version=version).first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="", metadata_version=version).first()
 
     enum = enum_meta.object
     enum_id = enum.id
@@ -5272,7 +5314,7 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,'SMALL',,,,,,,,,\n"
+        ",,,,,,enum,,,'SMALL',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -5280,7 +5322,7 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small", metadata_version=version).first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="", metadata_version=version).first()
 
     enum = enum_meta.object
     enum_id = enum.id
@@ -5356,8 +5398,8 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
-        ",,,,,,,big,,BIG,,,,,,,,,\n"
+        ",,,,,,enum,,,'''SMALL''',,,,,,,,,\n"
+        ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -5365,7 +5407,7 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="small").first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="").first()
 
     enum = enum_meta.object
     enum_id = enum.id
@@ -5418,8 +5460,8 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
-        ",,,,,,,big,,BIG,,,,,,,,,\n"
+        ",,,,,,enum,,,'''SMALL''',,,,,,,,,\n"
+        ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -5427,7 +5469,7 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="small").first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="").first()
 
     enum = enum_meta.object
     enum_id = enum.id
@@ -5468,10 +5510,7 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
     prop = resp_props.context["prop"]
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
-        if enum_metadata.name == new_enum_name:
-            assert enum_metadata.status.codename == "completed"
-        else:
-            assert enum_metadata.status.codename == "deprecated"
+        assert enum_metadata.status.codename == "deprecated"
 
 
 @pytest.mark.django_db
@@ -5486,8 +5525,8 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,'SMALL',,,,,,,,,\n"
-        ",,,,,,,big,,'''BIG''',,,,,,,,,\n"
+        ",,,,,,enum,,,'SMALL',,,,,,,,,\n"
+        ",,,,,,,,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -5495,7 +5534,7 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="small").first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, prepare="'SMALL'").first()
 
     enum = enum_meta.object
     enum_id = enum.id
@@ -5527,7 +5566,6 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"])
     )
     prop = resp_props.context["prop"]
-    # TODO the status of enum should also be completed but because of a bug the name of the enum is changed even though nothing is submited. Change after bug fix
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"
@@ -5970,7 +6008,7 @@ def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
         "7,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
         "8,,,,,size,Size,,,,,5,,,open,dct:size,,,\n"
         "9,,,,,type,string,,,,,5,,,open,dct:type,,,\n"
-        "10,,,,,,enum,Type,,'''CREATED''',,,,,,,,,\n"
+        "10,,,,,,enum,,,'''CREATED''',,,,,,,,,\n"
         "11,,,,,,,,,'''MODIFIED''',,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -7787,6 +7825,67 @@ class TestStructure(BaseTestCreateManifest):
             "3,,,,,type,number required,,TypeID/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,1.1,,1.2,,,,develop,,,,,,",
             "5,,,,,,,,1.3,,1.4,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    @pytest.mark.django_db
+    def test_export__property_level_enum_ref_is_empty(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,\n"
+            "2,,,,,,enum,DatasetEnum,,1,,,,,,,,\n"
+            "3,,,,,,,,,2,,,,,,,,\n"
+            "4,,,,Dataset,,,,,,1,,,,,,,\n"
+            "5,,,,,code,integer,,,,4,,,,,,,\n"
+            "6,,,,,,enum,,,10,,,,,,,,\n"
+            "7,,,,,,,,,20,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset")
+
+        response = app.get(reverse("dataset-structure-export-no-version", args=[dataset.pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
+            "2,,,,,,enum,DatasetEnum,,,1,,,,develop,,,,,,",
+            "3,,,,,,,,,,2,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            "4,,,,Dataset,,,,,,,,,1,develop,,,,,,",
+            "5,,,,,code,integer,,,,,,,4,develop,,,,,,",
+            "6,,,,,,enum,,,,10,,,,develop,,,,,,",
+            "7,,,,,,,,,,20,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    @pytest.mark.django_db
+    def test_export__property_level_enum_with_ref_on_import_exports_empty_ref(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,\n"
+            "2,,,,Dataset,,,,,,1,,,,,,,\n"
+            "3,,,,,code,integer,,,,4,,,,,,,\n"
+            "4,,,,,,enum,SomeName,,10,,,,,,,,\n"
+            "5,,,,,,,,,20,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset")
+
+        response = app.get(reverse("dataset-structure-export-no-version", args=[dataset.pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
+            "2,,,,Dataset,,,,,,,,,1,develop,,,,,,",
+            "3,,,,,code,integer,,,,,,,4,develop,,,,,,",
+            "4,,,,,,enum,,,,10,,,,develop,,,,,,",
+            "5,,,,,,,,,,20,,,,develop,,,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
         ]
 

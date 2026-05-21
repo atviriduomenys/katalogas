@@ -1935,7 +1935,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
             self.object.enum = Enum.objects.create(
                 content_type=ContentType.objects.get_for_model(Property),
                 object_id=self.property.pk,
-                name=self.property.name,
+                name="",
                 metadata_version_id=self.metadata_version.pk,
             )
         self.object.save()

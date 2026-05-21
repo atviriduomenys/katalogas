@@ -15,6 +15,7 @@ from vitrina.resources.models import (
     GeoportalFormatValue,
     CompressionFormat,
     PackagingFormat,
+    MediaType,
 )
 
 
@@ -134,3 +135,11 @@ class PackagingFormatFactory(DjangoModelFactory):
 
     title = factory.Faker("word")
     extension = factory.Faker("word")
+
+
+class MediaTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = MediaType
+
+    title = factory.Faker("word")
+    uri = factory.Faker("url")

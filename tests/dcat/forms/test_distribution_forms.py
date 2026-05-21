@@ -7,7 +7,7 @@ from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
-from vitrina.resources.models import DatasetDistribution, DISTRIBUTION_STANDARD_URI
+from vitrina.resources.models import DatasetDistribution, DISTRIBUTION_STANDARD_URI, MediaType
 from vitrina.structure.factories import MetadataFactory
 
 pytestmark = pytest.mark.django_db
@@ -119,6 +119,13 @@ class TestDatasetDistributionForm:
 
         assert matching_concept in form.fields["conforms_to"].queryset
         assert other_concept not in form.fields["conforms_to"].queryset
+
+    def test_media_type_queryset_ordered_by_title(self):
+        dataset = DatasetFactory()
+        form = DatasetDistributionForm(dataset)
+
+        form_values = list(form.fields["media_type"].queryset.values_list("title", flat=True))
+        assert form_values == list(MediaType.objects.all().order_by("title").values_list("title", flat=True))
 
     def test_status_queryset_filtered_to_distribution_status_concepts(self):
         dataset = DatasetFactory()

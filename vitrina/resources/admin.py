@@ -10,6 +10,7 @@ from vitrina.resources.models import (
     GeoportalFormatValue,
     CompressionFormat,
     PackagingFormat,
+    MediaType,
 )
 from vitrina.admin import RevisionCommentVersionAdmin
 
@@ -44,6 +45,10 @@ class PackagingFormatAdmin(RevisionCommentVersionAdmin):
     fields = ("title", "extension", "uri")
 
 
+class MediaTypeAdmin(RevisionCommentVersionAdmin):
+    fields = ("title", "uri")
+
+
 class DatasetDistributionAdmin(RevisionCommentVersionAdmin):
     list_display = ("__str__", "dataset", "format", "data_last_updated")
     list_filter = ("format",)
@@ -57,3 +62,4 @@ admin.site.register(Format, FormatAdmin)
 admin.site.register(GeoportalFormat, GeoportalFormatAdmin)
 admin.site.register(CompressionFormat, CompressionFormatAdmin)
 admin.site.register(PackagingFormat, PackagingFormatAdmin)
+admin.site.register(MediaType, MediaTypeAdmin)

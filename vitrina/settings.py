@@ -129,7 +129,6 @@ INSTALLED_APPS = [
     "treebeard",
     "filer",
     "easy_thumbnails",
-    "djangocms_text",
     "djangocms_file",
     "djangocms_picture",
     "djangocms_link",
@@ -809,7 +808,6 @@ TAGULOUS_AUTOCOMPLETE_JS = (
 )
 TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}
 INSTALLED_APPS += [
-    "djangocms_4_migration",
     "djangocms_versioning",
     "djangocms_alias",
 ]
@@ -824,3 +822,4 @@ DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"
 INSTALLED_APPS += [
     "djangocms_stories",
 ]
+DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"

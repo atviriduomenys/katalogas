@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-18 11:01+0300\n"
+"POT-Creation-Date: 2026-05-21 08:21+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -114,11 +114,9 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -286,23 +284,18 @@ msgstr "Activities"
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -1263,8 +1256,8 @@ msgid ""
 "Ši savybė nurodo subjektus (organizacijas), atsakingus už IS prieinamumą. "
 "Atitinka dct:publisher"
 msgstr ""
-"This property indicates the entities (organizations) responsible for providing "
-"access to the information system (IS). Corresponds to dct:publisher"
+"This property indicates the entities (organizations) responsible for "
+"providing access to the information system (IS). Corresponds to dct:publisher"
 
 msgid "Versijos pastabos"
 msgstr "Version notes"
@@ -2098,6 +2091,33 @@ msgstr "Organizations"
 msgid "vaikiniai duomenų ištekliai"
 msgstr "child resources"
 
+msgid "Kodinio pavadinimo prefiksas"
+msgstr "Codename prefix"
+
+msgid ""
+"Kodinio pavadinimo prefiksas, kuris naudojamas kartu su kodiniu pavadinimu "
+"sudaro pilną ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas "
+"automatiškai pagal pasirinktą tėvinį išteklių arba organizaciją."
+msgstr ""
+"Codename prefix used together with codename makes full codename for a resource. "
+"If not provided - will be automatically filled by selected parent or organization."
+
+msgid ""
+"Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali "
+"turėti pasvirųjų brūkšnių"
+msgstr "Codename must contain only lowercase letters and (or) slashes"
+
+msgid ""
+"Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
+"pavadinimą organizacijai ir bandykit iš naujo"
+msgstr ""
+"Organization does not have specified codename. Add codename "
+"for organization and try again"
+
+#, python-brace-format
+msgid "Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}"
+msgstr "Codename prefix must be one of: {prefixes}"
+
 msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
 msgstr ""
 "RISR (registrai.lt) IS identification code. Corresponds to dct:identifier."
@@ -2106,7 +2126,8 @@ msgid "Valdytojas"
 msgstr "Creator"
 
 msgid "Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."
-msgstr "Organization, that is the creator of the IS. Corresponds to dct:creator."
+msgstr ""
+"Organization, that is the creator of the IS. Corresponds to dct:creator."
 
 msgid "Duomenų teikėjas"
 msgstr "Data provider"
@@ -2208,11 +2229,16 @@ msgstr "Form creation tool cannot be used for this resource subclass"
 msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
 msgstr "Given resource subclass does not have a defined form."
 
+#, python-brace-format
+msgid "Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}"
+msgstr "Resource created successfully. Codename: {0}"
+
 msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
 msgstr "Form creation tool cannot be used with open data resources"
 
-msgid "Duomenų išteklius atnaujintas sėkmingai"
-msgstr "Resource updated successfully"
+#, python-brace-format
+msgid "Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}"
+msgstr "Resource updated successfully. Codename: {0}"
 
 msgid "Nauja duomenų rinkinio pateiktis"
 msgstr "New dataset distribution"

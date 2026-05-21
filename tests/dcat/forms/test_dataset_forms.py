@@ -302,7 +302,7 @@ class TestBaseResourceForm:
 
         error_msg = (
             "Organizacija neturi nurodyto kodinio pavadinimo. "
-            "Priskirkite kodinį pavadinimą organizacijai ir bandykit iš naujo"
+            "Priskirkite kodinį pavadinimą organizacijai ir bandykite iš naujo"
         )
         assert not form.is_valid()
         assert error_msg in form.non_field_errors()
@@ -321,7 +321,7 @@ class TestBaseResourceForm:
 
         error_msg = (
             "Organizacija neturi nurodyto kodinio pavadinimo. "
-            "Priskirkite kodinį pavadinimą organizacijai ir bandykit iš naujo"
+            "Priskirkite kodinį pavadinimą organizacijai ir bandykite iš naujo"
         )
         assert not form.is_valid()
         assert error_msg in form.non_field_errors()
@@ -746,7 +746,7 @@ class TestServiceResourceForm:
 
         form = ServiceResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Service",
                 "name": "testservice",
@@ -898,7 +898,7 @@ class TestDatasetResourceForm:
 
         form = DatasetResourceForm(
             organization=organization,
-            parent_dataset_id=None,
+            url_parent=None,
             data={
                 "title": "Test Dataset",
                 "description": "Test description",

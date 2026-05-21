@@ -37,7 +37,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             "description",
             "data_service",
             "licence",
-            # Medijos tipas (dcat:mediaType) 0..1
+            "media_type",
             "format",
             "compression_format",
             "packaging_format",
@@ -64,6 +64,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             "availability": Select2Widget,
             "data_service": Select2Widget,
             "licence": Select2Widget,
+            "media_type": Select2Widget,
             "format": Select2Widget,
             "compression_format": Select2Widget,
             "packaging_format": Select2Widget,
@@ -106,6 +107,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         ).prefetch_related("translations")
         self.fields["data_service"].required = False
         self.fields["licence"].queryset = self.fields["licence"].queryset.order_by("title")
+        self.fields["media_type"].queryset = self.fields["media_type"].queryset.order_by("title")
         self.fields["format"].queryset = self.fields["format"].queryset.order_by("title")
         self.fields["format"].required = False
         self.fields["compression_format"].queryset = self.fields["compression_format"].queryset.order_by("title")

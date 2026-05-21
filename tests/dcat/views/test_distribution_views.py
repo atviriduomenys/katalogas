@@ -16,6 +16,7 @@ from vitrina.resources.factories import (
     CompressionFormatFactory,
     DatasetDistributionFactory,
     FileFormat,
+    MediaTypeFactory,
     PackagingFormatFactory,
 )
 from vitrina.resources.models import (
@@ -234,6 +235,7 @@ class TestDcatDistributionCreateView:
         data_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         data_service = DatasetServiceFactory(organization=org, subclass=data_service_subclass, is_public=False)
         licence = LicenceFactory()
+        media_type = MediaTypeFactory()
         file_format = FileFormat()
         compression_format = CompressionFormatFactory()
         packaging_format = PackagingFormatFactory()
@@ -259,6 +261,7 @@ class TestDcatDistributionCreateView:
         form["description"] = "My description"
         form["data_service"] = data_service.pk
         form["licence"] = licence.pk
+        form["media_type"] = media_type.pk
         form["format"] = file_format.pk
         form["compression_format"] = compression_format.pk
         form["packaging_format"] = packaging_format.pk
@@ -287,6 +290,7 @@ class TestDcatDistributionCreateView:
         assert distribution.description == "My description"
         assert distribution.data_service == data_service
         assert distribution.licence == licence
+        assert distribution.media_type == media_type
         assert distribution.format == file_format
         assert distribution.compression_format == compression_format
         assert distribution.packaging_format == packaging_format
@@ -568,6 +572,7 @@ class TestDcatDistributionUpdateView:
         data_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         data_service = DatasetServiceFactory(organization=org, subclass=data_service_subclass, is_public=False)
         licence = LicenceFactory()
+        media_type = MediaTypeFactory()
         fmt = FileFormat()
         compression_fmt = CompressionFormatFactory()
         packaging_fmt = PackagingFormatFactory()
@@ -597,6 +602,7 @@ class TestDcatDistributionUpdateView:
         form["description"] = "Updated description"
         form["data_service"] = data_service.pk
         form["licence"] = licence.pk
+        form["media_type"] = media_type.pk
         form["format"] = fmt.pk
         form["compression_format"] = compression_fmt.pk
         form["packaging_format"] = packaging_fmt.pk
@@ -623,6 +629,7 @@ class TestDcatDistributionUpdateView:
         assert distribution.description == "Updated description"
         assert distribution.data_service == data_service
         assert distribution.licence == licence
+        assert distribution.media_type == media_type
         assert distribution.format == fmt
         assert distribution.compression_format == compression_fmt
         assert distribution.packaging_format == packaging_fmt

@@ -13,6 +13,7 @@ from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept, LANGUAGE_CONCEPT_SCHEMA_URI
 from vitrina.datasets.models import Documentation
+from vitrina.models import UUIDBaseModel
 from vitrina.structure import AccessType
 from vitrina.structure.models import Metadata, Version
 from vitrina.helpers import get_file_extension
@@ -130,6 +131,18 @@ class PackagingFormat(models.Model):
         return self.title
 
 
+class MediaType(UUIDBaseModel):
+    title = models.CharField(max_length=255, verbose_name=_("Pavadinimas"))
+    uri = models.URLField(unique=True, max_length=255, verbose_name=_("Nuoroda į kontroliuojamą žodyną"))
+
+    class Meta:
+        verbose_name = _("Medijos tipas")
+        verbose_name_plural = _("Medijos tipai")
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class DatasetDistribution(TranslatableModel):
     DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
     CHECKSUM_ALGORITHM_CHOICES = [
@@ -210,6 +223,14 @@ class DatasetDistribution(TranslatableModel):
         help_text=_(
             "Ši savybė nurodo failo, kuriame yra vienas ar daugiau duomenų, formatą. Atitinka dcat:packageFormat."
         ),
+    )
+    media_type = models.ForeignKey(
+        MediaType,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_("Medijos tipas"),
+        help_text=_("Pateikties medijos tipas. Atitinka dcat:mediaType."),
     )
 
     download_url = models.TextField(

@@ -4,7 +4,11 @@ Changes
 v 1.22.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2629
 
+- Fix property-level enum `ref` export: structure export now always outputs an empty `ref` for enums declared at the property dimension.
+- Fix property-level enum creation via form: `Enum` objects created through the UI no longer inherit the property name as `enum.name`.
+- Add import validation: importing a CSV manifest with a non-empty `ref` on a property-level enum row now produces a structure error comment and silently sets the `ref` to an empty string.
 
 v 1.21.0 (2026-05-18)
 ==================

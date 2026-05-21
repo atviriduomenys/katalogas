@@ -13,6 +13,10 @@ v 1.23.0 (2026-06-30)
   Tightening those is deferred to a later nonce/refactor pass. Also switch the Leaflet OpenStreetMap tile URLs from ``http://`` to
   ``https://`` (they were mixed content on an HTTPS page).
 
+https://github.com/atviriduomenys/katalogas/issues/2632
+
+- Prefix log records with the authenticated user's ID (``user ID: <id>``), falling back to ``anonymous`` for unauthenticated requests and background tasks.
+- Add a request-scoped logging context (``vitrina.log_context``) and ``LogContextMiddleware`` so additional details can be surfaced in logs later.
 
 v 1.22.0 (2026-06-30)
 ==================

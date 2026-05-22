@@ -1,4 +1,4 @@
-from django.db.models import Case, IntegerField, Value, When
+from django.db.models import Case, IntegerField, Value, When, QuerySet
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 
 from vitrina.classifiers.models import Category
@@ -35,7 +35,7 @@ class CategoryMultipleWidget(ModelSelect2MultipleWidget):
         kwargs.setdefault("attrs", {}).setdefault("data-minimum-input-length", 0)
         super().__init__(*args, **kwargs)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Category]:
         return Category.objects.annotate(
             is_eu_theme=Case(
                 When(uri__startswith=EU_DATA_THEME_URI_PREFIX, then=Value(0)),

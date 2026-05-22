@@ -10,7 +10,7 @@ from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm, TranslatedField
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.classifiers.models import Concept, LANGUAGE_CONCEPT_SCHEMA_URI
+from vitrina.classifiers.models import Category, Concept, LANGUAGE_CONCEPT_SCHEMA_URI
 from vitrina.datasets.form_helpers import (
     validate_urls,
     validate_identifier,
@@ -29,7 +29,12 @@ from vitrina.datasets.models import (
     Relation,
 )
 from vitrina.dcat.form_helpers import get_available_dcat_name_prefixes
-from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget, OrganizationSingleWidget
+from vitrina.dcat.widgets import (
+    CategoryMultipleWidget,
+    DatasetMultipleWidget,
+    OrganizationMultipleWidget,
+    OrganizationSingleWidget,
+)
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
@@ -130,6 +135,13 @@ class BaseResourceForm(TranslatableModelForm):
         required=False,
         help_text=_("Ši savybė nurodo susijusį resursą. Atitinka dct:relation."),
     )
+    category = forms.ModelMultipleChoiceField(
+        queryset=Category.objects.order_by("title"),
+        label=_("Kategorija"),
+        help_text=_("Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."),
+        widget=CategoryMultipleWidget,
+        required=False,
+    )
     description = TranslatedField(required=True)
     title = TranslatedField(
         form_class=forms.CharField,
@@ -153,6 +165,9 @@ class BaseResourceForm(TranslatableModelForm):
         elif self.instance.pk:
             self.fields["parent"].initial = self.instance.get_parent()
             self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
+
+        if self.instance.pk:
+            self.initial["category"] = self.instance.category.all()
 
         instance_name = self.instance.name if self.instance.pk else None
         prefix_source_dataset = self._resolve_prefix_source_dataset(url_parent)
@@ -251,6 +266,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "title",
             "landing_page",
             "languages",
+            "category",
             "conditions",
             "rights_relation",
             "applicable_legislation",
@@ -359,6 +375,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "endpoint_description_type",  # Not in DCAT
             "tags",
             "organization",
+            "category",
             "access_rights",
             "conforms_to",
             "description",
@@ -468,6 +485,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "organization",
             "temporal_start",
             "temporal_end",
+            "category",
             "access_rights",
             "conforms_to",
             "creator",
@@ -535,6 +553,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
                 Field("temporal_start"),
                 Field("temporal_end"),
             ),
+            Field("category"),
             Field("access_rights"),
             Field("conforms_to"),
             Field("creator"),

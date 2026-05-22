@@ -225,6 +225,8 @@ class DcatDatasetCreateView(
         if "was_generated_by" in form.changed_data:
             self.object.was_generated_by.set(form.cleaned_data.get("was_generated_by"))
 
+        self.object.category.set(form.cleaned_data.get("category") or [])
+
         messages.success(
             self.request, _("Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)
         )
@@ -378,6 +380,9 @@ class DcatDatasetUpdateView(
 
         if "was_generated_by" in form.changed_data:
             self.object.was_generated_by.set(form.cleaned_data.get("was_generated_by"))
+
+        if "category" in form.changed_data:
+            self.object.category.set(form.cleaned_data.get("category") or [])
 
         self.object.save()
 

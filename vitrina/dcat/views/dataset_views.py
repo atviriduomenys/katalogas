@@ -16,7 +16,6 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Frequency
-from vitrina.datasets.helpers import generate_unique_dataset_name
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.datasets.view_helpers import (
     create_tasks_and_notify_subscribers_about_dataset_creation,
@@ -89,6 +88,12 @@ class DcatDatasetCreateView(
         )
         return isris_catalog
 
+    @cached_property
+    def dataset_parent(self) -> Dataset | None:
+        if parent_id := self.kwargs.get("parent_id"):
+            return get_object_or_404(Dataset.objects.select_related("organization"), pk=parent_id)
+        return None
+
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE_WIZARD, Dataset, self.organization)
 
@@ -131,7 +136,7 @@ class DcatDatasetCreateView(
     def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
-        kwargs["parent_dataset_id"] = self.kwargs.get("parent_id")
+        kwargs["url_parent"] = self.dataset_parent
 
         return kwargs
 
@@ -171,9 +176,7 @@ class DcatDatasetCreateView(
         self.object.tags.set(tags)
         self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
-        dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
-            self.object.organization, self.object
-        )
+        dataset_name = form.get_dataset_name()
         draft_metadata_version = _Version.objects.create(
             dataset=self.object,
             version=1,
@@ -222,7 +225,9 @@ class DcatDatasetCreateView(
         if "was_generated_by" in form.changed_data:
             self.object.was_generated_by.set(form.cleaned_data.get("was_generated_by"))
 
-        messages.success(self.request, _("Duomenų išteklius sukurtas sėkmingai"))
+        messages.success(
+            self.request, _("Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)
+        )
 
         return HttpResponseRedirect(
             reverse(
@@ -253,6 +258,12 @@ class DcatDatasetUpdateView(
     @cached_property
     def subclass(self) -> DCATResourceSubclass:
         return self.get_object().subclass
+
+    @cached_property
+    def dataset_parent(self) -> Dataset | None:
+        if parent_id := self.kwargs.get("parent_id"):
+            return get_object_or_404(Dataset.objects.select_related("organization"), pk=parent_id)
+        return None
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE_WIZARD, self.get_object())
@@ -307,7 +318,7 @@ class DcatDatasetUpdateView(
     def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
-        kwargs["parent_dataset_id"] = self.kwargs.get("parent_id")
+        kwargs["url_parent"] = self.dataset_parent
 
         return kwargs
 
@@ -385,9 +396,7 @@ class DcatDatasetUpdateView(
                 prepare_ast={},
                 version=1,
             )
-        dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
-            self.object.organization, self.object
-        )
+        dataset_name = form.get_dataset_name()
         if not metadata.name or metadata.name != dataset_name:
             metadata.name = dataset_name
             metadata.draft = True
@@ -414,7 +423,9 @@ class DcatDatasetUpdateView(
         save_dataset_attribution(self.request, self.object, form)
         save_dataset_creator(self.request, self.object, form)
 
-        messages.success(self.request, _("Duomenų išteklius atnaujintas sėkmingai"))
+        messages.success(
+            self.request, _("Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)
+        )
 
         return HttpResponseRedirect(
             reverse(

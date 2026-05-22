@@ -837,7 +837,7 @@ def _read_enum(
     enum_type = getattr(enum.meta, "type")
 
     # If string enum prepare is empty, use source as prepare value
-    if enum.prepare == "" and enum_type == "string":
+    if enum.prepare == "" and enum_type == "string" and enum.source:
         enum.prepare = f'"{enum.source}"'
 
     if enum.prepare == "":

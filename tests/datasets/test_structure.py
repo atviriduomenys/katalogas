@@ -318,9 +318,11 @@ def test_import_property_string_enum_without_prepare_uses_source_value():
     enum_item_1 = str_enum_property.enums[""][0]
     assert enum_item_1.source == "one"
     assert enum_item_1.prepare == '"one"'
+    assert enum_item_1.errors == []
     enum_item_2 = str_enum_property.enums[""][1]
     assert enum_item_2.source == "two"
     assert enum_item_2.prepare == '"two"'
+    assert enum_item_2.errors == []
 
 
 def test_import_property_string_enum_without_quoted_prepare_adds_error():

@@ -20,7 +20,7 @@ from vitrina.classifiers.models import Status
 from vitrina.datasets.structure import Dataset
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna, AccessType
-from vitrina.structure.helpers import is_time_unit, is_si_unit, is_quoted
+from vitrina.structure.helpers import is_time_unit, is_si_unit
 from vitrina.structure.models import (
     EnumItem,
     Metadata,
@@ -32,7 +32,6 @@ from vitrina.structure.models import (
     VersionType,
     Enum,
 )
-from vitrina.structure.utils import TypeCheckerError
 from vitrina.users.models import User
 
 
@@ -193,11 +192,7 @@ class EnumForm(forms.ModelForm):
 
         if instance and instance.metadata.first():
             metadata = instance.metadata.first()
-            if self.prop.metadata.first() and self.prop.metadata.first().type == "string":
-                value = metadata.prepare.replace('"', "")
-            else:
-                value = metadata.prepare
-            self.initial["value"] = value
+            self.initial["value"] = metadata.prepare
             self.initial["source"] = metadata.source
             self.initial["access"] = metadata.access
             self.initial["title"] = metadata.title
@@ -241,16 +236,6 @@ class EnumForm(forms.ModelForm):
     def clean_value(self):
         if not (value := self.cleaned_data.get("value")):
             return value
-
-        if metadata := self.prop.metadata.first():
-            if metadata.type == "string" and not is_quoted(value):
-                value = f'"{value}"'
-
-            checker = metadata.get_type_checker()
-            try:
-                checker.check_enum_item_value(value)
-            except TypeCheckerError as e:
-                raise ValidationError(e)
 
         try:
             spyna.parse(value)

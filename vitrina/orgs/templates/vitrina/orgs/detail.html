@@ -31,6 +31,11 @@
                 </div>
 				{% if can_update_organization %}
 					<div class="column buttons is-one-third">
+						<a href="{% url 'organization-wizard' pk=organization.id %}"
+						   class="button is-info is-normal m-t-md is-size-6-mobile"
+						   id="open_organization_wizard">
+							{% translate "Atidaryti formų valdymą" %}
+						</a>
 						<a href="{%url 'organization-change' pk=organization.id %}"
 						   class="button is-primary is-normal m-t-md is-size-6-mobile"
 						   id="change_organization">

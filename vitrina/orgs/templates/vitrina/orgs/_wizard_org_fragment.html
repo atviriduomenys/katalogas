@@ -1,0 +1,34 @@
+{% load i18n crispy_forms_tags %}
+<form id="wizard-fragment-form"
+      method="post"
+      enctype="multipart/form-data"
+      novalidate
+      hx-post="{% url 'organization-change' pk=organization.pk %}"
+      hx-target="#wizard-main-pane"
+      hx-swap="innerHTML"
+      hx-headers='{"X-Wizard-Request": "true"}'>
+    {% csrf_token %}
+
+    <div class="mb-4">
+        <p class="is-size-7 has-text-grey has-text-weight-semibold is-uppercase" style="letter-spacing:.05em;">
+            {% translate "Organizacija" %}
+        </p>
+        <p class="is-size-5 has-text-weight-semibold">{{ organization.title }}</p>
+        <p class="has-text-grey is-size-7 mt-1">{% translate "Redaguokite organizacijos informaciją" %}</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="notification {% if 'success' in message.tags %}is-success{% elif 'error' in message.tags or 'warning' in message.tags %}is-warning{% else %}is-info{% endif %} is-light mb-4">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% if form.errors %}
+        <div class="notification is-danger is-light mb-4">
+            {% for field in form %}{% for error in field.errors %}<p><strong>{{ field.label }}:</strong> {{ error }}</p>{% endfor %}{% endfor %}
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    {% crispy form %}
+</form>

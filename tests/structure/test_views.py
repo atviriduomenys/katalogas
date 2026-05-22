@@ -1607,7 +1607,7 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
     ) == [
         {
             "metadata_version_id": version.pk,
-            "metadata__prepare": '"test"',
+            "metadata__prepare": "test",
             "metadata__source": "TEST",
             "metadata__access": Metadata.OPEN,
             "metadata__title": "Test value",

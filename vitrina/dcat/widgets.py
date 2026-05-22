@@ -14,7 +14,9 @@ class OrganizationWidgetMixin:
     max_results = 10
 
     def __init__(self, *args, **kwargs) -> None:
-        kwargs.setdefault("attrs", {}).setdefault("data-minimum-input-length", 0)
+        attrs = kwargs.setdefault("attrs", {})
+        attrs.setdefault("data-minimum-input-length", 0)
+        attrs.setdefault("data-width", "100%")
         super().__init__(*args, **kwargs)
 
 
@@ -51,5 +53,7 @@ class DatasetMultipleWidget(ModelSelect2MultipleWidget):
     max_results = 10
 
     def __init__(self, *args, **kwargs) -> None:
-        kwargs.setdefault("attrs", {}).setdefault("data-minimum-input-length", 0)
+        attrs = kwargs.setdefault("attrs", {})
+        attrs.setdefault("data-minimum-input-length", 0)
+        attrs.setdefault("data-width", "100%")
         super().__init__(*args, **kwargs)

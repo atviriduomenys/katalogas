@@ -315,6 +315,25 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
 
+        self.helper.layout = Layout(
+            Field("parent"),
+            Field("information_system_importance"),
+            Field("information_system_type"),
+            Field("information_system_assessment_url"),
+            Field("description"),
+            Field("title"),
+            Field("name"),
+            Field("tags"),
+            Field("identifier"),
+            Field("information_system_publisher"),
+            Field("information_system_creator"),
+            Field("landing_page"),
+            Field("languages"),
+            Field("conditions"),
+            Field("rights_relation"),
+            Field("applicable_legislation"),
+        )
+
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_INFORMATION_SYSTEM)
 
     def clean(self) -> dict[str, Any]:
@@ -425,6 +444,27 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE)
+
+        self.helper.layout = Layout(
+            Field("parent"),
+            Field("name"),
+            Field("title"),
+            Field("agent"),
+            Field("endpoint_url"),
+            Field("endpoint_type"),
+            Field("contact"),
+            Field("endpoint_description"),
+            Field("endpoint_description_type"),
+            Field("tags"),
+            Field("access_rights"),
+            Field("conforms_to"),
+            Field("description"),
+            Field("follows"),
+            Field("landing_page"),
+            Field("license"),
+            Field("service_quality"),
+            Field("service_type"),
+        )
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
@@ -718,3 +758,105 @@ class DatasetUpdateForm(DatasetResourceForm):
                 self.initial["creator"] = creator_attribution.organization_id
 
         self.helper.layout.append(Field("qualified_attribution"))
+
+
+class InformationSystemRelationshipForm(forms.Form):
+    has_part = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Priklauso duomenų katalogams"),
+        help_text=_(
+            "Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
+            "Pildoma, kai institucijos turi nuosavus metaduomenų katalogus. Atitinka dct:hasPart."
+        ),
+    )
+    related_information_system = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusios informacinės sistemos (teikia duomenis į)"),
+        help_text=_(
+            "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė sistema. Susijusios "
+            "sistemos yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. "
+            "Atitinka dcataplt:informationSystem."
+        ),
+    )
+    relates_to_information_system = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusios informacinės sistemos (gauna duomenis iš)"),
+        help_text=_(
+            "Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos yra tos, kurios turi "
+            "integracijas ir yra įvardintos nuostatuose. Atitinka dcataplt:relatesToInformationSystem."
+        ),
+    )
+
+    def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if dataset.pk:
+            self.initial["has_part"] = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.CATALOG,
+                related_datasets__dataset=dataset,
+            )
+            self.initial["related_information_system"] = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
+                related_datasets__dataset=dataset,
+            )
+            self.initial["relates_to_information_system"] = Dataset.objects.filter(
+                dataset_relations__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
+                dataset_relations__part_of=dataset,
+            )
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("has_part"),
+            Field("related_information_system"),
+            Field("relates_to_information_system"),
+        )
+
+
+class ServiceRelationshipForm(forms.Form):
+    serves_datasets = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Pateikia duomenų rinkinius"),
+        help_text=_("Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."),
+    )
+
+    def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if dataset.pk:
+            self.initial["serves_datasets"] = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.SERVICE,
+                related_datasets__dataset=dataset,
+            )
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("serves_datasets"),
+        )
+
+
+class DatasetRelationshipForm(forms.Form):
+    qualified_attribution = forms.ModelMultipleChoiceField(
+        queryset=Organization.objects.all(),
+        widget=OrganizationMultipleWidget(),
+        required=False,
+        label=_("Kvalifikuotas priskyrimas"),
+        help_text=_("Organizacija atsakinga už šį duomenų rinkinį. Atitinka prov:qualifiedAttribution."),
+    )
+
+    def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if dataset.pk:
+            self.initial["qualified_attribution"] = dataset.datasetattribution_set.filter(
+                attribution__name=Attribution.CONTRIBUTOR
+            ).values_list("organization_id", flat=True)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("qualified_attribution"),
+        )

@@ -1,0 +1,70 @@
+{% load i18n crispy_forms_tags %}
+<form id="wizard-fragment-form"
+      method="post"
+      enctype="multipart/form-data"
+      novalidate
+      hx-post="{% url 'dcat-dataset-update' organization_id=organization.pk dataset_id=dataset.pk %}"
+      hx-target="#wizard-main-pane"
+      hx-swap="innerHTML"
+      hx-headers='{"X-Wizard-Request": "true"}'>
+    {% csrf_token %}
+
+    <nav class="wizard-crumbs mb-4">
+        <div class="is-flex is-align-items-flex-end" style="gap:.5rem;">
+            <div class="wizard-crumb">
+                <span class="wizard-crumb-label">{% translate "Organizacija" %}</span>
+                <span class="wizard-crumb-title">{{ organization.title }}</span>
+            </div>
+            <span class="wizard-crumb-sep">&rsaquo;</span>
+        </div>
+        <div class="wizard-crumb is-current">
+            <span class="wizard-crumb-label">{{ form_title }}</span>
+            <span class="wizard-crumb-title">{{ dataset.title }}</span>
+        </div>
+    </nav>
+
+    <div class="mb-4">
+        <p class="is-size-5 has-text-weight-semibold">{{ dataset.title }}</p>
+        <p class="has-text-grey is-size-7 mt-1">{% translate "Redaguokite" %} {{ form_title|lower }}</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="notification {% if 'success' in message.tags %}is-success{% elif 'error' in message.tags or 'warning' in message.tags %}is-warning{% else %}is-info{% endif %} is-light mb-4">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% if form.errors %}
+        <div class="notification is-danger is-light mb-4">
+            {% for field in form %}{% for error in field.errors %}<p><strong>{{ field.label }}:</strong> {{ error }}</p>{% endfor %}{% endfor %}
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="columns">
+        <div class="column">
+            {% crispy form %}
+        </div>
+
+        {% if relationship_form %}
+        <div class="column is-two-fifths" id="wizard-relationship-panel">
+            <div class="wizard-relationship-panel-inner">
+                <p class="is-size-6 has-text-weight-semibold mb-1">{% translate "Susieti su duomenų rinkiniu" %}</p>
+                <p class="has-text-grey is-size-7 mb-4">{% translate "Priskirkite vieną ar kelis duomenų rinkinius prie atitinkamo ryšio." %}</p>
+
+                <hr class="mb-4">
+
+                {% if relationship_form.errors %}
+                    <div class="notification is-danger is-light mb-4">
+                        {% for field in relationship_form %}{% for error in field.errors %}<p><strong>{{ field.label }}:</strong> {{ error }}</p>{% endfor %}{% endfor %}
+                    </div>
+                {% endif %}
+
+                {% crispy relationship_form %}
+            </div>
+        </div>
+        {% else %}
+        <div class="column is-two-fifths" id="wizard-relationship-panel"></div>
+        {% endif %}
+    </div>
+</form>

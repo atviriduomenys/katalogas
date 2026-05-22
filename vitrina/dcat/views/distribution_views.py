@@ -1,9 +1,11 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import QuerySet
 from django.http import HttpResponseBase, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.functional import cached_property
 from parler.views import TranslatableCreateView, TranslatableUpdateView
@@ -13,7 +15,7 @@ from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, get_language
 
 from vitrina.resources.view_helpers import get_default_distribution_name
 from vitrina.structure.models import Version
@@ -33,6 +35,14 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE_WIZARD, DatasetDistribution, self.dataset)
 
+    def _is_wizard_request(self) -> bool:
+        return bool(self.request.headers.get("X-Wizard-Request"))
+
+    def get_template_names(self) -> list[str]:
+        if self._is_wizard_request():
+            return ["vitrina/dcat/_wizard_distribution_create_fragment.html"]
+        return super().get_template_names()
+
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         if self.dataset.is_public:
             messages.warning(request, _("Vedlio negalima naudoti su atvirais duomenų ištekliais"))
@@ -49,7 +59,12 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Nauja duomenų rinkinio pateiktis")
-
+        context["dataset"] = self.dataset
+        if self._is_wizard_request():
+            context["wizard_create_post_url"] = reverse("dcat-distribution-create", kwargs={
+                "organization_id": self.dataset.organization_id,
+                "dataset_id": self.dataset.pk,
+            })
         return context
 
     def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
@@ -71,6 +86,22 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
             distribution.languages.set(form.cleaned_data["languages"])
 
         messages.success(self.request, _("Pateiktis sukurta sėkmingai!"))
+
+        if self._is_wizard_request():
+            distribution.set_current_language(get_language())
+            update_form = DatasetDistributionForm(instance=distribution, dataset=distribution.dataset)
+            update_form.helper.form_tag = False
+            context = {
+                "form": update_form,
+                "object": distribution,
+            }
+            response = render(self.request, "vitrina/dcat/_wizard_distribution_fragment.html", context)
+            response["HX-Trigger"] = json.dumps({
+                "treeRefresh": None,
+                "wizardnodecreated": {"nodeKey": f"distribution:{distribution.pk}"},
+            })
+            return response
+
         return HttpResponseRedirect(
             reverse(
                 "dcat-distribution-update",
@@ -92,17 +123,35 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE_WIZARD, self.get_object())
 
+    def _is_wizard_request(self) -> bool:
+        return bool(self.request.headers.get("X-Wizard-Request"))
+
+    def get_template_names(self) -> list[str]:
+        if self._is_wizard_request():
+            return ["vitrina/dcat/_wizard_distribution_fragment.html"]
+        return super().get_template_names()
+
+    def _wizard_notice(self, message: str) -> HttpResponseBase:
+        from django.http import HttpResponse
+        return HttpResponse(
+            f'<div class="notification is-warning is-light">{message}</div>'
+        )
+
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         distribution = self.get_object()
         if (version_id := kwargs.get("version_id")) is not None:
             metadata_version = get_object_or_404(Version, pk=version_id)
             if not metadata_version.is_draft():
+                if self._is_wizard_request():
+                    return self._wizard_notice(str(_("Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis.")))
                 messages.error(request, _("Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."))
                 return HttpResponseRedirect(
                     reverse("organization-detail", kwargs={"pk": distribution.dataset.organization.pk})
                 )
 
         if distribution.dataset.is_public:
+            if self._is_wizard_request():
+                return self._wizard_notice(str(_("Vedlio negalima naudoti su atvirais duomenų ištekliais.")))
             messages.warning(request, _("Vedlio negalima naudoti su atvirais duomenų ištekliais"))
             return HttpResponseRedirect(
                 reverse("organization-detail", kwargs={"pk": distribution.dataset.organization.pk})
@@ -130,7 +179,10 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Duomenų rinkinio pateikties redagavimas")
-
+        if self._is_wizard_request():
+            form = context.get("form")
+            if form and hasattr(form, "helper"):
+                form.helper.form_tag = False
         return context
 
     def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
@@ -154,6 +206,19 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
             distribution.languages.set(form.cleaned_data["languages"])
 
         messages.success(self.request, _("Pateiktis atnaujinta sėkmingai!"))
+
+        if self._is_wizard_request():
+            distribution.set_current_language(get_language())
+            fresh_form = DatasetDistributionForm(instance=distribution, dataset=distribution.dataset)
+            fresh_form.helper.form_tag = False
+            response = render(
+                self.request,
+                "vitrina/dcat/_wizard_distribution_fragment.html",
+                self.get_context_data(form=fresh_form),
+            )
+            response["HX-Trigger"] = "treeRefresh"
+            return response
+
         return HttpResponseRedirect(
             reverse(
                 "dcat-distribution-update",

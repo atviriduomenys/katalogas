@@ -445,14 +445,14 @@ def _load_enums(
                 ],
                 obj,
             )
-            db_name = ""
+            enum_name = ""
         else:
-            db_name = name
+            enum_name = name
 
-        enum = existing_enum_map.get(db_name)
+        enum = existing_enum_map.get(enum_name)
         if not enum:
             enum = Enum.objects.create(
-                name=db_name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version
+                name=enum_name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version
             )
 
         existing_enum_items = list(

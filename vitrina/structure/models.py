@@ -643,6 +643,12 @@ class MetadataVersion(models.Model):
         return ""
 
 
+class ModelScope(models.Model):
+    model = models.ForeignKey(Model, models.CASCADE, related_name="model_scopes")
+    metadata = GenericRelation("Metadata")
+    metadata_version = models.ForeignKey("Version", models.CASCADE, verbose_name=_("Versija"))
+
+
 class ValidationStatus(models.TextChoices):
     PENDING = "PENDING", _("Pending")
     VALID = "VALID", _("Valid")

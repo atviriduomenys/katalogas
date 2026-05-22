@@ -55,6 +55,7 @@ from vitrina.structure.forms import (
     PropertyForm,
     ParamForm,
     PublishForm,
+    ModelScopeForm,
 )
 from vitrina.structure.models import (
     Model,
@@ -72,6 +73,7 @@ from vitrina.structure.models import (
     Prefix,
     UMLDiagram,
     UMLDiagramStatus,
+    ModelScope,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -93,7 +95,7 @@ from spinta.manifests.components import ManifestPath
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 from copy import deepcopy
 
-RELATED_OBJECT_TYPE = Model | Property | Base | EnumItem | Enum | Param | ParamItem
+RELATED_OBJECT_TYPE = Model | Property | Base | EnumItem | Enum | Param | ParamItem | ModelScope
 
 EXCLUDED_COLS = ["_type", "_revision", "_base"]
 
@@ -465,6 +467,9 @@ class ModelStructureView(
         context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
         context["base_props"] = self.model.get_base_props()
         context["params"] = self.model.params.all().order_by("name")
+        context["scopes"] = self.model.model_scopes.filter(metadata_version=self.metadata_version)
+        context["show_scopes"] = True
+        context["show_props"] = True
         context["page_title"] = build_page_title_context(
             dataset=self.object,
             model=self.model,
@@ -756,6 +761,8 @@ class PropertyStructureView(
         context["prop"] = self.property
         context["props"] = self.props
         context["show_props"] = True
+        context["scopes"] = self.model.model_scopes.filter(metadata_version=self.metadata_version.pk)
+        context["show_scopes"] = True
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -1820,7 +1827,7 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
         main_dataset_name = self._get_main_dataset_name(manifest_stream, self.dataset)
 
         manifest_stream.seek(0)
-        manifest_path = ManifestPath(file=manifest_stream)
+        manifest_path = ManifestPath(file=self._strip_scope_rows(manifest_stream))
 
         openapi_spec = create_openapi_manifest(
             manifest_path,
@@ -1831,6 +1838,18 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
         response = JsonResponse(openapi_spec, json_dumps_params={"indent": 2, "ensure_ascii": False})
         response["Content-Disposition"] = "attachment; filename=manifest.json"
         return response
+
+    def _strip_scope_rows(self, manifest_stream: StringIO) -> StringIO:
+        """Remove scope rows from the manifest — spinta's OpenAPI generator doesn't know this type."""
+        reader = csv.DictReader(manifest_stream)
+        filtered = StringIO()
+        writer = csv.DictWriter(filtered, fieldnames=reader.fieldnames)
+        writer.writeheader()
+        for row in reader:
+            if row.get("type") != "scope":
+                writer.writerow(row)
+        filtered.seek(0)
+        return filtered
 
     def _get_main_dataset_name(self, manifest_stream: StringIO, dataset: Dataset) -> str | None:
         """
@@ -3854,6 +3873,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             Enum,
             Param,
             Prefix,
+            ModelScope,
         ]
         for field in new_related_object._meta.get_fields():
             if not self._should_process_foreign_key(field, needed_foreign_key_relationships):
@@ -3937,12 +3957,19 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         deeper_name = (
             getattr(deeper_old_related_object, "name", None)
             or getattr(deeper_old_related_object, "title", None)
+            or (
+                deeper_old_related_object.metadata.first().ref
+                if isinstance(deeper_old_related_object, ModelScope)
+                else None
+            )
             or deeper_old_related_object
         )
 
         new_name = (
             getattr(new_related_object, "name", None)
             or getattr(new_related_object, "title", None)
+            or getattr(new_related_object, "ref", None)
+            or (new_related_object.metadata.first().ref if isinstance(new_related_object, ModelScope) else None)
             or new_related_object
         )
 
@@ -4467,3 +4494,251 @@ class DatasetStructureUMLView(
         crumbs.append(Crumb(title=self.metadata_version.title, url=self.get_structure_url()))
         crumbs.append(Crumb(title=self.breadcrumb_title, url=None, is_current=True))
         return crumbs
+
+
+class ModelScopeCreateView(PermissionRequiredMixin, CreateView):
+    model = Metadata
+    template_name = "base_form.html"
+    form_class = ModelScopeForm
+
+    dataset: Dataset
+    model_obj: Model
+
+    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset)
+        model_name = self.kwargs.get("model")
+        allowed_visibility_model = get_allowed_visibilities(self.request.user, self.dataset, Action.STRUCTURE)
+        visibility_filter = Q(metadata__visibility__in=allowed_visibility_model) | Q(metadata__visibility__isnull=True)
+
+        self.model_obj = (
+            Model.objects.annotate(
+                model_name=Func(
+                    F("metadata__name"),
+                    Value("/"),
+                    Value(-1),
+                    function="split_part",
+                    output_field=TextField(),
+                )
+            )
+            .filter(model_name=model_name, dataset=self.dataset, metadata_version=self.metadata_version)
+            .filter(visibility_filter)
+            .first()
+        )
+        if not self.model_obj:
+            raise Http404("No Model matches the given query.")
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima kurti naujo duomenų lauko, kai versijos būsena nėra juodraštis."))
+            return redirect(self.model_obj.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
+
+    def form_valid(self, form) -> HttpResponse:
+        self.object: Metadata = form.save(commit=False)
+        self.object.metadata_version = self.metadata_version
+        model_scope = ModelScope.objects.create(model=self.model_obj, metadata_version=self.metadata_version)
+        self.object.metadata_version = self.metadata_version
+        self.object.uuid = str(uuid.uuid4())
+        self.object.object = model_scope
+        self.object.dataset = self.dataset
+        self.object.version = 1
+        self.object.level_given = self.object.level
+        if self.object.prepare:
+            self.object.prepare_ast = spyna.parse(self.object.prepare)
+        else:
+            self.object.prepare_ast = ""
+
+        self.object.save()
+
+        self.model_obj.update_level()
+        self.dataset.update_level()
+
+        return redirect(self.model_obj.get_absolute_url())
+
+    def get_breadcrumbs(self) -> List[Crumb]:
+        crumbs = self.dataset_hierarchy(dataset=self.dataset)
+        structure_title = (
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
+        )
+        crumbs.append(
+            Crumb(
+                title=structure_title,
+                url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk]),
+            )
+        )
+        crumbs.append(
+            Crumb(
+                title=self.model_obj.title or self.model_obj.name,
+                url=reverse("model-structure", args=[self.dataset.pk, self.metadata_version.pk, self.model_obj.name]),
+            )
+        )
+        crumbs.append(Crumb(title=_("Duomenų leidimo pridėjimas"), url=None, is_current=True))
+        return crumbs
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["current_title"] = _("Duomenų leidimo pridėjimas")
+        return context
+
+    def get_form_kwargs(self) -> dict[str, Any]:
+        kwargs = super().get_form_kwargs()
+        kwargs["model"] = self.model_obj
+        kwargs["user"] = self.request.user
+        return kwargs
+
+
+class ModelScopeUpdateView(PermissionRequiredMixin, UpdateView):
+    model = Metadata
+    form_class = ModelScopeForm
+    template_name = "base_form.html"
+
+    dataset: Dataset
+    model_obj: Model
+    scope: ModelScope
+
+    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset)
+        self.scope = get_object_or_404(ModelScope, pk=kwargs.get("scope_id"))
+        self.model_obj = self.scope.model
+        if self.model_obj.dataset != self.dataset:
+            raise Http404
+        if not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima redaguoti, kai versijos būsena nėra juodraštis."))
+            return redirect(self.model_obj.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
+
+    def get_object(self, queryset=None) -> Metadata:
+        metadata = self.scope.metadata.first()
+        if not metadata:
+            raise Http404
+        return metadata
+
+    def get_form_kwargs(self) -> dict[str, Any]:
+        kwargs = super().get_form_kwargs()
+        kwargs["model"] = self.model_obj
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form) -> HttpResponse:
+        self.object: Metadata = form.save(commit=False)
+        if not self.object.title:
+            self.object.title = self.object.ref
+        if self.object.prepare:
+            self.object.prepare_ast = spyna.parse(self.object.prepare)
+        else:
+            self.object.prepare_ast = ""
+        self.object.save()
+        return redirect(self.model_obj.get_absolute_url())
+
+
+class ModelScopeDeleteView(PermissionRequiredMixin, DeleteView):
+    model = ModelScope
+    pk_url_kwarg = "scope_id"
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset)
+        if not self.metadata_version.is_draft():
+            scope = get_object_or_404(ModelScope, pk=kwargs.get("scope_id"))
+            messages.error(request, _("Negalima ištrinti, kai versijos būsena nėra juodraštis."))
+            return redirect(scope.model.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
+
+    def get_success_url(self) -> str:
+        return self.object.model.get_absolute_url()
+
+    def form_valid(self, form) -> HttpResponse:
+        self.object = self.get_object()
+        model = self.object.model
+        response = super().form_valid(form)
+        model.save()
+        return response
+
+
+class ModelScopeDetailView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "vitrina/structure/scope_detail.html"
+
+    dataset: Dataset
+    model_obj: Model
+    scope: ModelScope
+
+    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset)
+        self.scope = get_object_or_404(ModelScope, pk=kwargs.get("scope_id"))
+        self.model_obj = self.scope.model
+        if self.model_obj.dataset != self.dataset:
+            raise Http404
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, self.dataset)
+
+    def get_breadcrumbs(self) -> List[Crumb]:
+        structure_title = (
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
+        )
+        crumbs = self.dataset_hierarchy(self.dataset, include_home=True, make_current=False)
+        crumbs.append(
+            Crumb(
+                title=structure_title,
+                url=reverse(
+                    "dataset-structure", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk}
+                ),
+            )
+        )
+        crumbs.append(
+            Crumb(
+                title=self.model_obj.title or self.model_obj.name,
+                url=reverse("model-structure", args=[self.dataset.pk, self.metadata_version.pk, self.model_obj.name]),
+            )
+        )
+        meta = self.scope.metadata.first()
+        scope_label = (meta.ref if meta and meta.ref else None) or str(self.scope.pk)
+        crumbs.append(Crumb(title=scope_label, url=None, is_current=True))
+        return crumbs
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        meta = self.scope.metadata.first()
+        context.update(
+            {
+                "dataset": self.dataset,
+                "version_id": self.metadata_version.pk,
+                "model": self.model_obj,
+                "models": Model.objects.filter(dataset=self.dataset, metadata_version=self.metadata_version).order_by(
+                    "metadata__name"
+                ),
+                "scopes": self.model_obj.model_scopes.filter(metadata_version=self.metadata_version),
+                "show_scopes": True,
+                "props": self.model_obj.get_given_props(),
+                "show_props": True,
+                "scope": self.scope,
+                "metadata": meta,
+                "can_manage_structure": has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset),
+                "is_disabled": not self.metadata_version.is_draft(),
+                "structure_url": reverse(
+                    "dataset-structure", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk}
+                ),
+                "detail_url": reverse("dataset-detail", args=[self.dataset.pk]),
+                "detail_url_name": "dataset-detail",
+                "child_resources_url": reverse("dataset-child-resources", args=[self.dataset.pk]),
+                "history_url": reverse("dataset-history", args=[self.dataset.pk]),
+                "can_manage_history": has_perm(self.request.user, Action.HISTORY_VIEW, self.dataset),
+                "plan_url": reverse("dataset-plans", args=[self.dataset.pk]),
+                "plan_url_name": "dataset-plans",
+                "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, self.dataset),
+            }
+        )
+        return context

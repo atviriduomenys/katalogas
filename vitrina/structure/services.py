@@ -51,6 +51,7 @@ from vitrina.structure.models import (
     Version,
     VersionStatus,
     MetadataVersion,
+    ModelScope,
 )
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
@@ -676,6 +677,7 @@ def _load_models(
                 metadata_cache=local_cache,
             )
             _load_params(dataset, meta.params, model, metadata_version, metadata_cache=local_cache)
+            _load_scopes(dataset, meta.scopes, model, metadata_version, metadata_cache=local_cache)
             _load_properties(dataset, meta, model, metadata_version, metadata_cache=local_cache)
             loaded_models.append(model)
             _create_errors(meta.errors, model)
@@ -684,6 +686,63 @@ def _load_models(
     removed_model_ids = [model.pk for model in set(existing_models) - set(loaded_models)]
     if removed_model_ids:
         Model.objects.filter(pk__in=removed_model_ids).delete()
+
+
+def _load_scopes(
+    dataset: Dataset,
+    scopes: List[struct.Scope],
+    model: Model,
+    metadata_version: Version,
+    metadata_cache: MetadataCache = None,
+) -> None:
+    if not scopes:
+        return
+
+    scope_ct = ContentType.objects.get_for_model(ModelScope)
+    existing_scopes = list(
+        ModelScope.objects.filter(model=model, metadata_version=metadata_version).prefetch_related("metadata")
+    )
+
+    if metadata_cache is not None:
+        local_cache = metadata_cache
+    else:
+        local_cache = _build_metadata_cache(
+            dataset,
+            metadata_version,
+            [
+                metadata
+                for scope in existing_scopes
+                for metadata in scope.metadata.all()
+                if metadata.content_type_id == scope_ct.pk and metadata.dataset_id == dataset.pk
+            ],
+        )
+
+    existing_scope_by_ref: dict[str, tuple] = {}
+    for scope in existing_scopes:
+        for metadata in scope.metadata.all():
+            if metadata.content_type_id == scope_ct.pk and metadata.dataset_id == dataset.pk:
+                if metadata.ref:
+                    existing_scope_by_ref[metadata.ref] = (scope, metadata)
+                break
+
+    loaded_scopes = []
+
+    for order, meta in enumerate(scopes, 1):
+        if not meta.id and meta.ref:
+            existing = existing_scope_by_ref.get(meta.ref)
+            if existing:
+                _, existing_metadata = existing
+                meta.id = existing_metadata.uuid
+
+        scope_obj = ModelScope(model=model, metadata_version=metadata_version)
+        scope_obj, _ = _create_or_update_metadata(
+            dataset, meta, scope_obj, order, metadata_version=metadata_version, metadata_cache=local_cache
+        )
+        loaded_scopes.append(scope_obj)
+
+    removed_scope_ids = [scope.pk for scope in set(existing_scopes) - set(loaded_scopes)]
+    if removed_scope_ids:
+        ModelScope.objects.filter(pk__in=removed_scope_ids).delete()
 
 
 def _load_properties(
@@ -2128,6 +2187,38 @@ def _params_to_tabular(
         yield to_row(DATASET, {})
 
 
+def _scopes_to_tabular(model: Model, version: Version | None = None) -> Generator:
+    scope_filter = {"model": model}
+    metadata_queryset = Metadata.objects.all()
+    has_metadata_filter = {"metadata__isnull": False}
+
+    if version is not None:
+        scope_filter["metadata_version"] = version
+        metadata_queryset = metadata_queryset.filter(metadata_version=version)
+        has_metadata_filter = {"metadata__metadata_version": version}
+
+    scopes = (
+        ModelScope.objects.filter(**scope_filter, **has_metadata_filter)
+        .distinct()
+        .prefetch_related(Prefetch("metadata", queryset=metadata_queryset.order_by("order")))
+    )
+
+    for scope in scopes:
+        meta = scope.metadata.first()
+        yield to_row(
+            DATASET,
+            {
+                "id": meta.uuid,
+                "type": "scope",
+                "ref": meta.ref,
+                "prepare": meta.prepare,
+                "title": meta.title,
+                "description": meta.description,
+                "eli": meta.eli,
+            },
+        )
+
+
 def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Version | None = None) -> Generator:
     model_filter = {"dataset": dataset}
     model_metadata_filter = {}
@@ -2208,6 +2299,7 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
 
             yield from _comments_to_tabular(model)
             yield from _params_to_tabular(model, version=version)
+            yield from _scopes_to_tabular(model, version=version)
             yield from _properties_to_tabular(model, version=version)
             if separator:
                 yield to_row(DATASET, {})
@@ -2282,6 +2374,7 @@ def _resource_models_to_tabular(
                 },
             )
             yield from _params_to_tabular(model, version=version)
+            yield from _scopes_to_tabular(model, version=version)
             yield from _properties_to_tabular(model, version=version)
             if separator:
                 yield to_row(DATASET, {})

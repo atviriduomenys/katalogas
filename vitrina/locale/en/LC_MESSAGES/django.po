@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-21 19:04+0300\n"
+"POT-Creation-Date: 2026-05-27 12:56+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4722,6 +4722,43 @@ msgstr "Version can be released not earlier than after 2 weeks."
 msgid "Versija negali įsigalioti anksčiau už praėjusią versiją."
 msgstr "Version can be released not earlier than previous version."
 
+msgid ""
+"Savybė nurodanti duomenų lauko pavadinimą, modelio atributas. DSA: `ref`"
+msgstr "Property indicating the data field name, a model attribute. DSA: 'ref'"
+
+msgid "Duomenų atranka"
+msgstr "Data filter"
+
+msgid "Formulė skirta suteikti leidimą modelio laukams. DSA: `prepare`"
+msgstr "The formula used to give a scope for model fields. DSA: `prepare`"
+
+msgid ""
+"Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį "
+"teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> Pateikti "
+"konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "
+"\"#17.2\" <br>Tais atvejais, kai yra keli dokumentai su priedais:  "
+"\"#priedas1/17.2\"  \"17.2/17.2.5\", kur \"priedas1\" yra dokumento failo "
+"pavadinimas. DSA: `eli`"
+msgstr ""
+"A standard for identifying legal acts, allowing not only the legal document "
+"itself to be identified, but also a specific location within the document. "
+"<br>To provide a specific location in the legislative document: after the # "
+"provide a specific location: \"#17.2\" <br>In cases where there are several "
+"documents with annexes: \"#attachment1/17.2\" \"17.2/17.2.5\" where "
+"\"attachment1\" is the name of the document's file. DSA: `eli`"
+
+msgid ""
+"Duomenų lauko pavadinimas. Šis pavadinimas yra skirtas skaityti žmonėms ir "
+"bus rodomas duomenų laukų sąrašuose ir antraštėse. Jei nenurodyta, bus "
+"naudojamas scope kodinis pavadinimas. DSA: `title`"
+msgstr ""
+"Data field name. This name is intended for human readability and will be "
+"displayed in data field lists and headers. If not provided, the property "
+"code name will be used. DSA: `title`"
+
+msgid "Duomenų lauko aprašymas. DSA: `description`"
+msgstr "Data field description. DSA: `description`"
+
 msgid "URI"
 msgstr "URI"
 
@@ -5016,6 +5053,12 @@ msgstr "No enum ."
 msgid "Nauja reikšmė"
 msgstr "New enum value"
 
+msgid "Metaduomenys nerasti."
+msgstr "Metadata was not found"
+
+msgid "Leidimų nėra."
+msgstr "No scopes."
+
 msgid "Įvyko klaida generuojant diagramą. Susisiekite su administracija."
 msgstr ""
 "An error occurred while generating the diagram. Please contact "
@@ -5157,6 +5200,15 @@ msgstr "Structure not found for the selected structure version."
 #, python-brace-format
 msgid "'{0}' struktūros UML diagrama"
 msgstr "'{0}' structure's UML diagram"
+
+msgid "Duomenų leidimo pridėjimas"
+msgstr "Add scope"
+
+msgid "Negalima redaguoti, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit, when the version status is not draft."
+
+msgid "Negalima ištrinti, kai versijos būsena nėra juodraštis."
+msgstr "Can not delete, when the version status is not draft."
 
 msgid "Vyr. koordinatorius"
 msgstr "Senior coordinator"

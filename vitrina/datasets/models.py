@@ -1457,6 +1457,25 @@ class Dataset(Resource):
                                     )
                                 label = mark_safe(label_str)
                                 meta_objects.append((metadata.pk, label))
+
+            for scope in model.model_scopes.filter(metadata_version=metadata_version):
+                metadata = scope.metadata.first()
+                if metadata and metadata.draft is True:
+                    scope_url = reverse(
+                        "model-scope-detail",
+                        args=[self.pk, metadata_version.pk, model.name, scope.pk],
+                    )
+                    label_str = (
+                        f"<span class='prop_metadata'><a href='{scope_url}'>scope</a> ref: "
+                        f"<span class='tag is-success is-light is-medium'>{metadata.ref}</span></span>"
+                    )
+                    if metadata.prepare:
+                        label_str += (
+                            f" prepare: <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
+                        )
+                    label = mark_safe(label_str)
+                    meta_objects.append((metadata.pk, label))
+
         return meta_objects
 
     def save_translations(self, *args, **kwargs):

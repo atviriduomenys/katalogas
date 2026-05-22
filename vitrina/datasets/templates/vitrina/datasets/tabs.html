@@ -17,7 +17,7 @@
         </li>
         {% endif %}
         {% if structure_url %}
-        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure' or request.resolver_match.url_name == 'version-list' or request.resolver_match.url_name == 'version-detail' or request.resolver_match.url_name == 'dataset-structure-import' or request.resolver_match.url_name == 'dataset-structure-uml-view' %} is-active {% endif %}">
+        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure' or request.resolver_match.url_name == 'model-scope-detail' or request.resolver_match.url_name == 'version-list' or request.resolver_match.url_name == 'version-detail' or request.resolver_match.url_name == 'dataset-structure-import' or request.resolver_match.url_name == 'dataset-structure-uml-view' %} is-active {% endif %}">
             <a href="{{ structure_url }}" id="structure_tab">
                 {% translate "Struktūra" %}
             </a>

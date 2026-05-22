@@ -6,6 +6,7 @@ from factory.django import DjangoModelFactory
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import (
     Model,
+    ModelScope,
     Metadata,
     Property,
     Prefix,
@@ -119,3 +120,11 @@ class UMLDiagramFactory(DjangoModelFactory):
         model = UMLDiagram
 
     metadata_version = factory.SubFactory(VersionFactory)
+
+
+class ModelScopeFactory(DjangoModelFactory):
+    class Meta:
+        model = ModelScope
+
+    model = factory.SubFactory(ModelFactory)
+    metadata_version = factory.SelfAttribute("model.metadata_version")

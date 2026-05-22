@@ -32,6 +32,23 @@
                     </span>
                 </div>
             {% endfor %}
+        {% endif %}
+        {% if show_scopes and request.resolver_match.kwargs.model == model.name %}
+            {% for scope in scopes %}
+                {% with meta=scope.metadata.first %}
+                <div>
+                    <span class="has-tooltip-top" data-tooltip="{{ meta.ref }}">
+                        <a href="{% url 'model-scope-detail' dataset.pk scope.metadata_version.pk model.name scope.pk %}" class="menu-panel-block ml-4">
+                        {% if request.resolver_match.kwargs.scope_id == scope.pk %}
+                            <strong><span id="side_menu_elem">{{ meta.ref }}</span></strong>
+                        {% else %}
+                            <span id="side_menu_elem">{{ meta.ref }}</span>
+                        {% endif %}
+                        </a>
+                    </span>
+                </div>
+                {% endwith %}
+            {% endfor %}
         {% elif is_api and request.resolver_match.kwargs.model == model.name %}
             {% for action, url in actions.items %}
                 <div>

@@ -116,6 +116,7 @@ RULES = {
         accepts=[
             "comment",
             "param",
+            "scope",
             "lang",
         ],
     ),
@@ -170,6 +171,12 @@ RULES = {
         accepts=[
             "coment",
         ],
+    ),
+    "scope": Rule(
+        parents=[
+            "model",
+        ],
+        accepts=[],
     ),
     "lang": Rule(
         parents=[
@@ -290,6 +297,7 @@ class Model(Metadata):
     resource: Resource | None = field(default=None, init=False)
     ref_props: list[str] = field(default_factory=list, init=False)
     params: dict[str, list[Param]] = field(default_factory=dict, init=False)
+    scopes: list[Scope] = field(default_factory=list, init=False)
     errors: list[str] = field(default_factory=list, init=False)
 
     @property
@@ -355,6 +363,16 @@ class Param(Metadata):
     errors: list[str] = field(default_factory=list, init=False)
 
 
+@dataclass
+class Scope(Metadata):
+    dim: str = field(default="scope")
+
+    name: str = ""
+
+    meta: Metadata = field(init=False)
+    errors: list[str] = field(default_factory=list, init=False)
+
+
 class State:
     manifest: Manifest | None = None
     dataset: Dataset | None = None
@@ -366,6 +384,8 @@ class State:
     comment: Comment | None = None
     prefix: Comment | None = None
     param: Param | None = None
+
+    scope: Scope | None = None
 
     stack: list[Metadata]
     errors: list[str]
@@ -525,6 +545,9 @@ def read(reader: Iterable[Row]) -> State:
 
         elif dim == "param":
             meta = _read_param(state, row, name)
+
+        elif dim == "scope":
+            meta = _read_scope(state, row, name)
 
         # Push read metadata to stack
         if meta:
@@ -877,6 +900,26 @@ def _read_param(
         param.meta.params[name] = [param]
 
     return param
+
+
+def _read_scope(
+    state: State,
+    row: Row,
+    name: str,
+) -> Scope:
+    scope = state.scope = Scope(
+        id=row["id"],
+        name=name,
+        ref=row["ref"],
+        prepare=row["prepare"],
+        access=row["access"],
+        title=row["title"],
+        description=row["description"],
+    )
+    scope.meta = state.model
+    if state.model is not None:
+        state.model.scopes.append(scope)
+    return scope
 
 
 def _split_dim(

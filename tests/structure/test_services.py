@@ -3428,3 +3428,42 @@ id : integer [0..1]
     assert f'click `datasets/gov/main/dataset/ChildModel` href "{base_url}{child_url}"' in mermaid
     assert f'click `datasets/gov/parent/dataset/ParentModel` href "{base_url}{parent_url}"' in mermaid
     assert f'click `datasets/gov/grand/dataset/GrandparentModel` href "{base_url}{grandparent_url}"' in mermaid
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("use_version", [False, True])
+def test_structure_export__scopes(app: DjangoTestApp, use_version):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "2,,,,Country,,,,,,,,,,,,,,\n"
+        "3,,,,,,scope,ids,,select(id),,,,,,,,,\n"
+        "4,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+
+    expected_output = (
+        "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n"
+        "2,,,,Country,,,,,,,,,,develop,,,,,,\r\n"
+        "3,,,,,,scope,ids,,,select(id),,,,,,,,,,\r\n"
+        "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+    )
+
+    if use_version:
+        metadata_version = VersionFactory(dataset=structure.dataset)
+        create_structure_objects(structure, metadata_version)
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
+    else:
+        create_structure_objects(structure)
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
+
+    assert resp.text == expected_output

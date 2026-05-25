@@ -6,6 +6,7 @@ from factory.django import DjangoModelFactory
 from vitrina.classifiers.models import (
     Activity,
     Category,
+    FormFieldHelpText,
     Frequency,
     Licence,
     AreaOfManagement,
@@ -147,3 +148,23 @@ class ActivityFactory(DjangoModelFactory):
         model = Activity
 
     title = factory.Faker("catch_phrase")
+
+
+class FormFieldHelpTextFactory(DjangoModelFactory):
+    class Meta:
+        model = FormFieldHelpText
+
+    form_name = FormFieldHelpText.DCAT_DATASET
+    field_name = factory.Faker("word")
+
+    @classmethod
+    def _create(cls, model_class: type[FormFieldHelpText], *args, **kwargs) -> FormFieldHelpText:
+        help_text_lt = kwargs.pop("help_text_lt", "")
+        help_text_en = kwargs.pop("help_text_en", "")
+        entry = model_class(*args, **kwargs)
+        entry.set_current_language("lt")
+        entry.help_text = help_text_lt
+        entry.set_current_language("en")
+        entry.help_text = help_text_en
+        entry.save()
+        return entry

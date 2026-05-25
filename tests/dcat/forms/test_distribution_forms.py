@@ -1,8 +1,9 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import override as translation_override
 
-from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, LicenceFactory
-from vitrina.classifiers.models import ConceptSchema
+from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, FormFieldHelpTextFactory, LicenceFactory
+from vitrina.classifiers.models import ConceptSchema, FormFieldHelpText
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.factories import OrganizationFactory
@@ -258,3 +259,16 @@ class TestDatasetDistributionForm:
 
         assert "documentation" not in form.errors
         assert form.cleaned_data["documentation"] == ["https://example.com/doc1", "https://example.com/doc2"]
+
+    def test_dynamic_help_text_applied(self):
+        dataset = DatasetFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_DISTRIBUTION,
+            field_name="documentation",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetDistributionForm(dataset)
+
+        assert form.fields["documentation"].help_text == "Dinaminis tekstas"

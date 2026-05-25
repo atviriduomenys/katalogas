@@ -297,7 +297,7 @@ def test_import_property_enum_type_number():
     assert enum_item_2.prepare == "1.4"
 
 
-def test_import_property_string_enum_without_prepare_uses_source_value():
+def test_import_property_string_enum_without_prepare_adds_error():
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"
         ",example,,,,,,,,,,,,,\n"
@@ -317,12 +317,12 @@ def test_import_property_string_enum_without_prepare_uses_source_value():
     assert str_enum_property.type == "string"
     enum_item_1 = str_enum_property.enums[""][0]
     assert enum_item_1.source == "one"
-    assert enum_item_1.prepare == '"one"'
-    assert enum_item_1.errors == []
+    assert enum_item_1.prepare == ""
+    assert enum_item_1.errors == ['Duomenų reikšmė (source: "one") privalo turėti nurodytą "prepare" stulpelį.']
     enum_item_2 = str_enum_property.enums[""][1]
     assert enum_item_2.source == "two"
-    assert enum_item_2.prepare == '"two"'
-    assert enum_item_2.errors == []
+    assert enum_item_2.prepare == ""
+    assert enum_item_2.errors == ['Duomenų reikšmė (source: "two") privalo turėti nurodytą "prepare" stulpelį.']
 
 
 def test_import_property_string_enum_without_quoted_prepare_adds_error():
@@ -370,17 +370,11 @@ def test_import_property_not_string_enum_without_prepare_results_in_error():
     enum_item_1 = int_enum_property.enums[""][0]
     assert enum_item_1.source == "1"
     assert enum_item_1.prepare == ""
-    assert enum_item_1.errors == [
-        'Duomenų reikšmė (source: "1") privalo turėti nurodytą "prepare" stulpelį.',
-        'Reikšmė "" turi būti integer tipo.',
-    ]
+    assert enum_item_1.errors == ['Duomenų reikšmė (source: "1") privalo turėti nurodytą "prepare" stulpelį.']
     enum_item_2 = int_enum_property.enums[""][1]
     assert enum_item_2.source == "2"
     assert enum_item_2.prepare == ""
-    assert enum_item_2.errors == [
-        'Duomenų reikšmė (source: "2") privalo turėti nurodytą "prepare" stulpelį.',
-        'Reikšmė "" turi būti integer tipo.',
-    ]
+    assert enum_item_2.errors == ['Duomenų reikšmė (source: "2") privalo turėti nurodytą "prepare" stulpelį.']
 
 
 def test_import_enum_checks_uniqueness_based_on_source_and_prepare():

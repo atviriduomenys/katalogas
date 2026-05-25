@@ -879,7 +879,6 @@ def test_structure_with_enum_without_prepare_value_adds_comment_about_error(app:
     assert prop_enum[0].name == ""
     assert not prop_enum[0].enumitem_set.exists()
     assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
-        'Reikšmė "" turi būti integer tipo.',
         'Duomenų reikšmė (source: "one") privalo turėti nurodytą "prepare" stulpelį.',
     ]
 
@@ -906,6 +905,30 @@ def test_structure_with_property_enum_ref_value_adds_comment_about_error(app: Dj
     assert list(prop_enum[0].enumitem_set.values_list("metadata__prepare", flat=True)) == ["1", "2"]
     assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
         'Reikšmių sąrašas "SomeName" negali turėti pavadinimo (ref), kai yra deklaruojamas savybės dimensijoje.',
+    ]
+
+
+@pytest.mark.django_db
+def test_structure_with_enum_with_wrong_type_prepare_adds_comment_about_error(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,,,,\n"
+        "1,,,,,type,integer,,,,5,,,,,,,,\n"
+        ',,,,,,enum,Type,one,hello,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    prop = Property.objects.get(metadata__uuid="1")
+    prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
+    assert prop_enum.count() == 1
+    assert prop_enum[0].name == "Type"
+    assert not prop_enum[0].enumitem_set.exists()
+    assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
+        'Reikšmė "hello" turi būti integer tipo.',
     ]
 
 

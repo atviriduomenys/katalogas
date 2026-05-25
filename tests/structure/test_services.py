@@ -915,7 +915,7 @@ def test_structure_with_enum_with_wrong_type_prepare_adds_comment_about_error(ap
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,City,,,,,,,,,,,,,,\n"
         "1,,,,,type,integer,,,,5,,,,,,,,\n"
-        ',,,,,,enum,Type,one,hello,,,,,,,,,\n'
+        ",,,,,,enum,Type,one,hello,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure

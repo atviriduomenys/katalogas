@@ -129,6 +129,7 @@ INSTALLED_APPS = [
     "treebeard",
     "filer",
     "easy_thumbnails",
+    "djangocms_text",
     "djangocms_file",
     "djangocms_picture",
     "djangocms_link",

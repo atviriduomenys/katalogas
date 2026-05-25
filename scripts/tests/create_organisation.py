@@ -12,7 +12,7 @@ CREDENTIALS = {
     "password": "Liabas.12345",
 }
 
-_org_counter = itertools.count(start=6)
+_org_counter = itertools.count(start=1)
 
 
 def generate_organisation_data():
@@ -109,9 +109,10 @@ def run(playwright: Playwright) -> None:
 
     page.goto(BASE_URL)
     login(page, CREDENTIALS["email"], CREDENTIALS["password"])
-    go_to_organizations(page)
-    ORGANISATION = generate_organisation_data()
-    create_organization(page, ORGANISATION)
+    for i in range(3):
+        go_to_organizations(page)
+        ORGANISATION = generate_organisation_data()
+        create_organization(page, ORGANISATION)
 
     context.close()
     browser.close()

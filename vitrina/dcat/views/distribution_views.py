@@ -61,10 +61,13 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         context["current_title"] = _("Nauja duomenų rinkinio pateiktis")
         context["dataset"] = self.dataset
         if self._is_wizard_request():
-            context["wizard_create_post_url"] = reverse("dcat-distribution-create", kwargs={
-                "organization_id": self.dataset.organization_id,
-                "dataset_id": self.dataset.pk,
-            })
+            context["wizard_create_post_url"] = reverse(
+                "dcat-distribution-create",
+                kwargs={
+                    "organization_id": self.dataset.organization_id,
+                    "dataset_id": self.dataset.pk,
+                },
+            )
         return context
 
     def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
@@ -96,10 +99,12 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
                 "object": distribution,
             }
             response = render(self.request, "vitrina/dcat/_wizard_distribution_fragment.html", context)
-            response["HX-Trigger"] = json.dumps({
-                "treeRefresh": None,
-                "wizardnodecreated": {"nodeKey": f"distribution:{distribution.pk}"},
-            })
+            response["HX-Trigger"] = json.dumps(
+                {
+                    "treeRefresh": None,
+                    "wizardnodecreated": {"nodeKey": f"distribution:{distribution.pk}"},
+                }
+            )
             return response
 
         return HttpResponseRedirect(
@@ -133,9 +138,8 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
     def _wizard_notice(self, message: str) -> HttpResponseBase:
         from django.http import HttpResponse
-        return HttpResponse(
-            f'<div class="notification is-warning is-light">{message}</div>'
-        )
+
+        return HttpResponse(f'<div class="notification is-warning is-light">{message}</div>')
 
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         distribution = self.get_object()
@@ -143,7 +147,9 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
             metadata_version = get_object_or_404(Version, pk=version_id)
             if not metadata_version.is_draft():
                 if self._is_wizard_request():
-                    return self._wizard_notice(str(_("Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis.")))
+                    return self._wizard_notice(
+                        str(_("Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."))
+                    )
                 messages.error(request, _("Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."))
                 return HttpResponseRedirect(
                     reverse("organization-detail", kwargs={"pk": distribution.dataset.organization.pk})

@@ -20,7 +20,6 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Frequency
-from vitrina.datasets.helpers import generate_unique_dataset_name
 from vitrina.datasets.models import Dataset, DatasetRelation, DCATResourceSubclass, Relation
 from vitrina.datasets.view_helpers import (
     create_tasks_and_notify_subscribers_about_dataset_creation,
@@ -171,16 +170,22 @@ class DcatDatasetCreateView(
         if self._is_wizard_request():
             parent_id = self.kwargs.get("parent_id")
             if parent_id:
-                context["wizard_create_post_url"] = reverse("dcat-dataset-create-with-parent", kwargs={
-                    "organization_id": self.organization.pk,
-                    "parent_id": parent_id,
-                    "subclass_uuid": self.subclass.pk,
-                })
+                context["wizard_create_post_url"] = reverse(
+                    "dcat-dataset-create-with-parent",
+                    kwargs={
+                        "organization_id": self.organization.pk,
+                        "parent_id": parent_id,
+                        "subclass_uuid": self.subclass.pk,
+                    },
+                )
             else:
-                context["wizard_create_post_url"] = reverse("dcat-dataset-create", kwargs={
-                    "organization_id": self.organization.pk,
-                    "subclass_uuid": self.subclass.pk,
-                })
+                context["wizard_create_post_url"] = reverse(
+                    "dcat-dataset-create",
+                    kwargs={
+                        "organization_id": self.organization.pk,
+                        "subclass_uuid": self.subclass.pk,
+                    },
+                )
         return context
 
     def get_form_kwargs(self) -> dict:
@@ -208,9 +213,7 @@ class DcatDatasetCreateView(
             if parent:
                 last_child = parent.get_last_child()
                 self.object.path = (
-                    last_child._inc_path()
-                    if last_child
-                    else Dataset._get_path(parent.path, parent.depth + 1, 1)
+                    last_child._inc_path() if last_child else Dataset._get_path(parent.path, parent.depth + 1, 1)
                 )
                 self.object.depth = parent.depth + 1
             else:
@@ -254,7 +257,6 @@ class DcatDatasetCreateView(
             tags = form.cleaned_data.get("tags")
             self.object.tags.set(tags)
             self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
-
 
             dataset_name = form.get_dataset_name()
             draft_metadata_version = _Version.objects.create(
@@ -328,10 +330,12 @@ class DcatDatasetCreateView(
             }
             response = render(self.request, "vitrina/dcat/_wizard_dataset_fragment.html", context)
             node_prefix = _WIZARD_NODE_KEY_PREFIX.get(self.subclass.name, "dataset")
-            response["HX-Trigger"] = json.dumps({
-                "treeRefresh": None,
-                "wizardnodecreated": {"nodeKey": f"{node_prefix}:{self.object.pk}"},
-            })
+            response["HX-Trigger"] = json.dumps(
+                {
+                    "treeRefresh": None,
+                    "wizardnodecreated": {"nodeKey": f"{node_prefix}:{self.object.pk}"},
+                }
+            )
             return response
 
         return HttpResponseRedirect(
@@ -383,9 +387,8 @@ class DcatDatasetUpdateView(
 
     def _wizard_notice(self, message: str) -> HttpResponseBase:
         from django.http import HttpResponse
-        return HttpResponse(
-            f'<div class="notification is-warning is-light">{message}</div>'
-        )
+
+        return HttpResponse(f'<div class="notification is-warning is-light">{message}</div>')
 
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         obj = self.get_object()
@@ -639,6 +642,6 @@ class DcatDatasetRelationshipUpdateView(LoginRequiredMixin, PermissionRequiredMi
             "form_title": self.dataset.subclass.translated_title,
             "information_title": self.dataset.subclass.translated_title,
         }
-        response = render(request, "vitrina/dcat/_wizard_dataset_fragment.html", context)
+        response = render(self.request, "vitrina/dcat/_wizard_dataset_fragment.html", context)
         response["HX-Trigger"] = "treeRefresh"
         return response

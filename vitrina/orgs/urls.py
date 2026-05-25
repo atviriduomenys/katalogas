@@ -331,5 +331,9 @@ urlpatterns = [
     path("orgs/remote-organization-check/", check_organization, name="check-organization"),
     path("orgs/<int:pk>/wizard/", OrganizationWizardView.as_view(), name="organization-wizard"),
     path("orgs/<int:pk>/wizard/tree/", OrganizationWizardTreeView.as_view(), name="organization-wizard-tree"),
-    path("orgs/<int:pk>/wizard/create/", OrganizationWizardCreateRedirectView.as_view(), name="organization-wizard-create"),
+    path(
+        "orgs/<int:pk>/wizard/create/",
+        OrganizationWizardCreateRedirectView.as_view(),
+        name="organization-wizard-create",
+    ),
 ]

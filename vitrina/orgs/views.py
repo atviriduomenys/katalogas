@@ -3234,23 +3234,27 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
         urls: dict[str, str] = {}
         for child_type in WIZARD_ALLOWED_CHILDREN.get(node_type, []):
             if child_type == WIZARD_NODE_DISTRIBUTION:
-                urls[child_type] = reverse("dcat-distribution-create", kwargs={
-                    "organization_id": organization.pk,
-                    "dataset_id": node_id,
-                })
+                urls[child_type] = reverse(
+                    "dcat-distribution-create",
+                    kwargs={
+                        "organization_id": organization.pk,
+                        "dataset_id": node_id,
+                    },
+                )
             else:
                 subclass_name = WIZARD_TYPE_TO_SUBCLASS_NAME.get(child_type)
                 if subclass_name and subclass_name in _subclass_uuids:
-                    urls[child_type] = reverse("dcat-dataset-create-with-parent", kwargs={
-                        "organization_id": organization.pk,
-                        "parent_id": node_id,
-                        "subclass_uuid": _subclass_uuids[subclass_name],
-                    })
+                    urls[child_type] = reverse(
+                        "dcat-dataset-create-with-parent",
+                        kwargs={
+                            "organization_id": organization.pk,
+                            "parent_id": node_id,
+                            "subclass_uuid": _subclass_uuids[subclass_name],
+                        },
+                    )
         return urls
 
-    org_datasets = list(
-        Dataset.objects.filter(organization=organization, is_public=False).select_related("subclass")
-    )
+    org_datasets = list(Dataset.objects.filter(organization=organization, is_public=False).select_related("subclass"))
     org_dataset_ids = {d.pk for d in org_datasets}
     datasets_by_id = {d.pk: d for d in org_datasets}
 
@@ -3265,16 +3269,11 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
             child_to_parent.setdefault(child_id, parent_id)
             parent_to_children.setdefault(parent_id, []).append(child_id)
 
-    top_level = [
-        d for d in org_datasets
-        if d.pk not in child_to_parent or child_to_parent[d.pk] not in org_dataset_ids
-    ]
+    top_level = [d for d in org_datasets if d.pk not in child_to_parent or child_to_parent[d.pk] not in org_dataset_ids]
 
     nodes_by_key: dict[str, dict] = {}
     org_key = f"org:{organization.pk}"
-    org_ancestor = _wizard_ancestor_summary(
-        WIZARD_NODE_ORGANIZATION, organization.pk, organization.title
-    )
+    org_ancestor = _wizard_ancestor_summary(WIZARD_NODE_ORGANIZATION, organization.pk, organization.title)
 
     def register_selection(
         key: str,
@@ -3298,9 +3297,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
             "create_urls": create_urls or {},
         }
 
-    def build(
-        dataset: Dataset, depth: int, visited: frozenset, ancestors: list[dict]
-    ) -> dict | None:
+    def build(dataset: Dataset, depth: int, visited: frozenset, ancestors: list[dict]) -> dict | None:
         if depth >= _WIZARD_TREE_MAX_DEPTH or dataset.pk in visited:
             return None
         visited = visited | {dataset.pk}
@@ -3335,26 +3332,36 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
                 },
             )
             register_selection(
-                dist_key, WIZARD_NODE_DISTRIBUTION, dist.pk, dist_title,
-                next_ancestors, fragment_url=dist_fragment_url,
+                dist_key,
+                WIZARD_NODE_DISTRIBUTION,
+                dist.pk,
+                dist_title,
+                next_ancestors,
+                fragment_url=dist_fragment_url,
             )
-            children.append({
-                "type": WIZARD_NODE_DISTRIBUTION,
-                "type_label": WIZARD_NODE_LABELS[WIZARD_NODE_DISTRIBUTION],
-                "type_label_plural": WIZARD_NODE_LABELS_PLURAL[WIZARD_NODE_DISTRIBUTION],
-                "icon": WIZARD_NODE_ICONS[WIZARD_NODE_DISTRIBUTION],
-                "id": dist.pk,
-                "key": dist_key,
-                "title": dist_title,
-                "children": [],
-                "allowed_children": [],
-                "fragment_url": dist_fragment_url,
-            })
+            children.append(
+                {
+                    "type": WIZARD_NODE_DISTRIBUTION,
+                    "type_label": WIZARD_NODE_LABELS[WIZARD_NODE_DISTRIBUTION],
+                    "type_label_plural": WIZARD_NODE_LABELS_PLURAL[WIZARD_NODE_DISTRIBUTION],
+                    "icon": WIZARD_NODE_ICONS[WIZARD_NODE_DISTRIBUTION],
+                    "id": dist.pk,
+                    "key": dist_key,
+                    "title": dist_title,
+                    "children": [],
+                    "allowed_children": [],
+                    "fragment_url": dist_fragment_url,
+                }
+            )
 
         children.sort(key=lambda c: WIZARD_TYPE_ORDER.get(c["type"], 99))
         dataset_create_urls = _node_create_urls(node_type, dataset.pk)
         register_selection(
-            node_key, node_type, dataset.pk, node_title, ancestors,
+            node_key,
+            node_type,
+            dataset.pk,
+            node_title,
+            ancestors,
             fragment_url=dataset_fragment_url,
             create_urls=dataset_create_urls,
         )
@@ -3384,12 +3391,19 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
     for child_type in WIZARD_ALLOWED_CHILDREN.get(WIZARD_NODE_ORGANIZATION, []):
         subclass_name = WIZARD_TYPE_TO_SUBCLASS_NAME.get(child_type)
         if subclass_name and subclass_name in _subclass_uuids:
-            org_create_urls[child_type] = reverse("dcat-dataset-create", kwargs={
-                "organization_id": organization.pk,
-                "subclass_uuid": _subclass_uuids[subclass_name],
-            })
+            org_create_urls[child_type] = reverse(
+                "dcat-dataset-create",
+                kwargs={
+                    "organization_id": organization.pk,
+                    "subclass_uuid": _subclass_uuids[subclass_name],
+                },
+            )
     register_selection(
-        org_key, WIZARD_NODE_ORGANIZATION, organization.pk, organization.title, [],
+        org_key,
+        WIZARD_NODE_ORGANIZATION,
+        organization.pk,
+        organization.title,
+        [],
         fragment_url=org_fragment_url,
         create_urls=org_create_urls,
     )
@@ -3460,10 +3474,15 @@ class OrganizationWizardCreateRedirectView(
                 parent_id = int(parent_id_str)
             except (ValueError, TypeError):
                 return redirect("organization-wizard", pk=org.pk)
-            return redirect(reverse("dcat-distribution-create", kwargs={
-                "organization_id": org.pk,
-                "dataset_id": parent_id,
-            }))
+            return redirect(
+                reverse(
+                    "dcat-distribution-create",
+                    kwargs={
+                        "organization_id": org.pk,
+                        "dataset_id": parent_id,
+                    },
+                )
+            )
 
         subclass_name = WIZARD_TYPE_TO_SUBCLASS_NAME.get(child_type)
         if not subclass_name:
@@ -3472,18 +3491,28 @@ class OrganizationWizardCreateRedirectView(
         subclass = get_object_or_404(DCATResourceSubclass, name=subclass_name)
 
         if parent_type == WIZARD_NODE_ORGANIZATION:
-            return redirect(reverse("dcat-dataset-create", kwargs={
-                "organization_id": org.pk,
-                "subclass_uuid": subclass.pk,
-            }))
+            return redirect(
+                reverse(
+                    "dcat-dataset-create",
+                    kwargs={
+                        "organization_id": org.pk,
+                        "subclass_uuid": subclass.pk,
+                    },
+                )
+            )
 
         try:
             parent_id = int(parent_id_str)
         except (ValueError, TypeError):
             return redirect("organization-wizard", pk=org.pk)
 
-        return redirect(reverse("dcat-dataset-create-with-parent", kwargs={
-            "organization_id": org.pk,
-            "parent_id": parent_id,
-            "subclass_uuid": subclass.pk,
-        }))
+        return redirect(
+            reverse(
+                "dcat-dataset-create-with-parent",
+                kwargs={
+                    "organization_id": org.pk,
+                    "parent_id": parent_id,
+                    "subclass_uuid": subclass.pk,
+                },
+            )
+        )

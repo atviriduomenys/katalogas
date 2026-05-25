@@ -28,7 +28,8 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
-from vitrina.dcat.form_helpers import get_available_dcat_name_prefixes
+from vitrina.classifiers.models import FormFieldHelpText
+from vitrina.dcat.form_helpers import apply_dynamic_help_texts, get_available_dcat_name_prefixes
 from vitrina.dcat.widgets import (
     CategoryMultipleWidget,
     DatasetMultipleWidget,
@@ -314,6 +315,8 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
 
+        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_INFORMATION_SYSTEM)
+
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
         rights_relation = cleaned_data.get("rights_relation")
@@ -420,6 +423,8 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["tags"].required = True
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=self.organization)
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
+
+        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE)
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
@@ -572,6 +577,8 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             Field("applicable_legislation"),
         )
 
+        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET)
+
     def clean_qualified_relation(self) -> list[str]:
         urls = self.cleaned_data.get("qualified_relation", []) or []
         item_errors = validate_urls(urls)
@@ -636,8 +643,8 @@ class InformationSystemUpdateForm(InformationSystemResourceForm):
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
-        self.fields["identifier"].initial = self.instance.identifier or ""
         if self.instance.pk:
+            self.fields["identifier"].initial = self.instance.identifier or ""
             self.initial["has_part"] = self.fields["has_part"].queryset.filter(
                 related_datasets__relation__name=Relation.CATALOG,
                 related_datasets__dataset=self.instance,
@@ -696,9 +703,11 @@ class DatasetUpdateForm(DatasetResourceForm):
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
-        self.initial["documentation"] = list(self.instance.documentation.values_list("documentation_link", flat=True))
-        self.initial["qualified_relation"] = list(self.instance.qualified_relations.values_list("url", flat=True))
         if self.instance.pk:
+            self.initial["documentation"] = list(
+                self.instance.documentation.values_list("documentation_link", flat=True)
+            )
+            self.initial["qualified_relation"] = list(self.instance.qualified_relations.values_list("url", flat=True))
             self.initial["qualified_attribution"] = self.instance.datasetattribution_set.filter(
                 attribution__name=Attribution.CONTRIBUTOR
             ).values_list("organization_id", flat=True)

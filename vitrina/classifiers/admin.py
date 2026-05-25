@@ -26,6 +26,7 @@ from vitrina.classifiers.models import (
     ServiceQualityPage,
     ProvenanceStatement,
     Activity,
+    FormFieldHelpText,
 )
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
@@ -305,6 +306,13 @@ class ProvenanceStatementAdmin(RevisionCommentVersionAdmin):
 class ActivityAdmin(RevisionCommentVersionAdmin):
     list_display = ("title",)
     search_fields = ("title",)
+
+
+@admin.register(FormFieldHelpText)
+class FormFieldHelpTextAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
+    list_display = ("form_name", "field_name")
+    list_filter = ("form_name",)
+    search_fields = ("form_name", "field_name")
 
 
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)

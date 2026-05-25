@@ -357,3 +357,48 @@ class Activity(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.title
+
+
+class FormFieldHelpText(TranslatableModel):
+    DCAT_INFORMATION_SYSTEM = "dcat_information_system"
+    DCAT_SERVICE = "dcat_service"
+    DCAT_DATASET = "dcat_dataset"
+    DCAT_DISTRIBUTION = "dcat_distribution"
+
+    FORM_NAME_CHOICES = [
+        (DCAT_INFORMATION_SYSTEM, _("DCAT: Informacinė sistema")),
+        (DCAT_SERVICE, _("DCAT: Paslauga")),
+        (DCAT_DATASET, _("DCAT: Duomenų rinkinys")),
+        (DCAT_DISTRIBUTION, _("DCAT: Pateiktis")),
+    ]
+
+    form_name = models.CharField(
+        max_length=255,
+        choices=FORM_NAME_CHOICES,
+        verbose_name=_("Formos pavadinimas"),
+    )
+    field_name = models.CharField(
+        max_length=255,
+        verbose_name=_("Lauko pavadinimas"),
+    )
+    translations = TranslatedFields(
+        help_text=models.TextField(
+            verbose_name=_("Pagalbinis tekstas"),
+            blank=True,
+        ),
+        extended_help_text=models.TextField(
+            verbose_name=_("Išplėstinis pagalbinis tekstas"),
+            help_text=_(
+                "Išplėstinis pagalbinis tekstas bus rodomas kaip iššokantis paspaudus 'i' ikonėlę, jei forma tai palaiko"
+            ),
+            blank=True,
+        ),
+    )
+
+    class Meta:
+        unique_together = [("form_name", "field_name")]
+        verbose_name = _("Formos lauko pagalbinis tekstas")
+        verbose_name_plural = _("Formų laukų pagalbiniai tekstai")
+
+    def __str__(self) -> str:
+        return f"{self.form_name} / {self.field_name}"

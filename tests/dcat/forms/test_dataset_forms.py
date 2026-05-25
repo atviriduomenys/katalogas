@@ -5,10 +5,12 @@ from vitrina.classifiers.factories import (
     CategoryFactory,
     ConceptFactory,
     DocumentationFactory,
+    FormFieldHelpTextFactory,
 )
 from vitrina.classifiers.models import (
     Concept,
     ConceptSchema,
+    FormFieldHelpText,
     LANGUAGE_CONCEPT_SCHEMA_URI,
 )
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
@@ -598,6 +600,19 @@ class TestInformationSystemResourceForm:
 
         assert "languages" not in form.errors
 
+    def test_dynamic_help_text_applied(self):
+        organization = OrganizationFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_INFORMATION_SYSTEM,
+            field_name="identifier",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["identifier"].help_text == "Dinaminis tekstas"
+
 
 class TestServiceResourceForm:
     def test_parent_queryset_includes_is_dataset_from_same_org(self):
@@ -787,6 +802,19 @@ class TestServiceResourceForm:
         assert not form.is_valid()
         assert "organization" in form.errors
 
+    def test_dynamic_help_text_applied(self):
+        organization = OrganizationFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_SERVICE,
+            field_name="endpoint_url",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = ServiceResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["endpoint_url"].help_text == "Dinaminis tekstas"
+
 
 class TestDatasetResourceForm:
     def test_parent_queryset_includes_service_dataset_from_same_org(self):
@@ -955,6 +983,19 @@ class TestDatasetResourceForm:
         assert "dataset_type" not in form.errors
         assert "was_generated_by" not in form.errors
 
+    def test_dynamic_help_text_applied(self):
+        organization = OrganizationFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_DATASET,
+            field_name="documentation",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["documentation"].help_text == "Dinaminis tekstas"
+
 
 class TestInformationSystemUpdateForm:
     def test_identifier_initial_set_from_instance(self):
@@ -1029,6 +1070,19 @@ class TestInformationSystemUpdateForm:
         )
 
         assert form.initial["applicable_legislation"] == []
+
+    def test_dynamic_help_text_applied(self):
+        organization = OrganizationFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_INFORMATION_SYSTEM,
+            field_name="identifier",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemUpdateForm(organization=organization, url_parent=None)
+
+        assert form.fields["identifier"].help_text == "Dinaminis tekstas"
 
 
 class TestDatasetUpdateForm:
@@ -1223,6 +1277,19 @@ class TestDatasetUpdateForm:
 
         assert "creator" not in form.initial
 
+    def test_dynamic_help_text_applied(self):
+        organization = OrganizationFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_DATASET,
+            field_name="documentation",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetUpdateForm(organization=organization, url_parent=None)
+
+        assert form.fields["documentation"].help_text == "Dinaminis tekstas"
+
 
 class TestServiceUpdateForm:
     def test_serves_datasets_initial_set_from_existing_relations(self):
@@ -1269,6 +1336,19 @@ class TestServiceUpdateForm:
         )
 
         assert not form.initial["serves_datasets"].exists()
+
+    def test_dynamic_help_text_applied(self):
+        organization = OrganizationFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_SERVICE,
+            field_name="endpoint_url",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = ServiceUpdateForm(organization=organization, url_parent=None)
+
+        assert form.fields["endpoint_url"].help_text == "Dinaminis tekstas"
 
 
 class TestInformationSystemUpdate:

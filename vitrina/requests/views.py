@@ -40,8 +40,9 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.datasets.services import (
     get_frequency_and_format,
-    get_query_for_frequency,
+    get_period_key,
     get_values_for_frequency,
+    bucket_grouped_rows,
     sort_publication_stats,
 )
 from vitrina.helpers import (
@@ -269,7 +270,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
     def get_graph_title(self, indicator):
         return _(f"{self.get_title_for_indicator(indicator)} pagal poreikio būseną laike")
 
-    def update_context_data(self, context):
+    def update_context_data(self, context: dict) -> dict:
         facet_fields = context.get("facets").get("fields")
         statuses = self.get_filter_data(facet_fields)
         requests = context["object_list"]
@@ -296,19 +297,10 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
             status_requests = Request.objects.filter(pk__in=status_request_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, status_requests)
+            buckets = bucket_grouped_rows(count_data, frequency, date_field)
 
             for label in labels:
-                time_count = 0
-                label_query = get_query_for_frequency(frequency, date_field, label)
-                if indicator == "request-count":
-                    label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
-                elif indicator == "request-count-open":
-                    label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
-                else:
-                    label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
+                time_count = buckets.get(get_period_key(frequency, date_field, label), 0)
 
                 bar_count += time_count
 
@@ -408,7 +400,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
     def get_graph_title(self, indicator):
         return _(f"{self.get_title_for_indicator(indicator)} pagal pateikimo datą")
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         requests = self.get_queryset()
         indicator = self.request.GET.get("indicator", None) or "request-count"
@@ -435,25 +427,36 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
                 period = str(pd.to_datetime(created).to_period(frequency))
                 stats_for_period[period] = stats_for_period.get(period, 0) + 1
         if indicator != "request-count":
+            tz_vilnius = pytz.timezone("Europe/Vilnius")
+            year_to_request_ids: dict = {}
             for yr in year_stats.keys():
-                start_date = datetime.strptime(str(yr) + "-1-1", "%Y-%m-%d")
-                end_date = datetime.strptime(str(yr) + "-12-31", "%Y-%m-%d")
-                tz = pytz.timezone("Europe/Vilnius")
-                filtered_requests = requests.filter(created__range=[tz.localize(start_date), tz.localize(end_date)])
-                request_ids = []
-                for fd in filtered_requests:
-                    request_ids.append(fd.pk)
-                if indicator == "request-count-open":
-                    total = Request.objects.filter(pk__in=request_ids, status=Request.CREATED).count()
-                    year_stats[yr] = total
-                else:
-                    total = (
-                        PlanRequest.objects.filter(
-                            request_id__in=request_ids,
-                            plan__deadline__lt=datetime.now(),
-                        )
-                    ).count()
-                    year_stats[yr] = total
+                yr_start = datetime.strptime(str(yr) + "-1-1", "%Y-%m-%d")
+                yr_end = datetime.strptime(str(yr) + "-12-31", "%Y-%m-%d")
+                filtered_requests = requests.filter(
+                    created__range=[tz_vilnius.localize(yr_start), tz_vilnius.localize(yr_end)]
+                )
+                year_to_request_ids[yr] = [int(fd.pk) for fd in filtered_requests]
+
+            if indicator == "request-count-open":
+                all_ids = [pk for ids in year_to_request_ids.values() for pk in ids]
+                open_ids = set(
+                    Request.objects.filter(pk__in=all_ids, status=Request.CREATED).values_list("pk", flat=True)
+                )
+                for yr, request_ids in year_to_request_ids.items():
+                    year_stats[yr] = sum(1 for pk in request_ids if pk in open_ids)
+            else:
+                all_ids = [pk for ids in year_to_request_ids.values() for pk in ids]
+                late_counts = dict(
+                    PlanRequest.objects.filter(
+                        request_id__in=all_ids,
+                        plan__deadline__lt=datetime.now(),
+                    )
+                    .values("request_id")
+                    .annotate(n=Count("id"))
+                    .values_list("request_id", "n")
+                )
+                for yr, request_ids in year_to_request_ids.items():
+                    year_stats[yr] = sum(late_counts.get(pk, 0) for pk in request_ids)
         if year_stats:
             keys = list(year_stats.keys())
             values = list(year_stats.values())

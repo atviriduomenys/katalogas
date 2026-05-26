@@ -18,6 +18,7 @@ class ModelDownloadStats(models.Model):
         managed = True
         db_table = "model_download_statistic"
         unique_together = (("source", "model", "model_format", "created"),)
+        indexes = [models.Index(fields=["model"], name="modeldl_model_idx")]
 
 
 class DatasetStats(models.Model):
@@ -34,6 +35,7 @@ class DatasetStats(models.Model):
     class Meta:
         managed = True
         db_table = "dataset_statistic"
+        indexes = [models.Index(fields=["dataset_id"], name="datasetstats_dataset_idx")]
 
 
 class StatRoute(TranslatableModel):

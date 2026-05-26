@@ -9,8 +9,9 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.datasets.services import (
     get_frequency_and_format,
     update_facet_data,
-    get_query_for_frequency,
     get_values_for_frequency,
+    get_period_key,
+    bucket_grouped_rows,
 )
 from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
@@ -52,7 +53,7 @@ class StatsMixin:
         context["parent_links"] = self.get_parent_links()
         return context
 
-    def update_context_data(self, context):
+    def update_context_data(self, context: dict) -> dict:
         facet_fields = context.get("facets").get("fields")
         filter_data = self.get_filter_data(facet_fields)
         queryset = context["object_list"]
@@ -84,13 +85,11 @@ class StatsMixin:
             filter_queryset = self.get_index_queryset().filter(pk__in=filter_queryset_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, filter_queryset)
+            buckets = bucket_grouped_rows(count_data, frequency, date_field)
 
             bar_count = 0
             for label in labels:
-                time_count = 0
-                label_query = get_query_for_frequency(frequency, date_field, label)
-                label_count_data = count_data.filter(**label_query)
-                time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
+                time_count = buckets.get(get_period_key(frequency, date_field, label), 0)
                 bar_count += time_count
 
                 if frequency == "W":

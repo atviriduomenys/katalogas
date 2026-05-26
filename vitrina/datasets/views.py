@@ -2,6 +2,7 @@ import itertools
 import secrets
 import json
 import uuid
+from collections import Counter, defaultdict
 from datetime import datetime, date
 from functools import cached_property
 from typing import List, Any, Type as TypingType
@@ -92,7 +93,9 @@ from vitrina.datasets.services import (
     get_total_by_indicator_from_stats,
     has_remove_from_request_perm,
     get_values_for_frequency,
-    get_query_for_frequency,
+    get_period_key,
+    row_period_key,
+    bucket_grouped_rows,
     DynamicResourceService,
     manage_subscriptions_for_representative,
     RepresentativeCreationError,
@@ -2080,7 +2083,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         else:
             return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio būseną laike")
 
-    def update_context_data(self, context):
+    def update_context_data(self, context: dict) -> dict:
         facet_fields = context.get("facets").get("fields")
         statuses = self.get_filter_data(facet_fields)
         datasets = context["object_list"]
@@ -2127,6 +2130,10 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         date_field = self.get_date_field()
         values = get_values_for_frequency(frequency, date_field)
 
+        status_period_counts: Counter = Counter()
+        for row in dataset_status:
+            status_period_counts[(row["status"], row_period_key(row, frequency, date_field))] += 1
+
         for status in statuses:
             bar_count = 0
             time_data = []
@@ -2136,12 +2143,12 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
             count_data = self.get_data_for_indicator(indicator, values, status_datasets)
 
+            buckets = bucket_grouped_rows(count_data, frequency, date_field)
+
             for label in labels:
                 time_count = 0
-                label_query = get_query_for_frequency(frequency, date_field, label)
                 if status["filter_value"] == Dataset.UNASSIGNED or indicator != "dataset-count":
-                    label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
+                    time_count = buckets.get(get_period_key(frequency, date_field, label), 0)
                     bar_count += time_count
                 else:
                     if status["filter_value"] == "HAS_DATA":
@@ -2151,7 +2158,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
                     else:
                         comm_val = status["filter_value"]
 
-                    time_count += dataset_status.filter(status=comm_val, **label_query).count()
+                    time_count = status_period_counts.get((comm_val, get_period_key(frequency, date_field, label)), 0)
                     bar_count += time_count
 
                 if frequency == "W":
@@ -2387,7 +2394,7 @@ class JurisdictionStatsView(DatasetListView):
     template_name = "vitrina/datasets/jurisdictions.html"
     paginate_by = 0
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         max_count = 0
         current_org = Organization.objects.get(id=self.kwargs.get("pk"))
@@ -2405,6 +2412,15 @@ class JurisdictionStatsView(DatasetListView):
                     id_list.append(d)
             modified[org] = id_list
             filtered_orgs.append(modified)
+
+        all_dataset_ids = [did for single in filtered_orgs for ids in single.values() for did in ids]
+
+        stats_by_dataset_id: dict = {}
+        if indicator not in ("dataset-count", "download-request-count", "download-object-count"):
+            all_stats_qs = DatasetStats.objects.filter(dataset_id__in=all_dataset_ids)
+            for st in all_stats_qs:
+                stats_by_dataset_id.setdefault(st.dataset_id, []).append(st)
+
         result = []
         for single in filtered_orgs:
             single_dict = {}
@@ -2439,11 +2455,13 @@ class JurisdictionStatsView(DatasetListView):
                                                 total += m_st.model_objects
                         single_dict["count"] = total
                     else:
-                        stats = DatasetStats.objects.filter(dataset_id__in=v)
-                        if len(stats) > 0:
-                            total = 0
-                            for st in stats:
+                        has_stats = False
+                        total = 0
+                        for did in v:
+                            for st in stats_by_dataset_id.get(did, []):
                                 total = get_total_by_indicator_from_stats(st, indicator, total)
+                                has_stats = True
+                        if has_stats:
                             single_dict["count"] = total
                             if max_count < single_dict.get("count"):
                                 max_count = single_dict.get("count")
@@ -2454,7 +2472,7 @@ class JurisdictionStatsView(DatasetListView):
                 result = sorted(result, key=lambda dd: dd["count"], reverse=True)
             else:
                 result = sorted(result, key=lambda dd: dd["count"], reverse=False)
-            # result = sorted(result, key=lambda dd: dd['count'], reverse=True)
+
         context["single_org"] = True
         context["jurisdiction_data"] = result
         context["max_count"] = max_count
@@ -2470,7 +2488,7 @@ class CategoryStatsView(DatasetListView):
     template_name = "vitrina/datasets/categories.html"
     paginate_by = 0
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         max_count = 0
         facet_fields = context.get("facets").get("fields")
@@ -2505,13 +2523,23 @@ class CategoryStatsView(DatasetListView):
         if sorting == "sort-asc":
             filtered_cats = sorted(filtered_cats, key=lambda dd: dd["count"], reverse=False)
         if indicator != "dataset-count":
+            id_list_by_display_value: dict = {}
+            all_dataset_ids: list = []
             for k in filtered_cats:
-                id_list = []
                 c_cat = Category.objects.get(title=k.get("display_value"))
                 cat_datasets = Dataset.objects.filter(category=c_cat.pk)
-                if len(cat_datasets) > 0:
-                    for dd in cat_datasets:
-                        id_list.append(dd.pk)
+                id_list_by_display_value[k.get("display_value")] = [dd.pk for dd in cat_datasets]
+                all_dataset_ids.extend(id_list_by_display_value[k.get("display_value")])
+
+            stats_by_dataset_id: dict = {}
+            if indicator not in ("download-request-count", "download-object-count"):
+                all_stats_qs = DatasetStats.objects.filter(dataset_id__in=all_dataset_ids)
+                for st in all_stats_qs:
+                    stats_by_dataset_id.setdefault(st.dataset_id, []).append(st)
+
+            for k in filtered_cats:
+                id_list = id_list_by_display_value.get(k.get("display_value"), [])
+                if len(id_list) > 0:
                     if indicator == "download-request-count" or indicator == "download-object-count":
                         models = Model.objects.filter(dataset_id__in=id_list).values_list("metadata__name", flat=True)
                         total = 0
@@ -2528,10 +2556,11 @@ class CategoryStatsView(DatasetListView):
                                                 total += m_st.model_objects
                         k["stats"] = total
                     else:
-                        stats = DatasetStats.objects.filter(dataset_id__in=id_list)
-                        if len(stats) > 0:
-                            total = 0
-                            for st in stats:
+                        has_stats = False
+                        total = 0
+                        for did in id_list:
+                            for st in stats_by_dataset_id.get(did, []):
+                                has_stats = True
                                 if indicator == "request-count":
                                     if st.request_count is not None:
                                         total += st.request_count
@@ -2564,13 +2593,13 @@ class CategoryStatsView(DatasetListView):
                                     k["stats"] = level_avg
                                 if max_count < k.get("stats"):
                                     max_count = k.get("stats")
-                        else:
+                        if not has_stats:
                             k["stats"] = 0
             if sorting is None or sorting == "sort-desc":
                 filtered_cats = sorted(filtered_cats, key=lambda d: d["stats"], reverse=True)
             else:
                 filtered_cats = sorted(filtered_cats, key=lambda d: d["stats"], reverse=False)
-            # filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
+
         context["max_count"] = max_count
         context["category_data"] = filtered_cats
         context["current_object"] = self.kwargs.get("pk")
@@ -2593,7 +2622,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
     def get_graph_title(self, indicator):
         return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio įkėlimo datą laike")
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         datasets = self.get_queryset()
         indicator = self.request.GET.get("indicator", None) or "dataset-count"
@@ -2620,15 +2649,18 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
                 stats_for_period[period] = stats_for_period.get(period, 0) + 1
 
         if indicator != "dataset-count":
+            tz_vilnius = pytz.timezone("Europe/Vilnius")
+            year_to_dataset_ids = {}
             for yr in year_stats.keys():
-                start_date = datetime.strptime(str(yr) + "-1-1", "%Y-%m-%d")
-                end_date = datetime.strptime(str(yr) + "-12-31", "%Y-%m-%d")
-                tz = pytz.timezone("Europe/Vilnius")
-                filtered_datasets = datasets.filter(published__range=[tz.localize(start_date), tz.localize(end_date)])
-                dataset_ids = []
-                for fd in filtered_datasets:
-                    dataset_ids.append(fd.pk)
-                if indicator == "download-request-count" or indicator == "download-object-count":
+                yr_start = datetime.strptime(str(yr) + "-1-1", "%Y-%m-%d")
+                yr_end = datetime.strptime(str(yr) + "-12-31", "%Y-%m-%d")
+                filtered_datasets = datasets.filter(
+                    published__range=[tz_vilnius.localize(yr_start), tz_vilnius.localize(yr_end)]
+                )
+                year_to_dataset_ids[yr] = [int(fd.pk) for fd in filtered_datasets]
+
+            if indicator == "download-request-count" or indicator == "download-object-count":
+                for yr, dataset_ids in year_to_dataset_ids.items():
                     models = Model.objects.filter(dataset_id__in=dataset_ids).values_list("metadata__name", flat=True)
                     total = 0
                     if len(models) > 0:
@@ -2643,21 +2675,49 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
                                         if m_st is not None:
                                             total += m_st.model_objects
                     year_stats[yr] = total
-                else:
-                    stats = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
-                    if len(stats) > 0:
-                        total = 0
-                        for st in stats:
+            else:
+                all_published_ids = [pk for ids in year_to_dataset_ids.values() for pk in ids]
+                all_stats_qs = DatasetStats.objects.filter(dataset_id__in=all_published_ids)
+                stats_by_dataset_id: dict = {}
+                for st in all_stats_qs:
+                    stats_by_dataset_id.setdefault(st.dataset_id, []).append(st)
+
+                for yr, dataset_ids in year_to_dataset_ids.items():
+                    total = 0
+                    has_stats = False
+                    for did in dataset_ids:
+                        for st in stats_by_dataset_id.get(did, []):
                             total = get_total_by_indicator_from_stats(st, indicator, total)
-                        year_stats[yr] = total
-                    else:
-                        year_stats[yr] = 0
+                            has_stats = True
+                    year_stats[yr] = total if has_stats else 0
+
         if year_stats:
             keys = list(year_stats.keys())
             values = list(year_stats.values())
             sorted_value_index = np.argsort(values)
             year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
             max_count = year_stats[max(year_stats, key=lambda key: year_stats[key], default=0)]
+
+        label_year_to_stats: dict = {}
+        if indicator != "dataset-count" and labels:
+            created_year_to_pks: dict = defaultdict(list)
+            for pk, created in Dataset.objects.values_list("pk", "created"):
+                if created is not None:
+                    created_year_to_pks[created.year].append(pk)
+
+            unique_label_years = {label.year for label in labels}
+            needed_pks = [pk for yr in unique_label_years for pk in created_year_to_pks.get(yr, [])]
+
+            label_stats_qs = DatasetStats.objects.filter(dataset_id__in=needed_pks)
+            stats_by_did: dict = {}
+            for st in label_stats_qs:
+                stats_by_did.setdefault(st.dataset_id, []).append(st)
+
+            for yr in unique_label_years:
+                yr_stats: list = []
+                for pk in created_year_to_pks.get(yr, []):
+                    yr_stats.extend(stats_by_did.get(pk, []))
+                label_year_to_stats[yr] = yr_stats
 
         data = []
         total = 0
@@ -2666,12 +2726,9 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
             if indicator == "dataset-count":
                 total += dataset_count
             else:
-                dataset_ids = Dataset.objects.filter(created__year=label.year).values_list("pk", flat=True)
-                stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
                 per_datasets = 0
-                if len(stat) > 0:
-                    for st in stat:
-                        per_datasets = get_total_by_indicator_from_stats(st, indicator, per_datasets)
+                for st in label_year_to_stats.get(label.year, []):
+                    per_datasets = get_total_by_indicator_from_stats(st, indicator, per_datasets)
                 total += per_datasets
 
             if frequency == "W":
@@ -2711,7 +2768,7 @@ class YearStatsView(DatasetListView):
     template_name = "vitrina/datasets/publications.html"
     paginate_by = 0
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
@@ -2729,8 +2786,9 @@ class YearStatsView(DatasetListView):
                 quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
                 quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
         if indicator != "dataset-count":
+            tz_vilnius = pytz.timezone("Europe/Vilnius")
+            quarter_to_dataset_ids: dict = {}
             for k in quarter_stats.keys():
-                tz = pytz.timezone("Europe/Vilnius")
                 if selected_year in k:
                     if "-Q1" in k:
                         start = datetime.strptime(str(selected_year) + "-1-1", "%Y-%m-%d")
@@ -2744,36 +2802,43 @@ class YearStatsView(DatasetListView):
                     else:
                         start = datetime.strptime(str(selected_year) + "-10-1", "%Y-%m-%d")
                         end = datetime.strptime(str(selected_year) + "-12-31", "%Y-%m-%d")
-                    filtered_datasets = datasets.filter(published__range=[tz.localize(start), tz.localize(end)])
-                    dataset_ids = []
-                    for fd in filtered_datasets:
-                        dataset_ids.append(fd.pk)
-                    if indicator == "download-request-count" or indicator == "download-object-count":
-                        models = Model.objects.filter(dataset_id__in=dataset_ids).values_list(
-                            "metadata__name", flat=True
-                        )
-                        total = 0
-                        if len(models) > 0:
-                            for m in models:
-                                model_stats = ModelDownloadStats.objects.filter(model=m)
-                                if len(model_stats) > 0:
-                                    for m_st in model_stats:
-                                        if indicator == "download-request-count":
-                                            if m_st is not None:
-                                                total += m_st.model_requests
-                                        elif indicator == "download-object-count":
-                                            if m_st is not None:
-                                                total += m_st.model_objects
-                        quarter_stats[k] = total
-                    else:
-                        stats = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
-                        if len(stats) > 0:
-                            total = 0
-                            for st in stats:
-                                total += get_total_by_indicator_from_stats(st, indicator, total)
-                            quarter_stats[k] = total
-                        else:
-                            quarter_stats[k] = 0
+                    filtered_datasets = datasets.filter(
+                        published__range=[tz_vilnius.localize(start), tz_vilnius.localize(end)]
+                    )
+                    quarter_to_dataset_ids[k] = [int(fd.pk) for fd in filtered_datasets]
+
+            if indicator == "download-request-count" or indicator == "download-object-count":
+                for k, dataset_ids in quarter_to_dataset_ids.items():
+                    models = Model.objects.filter(dataset_id__in=dataset_ids).values_list("metadata__name", flat=True)
+                    total = 0
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == "download-request-count":
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == "download-object-count":
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    quarter_stats[k] = total
+            else:
+                all_selected_ids = [pk for ids in quarter_to_dataset_ids.values() for pk in ids]
+                all_stats_qs = DatasetStats.objects.filter(dataset_id__in=all_selected_ids)
+                stats_by_dataset_id: dict = {}
+                for st in all_stats_qs:
+                    stats_by_dataset_id.setdefault(st.dataset_id, []).append(st)
+
+                for k, dataset_ids in quarter_to_dataset_ids.items():
+                    has_stats = False
+                    total = 0
+                    for did in dataset_ids:
+                        for st in stats_by_dataset_id.get(did, []):
+                            total += get_total_by_indicator_from_stats(st, indicator, total)
+                            has_stats = True
+                    quarter_stats[k] = total if has_stats else 0
+
         for key, value in quarter_stats.items():
             if max_count < value:
                 max_count = value
@@ -2797,7 +2862,7 @@ class QuarterStatsView(DatasetListView):
     template_name = "vitrina/datasets/publications.html"
     paginate_by = 0
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
@@ -2816,15 +2881,18 @@ class QuarterStatsView(DatasetListView):
                         month = str(year_published) + "-" + str("%02d" % published.month)
                         monthly_stats[month] = monthly_stats.get(month, 0) + 1
         if indicator != "dataset-count":
+            tz_vilnius = pytz.timezone("Europe/Vilnius")
+            month_to_dataset_ids: dict = {}
             for k in monthly_stats.keys():
-                tz = pytz.timezone("Europe/Vilnius")
                 start = datetime.strptime(str(k) + "-1", "%Y-%m-%d")
                 end = datetime.strptime(str(k) + "-28", "%Y-%m-%d")
-                filtered_datasets = datasets.filter(published__range=[tz.localize(start), tz.localize(end)])
-                dataset_ids = []
-                for fd in filtered_datasets:
-                    dataset_ids.append(fd.pk)
-                if indicator == "download-request-count" or indicator == "download-object-count":
+                filtered_datasets = datasets.filter(
+                    published__range=[tz_vilnius.localize(start), tz_vilnius.localize(end)]
+                )
+                month_to_dataset_ids[k] = [int(fd.pk) for fd in filtered_datasets]
+
+            if indicator == "download-request-count" or indicator == "download-object-count":
+                for k, dataset_ids in month_to_dataset_ids.items():
                     models = Model.objects.filter(dataset_id__in=dataset_ids).values_list("metadata__name", flat=True)
                     total = 0
                     if len(models) > 0:
@@ -2839,15 +2907,22 @@ class QuarterStatsView(DatasetListView):
                                         if m_st is not None:
                                             total += m_st.model_objects
                     monthly_stats[k] = total
-                else:
-                    stats = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
-                    if len(stats) > 0:
-                        total = 0
-                        for st in stats:
+            else:
+                all_month_ids = [pk for ids in month_to_dataset_ids.values() for pk in ids]
+                all_stats_qs = DatasetStats.objects.filter(dataset_id__in=all_month_ids)
+                stats_by_dataset_id: dict = {}
+                for st in all_stats_qs:
+                    stats_by_dataset_id.setdefault(st.dataset_id, []).append(st)
+
+                for k, dataset_ids in month_to_dataset_ids.items():
+                    has_stats = False
+                    total = 0
+                    for did in dataset_ids:
+                        for st in stats_by_dataset_id.get(did, []):
                             total += get_total_by_indicator_from_stats(st, indicator, total)
-                        monthly_stats[k] = total
-                    else:
-                        monthly_stats[k] = 0
+                            has_stats = True
+                    monthly_stats[k] = total if has_stats else 0
+
         for m, mv in monthly_stats.items():
             if max_count < mv:
                 max_count = mv

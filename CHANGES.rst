@@ -22,6 +22,12 @@ https://github.com/atviriduomenys/katalogas/issues/2566
 - Route per-user permission filtering and the manager-dataset list filter through Elasticsearch ``terms`` queries (via a custom Haystack backend) so large primary-key sets no longer expand into Lucene boolean OR clauses. Fixes intermittent ``too_many_clauses`` 400s on ``/datasets/manager`` and any authenticated dataset list whose user has many representations.
 
 
+https://github.com/atviriduomenys/katalogas/issues/2588
+
+- Significantly speed up the statistics pages (dataset status, organization, category, jurisdiction, publication and year/quarter) by removing per-time-bucket N+1 queries; aggregations are now computed once and reused.
+- Add database indexes on ``dataset_statistic.dataset_id`` and ``model_download_statistic.model``.
+- Raise the Haystack Elasticsearch iterator batch size (env-configurable via ``HAYSTACK_ITERATOR_LOAD_PER_QUERY``) to cut Elasticsearch round-trips when loading statistics pages.
+
 v 1.21.0 (2026-05-18)
 ==================
 

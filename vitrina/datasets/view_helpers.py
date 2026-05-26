@@ -119,7 +119,7 @@ def create_dataset_representative_and_attribution(dataset: Dataset) -> None:
     if not (attribution := Attribution.objects.filter(name=Attribution.CREATOR).first()):
         return
 
-    if not dataset.name or dataset.name.startswith(dataset.organization.name):
+    if not dataset.name or (dataset.organization.name and dataset.name.startswith(dataset.organization.name)):
         DatasetAttribution.objects.create(dataset=dataset, attribution=attribution, organization=dataset.organization)
     else:
         creator = Organization.objects.filter(

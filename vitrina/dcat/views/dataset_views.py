@@ -222,8 +222,10 @@ class DcatDatasetCreateView(
                 self.object.depth = 1
             self.object.numchild = 0
 
-            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
+            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM or self._is_wizard_request():
                 self.object.organization = self.organization
+
+            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
                 self.object.access_rights = Dataset.CONFIDENTIAL
                 self.object.frequency = Frequency.objects.filter(code=Frequency.CODE_UNKNOWN).first()
 

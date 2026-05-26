@@ -122,9 +122,9 @@ class BaseResourceForm(TranslatableModelForm):
         required=True,
         validators=[
             RegexValidator(
-                r"^([a-z]+\/?)+$",
+                r"^([a-z_]+\/?)+$",
                 message=_(
-                    "Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
+                    "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotynų raidžių ir (arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
                 ),
             )
         ],

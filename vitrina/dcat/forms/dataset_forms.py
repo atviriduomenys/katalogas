@@ -317,6 +317,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
 
         self.helper.layout = Layout(
             Field("parent"),
+            Field("name_prefix"),
             Field("information_system_importance"),
             Field("information_system_type"),
             Field("information_system_assessment_url"),
@@ -324,6 +325,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             Field("title"),
             Field("name"),
             Field("tags"),
+            Field("category"),
             Field("identifier"),
             Field("information_system_publishers"),
             Field("creator"),
@@ -447,8 +449,10 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
 
         self.helper.layout = Layout(
             Field("parent"),
+            Field("name_prefix"),
             Field("name"),
             Field("title"),
+            Field("organization"),
             Field("agent"),
             Field("endpoint_url"),
             Field("endpoint_type"),
@@ -456,6 +460,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             Field("endpoint_description"),
             Field("endpoint_description_type"),
             Field("tags"),
+            Field("category"),
             Field("access_rights"),
             Field("conforms_to"),
             Field("description"),
@@ -683,6 +688,13 @@ class InformationSystemUpdateForm(InformationSystemResourceForm):
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
+        self.helper.layout.extend(
+            [
+                Field("has_part"),
+                Field("related_information_system"),
+                Field("relates_to_information_system"),
+            ]
+        )
         if self.instance.pk:
             self.fields["identifier"].initial = self.instance.identifier or ""
             self.initial["has_part"] = self.fields["has_part"].queryset.filter(
@@ -720,6 +732,7 @@ class ServiceUpdateForm(ServiceResourceForm):
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
+        self.helper.layout.append(Field("serves_datasets"))
         if self.instance.pk:
             self.initial["serves_datasets"] = self.fields["serves_datasets"].queryset.filter(
                 related_datasets__relation__name=Relation.SERVICE,

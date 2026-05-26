@@ -808,6 +808,14 @@ TAGULOUS_AUTOCOMPLETE_JS = (
     "tagulous/adaptor/select2-4.js",
 )
 TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}
+INSTALLED_APPS += [
+    "djangocms_4_migration",
+    "djangocms_versioning",
+    "djangocms_alias",
+]
+CMS_CONFIRM_VERSION4 = True
+CMS_MIGRATION_USER_ID = 1
+
 
 CMS_CONFIRM_VERSION4 = True
 CMS_MIGRATION_USER_ID = 1

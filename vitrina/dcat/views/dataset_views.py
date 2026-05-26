@@ -431,12 +431,8 @@ class DcatDatasetUpdateView(
                 "button": _("Redaguoti"),
             }
         )
-        if self._is_wizard_request():
-            form = context.get("form")
-            if form and hasattr(form, "helper"):
-                form.helper.form_tag = False
-            rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
-            context["relationship_form"] = rel_form_class(self.get_object()) if rel_form_class else None
+        rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
+        context["relationship_form"] = rel_form_class(self.get_object()) if rel_form_class else None
         return context
 
     def get_queryset(self) -> QuerySet[Dataset]:
@@ -453,7 +449,6 @@ class DcatDatasetUpdateView(
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
         kwargs["url_parent"] = self.dataset_parent
-        kwargs["wizard"] = self._is_wizard_request()
 
         return kwargs
 
@@ -561,13 +556,12 @@ class DcatDatasetUpdateView(
         save_dataset_attribution(self.request, self.object, form)
         save_dataset_creator(self.request, self.object, form)
 
-        if self._is_wizard_request():
-            rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
-            if rel_form_class:
-                rel_form = rel_form_class(self.object, data=self.request.POST)
-                if rel_form.is_valid():
-                    save_dataset_relations(self.request, self.object, rel_form)
-                    save_dataset_attribution(self.request, self.object, rel_form)
+        rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
+        if rel_form_class:
+            rel_form = rel_form_class(self.object, data=self.request.POST)
+            if rel_form.is_valid():
+                save_dataset_relations(self.request, self.object, rel_form)
+                save_dataset_attribution(self.request, self.object, rel_form)
 
         messages.success(
             self.request, _("Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)

@@ -26,10 +26,13 @@ from vitrina.datasets.factories import (
 )
 from vitrina.datasets.models import Attribution, Dataset, DCATResourceSubclass, Relation
 from vitrina.dcat.forms.dataset_forms import (
+    DatasetRelationshipForm,
     DatasetResourceForm,
     DatasetUpdateForm,
+    InformationSystemRelationshipForm,
     InformationSystemResourceForm,
     InformationSystemUpdateForm,
+    ServiceRelationshipForm,
     ServiceResourceForm,
     ServiceUpdateForm,
 )
@@ -129,7 +132,7 @@ class TestBaseResourceForm:
         assert not form.is_valid()
         assert "name" in form.errors
         assert (
-            "Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
+            "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotynų raidžių ir (arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
             in form.errors["name"]
         )
 
@@ -1153,11 +1156,7 @@ class TestDatasetUpdateForm:
         org = OrganizationFactory()
         DatasetAttributionFactory(dataset=dataset, attribution=contributor, organization=org)
 
-        form = DatasetUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = DatasetRelationshipForm(dataset=dataset)
 
         assert org.pk in form.initial["qualified_attribution"]
 
@@ -1169,11 +1168,7 @@ class TestDatasetUpdateForm:
         org = OrganizationFactory()
         DatasetAttributionFactory(dataset=dataset, attribution=creator, organization=org)
 
-        form = DatasetUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = DatasetRelationshipForm(dataset=dataset)
 
         assert org.pk not in form.initial["qualified_attribution"]
 
@@ -1181,11 +1176,7 @@ class TestDatasetUpdateForm:
         organization = OrganizationFactory()
         dataset = DatasetFactory(organization=organization)
 
-        form = DatasetUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = DatasetRelationshipForm(dataset=dataset)
 
         assert list(form.initial["qualified_attribution"]) == []
 
@@ -1301,11 +1292,7 @@ class TestServiceUpdateForm:
         relation = RelationFactory(name=Relation.SERVICE)
         DatasetRelationFactory(relation=relation, dataset=service, part_of=served_dataset)
 
-        form = ServiceUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=service,
-        )
+        form = ServiceRelationshipForm(dataset=service)
 
         assert served_dataset in form.initial["serves_datasets"]
 
@@ -1316,11 +1303,7 @@ class TestServiceUpdateForm:
         service = DatasetFactory(organization=organization, subclass=service_subclass)
         unrelated_dataset = DatasetFactory(organization=organization, subclass=dataset_subclass)
 
-        form = ServiceUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=service,
-        )
+        form = ServiceRelationshipForm(dataset=service)
 
         assert unrelated_dataset not in form.initial["serves_datasets"]
 
@@ -1329,11 +1312,7 @@ class TestServiceUpdateForm:
         service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         service = DatasetFactory(organization=organization, subclass=service_subclass)
 
-        form = ServiceUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=service,
-        )
+        form = ServiceRelationshipForm(dataset=service)
 
         assert not form.initial["serves_datasets"].exists()
 
@@ -1361,11 +1340,7 @@ class TestInformationSystemUpdate:
         relation = RelationFactory(name=Relation.CATALOG)
         DatasetRelationFactory(relation=relation, dataset=dataset, part_of=catalog_dataset)
 
-        form = InformationSystemUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = InformationSystemRelationshipForm(dataset=dataset)
 
         assert catalog_dataset in form.initial["has_part"]
 
@@ -1374,11 +1349,7 @@ class TestInformationSystemUpdate:
         is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         dataset = DatasetFactory(organization=organization, subclass=is_subclass)
 
-        form = InformationSystemUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = InformationSystemRelationshipForm(dataset=dataset)
 
         assert not form.initial["has_part"].exists()
 
@@ -1390,11 +1361,7 @@ class TestInformationSystemUpdate:
         relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
         DatasetRelationFactory(relation=relation, dataset=other_is, part_of=dataset)
 
-        form = InformationSystemUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = InformationSystemRelationshipForm(dataset=dataset)
 
         assert other_is in form.initial["relates_to_information_system"]
 
@@ -1403,11 +1370,7 @@ class TestInformationSystemUpdate:
         is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         dataset = DatasetFactory(organization=organization, subclass=is_subclass)
 
-        form = InformationSystemUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = InformationSystemRelationshipForm(dataset=dataset)
 
         assert not form.initial["relates_to_information_system"].exists()
 
@@ -1419,11 +1382,7 @@ class TestInformationSystemUpdate:
         relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
         DatasetRelationFactory(relation=relation, dataset=dataset, part_of=other_is)
 
-        form = InformationSystemUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = InformationSystemRelationshipForm(dataset=dataset)
 
         assert other_is in form.initial["related_information_system"]
 
@@ -1432,10 +1391,6 @@ class TestInformationSystemUpdate:
         is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         dataset = DatasetFactory(organization=organization, subclass=is_subclass)
 
-        form = InformationSystemUpdateForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
+        form = InformationSystemRelationshipForm(dataset=dataset)
 
         assert not form.initial["related_information_system"].exists()

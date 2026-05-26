@@ -649,6 +649,8 @@
             }
 
             if (e.detail.target.id === 'wizard-main-pane') {
+                var mainCol = e.detail.target.closest('.wizard-main');
+                if (mainCol) mainCol.scrollTop = 0;
                 _wizardInitializing = true;
                 var target = e.detail.target;
                 $(target).find('.django-select2').not('[name*=__prefix__]').each(function() {

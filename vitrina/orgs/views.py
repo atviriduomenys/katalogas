@@ -3449,6 +3449,16 @@ class OrganizationWizardTreeView(
         return context
 
 
+class OrganizationWizardNodesView(
+    LoginRequiredMixin,
+    OrganizationBaseViewMixin,
+    View,
+):
+    def get(self, request, *args, **kwargs):
+        _, nodes_by_key = _build_wizard_tree(self.organization)
+        return JsonResponse(nodes_by_key)
+
+
 class OrganizationWizardCreateRedirectView(
     LoginRequiredMixin,
     OrganizationBaseViewMixin,

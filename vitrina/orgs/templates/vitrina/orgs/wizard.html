@@ -358,6 +358,7 @@
         </header>
 
         <div class="card-content p-0"
+             id="wizard-state"
              x-data="{
                  nodes: JSON.parse(document.getElementById('wizard-nodes').textContent),
                  meta: JSON.parse(document.getElementById('wizard-node-meta').textContent),
@@ -630,8 +631,16 @@
         }, true);
 
         document.body.addEventListener('htmx:afterSwap', function(e) {
-            // Tree refresh: re-expand the ancestor chain of the currently-selected node
+            // Tree refresh: re-expand the ancestor chain + refresh Alpine nodes dict
             if (e.detail.target.classList && e.detail.target.classList.contains('wizard-tree-children')) {
+                fetch('{% url "organization-wizard-nodes" pk=organization.pk %}')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var state = document.getElementById('wizard-state');
+                        if (state && window.Alpine) {
+                            window.Alpine.$data(state).nodes = data;
+                        }
+                    });
                 var selectedKey = window._wizardSelectedKey;
                 if (selectedKey) {
                     setTimeout(function() {

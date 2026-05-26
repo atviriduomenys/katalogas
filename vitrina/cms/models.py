@@ -1,3 +1,4 @@
+from cms.models import CMSPlugin
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
@@ -259,6 +260,54 @@ class TermsOfUse(models.Model):
 
     class Meta:
         db_table = "terms_of_use"
+
+
+class BulmaRow(CMSPlugin):
+    extra_classes = models.CharField(max_length=255, blank=True, verbose_name=_("Papildomos klasės"))
+
+    class Meta:
+        verbose_name = _("Eilutė (Bulma columns)")
+
+    def __str__(self):
+        return self.extra_classes or "columns"
+
+
+COLUMN_WIDTH_CHOICES = [
+    ("", _("Auto")),
+    ("is-1", "1/12"),
+    ("is-2", "2/12"),
+    ("is-3", "3/12 (ketvirtadalis)"),
+    ("is-4", "4/12 (trečdalis)"),
+    ("is-5", "5/12"),
+    ("is-6", "6/12 (pusė)"),
+    ("is-7", "7/12"),
+    ("is-8", "8/12 (du trečdaliai)"),
+    ("is-9", "9/12"),
+    ("is-10", "10/12"),
+    ("is-11", "11/12"),
+    ("is-12", "12/12 (visa)"),
+]
+
+
+class BulmaColumn(CMSPlugin):
+    width = models.CharField(
+        max_length=10, blank=True, choices=COLUMN_WIDTH_CHOICES, verbose_name=_("Plotis")
+    )
+    extra_classes = models.CharField(max_length=255, blank=True, verbose_name=_("Papildomos klasės"))
+
+    class Meta:
+        verbose_name = _("Stulpelis (Bulma column)")
+
+    def __str__(self):
+        return self.width or "column"
+
+    def get_column_classes(self):
+        classes = ["column"]
+        if self.width:
+            classes.append(self.width)
+        if self.extra_classes:
+            classes.append(self.extra_classes)
+        return " ".join(classes)
 
 
 class Deployment(models.Model):

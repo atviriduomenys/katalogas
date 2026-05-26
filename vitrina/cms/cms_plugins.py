@@ -3,7 +3,7 @@ from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
 from django.utils.translation import gettext as _
 
-from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
+from vitrina.cms.models import LearningMaterial, Faq, ExternalSite, BulmaRow, BulmaColumn
 from vitrina.orgs.models import PublishedReport
 
 
@@ -108,6 +108,33 @@ class OtherLandPlugin(CMSPluginBase):
             }
         )
         return context
+
+
+@plugin_pool.register_plugin
+class BulmaRowPlugin(CMSPluginBase):
+    model = BulmaRow
+    module = _("ADP")
+    name = _("Eilutė (Row)")
+    render_template = "cms/plugins/bulma_row.html"
+    allow_children = True
+    child_classes = ["BulmaColumnPlugin"]
+
+    def render(self, context, instance, placeholder):
+        return super().render(context, instance, placeholder)
+
+
+@plugin_pool.register_plugin
+class BulmaColumnPlugin(CMSPluginBase):
+    model = BulmaColumn
+    module = _("ADP")
+    name = _("Stulpelis (Column)")
+    render_template = "cms/plugins/bulma_column.html"
+    allow_children = True
+    require_parent = True
+    parent_classes = ["BulmaRowPlugin"]
+
+    def render(self, context, instance, placeholder):
+        return super().render(context, instance, placeholder)
 
 
 @plugin_pool.register_plugin

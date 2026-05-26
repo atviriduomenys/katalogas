@@ -138,6 +138,36 @@ git commit -m "migration plan v4"
 # sukurti failiukai:
 # dist/history_2026-05-26_19-22.txt
 # dist/requirements-2026-05-26_19-24.txt
+pip install django-cms==5.0.0
+python manage.py makemigrations --merge
+python manage.py migrate
+git checkout b123e9efe76f67ce vitrina/templatetags/navigation_tags.py
+pip install django-cms\>5.0.0
+python manage.py makemigrations 
+python manage.py migrate
+
+#
+
+#|  Summary of the root cause and fix:
+#|
+#|  The 0037_alter_cmsplugin_id_... and 0038_alter_cmsplugin_id_... migrations were locally generated (2026-05-25) to convert CMS model IDs to BigAutoField and back. Both
+#|  included an AlterField on treenode.id.
+#|
+#|  The problem: django-cms 5.0.7 already has an upstream migration pair (0037_merge_page_treenode → 0038_alter_page_site) that deletes the TreeNode model. When Django
+#|  reconstructs migration state, it processes the merge branch first (forced by the 0039–0041 dependency chain), which deletes TreeNode. Then when it processes the
+#|  BigAutoField branch's AlterField on treenode, the model no longer exists in the state → KeyError.
+#|
+#|  Fix: Removed the treenode AlterField entries from both local migrations in the installed CMS package. Since TreeNode gets deleted by the upstream migration, altering its
+#|  id is pointless and was causing the state reconstruction to crash.
+#|
+
+#############################################
+# djangocms-alias
+#############################################
+pip install djangocms-alias\>3.0.0
+python manage.py makemigrations --merge
+python manage.py makemigrations 
+python manage.py migrate
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #
 # iki čia padaryta                 #
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #

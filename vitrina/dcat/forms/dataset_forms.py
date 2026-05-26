@@ -687,14 +687,16 @@ class InformationSystemUpdateForm(InformationSystemResourceForm):
         widgets = InformationSystemResourceForm.Meta.widgets
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        wizard = kwargs.pop("wizard", False)
         super().__init__(organization, url_parent, *args, **kwargs)
-        self.helper.layout.extend(
-            [
-                Field("has_part"),
-                Field("related_information_system"),
-                Field("relates_to_information_system"),
-            ]
-        )
+        if not wizard:
+            self.helper.layout.extend(
+                [
+                    Field("has_part"),
+                    Field("related_information_system"),
+                    Field("relates_to_information_system"),
+                ]
+            )
         if self.instance.pk:
             self.fields["identifier"].initial = self.instance.identifier or ""
             self.initial["has_part"] = self.fields["has_part"].queryset.filter(
@@ -731,8 +733,10 @@ class ServiceUpdateForm(ServiceResourceForm):
         widgets = ServiceResourceForm.Meta.widgets
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        wizard = kwargs.pop("wizard", False)
         super().__init__(organization, url_parent, *args, **kwargs)
-        self.helper.layout.append(Field("serves_datasets"))
+        if not wizard:
+            self.helper.layout.append(Field("serves_datasets"))
         if self.instance.pk:
             self.initial["serves_datasets"] = self.fields["serves_datasets"].queryset.filter(
                 related_datasets__relation__name=Relation.SERVICE,
@@ -755,7 +759,10 @@ class DatasetUpdateForm(DatasetResourceForm):
         widgets = DatasetResourceForm.Meta.widgets
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        wizard = kwargs.pop("wizard", False)
         super().__init__(organization, url_parent, *args, **kwargs)
+        if not wizard:
+            self.helper.layout.append(Field("qualified_attribution"))
         if self.instance.pk:
             self.initial["documentation"] = list(
                 self.instance.documentation.values_list("documentation_link", flat=True)
@@ -769,8 +776,6 @@ class DatasetUpdateForm(DatasetResourceForm):
             ).first()
             if creator_attribution:
                 self.initial["creator"] = creator_attribution.organization_id
-
-        self.helper.layout.append(Field("qualified_attribution"))
 
 
 class InformationSystemRelationshipForm(forms.Form):

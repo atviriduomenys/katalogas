@@ -451,6 +451,7 @@ class DcatDatasetUpdateView(
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
         kwargs["url_parent"] = self.dataset_parent
+        kwargs["wizard"] = self._is_wizard_request()
 
         return kwargs
 

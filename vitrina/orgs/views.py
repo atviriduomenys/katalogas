@@ -66,9 +66,7 @@ from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import (
     Dataset,
     Contact,
-    DatasetRelation,
     DCATResourceSubclass,
-    Relation,
 )
 from vitrina.helpers import (
     get_current_domain,
@@ -3214,11 +3212,6 @@ def _wizard_ancestor_summary(node_type: str, node_id: int, title: str) -> dict:
 
 def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str, dict]]:
     """Build the org's content tree and a flat key→selection map for the wizard Alpine state."""
-    try:
-        part_of_relation = Relation.objects.get(name=Relation.PART_OF)
-    except Relation.DoesNotExist:
-        part_of_relation = None
-
     _subclass_uuids: dict[str, str] = {
         s.name: str(s.pk)
         for s in DCATResourceSubclass.objects.filter(
@@ -3254,22 +3247,20 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
                     )
         return urls
 
-    org_datasets = list(Dataset.objects.filter(organization=organization, is_public=False).select_related("subclass"))
-    org_dataset_ids = {d.pk for d in org_datasets}
+    org_datasets = list(
+        Dataset.objects.filter(organization=organization, is_public=False).select_related("subclass").order_by("path")
+    )
     datasets_by_id = {d.pk: d for d in org_datasets}
+    datasets_by_path = {d.path: d for d in org_datasets}
 
-    child_to_parent: dict[int, int] = {}
     parent_to_children: dict[int, list[int]] = {}
-    if part_of_relation and org_dataset_ids:
-        edges = DatasetRelation.objects.filter(
-            relation=part_of_relation,
-            dataset_id__in=org_dataset_ids,
-        ).values_list("dataset_id", "part_of_id")
-        for child_id, parent_id in edges:
-            child_to_parent.setdefault(child_id, parent_id)
-            parent_to_children.setdefault(parent_id, []).append(child_id)
+    for dataset in org_datasets:
+        parent_path = dataset.path[: -Dataset.steplen]
+        if parent_path and parent_path in datasets_by_path:
+            parent = datasets_by_path[parent_path]
+            parent_to_children.setdefault(parent.pk, []).append(dataset.pk)
 
-    top_level = [d for d in org_datasets if d.pk not in child_to_parent or child_to_parent[d.pk] not in org_dataset_ids]
+    top_level = [d for d in org_datasets if d.path[: -Dataset.steplen] not in datasets_by_path]
 
     nodes_by_key: dict[str, dict] = {}
     org_key = f"org:{organization.pk}"

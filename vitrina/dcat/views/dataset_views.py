@@ -20,7 +20,7 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Frequency
-from vitrina.datasets.models import Dataset, DatasetRelation, DCATResourceSubclass, Relation
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.datasets.view_helpers import (
     create_tasks_and_notify_subscribers_about_dataset_creation,
     create_dataset_representative_and_attribution,
@@ -236,16 +236,6 @@ class DcatDatasetCreateView(
 
             if parent:
                 Dataset.objects.filter(pk=parent.pk).update(numchild=F("numchild") + 1)
-                try:
-                    part_of_relation = Relation.objects.get(name=Relation.PART_OF)
-                    dataset_relation = DatasetRelation.objects.create(
-                        relation=part_of_relation,
-                        dataset=self.object,
-                        part_of=parent,
-                    )
-                    self.object.part_of.add(dataset_relation)
-                except Relation.DoesNotExist:
-                    pass
 
             if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
                 if identifier := form.cleaned_data.get("identifier"):

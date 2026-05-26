@@ -103,15 +103,42 @@ INSTALLED_APPS += [
 ]
 EOF
 git cherry-pick c707845e1e9d5db5f
+git commit -m "migration to djangocms-stories 1"
+git add .
+git commit -m "migration plan v4"
+git cherry-pick e26df61ee9c6fa129
+git commit -a --message 'migration to djangocms-stories 2'
+git cherry-pick -n 9ba5966b2946f674e
+git checkout 50efa00491c011fbf vitrina/cms/templates/vitrina/cms/post_detail.html
+python manage.py makemigrations --merge
+python manage.py migrate djangocms_blog
+python manage.py migrate djangocms_text
 python manage.py migrate djangocms_stories
 
+# ● Update(~/.pyenv/versions/kt312b/lib/python3.12/site-packages/djangocms_blog/migrations/0040_alter_authorentriesplugin_cmsplugin_ptr_and_more.py)
+#  ⎿  Removed 7 lines
+#      86                  auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+#      87              ),
+#      88          ),
+#      89 -        migrations.AlterField(                                                                                                                             
+#      90 -            model_name="posttranslation",                                                                                                                  
+#      91 -            name="id",                                                                                                                                     
+#      92 -            field=models.BigAutoField(                                                                                                                     
+#      93 -                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"                                                                    
+#      94 -            ),                                                                                                                                             
+#      95 -        ),                                                                                                                                                 
+#      89      ]
+sed -i '/djangocms_blog/d' vitrina/settings.py
+echo 'DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"' >> vitrina/settings.py
+git commit -m "migration to djangocms-stories 3"
+git add  .gitignore
+git commit -m "gitignore __pycache__"
+git add .
+git commit -m "migration plan v4"
+# sukurti failiukai:
+# dist/history_2026-05-26_19-22.txt
+# dist/requirements-2026-05-26_19-24.txt
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #
-# iki čia padaryta
+# iki čia padaryta                 #
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #
-
-#################################################
-python manage.py migrate djangocms_alias
-python manage.py migrate djangocms_versioning
-python -m manage create_versions --userid 1
-#################################################
 

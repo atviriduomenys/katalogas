@@ -1,6 +1,6 @@
 #!/usr/bin/zsh
 
-source dist/utils.sh
+source notes/migrations/djangocms/utils.sh
 
 ###############################################
 # Clean DEV environment
@@ -168,6 +168,9 @@ pip install djangocms-alias\>3.0.0
 python manage.py makemigrations --merge
 python manage.py makemigrations 
 python manage.py migrate
+# updated pyproject.toml and poetry.lock
+dump_db_GPX GP4dev
+ls -altr dist/backup/20260519
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #
 # iki čia padaryta                 #
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #

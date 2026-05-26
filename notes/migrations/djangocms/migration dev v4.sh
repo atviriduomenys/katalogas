@@ -45,6 +45,8 @@ python manage.py makemigrations --merge
 python manage.py migrate
 # Tvarka, veikia. No problems
 dump_db_GPX GP3dev
+# or restore DB from GP1dev1
+restore_db_GPX GP3dev
 ###############################################
 pip install pipdeptree
 pipdeptree > /tmp/pdt3
@@ -61,23 +63,38 @@ cat /tmp/requirements_GP3.txt | grep -E "link|meta|cms"
 ###############################################
 # Migrate to django-cms 4.1.4
 ###############################################
-
-pip install django-cms==4.1.4
+sed -i '/aldryn_apphooks_config/d' vitrina/settings.py
+pip install django-cms==4.1.11
 pip install djangocms-versioning==2.5.1
 pip install djangocms-alias==2.0.5
 pip install git+https://github.com/django-cms/djangocms-4-migration
-#
-sed -i '/djangocms_link/a\    "djangocms_4_migration",\n    "djangocms_versioning",\n    "djangocms_alias",\n    "djangocms_text",' vitrina/settings.py
+# 
 cat <<EOF >> vitrina/settings.py
+
 INSTALLED_APPS += [
     "djangocms_4_migration",
     "djangocms_versioning",
     "djangocms_alias",
-    "djangocms_text",
 ]
 CMS_CONFIRM_VERSION4 = True
 CMS_MIGRATION_USER_ID = 1
-TEXT_EDITOR = "djangocms_text_ckeditor5.ckeditor5"
 EOF
-# 
+
+################################################# 
 python manage.py cms4_migration
+# run scripts to check and to remove duplicates
+python manage.py makemigrations
+python manage.py migrate
+git checkout 8b1fa5f546a8049 vitrina/templatetags/navigation_tags.py vitrina/cms/templates/vitrina/cms/post_list.html
+#
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #
+# iki čia padaryta
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #
+
+#################################################
+python manage.py migrate djangocms_alias
+python manage.py migrate djangocms_versioning
+python -m manage create_versions --userid 1
+#################################################
+

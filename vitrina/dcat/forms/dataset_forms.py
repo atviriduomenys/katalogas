@@ -447,30 +447,6 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
 
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE)
 
-        self.helper.layout = Layout(
-            Field("parent"),
-            Field("name_prefix"),
-            Field("name"),
-            Field("title"),
-            Field("organization"),
-            Field("agent"),
-            Field("endpoint_url"),
-            Field("endpoint_type"),
-            Field("contact"),
-            Field("endpoint_description"),
-            Field("endpoint_description_type"),
-            Field("tags"),
-            Field("category"),
-            Field("access_rights"),
-            Field("conforms_to"),
-            Field("description"),
-            Field("follows"),
-            Field("landing_page"),
-            Field("license"),
-            Field("service_quality"),
-            Field("service_type"),
-        )
-
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
 
@@ -738,11 +714,6 @@ class InformationSystemRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
-        self.helper.layout = Layout(
-            Field("has_part"),
-            Field("related_information_system"),
-            Field("relates_to_information_system"),
-        )
 
 
 class ServiceRelationshipForm(forms.Form):
@@ -763,9 +734,6 @@ class ServiceRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
-        self.helper.layout = Layout(
-            Field("serves_datasets"),
-        )
 
 
 class DatasetRelationshipForm(forms.Form):
@@ -785,6 +753,3 @@ class DatasetRelationshipForm(forms.Form):
             ).values_list("organization_id", flat=True)
         self.helper = FormHelper()
         self.helper.form_tag = False
-        self.helper.layout = Layout(
-            Field("qualified_attribution"),
-        )

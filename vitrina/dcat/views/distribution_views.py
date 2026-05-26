@@ -17,6 +17,7 @@ from vitrina.resources.models import DatasetDistribution
 
 from django.utils.translation import gettext_lazy as _, get_language
 
+from vitrina.dcat.view_helpers import wizard_breadcrumb_ancestors
 from vitrina.resources.view_helpers import get_default_distribution_name
 from vitrina.structure.models import Version
 
@@ -29,7 +30,9 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
     @cached_property
     def dataset(self) -> Dataset:
         return get_object_or_404(
-            Dataset, organization_id=self.kwargs.get("organization_id"), pk=self.kwargs.get("dataset_id")
+            Dataset.objects.select_related("organization", "subclass"),
+            organization_id=self.kwargs.get("organization_id"),
+            pk=self.kwargs.get("dataset_id"),
         )
 
     def has_permission(self) -> bool:
@@ -68,6 +71,9 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
                     "dataset_id": self.dataset.pk,
                 },
             )
+            context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
+                self.dataset, self.dataset.organization, include_self=True
+            )
         return context
 
     def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
@@ -97,6 +103,9 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
             context = {
                 "form": update_form,
                 "object": distribution,
+                "breadcrumb_ancestors": wizard_breadcrumb_ancestors(
+                    distribution.dataset, distribution.dataset.organization, include_self=True
+                ),
             }
             response = render(self.request, "vitrina/dcat/_wizard_distribution_fragment.html", context)
             response["HX-Trigger"] = json.dumps(
@@ -173,7 +182,7 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
                 dataset__organization_id=self.kwargs.get("organization_id"),
                 dataset_id=self.kwargs.get("dataset_id"),
             )
-            .select_related("dataset__organization")
+            .select_related("dataset__organization", "dataset__subclass")
         )
 
     def get_form_kwargs(self) -> dict:
@@ -189,6 +198,10 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
             form = context.get("form")
             if form and hasattr(form, "helper"):
                 form.helper.form_tag = False
+            distribution = self.get_object()
+            context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
+                distribution.dataset, distribution.dataset.organization, include_self=True
+            )
         return context
 
     def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:

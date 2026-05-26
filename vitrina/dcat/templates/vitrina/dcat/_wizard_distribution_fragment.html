@@ -10,20 +10,15 @@
     {% csrf_token %}
 
     <nav class="wizard-crumbs mb-4">
+        {% for crumb in breadcrumb_ancestors %}
         <div class="is-flex is-align-items-flex-end" style="gap:.5rem;">
             <div class="wizard-crumb">
-                <span class="wizard-crumb-label">{% translate "Organizacija" %}</span>
-                <span class="wizard-crumb-title">{{ object.dataset.organization.title }}</span>
+                <span class="wizard-crumb-label">{{ crumb.type_label }}</span>
+                <span class="wizard-crumb-title">{{ crumb.title }}</span>
             </div>
             <span class="wizard-crumb-sep">&rsaquo;</span>
         </div>
-        <div class="is-flex is-align-items-flex-end" style="gap:.5rem;">
-            <div class="wizard-crumb">
-                <span class="wizard-crumb-label">{% translate "Duomenų rinkinys" %}</span>
-                <span class="wizard-crumb-title">{{ object.dataset.title }}</span>
-            </div>
-            <span class="wizard-crumb-sep">&rsaquo;</span>
-        </div>
+        {% endfor %}
         <div class="wizard-crumb is-current">
             <span class="wizard-crumb-label">{% translate "Distribucija" %}</span>
             <span class="wizard-crumb-title">{{ object.title }}</span>

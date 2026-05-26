@@ -31,6 +31,7 @@ from vitrina.dcat.view_helpers import (
     save_dataset_relations,
     save_dataset_attribution,
     save_dataset_qualified_relations,
+    wizard_breadcrumb_ancestors,
 )
 from vitrina.dcat.forms.dataset_forms import (
     InformationSystemResourceForm,
@@ -118,7 +119,7 @@ class DcatDatasetCreateView(
     @cached_property
     def dataset_parent(self) -> Dataset | None:
         if parent_id := self.kwargs.get("parent_id"):
-            return get_object_or_404(Dataset.objects.select_related("organization"), pk=parent_id)
+            return get_object_or_404(Dataset.objects.select_related("organization", "subclass"), pk=parent_id)
         return None
 
     def has_permission(self) -> bool:
@@ -168,6 +169,7 @@ class DcatDatasetCreateView(
             }
         )
         if self._is_wizard_request():
+            parent = self.dataset_parent
             parent_id = self.kwargs.get("parent_id")
             if parent_id:
                 context["wizard_create_post_url"] = reverse(
@@ -186,6 +188,9 @@ class DcatDatasetCreateView(
                         "subclass_uuid": self.subclass.pk,
                     },
                 )
+            context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
+                parent, self.organization, include_self=(parent is not None)
+            )
         return context
 
     def get_form_kwargs(self) -> dict:
@@ -307,6 +312,7 @@ class DcatDatasetCreateView(
 
         if self._is_wizard_request():
             self.object.set_current_language(get_language())
+            self.object.refresh_from_db(fields=["path", "depth"])
             update_form = DCAT_SUBCLASS_UPDATE_FORM_MAP[self.subclass.name](
                 self.organization, None, instance=self.object
             )
@@ -319,6 +325,7 @@ class DcatDatasetCreateView(
                 "organization": self.organization,
                 "form_title": self.subclass.translated_title,
                 "information_title": self.subclass.translated_title,
+                "breadcrumb_ancestors": wizard_breadcrumb_ancestors(self.object, self.organization, include_self=False),
             }
             response = render(self.request, "vitrina/dcat/_wizard_dataset_fragment.html", context)
             node_prefix = _WIZARD_NODE_KEY_PREFIX.get(self.subclass.name, "dataset")
@@ -363,7 +370,7 @@ class DcatDatasetUpdateView(
     @cached_property
     def dataset_parent(self) -> Dataset | None:
         if parent_id := self.kwargs.get("parent_id"):
-            return get_object_or_404(Dataset.objects.select_related("organization"), pk=parent_id)
+            return get_object_or_404(Dataset.objects.select_related("organization", "subclass"), pk=parent_id)
         return None
 
     def has_permission(self) -> bool:
@@ -423,6 +430,10 @@ class DcatDatasetUpdateView(
         )
         rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
         context["relationship_form"] = rel_form_class(self.get_object()) if rel_form_class else None
+        if self._is_wizard_request():
+            context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
+                self.object, self.organization, include_self=False
+            )
         return context
 
     def get_queryset(self) -> QuerySet[Dataset]:

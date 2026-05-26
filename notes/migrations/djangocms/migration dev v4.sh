@@ -61,7 +61,7 @@ cat /tmp/requirements_GP3.txt | grep -E "link|meta|cms"
 
 
 ###############################################
-# Migrate to django-cms 4.1.4
+# Migrate to django-cms 4.1.11
 ###############################################
 sed -i '/aldryn_apphooks_config/d' vitrina/settings.py
 pip install django-cms==4.1.11
@@ -86,7 +86,24 @@ python manage.py cms4_migration
 python manage.py makemigrations
 python manage.py migrate
 git checkout 8b1fa5f546a8049 vitrina/templatetags/navigation_tags.py vitrina/cms/templates/vitrina/cms/post_list.html
-#
+#################################################
+# Migrate to djangocms-stories
+#################################################
+pip uninstall djangocms-blog
+
+#|    /home/oa/.pyenv/versions/3.12.8/envs/kt312b/lib/python3.12/site-packages/djangocms_blog/migrations/0040_alter_authorentriesplugin_cmsplugin_ptr_and_more.py
+#|    /home/oa/.pyenv/versions/3.12.8/envs/kt312b/lib/python3.12/site-packages/djangocms_blog/migrations/0042_merge_20260525_2030.py
+#|    /home/oa/.pyenv/versions/3.12.8/envs/kt312b/lib/python3.12/site-packages/djangocms_blog/migrations/0043_merge_20260525_2034.py
+
+pip install djangocms-stories
+cat <<EOF >> vitrina/settings.py
+
+INSTALLED_APPS += [
+    "djangocms_stories",
+]
+EOF
+git cherry-pick c707845e1e9d5db5f
+python manage.py migrate djangocms_stories
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ #
 # iki čia padaryta

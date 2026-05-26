@@ -37,6 +37,7 @@
 .aider*
 GEMINI.md
 .coverage
+__pycache__
 
 # pytest-profiling
 /prof/

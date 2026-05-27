@@ -8,7 +8,7 @@ from utils import BASE_URL, login
 
 # Number of stories to create
 STORY_COUNT = 3
-STORIES_START_INDEX = 5
+STORIES_START_INDEX = 1
 _story_counter = itertools.count(start=STORIES_START_INDEX)
 
 

@@ -4,12 +4,11 @@ from djangocms_versioning.constants import PUBLISHED
 
 register = template.Library()
 
+
 def _published_nav_page_ids():
     """Return PKs of Pages that have a published PageContent with in_navigation=True."""
-    return (
-        PageContent.objects.filter(in_navigation=True, versions__state=PUBLISHED)
-        .values_list("page_id", flat=True)
-    )
+    return PageContent.objects.filter(in_navigation=True, versions__state=PUBLISHED).values_list("page_id", flat=True)
+
 
 def _published_nav_page_ids():
     """Return PKs of Pages that have a published PageContent with in_navigation=True."""

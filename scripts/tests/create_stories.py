@@ -1,5 +1,5 @@
 from playwright.sync_api import Page, Playwright, sync_playwright
-
+import itertools
 from utils import BASE_URL, login
 
 # ---------------------------------------------------------------------------
@@ -7,17 +7,19 @@ from utils import BASE_URL, login
 # ---------------------------------------------------------------------------
 
 # Number of stories to create
-STORY_COUNT = 5
+STORY_COUNT = 3
+STORIES_START_INDEX = 5
+_story_counter = itertools.count(start=STORIES_START_INDEX)
 
 
-def generate_story_data(index: int) -> dict:
+def generate_story_data() -> dict:
     """Generate story data dynamically based on index."""
+    index = next(_story_counter)
     return {
         "title": f"Blog {index} pavadinimas",
         "abstract": f"Blog {index} santrauka - Tai yra trumpas aprašymas apie ką kalbama šioje naujienoje.",
         "content": f"Blog {index} pilnas straipsnio tekstas\nTai yra pagrindinis turinio tekstas.",
         "extra_content": f"Papildomas Blog {index} tekstas.",
-    
     }
 
 
@@ -36,7 +38,7 @@ def start_new_story(page: Page) -> None:
     page.get_by_role("link", name="Sukurti").click()
     frame = page.locator("iframe").content_frame
     frame.get_by_text("Naujas +").click()
-    page.get_by_role("link", name="Kitas").click()
+    page.get_by_role("link", name="Kitas", exact=True).click()
 
 
 def _fill_basic_fields(frame, story: dict) -> None:
@@ -78,8 +80,8 @@ def create_multiple_stories(page: Page, count: int) -> None:
     """Create multiple stories with dynamically generated data."""
     print(f"\nStarting to create {count} stories...\n")
 
-    for i in range(1, count + 1):
-        story_data = generate_story_data(i)
+    for i in range(STORY_COUNT):
+        story_data = generate_story_data()
         create_story(page, story_data)
         print()
 

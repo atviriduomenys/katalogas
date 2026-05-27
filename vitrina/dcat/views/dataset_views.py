@@ -33,6 +33,7 @@ from vitrina.dcat.view_helpers import (
     save_dataset_qualified_relations,
     wizard_breadcrumb_ancestors,
 )
+from vitrina.dcat.wizard import WIZARD_SUBCLASS_TO_NODE_TYPE
 from vitrina.dcat.forms.dataset_forms import (
     InformationSystemResourceForm,
     BaseResourceForm,
@@ -69,13 +70,6 @@ DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP = {
     DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemRelationshipForm,
     DCATResourceSubclass.SERVICE: ServiceRelationshipForm,
     DCATResourceSubclass.DATASET: DatasetRelationshipForm,
-}
-
-# Maps DCAT subclass name → wizard tree node-key prefix (mirrors WIZARD_NODE_* in orgs/views.py)
-_WIZARD_NODE_KEY_PREFIX = {
-    DCATResourceSubclass.INFORMATION_SYSTEM: "is",
-    DCATResourceSubclass.SERVICE: "service",
-    DCATResourceSubclass.DATASET: "dataset",
 }
 
 # Lithuanian grammatical gender for the word "new" per subclass
@@ -316,7 +310,7 @@ class DcatDatasetCreateView(
             "breadcrumb_ancestors": wizard_breadcrumb_ancestors(self.object, self.organization, include_self=False),
         }
         response = render(self.request, "vitrina/dcat/_wizard_dataset_fragment.html", context)
-        node_prefix = _WIZARD_NODE_KEY_PREFIX.get(self.subclass.name, "dataset")
+        node_prefix = WIZARD_SUBCLASS_TO_NODE_TYPE.get(self.subclass.name, "dataset")
         response["HX-Trigger"] = json.dumps(
             {
                 "treeRefresh": None,
@@ -393,7 +387,7 @@ class DcatDatasetUpdateView(
             }
         )
         rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
-        context["relationship_form"] = rel_form_class(self.get_object()) if rel_form_class else None
+        context["relationship_form"] = rel_form_class(self.object) if rel_form_class else None
         context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
             self.object, self.organization, include_self=False
         )

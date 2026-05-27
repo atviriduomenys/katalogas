@@ -170,17 +170,7 @@ class TestDcatDistributionCreateView:
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
         assert distribution is not None
-
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-distribution-update",
-            kwargs={
-                "organization_id": org.pk,
-                "dataset_id": dataset.pk,
-                "distribution_id": distribution.pk,
-            },
-        )
-        assert response.location == expected_url
+        assert response.status_code == 200
 
     def test_post_without_name_uses_default_distribution_name(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -450,8 +440,8 @@ class TestDcatDistributionUpdateView:
         )
         response = app.get(url)
 
-        assert response.status_code == 302
-        assert reverse("organization-detail", kwargs={"pk": org.pk}) in response.location
+        assert response.status_code == 200
+        assert "notification" in response.text
 
     def test_non_draft_metadata_version_redirects_with_error(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -472,8 +462,8 @@ class TestDcatDistributionUpdateView:
         )
         response = app.get(url)
 
-        assert response.status_code == 302
-        assert reverse("organization-detail", kwargs={"pk": org.pk}) in response.location
+        assert response.status_code == 200
+        assert "notification" in response.text
 
     def test_authorized_user_gets_200(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -511,20 +501,11 @@ class TestDcatDistributionUpdateView:
                 "distribution_id": distribution.pk,
             },
         )
-        form = app.get(url).forms["resource-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["access_url"] = "https://example.com/updated"
         response = form.submit()
 
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-distribution-update",
-            kwargs={
-                "organization_id": org.pk,
-                "dataset_id": dataset.pk,
-                "distribution_id": distribution.pk,
-            },
-        )
-        assert response.location == expected_url
+        assert response.status_code == 200
 
     def test_post_updates_metadata_when_it_exists(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -552,7 +533,7 @@ class TestDcatDistributionUpdateView:
                 "distribution_id": distribution.pk,
             },
         )
-        form = app.get(url).forms["resource-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["access_url"] = "https://example.com/updated"
         form["name"] = "new-name"
         form["title"] = "New Title"
@@ -595,7 +576,7 @@ class TestDcatDistributionUpdateView:
                 "distribution_id": distribution.pk,
             },
         )
-        form = app.get(url).forms["resource-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["name"] = "updatedresource"
         form["access_url"] = "https://example.com/updated-access"
         form["title"] = "Updated Distribution"

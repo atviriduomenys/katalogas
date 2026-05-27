@@ -184,7 +184,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create",
             kwargs={"organization_id": org.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Test Redirect"
         form["description"] = "Test redirect description"
         form["name"] = "testredirect"
@@ -198,13 +198,7 @@ class TestDcatDatasetCreateView:
 
         dataset = Dataset.objects.filter(translations__title="Test Redirect").first()
         assert dataset is not None
-
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": org.pk, "dataset_id": dataset.id},
-        )
-        assert response.location == expected_url
+        assert response.status_code == 200
 
     def test_post_information_system_saves_all_fields(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -226,7 +220,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create",
             kwargs={"organization_id": org.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "IS All Fields"
         form["description"] = "IS description"
         form["name"] = "isallfields"
@@ -286,7 +280,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create",
             kwargs={"organization_id": org.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Service All Fields"
         form["name"] = "serviceallfields"
         form["tags"] = "svcTag"
@@ -348,7 +342,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create",
             kwargs={"organization_id": org.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Dataset All Fields"
         form["description"] = "Dataset description"
         form["name"] = "datasetallfields"
@@ -423,7 +417,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create-with-parent",
             kwargs={"organization_id": org.pk, "parent_id": parent.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Child Dataset"
         form["description"] = "Child description"
         form["name"] = "child"
@@ -454,7 +448,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create",
             kwargs={"organization_id": org.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Test Dataset"
         form["description"] = "Dataset description"
         form["name"] = "dataset"
@@ -481,7 +475,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create",
             kwargs={"organization_id": url_org.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Service Redirect Test"
         form["name"] = "redirect"
         form["tags"] = "tag1"
@@ -492,12 +486,8 @@ class TestDcatDatasetCreateView:
 
         dataset = Dataset.objects.filter(translations__title="Service Redirect Test").first()
         assert dataset is not None
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": form_org.pk, "dataset_id": dataset.pk},
-        )
-        assert response.location == expected_url
+        assert dataset.organization == form_org
+        assert response.status_code == 200
 
     def test_post_dataset_redirects_to_instance_organization(self, app: DjangoTestApp):
         url_org = OrganizationFactory()
@@ -511,7 +501,7 @@ class TestDcatDatasetCreateView:
             "dcat-dataset-create",
             kwargs={"organization_id": url_org.pk, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Dataset Redirect Test"
         form["description"] = "Test description"
         form["name"] = "redirect"
@@ -522,12 +512,8 @@ class TestDcatDatasetCreateView:
 
         dataset = Dataset.objects.filter(translations__title="Dataset Redirect Test").first()
         assert dataset is not None
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": form_org.pk, "dataset_id": dataset.pk},
-        )
-        assert response.location == expected_url
+        assert dataset.organization == form_org
+        assert response.status_code == 200
 
 
 class TestDcatDatasetUpdateView:
@@ -728,8 +714,8 @@ class TestDcatDatasetUpdateView:
         )
         response = app.get(url)
 
-        assert response.status_code == 302
-        assert reverse("organization-detail", kwargs={"pk": org.pk}) in response.location
+        assert response.status_code == 200
+        assert "notification" in response.text
 
     def test_invalid_subclass_redirects_with_warning(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -744,8 +730,8 @@ class TestDcatDatasetUpdateView:
         )
         response = app.get(url)
 
-        assert response.status_code == 302
-        assert reverse("organization-detail", kwargs={"pk": org.pk}) in response.location
+        assert response.status_code == 200
+        assert "notification" in response.text
 
     @pytest.mark.parametrize(
         "subclass_name, expected_form_class",
@@ -786,7 +772,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Redirect Test"
         form["description"] = "Redirect description"
         form["name"] = "redirect"
@@ -798,12 +784,7 @@ class TestDcatDatasetUpdateView:
         form["information_system_assessment_url"] = "https://example.com/assessment"
         response = form.submit()
 
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
-        )
-        assert response.location == expected_url
+        assert response.status_code == 200
 
     def test_post_service_redirects_to_instance_organization(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -824,19 +805,16 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Service Update Redirect"
         form["name"] = "redrect"
         form["tags"] = "tag1"
         form["organization"].force_value(str(new_org.pk))
         response = form.submit()
 
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": new_org.pk, "dataset_id": dataset.pk},
-        )
-        assert response.location == expected_url
+        dataset.refresh_from_db()
+        assert dataset.organization == new_org
+        assert response.status_code == 200
 
     def test_post_dataset_redirects_to_instance_organization(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -850,7 +828,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Dataset Update Redirect"
         form["description"] = "Dataset description"
         form["name"] = "redirect"
@@ -858,12 +836,9 @@ class TestDcatDatasetUpdateView:
         form["version_notes"] = "v1"
         response = form.submit()
 
-        assert response.status_code == 302
-        expected_url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": new_org.pk, "dataset_id": dataset.pk},
-        )
-        assert response.location == expected_url
+        dataset.refresh_from_db()
+        assert dataset.organization == new_org
+        assert response.status_code == 200
 
     def test_post_information_system_updates_all_fields(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -907,7 +882,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Updated IS Title"
         form["description"] = "Updated IS description"
         form["name"] = "updateis"
@@ -974,7 +949,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Updated Service Title"
         form["name"] = "updatesvc"
         form["tags"] = "updatedSvcTag"
@@ -1034,7 +1009,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Updated Dataset Title"
         form["description"] = "Updated dataset description"
         form["name"] = "updateds"
@@ -1118,7 +1093,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "New Title"
         form["description"] = "New description"
         form["name"] = "newname"
@@ -1152,7 +1127,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "IS Title"
         form["description"] = "IS description"
         form["name_prefix"].force_value(f"{parent.name}")
@@ -1186,7 +1161,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "IS Title"
         form["description"] = "IS description"
         form["name_prefix"].force_value(f"{org.name}")
@@ -1221,7 +1196,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Service Title"
         form["name"] = "updatesvc"
         form["tags"] = "svcTag"
@@ -1252,7 +1227,7 @@ class TestDcatDatasetUpdateView:
             "dcat-dataset-update",
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Service Title"
         form["name"] = "updatesvc"
         form["tags"] = "svcTag"
@@ -1282,7 +1257,7 @@ class TestDcatDatasetUpdateView:
             kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
         )
         # IS form has no endpoint_url field, so endpoint_url won't be in changed_data
-        form = app.get(url).forms["dataset-form"]
+        form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "IS Title"
         form["description"] = "IS description"
         form["name"] = "updateis"

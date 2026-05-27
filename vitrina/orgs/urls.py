@@ -61,6 +61,8 @@ from vitrina.orgs.views import (
     OrganizationCreateView,
     OrganizationCreateSearchUpdateView,
     OrganizationProjectsView,
+)
+from vitrina.dcat.views.wizard_views import (
     OrganizationWizardView,
     OrganizationWizardTreeView,
     OrganizationWizardCreateRedirectView,

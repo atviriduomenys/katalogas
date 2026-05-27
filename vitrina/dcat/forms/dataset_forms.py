@@ -452,6 +452,12 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         required=False,
         unique=True,
     )
+    was_generated_by = StringListField(
+        label=_("Buvo sukurtas dėl"),
+        help_text=_("Veikla, dėl kurios buvo sukurtas duomenų rinkinys. Atitinka prov:wasGeneratedBy."),
+        required=False,
+        unique=True,
+    )
     conforms_to = forms.ModelChoiceField(
         Concept.ordered_by_label_objects.filter(concept_schemas__uri=DATASET_STANDARD_URI).prefetch_related(
             "translations"
@@ -517,7 +523,6 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "languages": Select2MultipleWidget,
             "provenance": Select2MultipleWidget,
             "dataset_type": Select2Widget,
-            "was_generated_by": Select2MultipleWidget,
         }
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
@@ -547,6 +552,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         self.fields["languages"].label_from_instance = lambda obj: obj.safe_translation_getter(
             "label", any_language=True
         )
+
+        if self.instance.pk:
+            self.initial["was_generated_by"] = list(self.instance.was_generated_by.values_list("title", flat=True))
 
         self.helper.layout = Layout(
             Field("parent"),

@@ -1,16 +1,11 @@
 from playwright.sync_api import Page, Playwright, sync_playwright
 import itertools
 
+from utils import BASE_URL, login
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-
-BASE_URL = "http://localhost:8000"
-
-CREDENTIALS = {
-    "email": "superadmin@aa.lt",
-    "password": "Liabas.12345",
-}
 
 _org_counter = itertools.count(start=1)
 
@@ -41,17 +36,10 @@ def generate_organisation_data():
 # Step functions
 # ---------------------------------------------------------------------------
 
-def login(page: Page, email: str, password: str) -> None:
-    """Log in using email and password."""
-    page.get_by_role("link", name="Prisijungti").click()
-    page.get_by_role("textbox", name="El. paštas *").fill(email)
-    page.get_by_role("textbox", name="Slaptažodis *").fill(password)
-    page.get_by_role("button", name="Prisijungti").click()
-    page.wait_for_load_state("networkidle")
-
 def go_to_herbas(page: Page) -> None:
     page.get_by_role("link", name="herbas    data.gov.lt").click()
     page.wait_for_load_state("networkidle")
+
 
 def go_to_organizations(page: Page) -> None:
     """Navigate to the Organizations list from the homepage."""
@@ -88,7 +76,6 @@ def submit_organization_form(page: Page) -> None:
     page.wait_for_load_state("networkidle")
 
 
-
 def create_organization(page: Page, org: dict) -> None:
     """Run the full creation flow for a single organization."""
     print(f"Creating organisation: {org['name']}...")
@@ -103,12 +90,12 @@ def create_organization(page: Page, org: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False,slow_mo=500)
+    browser = playwright.chromium.launch(headless=False, slow_mo=500)
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
     page.goto(BASE_URL)
-    login(page, CREDENTIALS["email"], CREDENTIALS["password"])
+    login(page)
     for i in range(3):
         go_to_organizations(page)
         ORGANISATION = generate_organisation_data()

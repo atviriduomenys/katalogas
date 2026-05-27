@@ -5,6 +5,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
 
 from cms.api import create_page
+from cms.models import Page
 from cms.apphook_pool import apphook_pool
 from cms.models import PageContent, PageUrl
 from django.contrib.auth import get_user_model
@@ -25,6 +26,7 @@ PAGES = [
     {
         "title": "Duomenų ištekliai",
         "slug": "datasets",
+        "is_home": True,
         "in_navigation": True,
     },
     {
@@ -40,6 +42,8 @@ PAGES = [
     },
 ]
 
+LANGUAGE = "lt"
+TEMPLATE = "INHERIT"
 
 def get_or_create_stories_config():
     apphook_pool.discover_apps()
@@ -66,6 +70,7 @@ def run():
 
     print(f"Creating pages on site: {site} (publishing as '{superuser}')")
 
+    home_page = None
     stories_config = get_or_create_stories_config()
 
     existing_slugs = set(
@@ -78,6 +83,7 @@ def run():
     for page_def in PAGES:
         title = page_def["title"]
         slug = page_def.get("slug")
+        is_home = page_def.get("is_home", False)
         in_navigation = page_def.get("in_navigation", False)
         attach_stories = page_def.get("stories_config", False)
 
@@ -95,18 +101,26 @@ def run():
             created_by=superuser,
             apphook="StoriesApp" if attach_stories else None,
             apphook_namespace=stories_config.namespace if attach_stories else None,
+            published=True,
         )
 
+        if is_home:
+            page.set_as_homepage()
+            home_page = page
         content = PageContent.admin_manager.get(page=page, language=LANGUAGE)
         version = Version.objects.get_for_content(content)
         version.publish(user=superuser)
 
+        print(f"  Created: '{title}' (slug={slug!r}, is_home={is_home})")
         label = f"slug={slug!r}"
         if attach_stories:
             label += f", apphook=StoriesApp/{stories_config.namespace}"
         print(f"  Created + published: '{title}' ({label})")
         created_count += 1
 
+    print(f"\nDone. {len(PAGES)} pages created.")
+    if home_page:
+        print(f"Homepage set to: '{home_page.get_title()}'")
     print(f"\nDone. {created_count} page(s) created, {len(PAGES) - created_count} skipped.")
 
 

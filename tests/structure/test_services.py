@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -1394,14 +1396,96 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
+    version2 = create_structure_objects(structure)
     assert list(
         Comment.objects.filter(
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
     ) == ['Duomenų išteklius "datasets/gov/ivpk/adp" jau egzistuoja.']
-    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=version).count() == 0
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=version2).count() == 0
+
+
+@pytest.mark.django_db
+def test_same_manifest_name_blocked_across_two_datasets(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,resource1,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
+    )
+    org = OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])
+
+    structure1 = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=org),
+    )
+    structure1.dataset.current_structure = structure1
+    structure1.dataset.save()
+    create_structure_objects(structure1)
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
+
+    structure2 = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=org),
+    )
+    structure2.dataset.current_structure = structure2
+    structure2.dataset.save()
+    version2 = create_structure_objects(structure2)
+    assert list(
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(structure2),
+        ).values_list("body", flat=True)
+    ) == ['Duomenų išteklius "datasets/gov/ivpk/adp" jau egzistuoja.']
+    assert Metadata.objects.filter(dataset=structure2.dataset, metadata_version=version2).count() == 0
+
+
+@pytest.mark.django_db
+def test_reimport_after_publish_does_not_fail(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,resource1,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
+    )
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    draft_version = create_structure_objects(structure)
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
+
+    metadata_ids = list(
+        Metadata.objects.filter(dataset=structure.dataset, metadata_version=draft_version).values_list("pk", flat=True)
+    )
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, draft_version.pk])).forms["version-form"]
+    form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    form["version_type"] = "MAJOR"
+    form["metadata"] = metadata_ids
+    form.submit()
+
+    structure2 = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=structure.dataset,
+    )
+    structure.dataset.current_structure = structure2
+    structure.dataset.save()
+    create_structure_objects(structure2)
+    assert (
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(structure2),
+        ).count()
+        == 0
+    )
 
 
 @pytest.mark.django_db
@@ -1420,13 +1504,14 @@ def test_structure_with_invalid_prefix_no_whitelist(app: DjangoTestApp):
     WhitelistedCodeName.objects.filter(organization=structure.dataset.organization).delete()
     structure.dataset.current_structure = structure
     structure.dataset.save()
+    dataset_name = structure.dataset.name
     create_structure_objects(structure)
     assert list(
         Comment.objects.filter(
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
-    ) == ["Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“."]
+    ) == [f"Kodinis pavadinimas (datasets/gov/test/adp) nesutampa su rinkinio kodiniu pavadinimu {dataset_name}."]
 
 
 @pytest.mark.django_db
@@ -1446,15 +1531,14 @@ def test_structure_with_invalid_prefix_with_whitelist(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
+    dataset_name = structure.dataset.name
     create_structure_objects(structure)
     assert list(
         Comment.objects.filter(
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
-    ) == [
-        "Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „datasets/gov/allowed/“."
-    ]
+    ) == [f"Kodinis pavadinimas (datasets/gov/test/adp) nesutampa su rinkinio kodiniu pavadinimu {dataset_name}."]
 
 
 @pytest.mark.django_db

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-27 12:56+0300\n"
+"POT-Creation-Date: 2026-06-03 10:19+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4894,6 +4894,17 @@ msgstr "UML diagrams"
 
 msgid "UML diagrama mermaid sintaksės formatu."
 msgstr "UML diagram in mermaid syntax format."
+
+#, python-format
+msgid ""
+"Kodinis pavadinimas (%(manifest_names)s) nesutampa su rinkinio kodiniu "
+"pavadinimu %(dataset_name)s."
+msgstr ""
+"Code name (%(manifest_names)s) does not match with the dataset code name "
+"%(dataset_name)s."
+
+msgid "Manifeste nenurodytas duomenų rinkinio kodinis pavadinimas."
+msgstr "Dataset code name not defined in the manifest"
 
 #, python-brace-format
 msgid ""

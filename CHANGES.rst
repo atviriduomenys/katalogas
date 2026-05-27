@@ -4,6 +4,10 @@ Changes
 v 1.22.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2643
+
+- Fix a bug where two different datasets in the same organization could have the same name.
+
 https://github.com/atviriduomenys/katalogas/issues/2629
 
 - Fix property-level enum `ref` export: structure export now always outputs an empty `ref` for enums declared at the property dimension.

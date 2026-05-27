@@ -22,7 +22,6 @@ from django.utils.translation import gettext, gettext_lazy as _, get_language
 from vitrina import settings
 from vitrina.classifiers.models import Status
 from vitrina.comments.models import Comment
-from vitrina.datasets.helpers import get_name_prefixes
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.helpers import none_to_string, get_encoding
@@ -221,14 +220,15 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             type=Comment.STRUCTURE,
         ).only("pk", "object_id")
     )
-    to_process, main_prefix, whitelisted = _get_manifest_datasets_to_import(state, dataset)
+    to_process, all_manifest_names = _get_manifest_datasets_to_import(state, dataset)
     if not to_process:
-        if whitelisted:
+        if all_manifest_names:
+            names_str = ", ".join(all_manifest_names)
             message = _(
-                "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
-            ) % {"expected": main_prefix, "whitelisted": ", ".join(whitelisted)}
+                "Kodinis pavadinimas (%(manifest_names)s) nesutampa su rinkinio kodiniu pavadinimu %(dataset_name)s."
+            ) % {"manifest_names": names_str, "dataset_name": dataset.name}
         else:
-            message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“.") % {"expected": main_prefix}
+            message = _("Manifeste nenurodytas duomenų rinkinio kodinis pavadinimas.")
         _create_errors([message], dataset.current_structure)
         return
 
@@ -243,14 +243,13 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
         ).only("uuid", "name"):
             dataset_meta_uuid_by_name.setdefault(metadata.name, metadata.uuid)
 
-    # One query: names already claimed by another dataset for this version (replaces N loop queries).
+    # One query: names already claimed by another dataset (globally, not version-scoped).
     conflict_by_name: dict[str, Metadata] = {}
     if manifest_names:
         for metadata in (
             Metadata.objects.filter(
                 content_type=ct,
                 name__in=manifest_names,
-                metadata_version=metadata_version,
             )
             .exclude(dataset=dataset)
             .order_by("pk")
@@ -269,7 +268,6 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
                 Metadata.objects.filter(
                     content_type=ct,
                     name=meta.name,
-                    metadata_version=metadata_version,
                 )
                 .exclude(dataset=dataset)
                 .first()
@@ -345,24 +343,20 @@ def _get_manifest_datasets_to_process(state: struct.State, dataset: Dataset) -> 
 
 def _get_manifest_datasets_to_import(
     state: struct.State, dataset: Dataset
-) -> tuple[list[tuple[int, struct.Dataset]], str, list[str]]:
+) -> tuple[list[tuple[int, struct.Dataset]], list[str]]:
     """
     Get manifest datasets to import.
 
-    - Re-import: matches by dataset.name.
-    - First import: falls back to last dataset with a matching organization prefix.
-
-    Also returns main_prefix and whitelisted for error reporting.
+    Requires an exact name match with dataset.name.
+    Also returns all manifest dataset names for error reporting.
     """
     datasets = list(state.manifest.datasets.values())
     result: list[tuple[int, struct.Dataset]] = []
-    main_prefix, whitelisted = "", []
+    all_manifest_names: list[str] = [meta.name for meta in datasets if meta.name]
     for order, meta in enumerate(datasets, 1):
-        is_last = order == len(datasets)
-        matched_prefix, main_prefix, whitelisted = get_name_prefixes(meta.name, dataset.organization, dataset)
-        if meta.name == dataset.name or (matched_prefix and is_last):
+        if meta.name == dataset.name:
             result.append((order, meta))
-    return result, main_prefix, whitelisted
+    return result, all_manifest_names
 
 
 def _load_prefixes(

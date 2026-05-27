@@ -524,7 +524,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         super().__init__(organization, url_parent, *args, **kwargs)
 
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
+            organization=self.organization,
+            subclass__name__in=[DCATResourceSubclass.INFORMATION_SYSTEM, DCATResourceSubclass.SERVICE],
+            is_public=False,
         )
 
         self.fields["organization"].required = True

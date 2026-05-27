@@ -839,15 +839,6 @@ class TestDatasetResourceForm:
 
         assert other_org_dataset not in form.fields["parent"].queryset
 
-    def test_parent_queryset_excludes_dataset_with_is_subclass(self):
-        organization = OrganizationFactory()
-        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
-        is_dataset = DatasetFactory(organization=organization, subclass=is_subclass, is_public=False)
-
-        form = DatasetResourceForm(organization=organization, url_parent=None)
-
-        assert is_dataset not in form.fields["parent"].queryset
-
     def test_parent_queryset_excludes_public_dataset(self):
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)

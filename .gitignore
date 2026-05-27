@@ -36,6 +36,8 @@
 .kilo/
 .aider*
 GEMINI.md
+CLAUDE.md
+.claude
 .coverage
 __pycache__
 

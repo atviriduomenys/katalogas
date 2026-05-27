@@ -26,7 +26,6 @@ PAGES = [
     {
         "title": "Duomenų ištekliai",
         "slug": "datasets",
-        "is_home": True,
         "in_navigation": True,
     },
     {
@@ -42,8 +41,21 @@ PAGES = [
     },
 ]
 
-LANGUAGE = "lt"
-TEMPLATE = "INHERIT"
+
+def get_or_create_stories_config():
+    apphook_pool.discover_apps()
+    config, created = StoriesConfig.objects.get_or_create(
+        namespace=STORIES_CONFIG["namespace"],
+        defaults=config_defaults,
+    )
+    if created:
+        config.set_current_language(LANGUAGE)
+        config.app_title = STORIES_CONFIG["app_title"]
+        config.save()
+        print(f"  Created StoriesConfig: '{STORIES_CONFIG['app_title']}' (namespace={STORIES_CONFIG['namespace']!r})")
+    else:
+        print(f"  StoriesConfig already exists, skipping (namespace={STORIES_CONFIG['namespace']!r})")
+    return config
 
 def get_or_create_stories_config():
     apphook_pool.discover_apps()
@@ -83,7 +95,6 @@ def run():
     for page_def in PAGES:
         title = page_def["title"]
         slug = page_def.get("slug")
-        is_home = page_def.get("is_home", False)
         in_navigation = page_def.get("in_navigation", False)
         attach_stories = page_def.get("stories_config", False)
 

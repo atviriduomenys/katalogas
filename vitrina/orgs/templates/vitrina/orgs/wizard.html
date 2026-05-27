@@ -5,8 +5,7 @@
 {% block current_title %}{% translate "Duomenų pildymo aplinka" %}{% endblock %}
 
 {% block scripts %}
-    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
-    <script src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+    <script src="{% static 'js/wizard.js' %}" defer></script>
 {% endblock %}
 
 {% block head %}

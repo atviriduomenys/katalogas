@@ -306,14 +306,55 @@
 
         [x-cloak] { display: none !important; }
 
-        /* Select2 dropdowns must float above the fixed wizard overlay (z-index 9999) */
-        .select2-container--open .select2-dropdown { z-index: 10000 !important; }
-
-        /* Match select/select2 container width to field width (mirrors base_form.html) */
-        div.select, div.select select, .select2.select2-container { width: 100% !important; }
+                {# Select2 dropdowns must float above the fixed wizard overlay (z-index 9999) #}
+        .select2-container--open .select2-dropdown {
+            z-index: 10000 !important;
+        }
+        {# Match select width #}
+        div.select, div.select select, .select2.select2-container {
+            width: 100% !important;
+        }
+        {# Match select height and border color #}
+        .select2.select2-container .select2-selection--single {
+            height: 2.5rem;
+            padding: 6px 12px;
+            border-color: #767676;
+            position: relative;
+        }
+        {# Remove left padding to match padding on non-select2 fields #}
+        .select2.select2-container .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
+        }
+        {# Match multiple select height and border color #}
         .select2.select2-container .select2-selection--multiple {
             min-height: 2.5rem;
             border-color: #767676;
+        }
+        {# Vertically center the clear (x) button within the field #}
+        .select2.select2-container .select2-selection--single .select2-selection__clear {
+            position: absolute;
+            right: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            margin: 0;
+        }
+        {# Match select border color on hover #}
+        .select2.select2-container:hover .select2-selection--single:hover,
+        .select2.select2-container:hover .select2-selection--multiple:hover {
+            border-color: #b5b5b5;
+        }
+        {# Match select dropdown border color and position above/below field #}
+        .select2-container .select2-dropdown {
+            border-color: #767676;
+            margin-top: 46px;
+        }
+        {# Match select2 dropdown arrow #}
+        .select2-selection__arrow {
+            display: none;
+        }
+        {# Match select2 selection placeholder color #}
+        .select2.select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #363636;
         }
     </style>
 {% endblock %}

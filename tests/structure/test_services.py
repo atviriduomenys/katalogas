@@ -879,6 +879,7 @@ def test_structure_with_enum_without_prepare_value_adds_comment_about_error(app:
     assert prop_enum[0].name == ""
     assert not prop_enum[0].enumitem_set.exists()
     assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
+        'Reikšmė "" turi būti integer tipo.',
         'Duomenų reikšmė (source: "one") privalo turėti nurodytą "prepare" stulpelį.',
     ]
 

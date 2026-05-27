@@ -656,7 +656,9 @@ class DatasetUpdateForm(DatasetResourceForm):
 
 class InformationSystemRelationshipForm(forms.Form):
     has_part = forms.ModelMultipleChoiceField(
-        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
+        queryset=Dataset.objects.filter(
+            subclass__name__in=[DCATResourceSubclass.CATALOG, DCATResourceSubclass.INFORMATION_SYSTEM]
+        ),
         widget=DatasetMultipleWidget(),
         required=False,
         label=_("Priklauso duomenų katalogams"),

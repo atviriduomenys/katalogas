@@ -93,7 +93,7 @@ class DcatDatasetCreateView(
     LanguageChoiceMixin,
 ):
     model = Dataset
-    template_name = "vitrina/dcat/dataset_form.html"
+    template_name = "vitrina/dcat/_wizard_dataset_create_fragment.html"
     context_object_name = "dataset"
 
     @cached_property
@@ -124,14 +124,6 @@ class DcatDatasetCreateView(
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE_WIZARD, Dataset, self.organization)
-
-    def _is_wizard_request(self) -> bool:
-        return bool(self.request.headers.get("X-Wizard-Request"))
-
-    def get_template_names(self) -> list[str]:
-        if self._is_wizard_request():
-            return ["vitrina/dcat/_wizard_dataset_create_fragment.html"]
-        return super().get_template_names()
 
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         is_valid_subclass = self.subclass.name in [
@@ -168,29 +160,28 @@ class DcatDatasetCreateView(
                 "button": _("Sukurti"),
             }
         )
-        if self._is_wizard_request():
-            parent = self.dataset_parent
-            parent_id = self.kwargs.get("parent_id")
-            if parent_id:
-                context["wizard_create_post_url"] = reverse(
-                    "dcat-dataset-create-with-parent",
-                    kwargs={
-                        "organization_id": self.organization.pk,
-                        "parent_id": parent_id,
-                        "subclass_uuid": self.subclass.pk,
-                    },
-                )
-            else:
-                context["wizard_create_post_url"] = reverse(
-                    "dcat-dataset-create",
-                    kwargs={
-                        "organization_id": self.organization.pk,
-                        "subclass_uuid": self.subclass.pk,
-                    },
-                )
-            context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
-                parent, self.organization, include_self=(parent is not None)
+        parent = self.dataset_parent
+        parent_id = self.kwargs.get("parent_id")
+        if parent_id:
+            context["wizard_create_post_url"] = reverse(
+                "dcat-dataset-create-with-parent",
+                kwargs={
+                    "organization_id": self.organization.pk,
+                    "parent_id": parent_id,
+                    "subclass_uuid": self.subclass.pk,
+                },
             )
+        else:
+            context["wizard_create_post_url"] = reverse(
+                "dcat-dataset-create",
+                kwargs={
+                    "organization_id": self.organization.pk,
+                    "subclass_uuid": self.subclass.pk,
+                },
+            )
+        context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
+            parent, self.organization, include_self=(parent is not None)
+        )
         return context
 
     def get_form_kwargs(self) -> dict:
@@ -227,7 +218,7 @@ class DcatDatasetCreateView(
                 self.object.depth = 1
             self.object.numchild = 0
 
-            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM or self._is_wizard_request():
+            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
                 self.object.organization = self.organization
 
             if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
@@ -310,42 +301,29 @@ class DcatDatasetCreateView(
             self.request, _("Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)
         )
 
-        if self._is_wizard_request():
-            self.object.set_current_language(get_language())
-            self.object.refresh_from_db(fields=["path", "depth"])
-            update_form = DCAT_SUBCLASS_UPDATE_FORM_MAP[self.subclass.name](
-                self.organization, None, instance=self.object
-            )
-            update_form.helper.form_tag = False
-            rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
-            context = {
-                "form": update_form,
-                "relationship_form": rel_form_class(self.object) if rel_form_class else None,
-                "dataset": self.object,
-                "organization": self.organization,
-                "form_title": self.subclass.translated_title,
-                "information_title": self.subclass.translated_title,
-                "breadcrumb_ancestors": wizard_breadcrumb_ancestors(self.object, self.organization, include_self=False),
+        self.object.set_current_language(get_language())
+        self.object.refresh_from_db(fields=["path", "depth"])
+        update_form = DCAT_SUBCLASS_UPDATE_FORM_MAP[self.subclass.name](self.organization, None, instance=self.object)
+        update_form.helper.form_tag = False
+        rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
+        context = {
+            "form": update_form,
+            "relationship_form": rel_form_class(self.object) if rel_form_class else None,
+            "dataset": self.object,
+            "organization": self.organization,
+            "form_title": self.subclass.translated_title,
+            "information_title": self.subclass.translated_title,
+            "breadcrumb_ancestors": wizard_breadcrumb_ancestors(self.object, self.organization, include_self=False),
+        }
+        response = render(self.request, "vitrina/dcat/_wizard_dataset_fragment.html", context)
+        node_prefix = _WIZARD_NODE_KEY_PREFIX.get(self.subclass.name, "dataset")
+        response["HX-Trigger"] = json.dumps(
+            {
+                "treeRefresh": None,
+                "wizardnodecreated": {"nodeKey": f"{node_prefix}:{self.object.pk}"},
             }
-            response = render(self.request, "vitrina/dcat/_wizard_dataset_fragment.html", context)
-            node_prefix = _WIZARD_NODE_KEY_PREFIX.get(self.subclass.name, "dataset")
-            response["HX-Trigger"] = json.dumps(
-                {
-                    "treeRefresh": None,
-                    "wizardnodecreated": {"nodeKey": f"{node_prefix}:{self.object.pk}"},
-                }
-            )
-            return response
-
-        return HttpResponseRedirect(
-            reverse(
-                "dcat-dataset-update",
-                kwargs={
-                    "dataset_id": self.object.pk,
-                    "organization_id": self.object.organization_id,
-                },
-            )
         )
+        return response
 
 
 class DcatDatasetUpdateView(
@@ -355,7 +333,7 @@ class DcatDatasetUpdateView(
     LanguageChoiceMixin,
 ):
     model = Dataset
-    template_name = "vitrina/dcat/dataset_form.html"
+    template_name = "vitrina/dcat/_wizard_dataset_fragment.html"
     context_object_name = "dataset"
     pk_url_kwarg = "dataset_id"
 
@@ -376,14 +354,6 @@ class DcatDatasetUpdateView(
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE_WIZARD, self.get_object())
 
-    def _is_wizard_request(self) -> bool:
-        return bool(self.request.headers.get("X-Wizard-Request"))
-
-    def get_template_names(self) -> list[str]:
-        if self._is_wizard_request():
-            return ["vitrina/dcat/_wizard_dataset_fragment.html"]
-        return super().get_template_names()
-
     def _wizard_notice(self, message: str) -> HttpResponseBase:
         from django.http import HttpResponse
 
@@ -392,19 +362,13 @@ class DcatDatasetUpdateView(
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         obj = self.get_object()
         if obj.is_public:
-            if self._is_wizard_request():
-                return self._wizard_notice(str(_("Vedlio negalima naudoti su atvirais duomenų ištekliais.")))
-            messages.warning(request, _("Vedlio negalima naudoti su atvirais duomenų ištekliais"))
-            return HttpResponseRedirect(reverse("organization-detail", kwargs={"pk": self.organization.pk}))
+            return self._wizard_notice(str(_("Vedlio negalima naudoti su atvirais duomenų ištekliais.")))
         if obj.subclass.name not in (
             DCATResourceSubclass.INFORMATION_SYSTEM,
             DCATResourceSubclass.SERVICE,
             DCATResourceSubclass.DATASET,
         ):
-            if self._is_wizard_request():
-                return self._wizard_notice(str(_("Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu.")))
-            messages.warning(request, _("Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"))
-            return HttpResponseRedirect(reverse("organization-detail", kwargs={"pk": self.organization.pk}))
+            return self._wizard_notice(str(_("Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu.")))
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_class(self) -> BaseResourceForm:
@@ -430,10 +394,9 @@ class DcatDatasetUpdateView(
         )
         rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
         context["relationship_form"] = rel_form_class(self.get_object()) if rel_form_class else None
-        if self._is_wizard_request():
-            context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
-                self.object, self.organization, include_self=False
-            )
+        context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
+            self.object, self.organization, include_self=False
+        )
         return context
 
     def get_queryset(self) -> QuerySet[Dataset]:
@@ -568,28 +531,15 @@ class DcatDatasetUpdateView(
             self.request, _("Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)
         )
 
-        if self._is_wizard_request():
-            self.object.set_current_language(get_language())
-            fresh_form = DCAT_SUBCLASS_UPDATE_FORM_MAP[self.subclass.name](
-                self.organization, None, instance=self.object
-            )
-            response = render(
-                self.request,
-                "vitrina/dcat/_wizard_dataset_fragment.html",
-                self.get_context_data(form=fresh_form),
-            )
-            response["HX-Trigger"] = "treeRefresh"
-            return response
-
-        return HttpResponseRedirect(
-            reverse(
-                "dcat-dataset-update",
-                kwargs={
-                    "dataset_id": self.object.pk,
-                    "organization_id": self.object.organization_id,
-                },
-            )
+        self.object.set_current_language(get_language())
+        fresh_form = DCAT_SUBCLASS_UPDATE_FORM_MAP[self.subclass.name](self.organization, None, instance=self.object)
+        response = render(
+            self.request,
+            "vitrina/dcat/_wizard_dataset_fragment.html",
+            self.get_context_data(form=fresh_form),
         )
+        response["HX-Trigger"] = "treeRefresh"
+        return response
 
 
 class DcatDatasetRelationshipUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
@@ -608,7 +558,7 @@ class DcatDatasetRelationshipUpdateView(LoginRequiredMixin, PermissionRequiredMi
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE_WIZARD, self.dataset)
 
-    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
+    def post(self, request: WSGIRequest, *_args, **_kwargs) -> HttpResponseBase:
         form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.dataset.subclass.name)
         if not form_class:
             return self._render_fragment()

@@ -100,8 +100,8 @@ def _wizard_ancestor_summary(node_type: str, node_id: int, title: str) -> dict:
 def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str, dict]]:
     """Build the org's content tree and a flat key→selection map for the wizard Alpine state."""
     _subclass_uuids: dict[str, str] = {
-        s.name: str(s.pk)
-        for s in DCATResourceSubclass.objects.filter(
+        subclass.name: str(subclass.pk)
+        for subclass in DCATResourceSubclass.objects.filter(
             name__in=[
                 DCATResourceSubclass.INFORMATION_SYSTEM,
                 DCATResourceSubclass.SERVICE,
@@ -137,8 +137,8 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
     org_datasets = list(
         Dataset.objects.filter(organization=organization, is_public=False).select_related("subclass").order_by("path")
     )
-    datasets_by_id = {d.pk: d for d in org_datasets}
-    datasets_by_path = {d.path: d for d in org_datasets}
+    datasets_by_id = {dataset.pk: dataset for dataset in org_datasets}
+    datasets_by_path = {dataset.path: dataset for dataset in org_datasets}
 
     parent_to_children: dict[int, list[int]] = {}
     for dataset in org_datasets:
@@ -147,7 +147,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
             parent = datasets_by_path[parent_path]
             parent_to_children.setdefault(parent.pk, []).append(dataset.pk)
 
-    top_level = [d for d in org_datasets if d.path[: -Dataset.steplen] not in datasets_by_path]
+    root_datasets = [dataset for dataset in org_datasets if dataset.path[: -Dataset.steplen] not in datasets_by_path]
 
     nodes_by_key: dict[str, dict] = {}
     org_key = f"org:{organization.pk}"
@@ -258,7 +258,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
         }
 
     tree: list[dict] = []
-    for dataset in top_level:
+    for dataset in root_datasets:
         node = build(dataset, 0, frozenset(), [org_ancestor])
         if node is not None:
             tree.append(node)

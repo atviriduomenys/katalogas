@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.http import JsonResponse
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponseBase, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -30,13 +31,13 @@ class OrganizationWizardView(
 
     organization: Organization
 
-    def has_permission(self):
+    def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, self.organization)
 
-    def handle_no_permission(self):
+    def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         tree, nodes_by_key = _build_wizard_tree(self.organization)
         context["wizard_tree"] = tree
@@ -61,7 +62,7 @@ class OrganizationWizardTreeView(
 ):
     template_name = "vitrina/orgs/_wizard_tree_children_fragment.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         tree, _ = _build_wizard_tree(self.organization)
         context["wizard_tree"] = tree
@@ -73,7 +74,7 @@ class OrganizationWizardNodesView(
     OrganizationBaseViewMixin,
     View,
 ):
-    def get(self, request, *args, **kwargs):
+    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         _, nodes_by_key = _build_wizard_tree(self.organization)
         return JsonResponse(nodes_by_key)
 
@@ -83,7 +84,7 @@ class OrganizationWizardCreateRedirectView(
     OrganizationBaseViewMixin,
     View,
 ):
-    def get(self, request, *args, **kwargs):
+    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         child_type = request.GET.get("type", "")
         parent_type = request.GET.get("parent_type", "")
         parent_id_str = request.GET.get("parent_id", "")

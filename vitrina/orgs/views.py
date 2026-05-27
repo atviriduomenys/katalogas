@@ -66,7 +66,6 @@ from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import (
     Dataset,
     Contact,
-    DCATResourceSubclass,
 )
 from vitrina.helpers import (
     get_current_domain,

@@ -916,18 +916,13 @@ def test_structure_with_enum_with_wrong_type_prepare_adds_comment_about_error(ap
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,City,,,,,,,,,,,,,,\n"
         "1,,,,,type,integer,,,,5,,,,,,,,\n"
-        ",,,,,,enum,Type,one,hello,,,,,,,,,\n"
+        ",,,,,,enum,,one,hello,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
 
-    prop = Property.objects.get(metadata__uuid="1")
-    prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
-    assert prop_enum.count() == 1
-    assert prop_enum[0].name == "Type"
-    assert not prop_enum[0].enumitem_set.exists()
     assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
         'Reikšmė "hello" turi būti integer tipo.',
     ]

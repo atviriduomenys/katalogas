@@ -836,17 +836,17 @@ def _read_enum(
 
     enum_type = getattr(enum.meta, "type")
 
-    # If string enum prepare is empty, use source as prepare value
-    if enum.prepare == "" and enum_type == "string" and enum.source:
-        enum.prepare = f'"{enum.source}"'
-
-    if enum.prepare == "":
+    if enum.prepare == "" and enum_type != "string":
         enum.errors.append(_(f'Duomenų reikšmė (source: "{enum.source}") privalo turėti nurodytą "prepare" stulpelį.'))
 
     _update_parent_visibility_from_enum(state, enum)
 
-    # Validate if enum item value matches enum type
-    if (type_checker := get_type_checker_for_type(enum_type)) and type(type_checker) is not NotImplementedTypeChecker:
+    # Validate if enum item value matches enum type (not applicable to string type)
+    if (
+        enum_type != "string"
+        and (type_checker := get_type_checker_for_type(enum_type))
+        and type(type_checker) is not NotImplementedTypeChecker
+    ):
         try:
             type_checker.check_enum_item_value(enum.prepare)
         except TypeCheckerError as e:

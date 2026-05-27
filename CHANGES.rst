@@ -10,6 +10,13 @@ https://github.com/atviriduomenys/katalogas/issues/2629
 - Fix property-level enum creation via form: `Enum` objects created through the UI no longer inherit the property name as `enum.name`.
 - Add import validation: importing a CSV manifest with a non-empty `ref` on a property-level enum row now produces a structure error comment and silently sets the `ref` to an empty string.
 
+https://github.com/atviriduomenys/katalogas/issues/2624
+
+- Remove auto-stripping of quotes from string enum values in the form's initial data
+- Remove auto-wrapping of unquoted string values in clean_value()
+- Remove synchronous type checking (TypeCheckerError) from clean_value()
+- Fix edge case in CSV import: when prepare is empty and source is also empty, no longer produces "" as a valid quoted value
+
 v 1.21.0 (2026-05-18)
 ==================
 

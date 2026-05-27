@@ -5500,7 +5500,6 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
         ",,,,,,enum,,,'''SMALL''',,,,,,,,,\n"
-        ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))

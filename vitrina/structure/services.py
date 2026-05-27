@@ -440,7 +440,7 @@ def _load_enums(
             _create_errors(
                 [
                     _(
-                        'Reikšmių sąrašas "{0}" negali turėtį pavadinimo (ref), kai yra deklaruojamas savybės dimensijoje.'
+                        'Reikšmių sąrašas "{0}" negali turėti pavadinimo (ref), kai yra deklaruojamas savybės dimensijoje.'
                     ).format(name)
                 ],
                 obj,

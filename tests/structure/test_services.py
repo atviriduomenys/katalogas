@@ -905,7 +905,7 @@ def test_structure_with_property_enum_ref_value_adds_comment_about_error(app: Dj
     assert prop_enum[0].name == ""
     assert list(prop_enum[0].enumitem_set.values_list("metadata__prepare", flat=True)) == ["1", "2"]
     assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
-        'Reikšmių sąrašas "SomeName" negali turėtį pavadinimo (ref), kai yra deklaruojamas savybės dimensijoje.',
+        'Reikšmių sąrašas "SomeName" negali turėti pavadinimo (ref), kai yra deklaruojamas savybės dimensijoje.',
     ]
 
 

@@ -4860,7 +4860,7 @@ msgstr "UML diagram in mermaid syntax format."
 
 #, python-brace-format
 msgid ""
-"Reikšmių sąrašas \"{0}\" negali turėtį pavadinimo (ref), kai yra "
+"Reikšmių sąrašas \"{0}\" negali turėti pavadinimo (ref), kai yra "
 "deklaruojamas savybės dimensijoje."
 msgstr ""
 "The enum list \"{0}\" cannot have a name (ref) when declared in the property "

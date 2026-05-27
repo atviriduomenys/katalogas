@@ -8,7 +8,6 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import QuerySet
 from django.db import transaction
-from django.db.models import F
 from django.http import HttpResponseRedirect, HttpResponseBase
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -196,36 +195,21 @@ class DcatDatasetCreateView(
             self.object.is_public = False
             self.object.catalog = self.catalog
 
-            # Set treebeard path fields directly, mirroring add_self_as_root().
-            # Dataset.node_order_by forces sorted-sibling insertion which fails on
-            # dense path sequences — bypassing add_root/add_child avoids this entirely.
-            parent: Dataset | None = form.cleaned_data.get("parent", None)
-            if parent:
-                last_child = parent.get_last_child()
-                self.object.path = (
-                    last_child._inc_path() if last_child else Dataset._get_path(parent.path, parent.depth + 1, 1)
-                )
-                self.object.depth = parent.depth + 1
-            else:
-                last_root = Dataset.get_last_root_node()
-                self.object.path = last_root._inc_path() if last_root else Dataset._get_path(None, 1, 1)
-                self.object.depth = 1
-            self.object.numchild = 0
-
             if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
                 self.object.organization = self.organization
-
-            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
                 self.object.access_rights = Dataset.CONFIDENTIAL
                 self.object.frequency = Frequency.objects.filter(code=Frequency.CODE_UNKNOWN).first()
 
             if self.subclass.name == DCATResourceSubclass.SERVICE:
                 self.object.service = True
 
-            self.object.save()
-
+            # Use pos= explicitly so treebeard ignores Dataset.node_order_by and
+            # appends rather than doing sorted insertion (which can overflow).
+            parent: Dataset | None = form.cleaned_data.get("parent", None)
             if parent:
-                Dataset.objects.filter(pk=parent.pk).update(numchild=F("numchild") + 1)
+                parent.add_child(instance=self.object, pos="last-child")
+            else:
+                Dataset.add_root(instance=self.object, pos="last-sibling")
 
             if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
                 if identifier := form.cleaned_data.get("identifier"):

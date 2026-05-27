@@ -917,7 +917,11 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         if self._is_wizard_request():
             form = context.get("form")
             if form and hasattr(form, "helper"):
+                from crispy_forms.layout import Submit
+
                 form.helper.form_tag = False
+                if form.helper.layout:
+                    form.helper.layout.fields = [f for f in form.helper.layout.fields if not isinstance(f, Submit)]
         return context
 
     def get_form_kwargs(self):

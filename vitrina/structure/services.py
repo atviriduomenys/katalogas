@@ -242,14 +242,13 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
         ).only("uuid", "name"):
             dataset_meta_uuid_by_name.setdefault(metadata.name, metadata.uuid)
 
-    # One query: names already claimed by another dataset for this version (replaces N loop queries).
+    # One query: names already claimed by another dataset (globally, not version-scoped).
     conflict_by_name: dict[str, Metadata] = {}
     if manifest_names:
         for metadata in (
             Metadata.objects.filter(
                 content_type=ct,
                 name__in=manifest_names,
-                metadata_version=metadata_version,
             )
             .exclude(dataset=dataset)
             .order_by("pk")
@@ -268,7 +267,6 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
                 Metadata.objects.filter(
                     content_type=ct,
                     name=meta.name,
-                    metadata_version=metadata_version,
                 )
                 .exclude(dataset=dataset)
                 .first()

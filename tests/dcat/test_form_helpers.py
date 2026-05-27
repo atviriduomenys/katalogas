@@ -6,10 +6,13 @@ from vitrina.classifiers.models import FormFieldHelpText
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.dcat.form_helpers import get_available_dcat_name_prefixes
 from vitrina.dcat.forms.dataset_forms import (
+    DatasetRelationshipForm,
     DatasetResourceForm,
     DatasetUpdateForm,
+    InformationSystemRelationshipForm,
     InformationSystemResourceForm,
     InformationSystemUpdateForm,
+    ServiceRelationshipForm,
     ServiceResourceForm,
     ServiceUpdateForm,
 )
@@ -216,3 +219,42 @@ class TestApplyDynamicHelpTexts:
             form = DatasetDistributionForm(dataset=dataset)
 
         assert form.fields["documentation"].help_text == default_help_text
+
+    def test_is_relationship_form_applies_dynamic_help_text(self):
+        dataset = DatasetFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_IS_RELATIONSHIPS,
+            field_name="has_part",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemRelationshipForm(dataset=dataset)
+
+        assert form.fields["has_part"].help_text == "Dinaminis tekstas"
+
+    def test_service_relationship_form_applies_dynamic_help_text(self):
+        dataset = DatasetFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_SERVICE_RELATIONSHIPS,
+            field_name="serves_datasets",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = ServiceRelationshipForm(dataset=dataset)
+
+        assert form.fields["serves_datasets"].help_text == "Dinaminis tekstas"
+
+    def test_dataset_relationship_form_applies_dynamic_help_text(self):
+        dataset = DatasetFactory()
+        FormFieldHelpTextFactory(
+            form_name=FormFieldHelpText.DCAT_DATASET_RELATIONSHIPS,
+            field_name="qualified_attribution",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetRelationshipForm(dataset=dataset)
+
+        assert form.fields["qualified_attribution"].help_text == "Dinaminis tekstas"

@@ -124,7 +124,7 @@ class BaseResourceForm(TranslatableModelForm):
             RegexValidator(
                 r"^([a-z_]+\/?)+$",
                 message=_(
-                    "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotynų raidžių ir (arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
+                    "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir (arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
                 ),
             )
         ],
@@ -314,27 +314,6 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
-
-        self.helper.layout = Layout(
-            Field("parent"),
-            Field("name_prefix"),
-            Field("information_system_importance"),
-            Field("information_system_type"),
-            Field("information_system_assessment_url"),
-            Field("description"),
-            Field("title"),
-            Field("name"),
-            Field("tags"),
-            Field("category"),
-            Field("identifier"),
-            Field("information_system_publishers"),
-            Field("creator"),
-            Field("landing_page"),
-            Field("languages"),
-            Field("conditions"),
-            Field("rights_relation"),
-            Field("applicable_legislation"),
-        )
 
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_INFORMATION_SYSTEM)
 
@@ -714,6 +693,7 @@ class InformationSystemRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
+        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_IS_RELATIONSHIPS)
 
 
 class ServiceRelationshipForm(forms.Form):
@@ -734,6 +714,7 @@ class ServiceRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
+        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE_RELATIONSHIPS)
 
 
 class DatasetRelationshipForm(forms.Form):
@@ -753,3 +734,4 @@ class DatasetRelationshipForm(forms.Form):
             ).values_list("organization_id", flat=True)
         self.helper = FormHelper()
         self.helper.form_tag = False
+        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET_RELATIONSHIPS)

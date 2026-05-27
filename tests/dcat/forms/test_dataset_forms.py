@@ -132,7 +132,7 @@ class TestBaseResourceForm:
         assert not form.is_valid()
         assert "name" in form.errors
         assert (
-            "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotynų raidžių ir (arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
+            "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir (arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
             in form.errors["name"]
         )
 

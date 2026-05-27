@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-14 14:55+0300\n"
+"POT-Creation-Date: 2026-05-21 19:04+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4857,6 +4857,14 @@ msgstr "UML diagrams"
 
 msgid "UML diagrama mermaid sintaksės formatu."
 msgstr "UML diagram in mermaid syntax format."
+
+#, python-brace-format
+msgid ""
+"Reikšmių sąrašas \"{0}\" negali turėti pavadinimo (ref), kai yra "
+"deklaruojamas savybės dimensijoje."
+msgstr ""
+"The enum list \"{0}\" cannot have a name (ref) when declared in the property "
+"dimension."
 
 msgid ""
 "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."

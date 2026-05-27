@@ -436,9 +436,24 @@ def _load_enums(
     loaded_enums = []
 
     for name, enum_items in enums.items():
-        enum = existing_enum_map.get(name)
+        if isinstance(obj, Property) and name:
+            _create_errors(
+                [
+                    _(
+                        'Reikšmių sąrašas "{0}" negali turėti pavadinimo (ref), kai yra deklaruojamas savybės dimensijoje.'
+                    ).format(name)
+                ],
+                obj,
+            )
+            enum_name = ""
+        else:
+            enum_name = name
+
+        enum = existing_enum_map.get(enum_name)
         if not enum:
-            enum = Enum.objects.create(name=name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version)
+            enum = Enum.objects.create(
+                name=enum_name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version
+            )
 
         existing_enum_items = list(
             EnumItem.objects.filter(enum=enum, metadata_version=metadata_version).prefetch_related("metadata")
@@ -2045,7 +2060,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Versi
                     {
                         "id": meta.uuid,
                         "type": "enum" if first else "",
-                        "ref": enum.name if first else "",
+                        "ref": enum.name if (first and not isinstance(obj, Property)) else "",
                         "source": meta.source,
                         "prepare": meta.prepare,
                         "level": meta.level_given,

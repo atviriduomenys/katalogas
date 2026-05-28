@@ -11,18 +11,11 @@ from vitrina.datasets.models import (
     DatasetAttribution,
     DatasetQualifiedRelation,
     DatasetRelation,
-    DCATResourceSubclass,
     Relation,
 )
 
 if TYPE_CHECKING:
     from vitrina.dcat.forms.dataset_forms import BaseResourceForm
-
-_SUBCLASS_CRUMB_LABELS = {
-    DCATResourceSubclass.INFORMATION_SYSTEM: _("Informacinė sistema"),
-    DCATResourceSubclass.SERVICE: _("Paslauga"),
-    DCATResourceSubclass.DATASET: _("Duomenų rinkinys"),
-}
 
 
 def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include_self: bool = False) -> list[dict]:
@@ -34,9 +27,11 @@ def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include
     """
 
     def _crumb(ds: Dataset) -> dict:
-        subclass_name = ds.subclass.name if ds.subclass_id else None
+        type_label = (
+            ds.subclass.translated_title if ds.subclass_id else None
+        ) or str(_("Duomenų rinkinys"))
         return {
-            "type_label": str(_SUBCLASS_CRUMB_LABELS.get(subclass_name, _("Duomenų rinkinys"))),
+            "type_label": type_label,
             "title": ds.safe_translation_getter("title", any_language=True) or f"#{ds.pk}",
         }
 
@@ -44,7 +39,7 @@ def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include
     if dataset is None:
         return crumbs
 
-    for ancestor in dataset.get_ancestors().select_related("subclass"):
+    for ancestor in dataset.get_ancestors().select_related("subclass").prefetch_related("subclass__translations"):
         crumbs.append(_crumb(ancestor))
 
     if include_self:

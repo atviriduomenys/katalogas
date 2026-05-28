@@ -129,17 +129,18 @@ INSTALLED_APPS = [
     "treebeard",
     "filer",
     "easy_thumbnails",
-    "djangocms_text_ckeditor",
     "djangocms_file",
     "djangocms_picture",
     "djangocms_link",
-    "aldryn_apphooks_config",
     "parler",
     "taggit",
     "taggit_autosuggest",
     "meta",
     "sortedm2m",
-    "djangocms_blog",
+    "djangocms_text",
+    "djangocms_versioning",
+    "djangocms_alias",
+    "djangocms_stories",
     "reversion",
     "hitcount",
     "crispy_forms",
@@ -550,6 +551,7 @@ HAYSTACK_SIGNAL_PROCESSOR = "vitrina.datasets.search_indexes.CustomSignalProcess
 HAYSTACK_ITERATOR_LOAD_PER_QUERY = env.int("HAYSTACK_ITERATOR_LOAD_PER_QUERY", default=5000)
 
 BLOG_USE_PLACEHOLDER = False
+
 META_USE_SITES = True
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = ("bulma",)
@@ -805,3 +807,7 @@ TAGULOUS_AUTOCOMPLETE_JS = (
     "tagulous/adaptor/select2-4.js",
 )
 TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}
+
+CMS_CONFIRM_VERSION4 = True
+CMS_MIGRATION_USER_ID = 1
+DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"

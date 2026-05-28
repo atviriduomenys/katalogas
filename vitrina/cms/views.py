@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.views.generic import TemplateView, DetailView
-from djangocms_blog.views import PostDetailView as BasePostDetailView
+from djangocms_stories.views import PostDetailView as BasePostDetailView
 from django.utils.translation import gettext_lazy as _
 
 

@@ -1,10 +1,11 @@
 import logging
 from datetime import timedelta
+from django.conf import settings
 from django.dispatch import receiver, Signal
 from django.utils import timezone
 from django.contrib.sites.models import Site
 from django.urls import reverse
-from djangocms_blog.models import Post
+from djangocms_stories.models import PostContent
 
 from vitrina.messages.models import NewsletterSubscriber
 from vitrina.datasets.models import Dataset
@@ -29,11 +30,11 @@ def send_newsletter_to_subscribers(sender, **kwargs):
         logger.warning("No subscribers found.")
         return
 
-    blog_posts = Post.objects.filter(
-        publish=True,
-        date_published__gte=last_month_start,
-        date_published__lte=last_month_end,
-    ).order_by("-date_published")
+    blog_posts = PostContent.admin_manager.filter(
+        post__date_published__gte=last_month_start,
+        post__date_published__lte=last_month_end,
+        language=settings.LANGUAGE_CODE,
+    ).order_by("-post__date_published")
 
     datasets = Dataset.objects.filter(
         is_public=True,
@@ -76,7 +77,7 @@ def send_newsletter_to_subscribers(sender, **kwargs):
 
     blog_posts_data = [
         {
-            "title": getattr(post, "title", ""),
+            "title": post.title,
             "url": post.get_absolute_url(),
             "day": post.date_published.day,
             "month": month_names[post.date_published.month],

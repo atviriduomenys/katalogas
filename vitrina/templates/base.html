@@ -79,7 +79,7 @@
     {% endif %}
 {% endblock %}
 {% block messages %}
-    {% if messages %}
+    {% if messages and not request.toolbar.show_toolbar %}
         <ul class="messages">
             {% for message in messages %}
                 <li id="message-list-{{ forloop.counter }}">

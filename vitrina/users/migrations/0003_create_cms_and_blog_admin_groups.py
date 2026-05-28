@@ -24,13 +24,13 @@ def create_blog_groups(apps, schema_editor):
     Permission = apps.get_model('auth', 'Permission')
 
     blog_permissions = Permission.objects.filter(
-        content_type__app_label='djangocms_blog'
+        content_type__app_label='djangocms_stories'
     ).values_list('codename', flat=True)
 
     blog_groups = {
         'Blog Administrators': list(blog_permissions),
     }
-    create_groups_with_permissions(blog_groups, 'djangocms_blog', apps, schema_editor)
+    create_groups_with_permissions(blog_groups, 'djangocms_stories', apps, schema_editor)
 
 
 def create_cms_groups(apps, schema_editor):
@@ -67,7 +67,6 @@ def create_cms_groups(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ('vitrina_users', '0002_initial'),
-        ('djangocms_blog', '0001_initial'),
         ('cms', '0022_auto_20180620_1551'),
         ('filer', '0012_file_mime_type'),
     ]

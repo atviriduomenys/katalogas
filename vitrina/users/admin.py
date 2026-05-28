@@ -1,6 +1,6 @@
 import csv
-from djangocms_blog.models import Post
-from djangocms_blog.admin import PostAdmin as OriginalPostAdmin
+from djangocms_stories.models import Post
+from djangocms_stories.admin import PostAdmin as OriginalPostAdmin
 import secrets
 from datetime import datetime
 
@@ -516,19 +516,19 @@ admin.site.unregister(Post)
 class CustomPostAdmin(OriginalPostAdmin):
     def has_module_permission(self, request):
         """Only Blog Administrators can see the blog section"""
-        return request.user.has_perm("djangocms_blog.view_post")
+        return request.user.has_perm("djangocms_stories.view_post")
 
     def has_add_permission(self, request):
-        return request.user.has_perm("djangocms_blog.add_post")
+        return request.user.has_perm("djangocms_stories.add_post")
 
     def has_change_permission(self, request, obj=None):
-        return request.user.has_perm("djangocms_blog.change_post")
+        return request.user.has_perm("djangocms_stories.change_post")
 
     def has_delete_permission(self, request, obj=None):
-        return request.user.has_perm("djangocms_blog.delete_post")
+        return request.user.has_perm("djangocms_stories.delete_post")
 
     def has_view_permission(self, request, obj=None):
-        return request.user.has_perm("djangocms_blog.view_post")
+        return request.user.has_perm("djangocms_stories.view_post")
 
 
 admin.site.unregister(EmailAddress)

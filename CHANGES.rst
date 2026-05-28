@@ -4,10 +4,12 @@ Changes
 v 1.22.0 (current)
 ==================
 
-https://github.com/atviriduomenys/katalogas/pull/2640
+https://github.com/atviriduomenys/katalogas/pull/2650
 
-- Add single-page DCAT data-filling wizard ("Atidaryti formų valdymą") accessible from the Organisation detail page, replacing the previous multi-page navigation flow for building out an organisation's hierarchy.
-- Wizard includes: sidebar tree reflecting the live treebeard hierarchy; inline Organisation form; create/edit forms for Information Systems, Services, Datasets, and Distributions; relationship panels per node type; dynamic breadcrumbs derived from treebeard ancestors.
+- Add single-page DCAT wizard for creating datasets and dataset distributions, accessible from the Organisation detail page; supports non-public resources and exposes additional DCAT-AP fields not available in the standard dataset creation flow.
+- Wizard displays the full dataset parent-child structure (Information System → Service → Dataset → Distribution) in a sidebar tree; datasets created via the wizard remain fully compatible with existing dataset views and editing flows.
+- Add new classifier models (e.g. `ProvenanceStatement`) and a `DatasetDistribution.availability` field with corresponding migrations.
+- Add `wizard.js` webpack entry point driving the wizard UI interactions.
 
 https://github.com/atviriduomenys/katalogas/issues/2629
 

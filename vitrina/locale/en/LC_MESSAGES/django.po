@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-21 16:07+0300\n"
+"POT-Creation-Date: 2026-05-28 09:51+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -114,9 +114,11 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -281,21 +283,87 @@ msgstr "Activity"
 msgid "Veiklos"
 msgstr "Activities"
 
+#, fuzzy
+#| msgid "Informacinė sistema"
+msgid "DCAT: Informacinė sistema"
+msgstr "Information System"
+
+msgid "DCAT: Paslauga"
+msgstr "DCAT: Service"
+
+#, fuzzy
+#| msgid "Duomenų rinkinys"
+msgid "DCAT: Duomenų rinkinys"
+msgstr "Dataset"
+
+#, fuzzy
+#| msgid "Pateiktis"
+msgid "DCAT: Pateiktis"
+msgstr "Distribution"
+
+msgid "DCAT: IS ryšiai"
+msgstr "DCAT: IS relationships"
+
+msgid "DCAT: Paslaugos ryšiai"
+msgstr "DCAT: Service relationships"
+
+#, fuzzy
+#| msgid "Duomenų rinkinio ryšiai"
+msgid "DCAT: Duomenų rinkinio ryšiai"
+msgstr "Dataset relations"
+
+#, fuzzy
+#| msgid "Įmonės pavadinimas"
+msgid "Formos pavadinimas"
+msgstr "Code name"
+
+#, fuzzy
+#| msgid "Rakto pavadinimas"
+msgid "Lauko pavadinimas"
+msgstr "Key title"
+
+#, fuzzy
+#| msgid "API galinis taškas"
+msgid "Pagalbinis tekstas"
+msgstr "API endpoint"
+
+msgid "Išplėstinis pagalbinis tekstas"
+msgstr "Extended help text"
+
+msgid ""
+"Išplėstinis pagalbinis tekstas bus rodomas kaip iššokantis paspaudus 'i' "
+"ikonėlę, jei forma tai palaiko"
+msgstr ""
+"Extended help text will be shown as a popup when the 'i' icon is clicked, "
+"if the form supports it"
+
+msgid "Formos lauko pagalbinis tekstas"
+msgstr "Form field help text"
+
+msgid "Formų laukų pagalbiniai tekstai"
+msgstr "Form field help texts"
+
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -2103,9 +2171,13 @@ msgstr ""
 "resource. If not provided - will be automatically filled by selected parent "
 "or organization."
 
+#, fuzzy
+#| msgid ""
+#| "Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali "
+#| "turėti pasvirųjų brūkšnių"
 msgid ""
-"Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali "
-"turėti pasvirųjų brūkšnių"
+"Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
+"(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
 msgstr "Codename must contain only lowercase letters and (or) slashes"
 
 msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
@@ -2219,6 +2291,47 @@ msgstr "Distribution with this download link already exists."
 msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
 msgstr "Checksum value can only include lowercase letters."
 
+#, fuzzy
+#| msgid "Redaguota"
+msgid "Redaguokite"
+msgstr "Edited"
+
+#, fuzzy
+#| msgid "Susiejimas su duomenų rinkiniu"
+msgid "Susieti su duomenų rinkiniu"
+msgstr "Link to dataset"
+
+msgid "Priskirkite vieną ar kelis duomenų rinkinius prie atitinkamo ryšio."
+msgstr "Assign one or more datasets to the corresponding relationship."
+
+#, fuzzy
+#| msgid "Institucija"
+msgid "Distribucija"
+msgstr "Institution"
+
+#, fuzzy
+#| msgid "Naujausi"
+msgid "Nauja"
+msgstr "Newest"
+
+#, fuzzy
+#| msgid "Nauja organizacija"
+msgid "Nauja distribucija"
+msgstr "New organization"
+
+msgid "Pildykite distribuciją"
+msgstr "Fill in the distribution"
+
+#, fuzzy
+#| msgid "Redaguoti organizaciją"
+msgid "Redaguokite distribuciją"
+msgstr "Edit organization"
+
+#, fuzzy
+#| msgid "Paslaugų gavėjas"
+msgid "Paslauga"
+msgstr "Service receiver"
+
 #, python-brace-format
 msgid ""
 "Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
@@ -2226,6 +2339,11 @@ msgid ""
 msgstr ""
 "Field's '{label}' relation '{relation_name}' does not exist. Field's value "
 "is not saved. Contact the administrator."
+
+#, fuzzy
+#| msgid "Naujausi"
+msgid "Naujas"
+msgstr "Newest"
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
 msgstr "Form creation tool cannot be used for this resource subclass"
@@ -2237,12 +2355,27 @@ msgstr "Given resource subclass does not have a defined form."
 msgid "Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}"
 msgstr "Resource created successfully. Codename: {0}"
 
-msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
+#, fuzzy
+#| msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
+msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais."
 msgstr "Form creation tool cannot be used with open data resources"
+
+#, fuzzy
+#| msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
+msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu."
+msgstr "Form creation tool cannot be used for this resource subclass"
 
 #, python-brace-format
 msgid "Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}"
 msgstr "Resource updated successfully. Codename: {0}"
+
+#, fuzzy
+#| msgid "Pateiktis atnaujinta sėkmingai!"
+msgid "Ryšiai atnaujinti sėkmingai"
+msgstr "Distribution updated successfully!"
+
+msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
+msgstr "Form creation tool cannot be used with open data resources"
 
 msgid "Nauja duomenų rinkinio pateiktis"
 msgstr "New dataset distribution"
@@ -2258,6 +2391,47 @@ msgstr "Dataset distribution edit"
 
 msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr "Distribution updated successfully!"
+
+#, fuzzy
+#| msgid "Duomenų atvėrimo kaina"
+msgid "Duomenų pildymo aplinka"
+msgstr "Cost of opening data"
+
+#, fuzzy
+#| msgid "Informacinė sistema"
+msgid "Informacinės sistemos"
+msgstr "Information System"
+
+#, fuzzy
+#| msgid "Paslaugos kokybė"
+msgid "Paslaugos"
+msgstr "Service quality"
+
+#, fuzzy
+#| msgid "Duomenų rinkinys"
+msgid "Duomenų rinkiniai"
+msgstr "Dataset"
+
+msgid "Distribucijos"
+msgstr "Distributions"
+
+#, fuzzy
+#| msgid "Pridėti informacinę sistemą"
+msgid "Sukurti naują informacinę sistemą po šiuo mazgu."
+msgstr "Add Information System"
+
+msgid "Sukurti naują paslaugą po šiuo mazgu."
+msgstr "Create a new service under this node."
+
+#, fuzzy
+#| msgid "Atverti duomenų rinkinį kitu formatu"
+msgid "Sukurti naują duomenų rinkinį po šiuo mazgu."
+msgstr "Open dataset using another format"
+
+#, fuzzy
+#| msgid "Pridėti duomenų rinkinio seriją"
+msgid "Pridėti naują duomenų rinkinio distribuciją."
+msgstr "Add Data Serias"
 
 msgid "Pasirinkti failą"
 msgstr "Select a file"
@@ -2956,6 +3130,25 @@ msgid ""
 "Unikalus kodinis pavadinimas, kurį galima naudoti kuriant duomenų išteklius."
 msgstr "The unique codename, which can be used while creating data resources."
 
+#, fuzzy
+#| msgid "Redaguoti organizaciją"
+msgid "Redaguokite organizacijos informaciją"
+msgstr "Edit organization"
+
+msgid "Šioje organizacijoje dar nėra turinio."
+msgstr "This organisation has no content yet."
+
+#, python-format
+msgid "%(counter)s tiesioginis vaikas"
+msgid_plural "%(counter)s tiesioginių vaikų"
+msgstr[0] ""
+msgstr[1] ""
+
+#, fuzzy
+#| msgid "Pridėti agentą"
+msgid "Pridėti naują elementą"
+msgstr "Add an Agent"
+
 msgid "Galimi duomenų ištekliai"
 msgstr "Available resources"
 
@@ -3108,6 +3301,9 @@ msgstr "Local namespace of the organization"
 msgid "Organizacijos vietinių rinkinių leidžiamų vardų erdvių sąrašas."
 msgstr "List of namespaces allowed by the organization's local collections."
 
+msgid "Atidaryti formų valdymą"
+msgstr "Open data-filling environment"
+
 msgid "Redaguoti organizaciją"
 msgstr "Edit organization"
 
@@ -3238,6 +3434,47 @@ msgstr "Agents"
 msgid "Raktas duomenų įkėlimui į saugyklą"
 msgstr "Key for uploading data to storage"
 
+#, fuzzy
+#| msgid "Pateikia duomenų rinkinius"
+msgid "Supildykite duomenų rinkinius"
+msgstr "Provides datasets"
+
+msgid "Įkeliama forma..."
+msgstr "Loading form..."
+
+#, fuzzy
+#| msgid "Pasirinkite leidimą"
+msgid "Pasirinkite formą"
+msgstr "Select a scope"
+
+#, fuzzy
+#| msgid "Pasirinkite leidimą"
+msgid "Pasirinkite objektą"
+msgstr "Select a scope"
+
+#, fuzzy
+#| msgid "Pasirinkite kategoriją."
+msgid "Pasirinkite ką norite sukurti"
+msgstr "Select a category."
+
+msgid "Žemiau rodomi objektų tipai, kuriuos galima sukurti po šiuo mazgu."
+msgstr "The object types that can be created under this node are shown below."
+
+msgid "Šiam mazgui nėra leidžiamų vaikinių elementų."
+msgstr "This node has no allowed child types."
+
+#, fuzzy
+#| msgid "Patvirtinkite pakeitimus"
+msgid "Atšaukti pakeitimus"
+msgstr "Confirm changes"
+
+msgid ""
+"Turite neišsaugotų pakeitimų. Ar tikrai norite išeiti ir prarasti pakeitimus?"
+msgstr ""
+
+msgid "Serverio klaida. Patikrinkite laukų reikšmes ir bandykite dar kartą."
+msgstr "Server error. Check the field values and try again."
+
 msgid "Organizacijų skaičius pagal valdymo sritį laike"
 msgstr "Organization count by managment area in time"
 
@@ -3268,6 +3505,11 @@ msgstr "Agreement"
 
 msgid "Organizacijos redagavimas"
 msgstr "Edit organization"
+
+#, fuzzy
+#| msgid "Pateiktis atnaujinta sėkmingai!"
+msgid "Organizacija atnaujinta sėkmingai"
+msgstr "Distribution updated successfully!"
 
 msgid "Nepavyko atnaujinti duomenų iš JAR:"
 msgstr "Couldn't update data from JAR"

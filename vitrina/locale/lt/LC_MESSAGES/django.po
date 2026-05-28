@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-21 16:07+0300\n"
+"POT-Creation-Date: 2026-05-28 09:51+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -113,9 +113,11 @@ msgstr ""
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr ""
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
@@ -269,21 +271,71 @@ msgstr ""
 msgid "Veiklos"
 msgstr ""
 
+msgid "DCAT: Informacinė sistema"
+msgstr ""
+
+msgid "DCAT: Paslauga"
+msgstr ""
+
+msgid "DCAT: Duomenų rinkinys"
+msgstr ""
+
+msgid "DCAT: Pateiktis"
+msgstr ""
+
+msgid "DCAT: IS ryšiai"
+msgstr ""
+
+msgid "DCAT: Paslaugos ryšiai"
+msgstr ""
+
+msgid "DCAT: Duomenų rinkinio ryšiai"
+msgstr ""
+
+msgid "Formos pavadinimas"
+msgstr ""
+
+msgid "Lauko pavadinimas"
+msgstr ""
+
+msgid "Pagalbinis tekstas"
+msgstr ""
+
+msgid "Išplėstinis pagalbinis tekstas"
+msgstr ""
+
+msgid ""
+"Išplėstinis pagalbinis tekstas bus rodomas kaip iššokantis paspaudus 'i' "
+"ikonėlę, jei forma tai palaiko"
+msgstr ""
+
+msgid "Formos lauko pagalbinis tekstas"
+msgstr ""
+
+msgid "Formų laukų pagalbiniai tekstai"
+msgstr ""
+
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
@@ -1947,8 +1999,8 @@ msgid ""
 msgstr ""
 
 msgid ""
-"Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali "
-"turėti pasvirųjų brūkšnių"
+"Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
+"(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
 msgstr ""
 
 msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
@@ -2043,10 +2095,40 @@ msgstr ""
 msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
 msgstr ""
 
+msgid "Redaguokite"
+msgstr ""
+
+msgid "Susieti su duomenų rinkiniu"
+msgstr ""
+
+msgid "Priskirkite vieną ar kelis duomenų rinkinius prie atitinkamo ryšio."
+msgstr ""
+
+msgid "Distribucija"
+msgstr ""
+
+msgid "Nauja"
+msgstr ""
+
+msgid "Nauja distribucija"
+msgstr ""
+
+msgid "Pildykite distribuciją"
+msgstr ""
+
+msgid "Redaguokite distribuciją"
+msgstr ""
+
+msgid "Paslauga"
+msgstr ""
+
 #, python-brace-format
 msgid ""
 "Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
 "reikšmė neišsaugota. Susisiekite su administratoriumi."
+msgstr ""
+
+msgid "Naujas"
 msgstr ""
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
@@ -2059,11 +2141,20 @@ msgstr ""
 msgid "Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}"
 msgstr ""
 
-msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
+msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais."
+msgstr ""
+
+msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu."
 msgstr ""
 
 #, python-brace-format
 msgid "Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}"
+msgstr ""
+
+msgid "Ryšiai atnaujinti sėkmingai"
+msgstr ""
+
+msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
 msgstr ""
 
 msgid "Nauja duomenų rinkinio pateiktis"
@@ -2079,6 +2170,33 @@ msgid "Duomenų rinkinio pateikties redagavimas"
 msgstr ""
 
 msgid "Pateiktis atnaujinta sėkmingai!"
+msgstr ""
+
+msgid "Duomenų pildymo aplinka"
+msgstr ""
+
+msgid "Informacinės sistemos"
+msgstr ""
+
+msgid "Paslaugos"
+msgstr ""
+
+msgid "Duomenų rinkiniai"
+msgstr ""
+
+msgid "Distribucijos"
+msgstr ""
+
+msgid "Sukurti naują informacinę sistemą po šiuo mazgu."
+msgstr ""
+
+msgid "Sukurti naują paslaugą po šiuo mazgu."
+msgstr ""
+
+msgid "Sukurti naują duomenų rinkinį po šiuo mazgu."
+msgstr ""
+
+msgid "Pridėti naują duomenų rinkinio distribuciją."
 msgstr ""
 
 msgid "Pasirinkti failą"
@@ -2731,6 +2849,23 @@ msgid ""
 "Unikalus kodinis pavadinimas, kurį galima naudoti kuriant duomenų išteklius."
 msgstr ""
 
+msgid "Redaguokite organizacijos informaciją"
+msgstr ""
+
+msgid "Šioje organizacijoje dar nėra turinio."
+msgstr ""
+
+#, python-format
+msgid "%(counter)s tiesioginis vaikas"
+msgid_plural "%(counter)s tiesioginių vaikų"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+
+msgid "Pridėti naują elementą"
+msgstr ""
+
 msgid "Galimi duomenų ištekliai"
 msgstr ""
 
@@ -2877,6 +3012,9 @@ msgstr ""
 msgid "Organizacijos vietinių rinkinių leidžiamų vardų erdvių sąrašas."
 msgstr ""
 
+msgid "Atidaryti formų valdymą"
+msgstr ""
+
 msgid "Redaguoti organizaciją"
 msgstr ""
 
@@ -2995,6 +3133,37 @@ msgstr ""
 msgid "Raktas duomenų įkėlimui į saugyklą"
 msgstr ""
 
+msgid "Supildykite duomenų rinkinius"
+msgstr ""
+
+msgid "Įkeliama forma..."
+msgstr ""
+
+msgid "Pasirinkite formą"
+msgstr ""
+
+msgid "Pasirinkite objektą"
+msgstr ""
+
+msgid "Pasirinkite ką norite sukurti"
+msgstr ""
+
+msgid "Žemiau rodomi objektų tipai, kuriuos galima sukurti po šiuo mazgu."
+msgstr ""
+
+msgid "Šiam mazgui nėra leidžiamų vaikinių elementų."
+msgstr ""
+
+msgid "Atšaukti pakeitimus"
+msgstr ""
+
+msgid ""
+"Turite neišsaugotų pakeitimų. Ar tikrai norite išeiti ir prarasti pakeitimus?"
+msgstr ""
+
+msgid "Serverio klaida. Patikrinkite laukų reikšmes ir bandykite dar kartą."
+msgstr ""
+
 msgid "Organizacijų skaičius pagal valdymo sritį laike"
 msgstr ""
 
@@ -3024,6 +3193,9 @@ msgid "Sutartis"
 msgstr ""
 
 msgid "Organizacijos redagavimas"
+msgstr ""
+
+msgid "Organizacija atnaujinta sėkmingai"
 msgstr ""
 
 msgid "Nepavyko atnaujinti duomenų iš JAR:"

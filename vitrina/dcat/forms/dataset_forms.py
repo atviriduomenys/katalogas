@@ -264,14 +264,15 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "description",
             "identifier",
             "information_system_publishers",
+            "creator",
             "title",
             "landing_page",
             "languages",
+            "tags",
             "category",
             "conditions",
             "rights_relation",
             "applicable_legislation",
-            "tags",
         )
         widgets = {
             "information_system_importance": Select2Widget,
@@ -452,6 +453,12 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         required=False,
         unique=True,
     )
+    was_generated_by = StringListField(
+        label=_("Buvo sukurtas dėl"),
+        help_text=_("Veikla, dėl kurios buvo sukurtas duomenų rinkinys. Atitinka prov:wasGeneratedBy."),
+        required=False,
+        unique=True,
+    )
     conforms_to = forms.ModelChoiceField(
         Concept.ordered_by_label_objects.filter(concept_schemas__uri=DATASET_STANDARD_URI).prefetch_related(
             "translations"
@@ -517,14 +524,15 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "languages": Select2MultipleWidget,
             "provenance": Select2MultipleWidget,
             "dataset_type": Select2Widget,
-            "was_generated_by": Select2MultipleWidget,
         }
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
+            organization=self.organization,
+            subclass__name__in=[DCATResourceSubclass.INFORMATION_SYSTEM, DCATResourceSubclass.SERVICE],
+            is_public=False,
         )
 
         self.fields["organization"].required = True
@@ -546,6 +554,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "label", any_language=True
         )
 
+        if self.instance.pk:
+            self.initial["was_generated_by"] = list(self.instance.was_generated_by.values_list("title", flat=True))
+
         self.helper.layout = Layout(
             Field("parent"),
             Field("name_prefix"),
@@ -564,8 +575,8 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             Field("creator"),
             Field("documentation"),
             Field("frequency"),
-            Field("contact"),
             Field("landing_page"),
+            Field("contact"),
             Field("languages"),
             Field("qualified_relation"),
             Field("provenance"),
@@ -645,7 +656,9 @@ class DatasetUpdateForm(DatasetResourceForm):
 
 class InformationSystemRelationshipForm(forms.Form):
     has_part = forms.ModelMultipleChoiceField(
-        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
+        queryset=Dataset.objects.filter(
+            subclass__name__in=[DCATResourceSubclass.CATALOG, DCATResourceSubclass.INFORMATION_SYSTEM]
+        ),
         widget=DatasetMultipleWidget(),
         required=False,
         label=_("Priklauso duomenų katalogams"),

@@ -7,6 +7,15 @@ def migrate_publisher_to_m2m(apps, schema_editor):
         dataset.information_system_publishers.add(dataset.information_system_publisher_id)
 
 
+def reverse_migrate_publisher_to_m2m(apps, schema_editor):
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    for dataset in Dataset.objects.prefetch_related("information_system_publishers").all():
+        publishers = dataset.information_system_publishers.all()
+        if publishers.exists():
+            dataset.information_system_publisher = publishers.first()
+            dataset.save(update_fields=["information_system_publisher"])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [

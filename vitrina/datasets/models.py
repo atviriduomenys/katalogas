@@ -1618,6 +1618,13 @@ class Dataset(Resource):
 
         self.documentation.set(documentations)
 
+    def update_was_generated_by(self, titles: list[str]) -> None:
+        activities: list[Activity] = []
+        for title in titles:
+            activity, created = Activity.objects.get_or_create(title=title)
+            activities.append(activity)
+        self.was_generated_by.set(activities)
+
     def update_service_quality(self, urls: list[str]) -> None:
         service_qualities: list[ServiceQualityPage] = []
 

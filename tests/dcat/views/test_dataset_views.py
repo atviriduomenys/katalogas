@@ -360,7 +360,7 @@ class TestDcatDatasetCreateView:
         form["languages"] = [str(language.pk)]
         form["provenance"] = [str(provenance.pk)]
         form["dataset_type"] = dataset_type.pk
-        form["was_generated_by"] = [str(activity.pk)]
+        form["was_generated_by"] = activity.title
         form["qualified_relation"] = "https://example.com/relation"
         form["version_notes"] = "Initial version"
         form["creator"].force_value(str(creator_org.pk))
@@ -392,7 +392,7 @@ class TestDcatDatasetCreateView:
         assert dataset.languages.filter(pk=language.pk).exists()
         assert dataset.provenance.filter(pk=provenance.pk).exists()
         assert dataset.dataset_type == dataset_type
-        assert dataset.was_generated_by.filter(pk=activity.pk).exists()
+        assert dataset.was_generated_by.filter(title=activity.title).exists()
         assert dataset.category.filter(pk=category.pk).exists()
         assert Metadata.objects.get(dataset=dataset).name == f"{org.name}datasetallfields"
         assert DatasetQualifiedRelation.objects.filter(dataset=dataset, url="https://example.com/relation").exists()
@@ -1028,7 +1028,7 @@ class TestDcatDatasetUpdateView:
         form["languages"] = [str(language.pk)]
         form["provenance"] = [str(provenance.pk)]
         form["dataset_type"] = dataset_type.pk
-        form["was_generated_by"] = [str(activity.pk)]
+        form["was_generated_by"] = activity.title
         form["qualified_attribution"].force_value([str(attribution_org.pk)])
         form["qualified_relation"] = "https://example.com/relation"
         form["version_notes"] = "Updated version notes"
@@ -1055,7 +1055,7 @@ class TestDcatDatasetUpdateView:
         assert dataset.languages.filter(pk=language.pk).exists()
         assert dataset.provenance.filter(pk=provenance.pk).exists()
         assert dataset.dataset_type == dataset_type
-        assert dataset.was_generated_by.filter(pk=activity.pk).exists()
+        assert dataset.was_generated_by.filter(title=activity.title).exists()
         assert dataset.category.filter(pk=category.pk).exists()
         assert DatasetAttribution.objects.filter(
             dataset=dataset, attribution=contributor, organization=attribution_org

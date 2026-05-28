@@ -269,7 +269,7 @@ class DcatDatasetCreateView(
                 self.object.provenance.set(form.cleaned_data.get("provenance"))
 
             if "was_generated_by" in form.changed_data:
-                self.object.was_generated_by.set(form.cleaned_data.get("was_generated_by"))
+                self.object.update_was_generated_by(form.cleaned_data.get("was_generated_by") or [])
 
         self.object.category.set(form.cleaned_data.get("category") or [])
 
@@ -447,7 +447,7 @@ class DcatDatasetUpdateView(
             self.object.provenance.set(form.cleaned_data.get("provenance"))
 
         if "was_generated_by" in form.changed_data:
-            self.object.was_generated_by.set(form.cleaned_data.get("was_generated_by"))
+            self.object.update_was_generated_by(form.cleaned_data.get("was_generated_by") or [])
 
         if "category" in form.changed_data:
             self.object.category.set(form.cleaned_data.get("category") or [])

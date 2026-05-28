@@ -1,0 +1,641 @@
+/* ── Design tokens ──
+   brand:        #375677  (primary dark navy-blue)
+   brand-light:  #ebf1f9  (light blue background / field borders)
+   border:       #ccdae4  (structural borders)
+   text-heading: #0f181f
+   text-primary: #375677
+   text-muted:   #59656e
+   text-dark:    #1c1c1c
+*/
+
+/* ── Overlay ── */
+.wizard-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.wizard-overlay-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Card shell ── */
+.wizard-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 0;
+}
+.wizard-card .card-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+.wizard-card .card-content > .columns {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    margin: 0;
+}
+
+/* ── Header ── */
+.wizard-card-header {
+    display: flex !important;
+    align-items: center;
+    gap: 0;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #ccdae4 !important;
+    flex: 0 0 auto;
+}
+.wizard-header-org {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-right: 1px solid #ccdae4;
+    min-width: 0;
+    flex: 0 0 auto;
+    max-width: 320px;
+}
+.wizard-org-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0,86,164,0.1);
+    flex: 0 0 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+.wizard-org-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.wizard-org-avatar-letter {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #375677;
+    line-height: 1;
+}
+.wizard-org-info { min-width: 0; }
+.wizard-org-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0f181f;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wizard-org-type {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #59656e;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.wizard-header-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.wizard-card-title {
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: #1c1c1c;
+    line-height: 1.6rem;
+    letter-spacing: 0.15px;
+}
+.wizard-card-subtitle-label {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #59656e;
+    line-height: 1.25rem;
+}
+.wizard-header-close {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #59656e;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    margin-right: 1.5rem;
+    font-size: 1rem;
+}
+.wizard-header-close:hover { background: #ebf1f9; color: #375677; }
+
+/* ── Sidebar ── */
+.wizard-sidebar {
+    border-right: 1px solid #ccdae4;
+    overflow-y: auto;
+    flex: 0 0 auto;
+}
+
+/* ── Main pane ── */
+.wizard-main {
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: #fff;
+}
+/* Bulma .is-gapless uses !important on column padding (specificity 0-2-0).
+   This rule adds .wizard-main for 0-3-0 specificity, winning at equal !important. */
+.columns.is-gapless > .column.wizard-main,
+.wizard-main {
+    padding: 2rem 2.5rem !important;
+}
+
+/* ── Footer ── */
+.wizard-footer {
+    border-top: 1px solid #ccdae4;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    flex: 0 0 auto;
+}
+.wizard-footer .button {
+    border: 1px solid #375677 !important;
+    color: #375677 !important;
+    border-radius: 12px !important;
+    height: 40px !important;
+    background: transparent !important;
+    font-weight: 500 !important;
+    font-size: 1rem !important;
+    padding: 0 1rem !important;
+}
+.wizard-footer .button:hover {
+    background: #ebf1f9 !important;
+}
+.wizard-footer .button.is-light {
+    background: #ebf1f9 !important;
+    border-color: transparent !important;
+}
+.wizard-footer .button.is-light:hover {
+    background: #d6e5f4 !important;
+}
+.wizard-footer .button.is-dark {
+    background: #375677 !important;
+    border-color: #375677 !important;
+    color: #fff !important;
+}
+.wizard-footer .button.is-dark:hover {
+    background: #2d4761 !important;
+}
+
+/* ── Form body container — transparent, no outer card ── */
+.wizard-form-body {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    margin-top: 0;
+}
+
+/* ── Columns layout (form + relationship panel) ── */
+.wizard-columns {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+.wizard-columns > .column {
+    padding: 0;
+}
+
+/* ── Field-card: each form field gets its own rounded bordered box ── */
+.wizard-form-body .field {
+    border: 1px solid #ebf1f9;
+    border-radius: 16px;
+    padding: 0.5rem 0.9375rem;
+    background: #fff;
+    margin-bottom: 1rem;
+    min-height: 52px;
+    transition: border-color 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.wizard-form-body .field:focus-within {
+    border-color: #375677;
+    box-shadow: 0 0 0 2px rgba(55,86,119,0.08);
+}
+/* crispy forms puts is-danger on the input/textarea/select, not the .field wrapper.
+   Scope to form inputs only — .button.is-danger (formset delete btn) must not trigger this. */
+.wizard-form-body .field.is-danger,
+.wizard-form-body .field:has(.input.is-danger, .textarea.is-danger, select.is-danger) {
+    border-color: #f14668 !important;
+    box-shadow: 0 0 0 2px rgba(241,70,104,0.08);
+}
+.wizard-form-body .help.is-danger {
+    color: #f14668;
+}
+
+/* Inline formsets render nested .field elements inside an outer .field.
+   Strip the card treatment from them so they appear flat within the card. */
+.wizard-form-body .field .field {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    min-height: auto !important;
+    box-shadow: none !important;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+.wizard-form-body .field .field:focus-within {
+    border: none !important;
+    box-shadow: none !important;
+}
+.wizard-form-body .field .field.is-danger,
+.wizard-form-body .field .field:has(.is-danger) {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Label — small caption at top of each field card */
+.wizard-form-body .label {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #375677;
+    margin-bottom: 0.1rem;
+    letter-spacing: 0.6px;
+}
+
+/* Remove native borders — the .field card is the visible border */
+.wizard-form-body .input,
+.wizard-form-body .textarea {
+    border: none !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    background: transparent !important;
+    color: #375677 !important;
+    font-size: 1rem;
+    height: auto;
+}
+.wizard-form-body .textarea {
+    min-height: 5rem;
+    resize: vertical;
+}
+.wizard-form-body .select select {
+    border: none !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    background: transparent !important;
+    color: #375677 !important;
+}
+.wizard-form-body .select::after { right: 0.25rem; border-color: #375677 !important; }
+.wizard-form-body .select2.select2-container .select2-selection--single {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+.wizard-form-body .select2.select2-container .select2-selection--single .select2-selection__rendered {
+    padding-left: 0 !important;
+    color: #375677 !important;
+}
+.wizard-form-body .select2.select2-container .select2-selection--multiple {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    min-height: auto;
+    padding: 0 !important;
+}
+.wizard-form-body .help {
+    font-size: 0.75rem;
+    color: #59656e;
+    margin-top: 0.25rem;
+    line-height: 1.4;
+}
+.wizard-form-body .field:has(input[type=file]) {
+    border: none;
+    padding: 0;
+    background: transparent;
+    min-height: auto;
+}
+.wizard-form-body .field:has(input[type=file]):focus-within { box-shadow: none; }
+
+/* ── Relationship panel ── */
+.wizard-relationship-panel-inner {
+    background: #ebf1f9;
+    border: none;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: none;
+    height: auto;
+}
+.wizard-relationship-panel-inner > p.is-size-6 {
+    font-size: 1.25rem !important;
+    font-weight: 500 !important;
+    color: #0f181f !important;
+    margin-bottom: 0.25rem !important;
+}
+.wizard-relationship-panel-inner > p.has-text-grey {
+    font-size: 0.875rem !important;
+    color: #59656e !important;
+    margin-bottom: 0.75rem !important;
+}
+.wizard-relationship-panel-inner > hr {
+    background-color: #ccdae4 !important;
+    height: 1px !important;
+    margin: 0 0 1rem !important;
+}
+#wizard-relationship-panel .field {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    min-height: auto;
+    margin-bottom: 0.5rem;
+}
+#wizard-relationship-panel .field + .field {
+    padding-top: 1rem;
+    border-top: 1px solid #ccdae4;
+    margin-top: 0.5rem;
+}
+#wizard-relationship-panel .label {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #0f181f;
+    margin-bottom: 0.25rem;
+}
+#wizard-relationship-panel .help {
+    font-size: 0.875rem;
+    color: #59656e;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+#wizard-relationship-panel .control {
+    background: #fff;
+    border: 1px solid #ebf1f9;
+    border-radius: 16px;
+    min-height: 52px;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+}
+#wizard-relationship-panel .select2.select2-container {
+    width: 100% !important;
+}
+#wizard-relationship-panel .select2.select2-container .select2-selection--multiple {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    min-height: auto;
+}
+.wizard-relationship-panel-inner .select2-selection__choice {
+    background: #f5f5f4 !important;
+    color: #375677 !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+
+/* ── Breadcrumbs ── */
+.wizard-crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.625rem;
+    color: #59656e;
+    margin-bottom: 1.5rem;
+    align-items: flex-end;
+}
+.wizard-crumbs > div:not(.wizard-crumb) {
+    gap: 0.5rem;
+}
+.wizard-crumb {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 1px;
+}
+.wizard-crumb-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #59656e;
+}
+.wizard-crumb-title {
+    font-size: 0.875rem;
+    color: #59656e;
+    font-weight: 400;
+}
+.wizard-crumb.is-current .wizard-crumb-title {
+    color: #375677;
+    font-weight: 600;
+}
+.wizard-crumb.is-current .wizard-crumb-label {
+    color: #375677;
+}
+.wizard-crumb-sep { color: #ccdae4; padding-bottom: 2px; }
+
+/* ── Form section header (title + subtitle above form fields) ── */
+.wizard-form-section-header {
+    margin-bottom: 1.5rem;
+}
+.wizard-form-section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0f181f;
+    line-height: 2rem;
+}
+.wizard-form-section-header > .wizard-form-section-sub {
+    font-size: 0.875rem;
+    color: #59656e;
+    margin-top: 0.125rem;
+}
+
+/* ── Detail pane ── */
+.wizard-detail-header { border-bottom: 1px solid #ccdae4; padding-bottom: 0.75rem; }
+.wizard-detail-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0f181f;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+/* ── Sidebar tree ── */
+.wizard-tree { list-style: none; margin: 0; padding: 0; font-size: 0.875rem; }
+.wizard-tree .wizard-tree-children {
+    list-style: none;
+    margin: 0 0 0 0.9rem;
+    padding-left: 0.35rem;
+    border-left: 1px solid #ccdae4;
+}
+.wizard-tree-group {
+    list-style: none;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #59656e;
+    padding: 0.5rem 0.4rem 0.2rem;
+    user-select: none;
+}
+.wizard-tree-group-root { padding-top: 0; }
+.wizard-tree-row {
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    line-height: 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    color: #1c1c1c;
+}
+.wizard-tree-row:hover { background-color: #ebf1f9; }
+.wizard-tree-row.is-active {
+    background-color: #ebf1f9;
+    color: #375677;
+    font-weight: 600;
+    box-shadow: none;
+}
+.wizard-tree-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1 1 auto;
+}
+.wizard-tree-root > .wizard-tree-row {
+    font-weight: 600;
+}
+.wizard-tree-caret {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 1rem;
+    flex: 0 0 1rem;
+}
+.wizard-tree-actions { margin-left: auto; gap: 0.25rem; flex: 0 0 auto; }
+.wizard-tree-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #59656e;
+    background-color: rgba(221,221,221,0.5);
+    border-radius: 16px;
+}
+.wizard-tree-row.is-active .wizard-tree-count {
+    color: #375677;
+    background-color: rgba(55,86,119,0.12);
+}
+.wizard-tree-add {
+    padding: 0 0.35rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    color: #375677 !important;
+    background: #ebf1f9 !important;
+    border-radius: 4px;
+    border: none !important;
+    box-shadow: none !important;
+}
+.wizard-tree-add:hover { background-color: #d6e5f4 !important; }
+
+/* ── Type picker ── */
+.wizard-picker-title { font-size: 1.35rem; font-weight: 600; color: #0f181f; margin-bottom: 0.25rem; }
+.wizard-picker-sub { color: #59656e; margin-bottom: 1.25rem; }
+.wizard-picker-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #ccdae4;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    background-color: #fff;
+}
+.wizard-picker-card:hover { border-color: #375677; box-shadow: 0 1px 4px rgba(55,86,119,0.12); }
+.wizard-picker-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background-color: #ebf1f9;
+    color: #375677;
+    flex: 0 0 2.25rem;
+}
+.wizard-picker-card-body { flex: 1 1 auto; min-width: 0; }
+.wizard-picker-card-title { font-weight: 600; color: #0f181f; }
+.wizard-picker-card-helper { font-size: 0.8rem; color: #59656e; }
+.wizard-picker-card-chevron { color: #59656e; flex: 0 0 auto; }
+
+/* ── Fragment area ── */
+#wizard-main-pane { min-height: 0; }
+
+[x-cloak] { display: none !important; }
+
+/* Select2 dropdowns must float above the fixed wizard overlay (z-index 9999) */
+.select2-container--open .select2-dropdown {
+    z-index: 10000 !important;
+}
+div.select, div.select select, .select2.select2-container {
+    width: 100% !important;
+}
+/* Select2 single — default style outside wizard forms */
+.select2.select2-container .select2-selection--single {
+    height: 2.5rem;
+    padding: 6px 12px;
+    border-color: #ccdae4;
+    position: relative;
+}
+.select2.select2-container .select2-selection--single .select2-selection__rendered {
+    padding-left: 0;
+}
+.select2.select2-container .select2-selection--multiple {
+    min-height: 2.5rem;
+    border-color: #ccdae4;
+}
+.select2.select2-container .select2-selection--single .select2-selection__clear {
+    position: absolute;
+    right: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+}
+.select2.select2-container:hover .select2-selection--single:hover,
+.select2.select2-container:hover .select2-selection--multiple:hover {
+    border-color: #375677;
+}
+.select2-container .select2-dropdown {
+    border-color: #ccdae4;
+    margin-top: 46px;
+}
+.select2-selection__arrow { display: none; }
+.select2.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: #59656e;
+}

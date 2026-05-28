@@ -59,6 +59,7 @@
         </script>
     {% endif %}
     {% include "component/favicon.html" %}
+    {% block meta %}{% endblock %}
     {% block head %}{% endblock %}
     {% if cssOverride %}
         <style nonce="{{ request.csp_nonce }}">

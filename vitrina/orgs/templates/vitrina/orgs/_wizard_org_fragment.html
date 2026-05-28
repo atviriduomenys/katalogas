@@ -9,12 +9,9 @@
       hx-headers='{"X-Wizard-Request": "true"}'>
     {% csrf_token %}
 
-    <div class="mb-4">
-        <p class="is-size-7 has-text-grey has-text-weight-semibold is-uppercase" style="letter-spacing:.05em;">
-            {% translate "Organizacija" %}
-        </p>
+    <div class="wizard-form-section-header">
         <p class="is-size-5 has-text-weight-semibold">{{ organization.title }}</p>
-        <p class="has-text-grey is-size-7 mt-1">{% translate "Redaguokite organizacijos informaciją" %}</p>
+        <p class="wizard-form-section-sub">{% translate "Redaguokite organizacijos informaciją" %}</p>
     </div>
 
     {% for message in messages %}
@@ -30,5 +27,7 @@
         </div>
     {% endif %}
 
-    {% crispy form %}
+    <div class="wizard-form-body">
+        {% crispy form %}
+    </div>
 </form>

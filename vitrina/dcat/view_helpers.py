@@ -27,9 +27,7 @@ def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include
     """
 
     def _crumb(ds: Dataset) -> dict:
-        type_label = (
-            ds.subclass.translated_title if ds.subclass_id else None
-        ) or str(_("Duomenų rinkinys"))
+        type_label = (ds.subclass.translated_title if ds.subclass_id else None) or str(_("Duomenų rinkinys"))
         return {
             "type_label": type_label,
             "title": ds.safe_translation_getter("title", any_language=True) or f"#{ds.pk}",

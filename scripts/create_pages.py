@@ -30,13 +30,13 @@ PAGES = [
     },
     {
         "title": "Naujienos",
-        "slug": "naujienos",
+        "slug": "blog",
         "in_navigation": True,
         "stories_config": True,
     },
     {
         "title": "Mokymai",
-        "slug": "mokymai",
+        "slug": "training",
         "in_navigation": True,
     },
 ]

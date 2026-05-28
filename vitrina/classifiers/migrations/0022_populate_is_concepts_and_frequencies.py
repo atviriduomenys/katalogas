@@ -206,7 +206,7 @@ def add_frequency_values(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_classifiers', '0020_formfieldhelptext_formfieldhelptexttranslation'),
+        ('vitrina_classifiers', '0021_add_relationship_form_help_text_choices'),
     ]
 
     operations = [

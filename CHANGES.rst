@@ -4,7 +4,10 @@ Changes
 v 1.22.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/pull/2640
 
+- Add single-page DCAT data-filling wizard ("Atidaryti formų valdymą") accessible from the Organisation detail page, replacing the previous multi-page navigation flow for building out an organisation's hierarchy.
+- Wizard includes: sidebar tree reflecting the live treebeard hierarchy; inline Organisation form; create/edit forms for Information Systems, Services, Datasets, and Distributions; relationship panels per node type; dynamic breadcrumbs derived from treebeard ancestors.
 
 v 1.21.0 (2026-05-18)
 ==================

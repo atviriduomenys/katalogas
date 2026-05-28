@@ -203,13 +203,11 @@ class DcatDatasetCreateView(
             if self.subclass.name == DCATResourceSubclass.SERVICE:
                 self.object.service = True
 
-            # Use pos= explicitly so treebeard ignores Dataset.node_order_by and
-            # appends rather than doing sorted insertion (which can overflow).
             parent: Dataset | None = form.cleaned_data.get("parent", None)
             if parent:
-                parent.add_child(instance=self.object, pos="last-child")
+                parent.add_child(instance=self.object)
             else:
-                Dataset.add_root(instance=self.object, pos="last-sibling")
+                Dataset.add_root(instance=self.object)
 
             if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
                 if identifier := form.cleaned_data.get("identifier"):

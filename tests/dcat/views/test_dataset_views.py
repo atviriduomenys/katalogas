@@ -109,8 +109,6 @@ class TestDcatDatasetCreateView:
         assert response.status_code == 404
 
     def test_coordinator_of_different_org_returns_403(self, app: DjangoTestApp):
-        from django.contrib.contenttypes.models import ContentType
-
         org = OrganizationFactory()
         other_org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)

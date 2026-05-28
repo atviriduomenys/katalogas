@@ -2,7 +2,7 @@
 {% load i18n static %}
 
 {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
-{% block current_title %}{% translate "Duomenų pildymo aplinka" %}{% endblock %}
+{% block current_title %}{% translate "IS metaduomenys" %}{% endblock %}
 
 {% block scripts %}
     <script src="{% static 'js/wizard.js' %}" defer></script>
@@ -11,381 +11,44 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'admin/css/vendor/select2/select2.min.css' %}">
     <link rel="stylesheet" href="{% static 'django_select2/django_select2.css' %}">
-    <style>
-        /* ── Overlay ── */
-        .wizard-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .wizard-overlay-inner {
-            flex: 1 1 auto;
-            min-height: 0;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* ── Card ── */
-        .wizard-card {
-            flex: 1 1 auto;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border-radius: 8px;
-        }
-        .wizard-card-header { box-shadow: none; border-bottom: 1px solid #e5e7eb; flex: 0 0 auto; }
-        .wizard-card .card-content {
-            flex: 1 1 auto;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            overflow: hidden;
-        }
-        .wizard-card .card-content > .columns {
-            flex: 1 1 auto;
-            min-height: 0;
-            overflow: hidden;
-            margin: 0;
-        }
-        /* ── Header ── */
-        .wizard-card-header {
-            display: flex !important;
-            align-items: center;
-            gap: 0;
-            padding: 0 !important;
-            box-shadow: none;
-        }
-        .wizard-header-org {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.25rem;
-            border-right: 1px solid #e5e7eb;
-            min-width: 0;
-            flex: 0 0 auto;
-            max-width: 280px;
-        }
-        .wizard-org-avatar {
-            width: 2.25rem;
-            height: 2.25rem;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #e0e7ff;
-            flex: 0 0 2.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #e5e7eb;
-        }
-        .wizard-org-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        .wizard-org-avatar-letter {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #4f46e5;
-            line-height: 1;
-        }
-        .wizard-org-info { min-width: 0; }
-        .wizard-org-name {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #111827;
-            line-height: 1.2;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .wizard-org-type {
-            font-size: 0.62rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: #9ca3af;
-        }
-        .wizard-header-title {
-            flex: 1 1 auto;
-            min-width: 0;
-            padding: 0.75rem 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-        .wizard-card-subtitle-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #9ca3af;
-            line-height: 1.2;
-        }
-        .wizard-card-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #363636;
-            line-height: 1.3;
-        }
-        .wizard-header-close {
-            flex: 0 0 auto;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #9ca3af;
-            width: 2.5rem;
-            height: 2.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            margin-right: 0.5rem;
-            font-size: 1rem;
-        }
-        .wizard-header-close:hover { background: #f3f4f6; color: #374151; }
-        .wizard-sidebar {
-            border-right: 1px solid #e5e7eb;
-            overflow-y: auto;
-            flex: 0 0 auto;
-        }
-        .wizard-main {
-            overflow-y: auto;
-            flex: 1 1 auto;
-            min-width: 0;
-        }
-        .wizard-footer {
-            border-top: 1px solid #e5e7eb;
-            padding: 0.75rem 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #fff;
-            flex: 0 0 auto;
-        }
-
-        /* Detail pane */
-        .wizard-detail-header { border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; }
-        .wizard-detail-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            line-height: 1.3;
-            word-break: break-word;
-        }
-
-        /* Breadcrumb */
-        .wizard-crumbs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.25rem 0.75rem;
-            font-size: 0.85rem;
-            color: #6b7280;
-            margin-bottom: 1.25rem;
-            align-items: flex-end;
-        }
-        .wizard-crumb { display: flex; flex-direction: column; gap: 1px; }
-        .wizard-crumb-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #9ca3af;
-        }
-        .wizard-crumb-title { color: #374151; font-weight: 500; }
-        .wizard-crumb.is-current .wizard-crumb-title { color: #1e40af; font-weight: 600; }
-        .wizard-crumb-sep { color: #d1d5db; padding-bottom: 2px; }
-
-        /* Tree */
-        .wizard-tree { list-style: none; margin: 0; padding: 0; font-size: 0.9rem; }
-        .wizard-tree .wizard-tree-children {
-            list-style: none;
-            margin: 0 0 0 0.9rem;
-            padding-left: 0.35rem;
-            border-left: 1px solid #e5e7eb;
-        }
-        .wizard-tree-group {
-            list-style: none;
-            font-size: 0.65rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: #9ca3af;
-            padding: 0.5rem 0.4rem 0.2rem;
-            user-select: none;
-        }
-        .wizard-tree-group-root { padding-top: 0; }
-        .wizard-tree-row {
-            padding: 0.3rem 0.4rem;
-            border-radius: 4px;
-            line-height: 1.2;
-            cursor: pointer;
-            user-select: none;
-        }
-        .wizard-tree-row:hover { background-color: #f5f7fa; }
-        .wizard-tree-row.is-active {
-            background-color: #e0f2fe;
-            box-shadow: inset 2px 0 0 #3273dc;
-        }
-        .wizard-tree-label {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            flex: 1 1 auto;
-        }
-        .wizard-tree-root > .wizard-tree-row {
-            font-weight: 600;
-            background-color: #f1f5f9;
-        }
-        .wizard-tree-caret {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            width: 1rem;
-            flex: 0 0 1rem;
-        }
-        .wizard-tree-actions { margin-left: auto; gap: 0.25rem; flex: 0 0 auto; }
-        .wizard-tree-count {
-            display: inline-block;
-            min-width: 1.4rem;
-            padding: 0 0.45rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-            line-height: 1.25rem;
-            text-align: center;
-            color: #64748b;
-            background-color: #e5e7eb;
-            border-radius: 9999px;
-        }
-        .wizard-tree-row.is-active .wizard-tree-count { color: #1e40af; background-color: #bfdbfe; }
-        .wizard-tree-add {
-            padding: 0 0.35rem;
-            height: 1.5rem;
-            min-width: 1.5rem;
-            color: #9ca3af;
-        }
-        .wizard-tree-add:hover { color: #1e40af; background-color: rgba(30,64,175,0.08); }
-
-        /* Picker */
-        .wizard-picker-title { font-size: 1.35rem; font-weight: 600; color: #111827; margin-bottom: 0.25rem; }
-        .wizard-picker-sub { color: #6b7280; margin-bottom: 1.25rem; }
-        .wizard-picker-card {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 1.25rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            margin-bottom: 0.75rem;
-            cursor: pointer;
-            transition: all 0.12s ease;
-            background-color: #fff;
-        }
-        .wizard-picker-card:hover { border-color: #3273dc; box-shadow: 0 1px 4px rgba(50,115,220,0.12); }
-        .wizard-picker-card-icon {
-            display: flex; align-items: center; justify-content: center;
-            width: 2.25rem; height: 2.25rem; border-radius: 50%;
-            background-color: #f1f5f9; color: #475569; flex: 0 0 2.25rem;
-        }
-        .wizard-picker-card-body { flex: 1 1 auto; min-width: 0; }
-        .wizard-picker-card-title { font-weight: 600; color: #111827; }
-        .wizard-picker-card-helper { font-size: 0.8rem; color: #6b7280; }
-        .wizard-picker-card-chevron { color: #9ca3af; flex: 0 0 auto; }
-
-        /* Form fragment area */
-        #wizard-main-pane { min-height: 0; }
-
-        [x-cloak] { display: none !important; }
-
-                {# Select2 dropdowns must float above the fixed wizard overlay (z-index 9999) #}
-        .select2-container--open .select2-dropdown {
-            z-index: 10000 !important;
-        }
-        {# Match select width #}
-        div.select, div.select select, .select2.select2-container {
-            width: 100% !important;
-        }
-        {# Match select height and border color #}
-        .select2.select2-container .select2-selection--single {
-            height: 2.5rem;
-            padding: 6px 12px;
-            border-color: #767676;
-            position: relative;
-        }
-        {# Remove left padding to match padding on non-select2 fields #}
-        .select2.select2-container .select2-selection--single .select2-selection__rendered {
-            padding-left: 0;
-        }
-        {# Match multiple select height and border color #}
-        .select2.select2-container .select2-selection--multiple {
-            min-height: 2.5rem;
-            border-color: #767676;
-        }
-        {# Vertically center the clear (x) button within the field #}
-        .select2.select2-container .select2-selection--single .select2-selection__clear {
-            position: absolute;
-            right: 32px;
-            top: 50%;
-            transform: translateY(-50%);
-            margin: 0;
-        }
-        {# Match select border color on hover #}
-        .select2.select2-container:hover .select2-selection--single:hover,
-        .select2.select2-container:hover .select2-selection--multiple:hover {
-            border-color: #b5b5b5;
-        }
-        {# Match select dropdown border color and position above/below field #}
-        .select2-container .select2-dropdown {
-            border-color: #767676;
-            margin-top: 46px;
-        }
-        {# Match select2 dropdown arrow #}
-        .select2-selection__arrow {
-            display: none;
-        }
-        {# Match select2 selection placeholder color #}
-        .select2.select2-container--default .select2-selection--single .select2-selection__placeholder {
-            color: #363636;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/wizard.css' %}">
 {% endblock %}
 
 {% block root %}
     {{ wizard_nodes_json|json_script:"wizard-nodes" }}
     {{ wizard_node_meta_json|json_script:"wizard-node-meta" }}
+    {{ wizard_creatable_types_json|json_script:"wizard-creatable-types" }}
 
     <div class="wizard-overlay">
         <div class="wizard-overlay-inner">
     <div class="wizard-card card">
         <header class="card-header wizard-card-header">
-            {# Left — org identity #}
-            <div class="wizard-header-org">
-                <div class="wizard-org-avatar">
-                    {% if organization.image %}
-                        <img src="{{ organization.image.url }}"
-                             alt="{{ organization.title }}"
-                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                        <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
-                    {% else %}
-                        <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
-                    {% endif %}
-                </div>
+            {# Left — wizard title #}
+            <div class="wizard-header-left">
                 <div class="wizard-org-info">
-                    <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
-                    <p class="wizard-org-type">{% translate "Organizacija" %}</p>
+                    <p class="wizard-card-title">{% translate "IS metaduomenys" %}</p>
+                    <p class="wizard-card-subtitle-label">{% translate "Organizacijos informacinių sistemų metaduomenų pildymas pagal DCAT-AP-LT" %}</p>
                 </div>
             </div>
 
-            {# Right — wizard title #}
-            <div class="wizard-header-title">
-                <p class="wizard-card-subtitle-label">{% translate "Duomenų pildymo aplinka" %}</p>
-                <p class="wizard-card-title">{% translate "Supildykite duomenų rinkinius" %}</p>
+            {# Right — org identity #}
+            <div class="wizard-header-right">
+                <div class="wizard-header-identity">
+                    <div class="wizard-org-avatar">
+                        {% if organization.image %}
+                            <img src="{{ organization.image.url }}"
+                                 alt="{{ organization.title }}"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
+                        {% else %}
+                            <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="wizard-org-info">
+                        <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
+                        <p class="wizard-org-type">{% translate "Organizacija" %}</p>
+                    </div>
+                </div>
             </div>
 
             {# Close button #}
@@ -400,9 +63,15 @@
              x-data="{
                  nodes: JSON.parse(document.getElementById('wizard-nodes').textContent),
                  meta: JSON.parse(document.getElementById('wizard-node-meta').textContent),
+                 creatable: JSON.parse(document.getElementById('wizard-creatable-types').textContent),
                  selected: null,
                  mode: 'detail',
                  createAttempt: null,
+                 treeExpanded: false,
+                 schemaOpen: true,
+                 canCreate(type) {
+                     return !!(this.selected && this.selected.create_urls && this.selected.create_urls[type]);
+                 },
                  select(key, nextMode) {
                      this.selected = this.nodes[key] || { key: key };
                      this.mode = nextMode || 'detail';
@@ -428,11 +97,35 @@
 
                 {# Left sidebar — tree navigation #}
                 <aside class="column is-one-quarter wizard-sidebar p-4">
+                    <section class="wizard-schema-block">
+                        <button type="button" class="wizard-schema-header"
+                                :aria-expanded="schemaOpen ? 'true' : 'false'"
+                                @click="schemaOpen = !schemaOpen">
+                            <span>{% translate "Kūrimo tvarka" %}</span>
+                            <span class="wizard-tree-expand-icon" :class="schemaOpen ? 'is-open' : ''">
+                                <i class="fas fa-chevron-down fa-xs"></i>
+                            </span>
+                        </button>
+                        <div class="wizard-schema-body" x-show="schemaOpen" x-cloak>
+                            {% include "vitrina/orgs/_wizard_schema_matrix.html" %}
+                        </div>
+                    </section>
                     <ul class="wizard-tree">
-                        <li class="wizard-tree-group wizard-tree-group-root" aria-hidden="true">
-                            {% translate "Organizacija" %}
+                        <li class="wizard-tree-group wizard-tree-group-root">
+                            <span aria-hidden="true">{% translate "Organizacija" %}</span>
+                            {% if wizard_tree %}
+                                <button type="button" class="wizard-tree-expand-toggle"
+                                        :title="treeExpanded ? '{% translate 'Suskleisti viską' %}' : '{% translate 'Išskleisti viską' %}'"
+                                        :aria-label="treeExpanded ? '{% translate 'Suskleisti viską' %}' : '{% translate 'Išskleisti viską' %}'"
+                                        @click="treeExpanded = !treeExpanded; $dispatch('treetoggleall', treeExpanded)">
+                                    <span class="wizard-tree-expand-icon" :class="treeExpanded ? 'is-open' : ''">
+                                        <i class="fas fa-angle-double-down fa-xs"></i>
+                                    </span>
+                                </button>
+                            {% endif %}
                         </li>
-                        <li class="wizard-tree-node wizard-tree-root" x-data="{ open: true }">
+                        <li class="wizard-tree-node wizard-tree-root" x-data="{ open: true }"
+                            @treetoggleall.window="if ($event.detail) open = true">
                             <div class="wizard-tree-row is-flex is-align-items-center"
                                  :class="selected && selected.key === 'org:{{ organization.pk }}' && mode === 'detail' ? 'is-active' : ''"
                                  hx-get="{% url 'organization-change' pk=organization.pk %}"
@@ -440,9 +133,13 @@
                                  hx-swap="innerHTML"
                                  hx-headers='{"X-Wizard-Request": "true"}'
                                  @click.stop="select('org:{{ organization.pk }}'){% if wizard_tree %}; open = !open{% endif %}">
-                                <span class="wizard-tree-caret has-text-grey">
+                                <span class="wizard-tree-caret has-text-grey"
+                                      {% if wizard_tree %}
+                                      :class="open ? 'is-open' : ''"
+                                      @click.stop="open = !open"
+                                      {% endif %}>
                                     {% if wizard_tree %}
-                                        <i class="fas fa-xs" :class="open ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                        <i class="fas fa-chevron-right fa-xs"></i>
                                     {% endif %}
                                 </span>
                                 <span class="wizard-tree-label has-text-dark" title="{{ organization.title }}">
@@ -474,7 +171,7 @@
                 </aside>
 
                 {# Right main pane — form fragments load here #}
-                <main class="column wizard-main p-5">
+                <main class="column wizard-main">
 
                     {# HTMX fragment target — auto-loads org form on page open #}
                     <div id="wizard-main-pane" x-show="mode !== 'create'"
@@ -506,7 +203,7 @@
                     <div x-show="mode === 'create' && selected" x-cloak>
                         <nav class="wizard-crumbs" aria-label="breadcrumb">
                             <template x-for="(crumb, index) in (selected ? selected.ancestors : [])" :key="crumb.key">
-                                <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;">
+                                <div class="is-flex is-align-items-flex-end">
                                     <div class="wizard-crumb">
                                         <span class="wizard-crumb-label" x-text="crumb.type_label"></span>
                                         <span class="wizard-crumb-title" x-text="crumb.title"></span>
@@ -514,7 +211,7 @@
                                     <span class="wizard-crumb-sep">&rsaquo;</span>
                                 </div>
                             </template>
-                            <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;">
+                            <div class="is-flex is-align-items-flex-end">
                                 <div class="wizard-crumb">
                                     <span class="wizard-crumb-label" x-text="selected && selected.type_label"></span>
                                     <span class="wizard-crumb-title" x-text="selected && selected.title"></span>
@@ -523,31 +220,40 @@
                             </div>
                             <div class="wizard-crumb is-current">
                                 <span class="wizard-crumb-label">{% translate "Pasirinkite formą" %}</span>
-                                <span class="wizard-crumb-title">{% translate "Pasirinkite objektą" %}</span>
+                                <span class="wizard-crumb-title">{% translate "Pasirinkite elementą" %}</span>
                             </div>
                         </nav>
 
                         <h2 class="wizard-picker-title">{% translate "Pasirinkite ką norite sukurti" %}</h2>
-                        <p class="wizard-picker-sub">{% translate "Žemiau rodomi objektų tipai, kuriuos galima sukurti po šiuo mazgu." %}</p>
+                        <p class="wizard-picker-sub">
+                            {% translate "Žemiau rodomi elementai, kuriuos galima sukurti po" %}
+                            „<span x-text="selected && selected.title"></span>“.
+                        </p>
 
-                        <template x-for="type in (selected ? selected.allowed_children : [])" :key="type">
-                            <div class="wizard-picker-card" @click="attemptCreate(type)">
+                        <template x-for="type in creatable" :key="type">
+                            <div class="wizard-picker-card"
+                                 :class="canCreate(type) ? '' : 'is-disabled'"
+                                 :aria-disabled="canCreate(type) ? 'false' : 'true'"
+                                 @click="canCreate(type) && attemptCreate(type)">
                                 <span class="wizard-picker-card-icon">
                                     <i class="fas" :class="meta[type] && meta[type].icon"></i>
                                 </span>
                                 <div class="wizard-picker-card-body">
                                     <div class="wizard-picker-card-title" x-text="meta[type] && meta[type].type_label"></div>
-                                    <div class="wizard-picker-card-helper" x-text="meta[type] && meta[type].helper"></div>
+                                    <div class="wizard-picker-card-helper" x-show="canCreate(type)"
+                                         x-text="meta[type] && meta[type].helper"></div>
+                                    <div class="wizard-picker-card-helper" x-show="!canCreate(type)">
+                                        {% translate "Galima sukurti tik po šiais elementais:" %}
+                                        <strong x-text="meta[type] && meta[type].parents_label"></strong>
+                                    </div>
                                 </div>
-                                <span class="wizard-picker-card-chevron">
+                                <span class="wizard-picker-card-chevron" x-show="canCreate(type)">
                                     <i class="fas fa-chevron-right"></i>
                                 </span>
-                            </div>
-                        </template>
-
-                        <template x-if="selected && selected.allowed_children.length === 0">
-                            <div class="notification is-info is-light">
-                                {% translate "Šiam mazgui nėra leidžiamų vaikinių elementų." %}
+                                <span class="wizard-picker-card-locks" x-show="!canCreate(type)"
+                                      title="{% translate 'Naują elementą galima sukurti tik turint aukštesnio lygio elementą.' %}">
+                                    <i class="fas fa-lock"></i>
+                                </span>
                             </div>
                         </template>
 
@@ -565,23 +271,25 @@
             {# Sticky footer #}
             <footer class="wizard-footer">
                 <a href="{% url 'organization-detail' pk=organization.pk %}"
-                   class="button is-light"
+                   class="button"
                    onclick="event.preventDefault(); wizardNavigateTo(this.href);">
                     {% translate "Uždaryti" %}
                 </a>
                 <div class="buttons">
+                    <div id="wizard-footer-extra"></div>
                     <button type="button" class="button is-light"
                             id="wizard-cancel-btn"
                             @click="window.wizardFormDirty = false; document.querySelector('.wizard-tree-row.is-active')?.click()">
                         {% translate "Atšaukti pakeitimus" %}
                     </button>
                     <button type="submit" form="wizard-fragment-form"
-                            class="button is-primary"
+                            class="button is-dark"
                             id="wizard-save-btn">
                         {% translate "Išsaugoti" %}
                     </button>
                 </div>
             </footer>
+            {# end wizard-card-content #}
         </div>
     </div>
 
@@ -633,6 +341,48 @@
         // Still gated by _wizardInitializing in case init triggers these events.
         $(document).on('select2:select select2:unselect', '#wizard-main-pane .django-select2', function() {
             _setDirty();
+        });
+
+        $(document).on('select2:clear select2:unselect', '#wizard-main-pane select.select2-hidden-accessible', function () {
+            var $el = $(this);
+            $el.one('select2:open', function () {
+                $el.select2('close');
+            });
+        });
+
+        function _wizardSelect2InterceptClearAll(e) {
+            var clearBtn = e.target.closest && e.target.closest('.select2-selection__clear');
+            if (!clearBtn) return;
+            var selection = clearBtn.closest('.select2-selection--multiple');
+            if (!selection) return;
+            var container = selection.closest('.select2-container');
+            if (!container) return;
+            var select = container.previousElementSibling;
+            if (!select || !select.classList.contains('select2-hidden-accessible')) return;
+            var pane = document.getElementById('wizard-main-pane');
+            if (!pane || !pane.contains(select)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (e.type === 'mousedown') {
+                var $select = $(select);
+                $select.find('option').prop('selected', false);
+                $select.val(null).trigger('change');
+                _setDirty();
+            }
+        }
+        document.addEventListener('mousedown', _wizardSelect2InterceptClearAll, true);
+        document.addEventListener('click', _wizardSelect2InterceptClearAll, true);
+
+        // Prevent Enter in single-line inputs from submitting the wizard form
+        // prematurely (which otherwise saves, re-renders the pane and scrolls to
+        // the top). Delegated off document so it survives HTMX pane swaps.
+        // Textarea fields, Select2 search (rendered outside the form) and the
+        // submit button keep their default behaviour.
+        $(document).on('keydown', '#wizard-fragment-form input:not([type=submit]):not([type=button])', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
         });
 
         // Block HTMX GET navigations into the main pane when dirty
@@ -698,6 +448,9 @@
             if (e.detail.target.id === 'wizard-main-pane') {
                 var mainCol = e.detail.target.closest('.wizard-main');
                 if (mainCol) mainCol.scrollTop = 0;
+                var verb = (e.detail.requestConfig && e.detail.requestConfig.verb || 'get').toLowerCase();
+                var hxTrigger = (e.detail.xhr && e.detail.xhr.getResponseHeader('HX-Trigger')) || '';
+                var keepDirty = verb === 'post' && hxTrigger.indexOf('treeRefresh') === -1;
                 _wizardInitializing = true;
                 var target = e.detail.target;
                 $(target).find('.django-select2').not('[name*=__prefix__]').each(function() {
@@ -707,9 +460,9 @@
                 // Hold the initializing flag for 200 ms to cover any async events fired
                 // during Select2 setup (AJAX label fetching, search-input focus, etc.).
                 setTimeout(function() {
-                    window.wizardFormDirty = false;
+                    window.wizardFormDirty = keepDirty;
                     _wizardInitializing = false;
-                }, 200);
+                }, 300);
             }
         });
 

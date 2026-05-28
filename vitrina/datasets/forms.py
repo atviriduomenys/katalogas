@@ -77,7 +77,7 @@ class ResourceSubclassTypeField(ModelChoiceField):
 class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
     subclass = ResourceSubclassTypeField(
         label=_("Duomenų ištekliaus rūšis"),
-        queryset=DCATResourceSubclass.objects.all(),
+        queryset=DCATResourceSubclass.objects.all().exclude(name=DCATResourceSubclass.IS_PUBLIC_SERVICE),
         widget=forms.RadioSelect,
     )
 
@@ -348,6 +348,10 @@ class ServiceResourceForm(BaseResourceForm):
         self.fields["contact"].required = True
         organization = self.organization if self.organization else self.instance.organization
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=organization)
+
+        if not self.instance.pk:
+            self.fields["access_rights"].initial = Dataset.PUBLIC
+
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
@@ -432,8 +436,11 @@ class CatalogResourceForm(BaseResourceForm):
         rights_relation = self.cleaned_data.get("rights_relation")
         conditions = self.cleaned_data.get("conditions")
         if rights_relation and conditions:
-            self.add_error("conditions", _("Užpildykite tik vieną teisių deklaracijų lauką."))
-            self.add_error("rights_relation", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+            error_message = _(
+                "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            )
+            self.add_error("conditions", error_message)
+            self.add_error("rights_relation", error_message)
 
 
 class InformationSystemResourceForm(CatalogResourceForm):

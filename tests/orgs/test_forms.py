@@ -45,6 +45,22 @@ class TestOrganizationCreateForm:
         generated_name = form.cleaned_data["name"]
         assert generated_name == "datasets/gov/test-org/"
 
+    def test_phone_invalid_fails_validation(self, app: DjangoTestApp):
+        user = UserFactory()
+
+        form = OrganizationCreateForm(user=user, data={"phone": "invalid-phone"})
+
+        form.is_valid()
+        assert "phone" in form.errors
+
+    def test_phone_valid_passes_validation(self, app: DjangoTestApp):
+        user = UserFactory()
+
+        form = OrganizationCreateForm(user=user, data={"phone": "+37061234567"})
+
+        form.is_valid()
+        assert "phone" not in form.errors
+
 
 class TestRepresentativeCreateForm:
     def test_can_make_agreements_field_create_null_defaults_to_default_value(self, app: DjangoTestApp):

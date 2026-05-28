@@ -1,11 +1,10 @@
 from typing import Any
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field
+from crispy_forms.layout import Div, Layout, Field
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.shortcuts import get_object_or_404
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm, TranslatedField
 from django.utils.translation import gettext_lazy as _
@@ -15,12 +14,9 @@ from vitrina.datasets.form_helpers import (
     validate_urls,
     validate_identifier,
     get_contact_form_choices,
-    set_default_agent_endpoint_fields,
-    validate_agent_endpoint_fields,
     DATA_SERVICE_STANDARD_URI,
     DATASET_STANDARD_URI,
 )
-from vitrina.datasets.helpers import match_name_prefix
 from vitrina.datasets.models import (
     Attribution,
     Dataset,
@@ -28,8 +24,9 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
-from vitrina.classifiers.models import FormFieldHelpText
-from vitrina.dcat.form_helpers import apply_dynamic_help_texts, get_available_dcat_name_prefixes
+from vitrina.identifiers.models import Agency
+from vitrina.classifiers.models import FormFieldText
+from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.dcat.widgets import (
     CategoryMultipleWidget,
     DatasetMultipleWidget,
@@ -39,7 +36,6 @@ from vitrina.dcat.widgets import (
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
-from vitrina.uapi.models import Agent
 
 
 class ApplicableLegislationFormMixin(forms.Form):
@@ -105,20 +101,16 @@ class ContactFormMixin(forms.Form):
             )
 
 
-class BaseResourceForm(TranslatableModelForm):
-    name_prefix = forms.ChoiceField(
+class DatasetNameMixin(forms.Form):
+    codename_preview = forms.CharField(
+        disabled=True,
         required=False,
-        widget=Select2Widget,
-        label=_("Kodinio pavadinimo prefiksas"),
-        help_text=_(
-            "Kodinio pavadinimo prefiksas, kuris kartu su kodiniu pavadinimu sudaro pilną "
-            "ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas automatiškai pagal pasirinktą "
-            "tėvinį išteklių arba organizaciją."
-        ),
+        label=_("Pilnas kodinis pavadinimas"),
+        help_text=_("Pilnas kodinis pavadinimas, sudarytas iš prefikso ir kodinio pavadinimo."),
     )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
-        help_text=_("Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."),
+        help_text=_("Duomenų ištekliaus kodinis pavadinimas"),
         required=True,
         validators=[
             RegexValidator(
@@ -129,13 +121,41 @@ class BaseResourceForm(TranslatableModelForm):
             )
         ],
     )
-    parent = forms.ModelChoiceField(
-        Dataset.objects.all().prefetch_related("translations"),
-        label=_("Tėvinis išteklius"),
-        widget=Select2Widget(),
-        required=False,
-        help_text=_("Ši savybė nurodo susijusį resursą. Atitinka dct:relation."),
-    )
+
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
+
+        organization_codename = self.organization.name or ""
+        if self.instance.pk:
+            parent = self.instance.get_parent()
+            self.codename_prefix = parent.name if parent else organization_codename
+        else:
+            self.codename_prefix = url_parent.name if url_parent else organization_codename
+
+        if self.instance.pk:
+            # For update, we set initial name from instance, not from parent
+            codename_preview = self.instance.name or ""
+            self.initial["name"] = codename_preview.removeprefix(self.codename_prefix).strip("/")
+            self.initial["codename_preview"] = codename_preview
+        else:
+            self.initial["codename_preview"] = f"{self.codename_prefix}" if self.codename_prefix else ""
+
+    def get_dataset_name(self) -> str:
+        return f"{self.codename_prefix.removesuffix('/')}/{self.cleaned_data['name']}"
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        if not self.codename_prefix:
+            raise ValidationError(
+                _(
+                    "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
+                    "pavadinimą organizacijai ir bandykite iš naujo"
+                )
+            )
+        return cleaned_data
+
+
+class BaseResourceForm(TranslatableModelForm):
     category = forms.ModelMultipleChoiceField(
         queryset=Category.objects.order_by("title"),
         label=_("Kategorija"),
@@ -157,88 +177,16 @@ class BaseResourceForm(TranslatableModelForm):
         self.helper.form_id = "dataset-form"
         self.helper.form_tag = False
         self.organization = organization
+        self.codename_prefix = ""
 
         if self.language_code == "en":
             self.fields["description"].required = False
 
-        if url_parent:
-            self.fields["parent"].initial = url_parent.pk
-        elif self.instance.pk:
-            self.fields["parent"].initial = self.instance.get_parent()
-            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
-
         if self.instance.pk:
             self.initial["category"] = self.instance.category.all()
 
-        instance_name = self.instance.name if self.instance.pk else None
-        prefix_source_dataset = self._resolve_prefix_source_dataset(url_parent)
-        available_prefixes = get_available_dcat_name_prefixes(prefix_source_dataset, self.organization)
-        self._setup_name_prefix_field(available_prefixes, url_parent, instance_name)
-        self._setup_name_field(available_prefixes, instance_name)
 
-    def _resolve_prefix_source_dataset(self, url_parent: Dataset | None) -> Dataset | None:
-        """Resolves what parent dataset to use when checking available prefixes"""
-        if self.data:
-            # If form data is being submitted - use value from "parent" field. Even if it's empty
-            if submitted_parent_id := self.data.get(self.add_prefix("parent")):
-                return get_object_or_404(Dataset, id=submitted_parent_id)
-            return None
-        if self.instance and self.instance.pk:
-            # If form has existing dataset instance - use instance parent
-            return self.instance.get_parent()
-
-        # Otherwise use dataset parent given via URL. It may also be None
-        return url_parent
-
-    def _setup_name_prefix_field(
-        self, available_prefixes: list[str], url_parent: Dataset | None, instance_name: str | None
-    ) -> None:
-        self.fields["name_prefix"].choices = [(p, p) for p in available_prefixes]
-        if not available_prefixes:
-            return
-
-        initial_prefix = None
-        if instance_name:
-            initial_prefix = match_name_prefix(instance_name, available_prefixes)
-        elif url_parent and url_parent.name:
-            initial_prefix = match_name_prefix(url_parent.name, available_prefixes)
-
-        self.fields["name_prefix"].initial = initial_prefix or available_prefixes[0]
-
-    def _setup_name_field(self, available_prefixes: list[str], instance_name: str | None) -> None:
-        if instance_name and available_prefixes:
-            prefix = match_name_prefix(instance_name, available_prefixes)
-            suffix = instance_name[len(prefix) :] if prefix else instance_name
-            self.initial["name"] = suffix.strip("/")
-
-    def get_dataset_name(self) -> str:
-        return f"{self.cleaned_data['name_prefix'].removesuffix('/')}/{self.cleaned_data['name']}"
-
-    def clean(self) -> dict[str, Any]:
-        cleaned_data = super().clean()
-
-        available_name_prefixes = get_available_dcat_name_prefixes(cleaned_data.get("parent"), self.organization)
-        if not available_name_prefixes:
-            raise ValidationError(
-                _(
-                    "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
-                    "pavadinimą organizacijai ir bandykite iš naujo"
-                )
-            )
-
-        if (name_prefix := cleaned_data.get("name_prefix")) and name_prefix not in available_name_prefixes:
-            self.add_error(
-                "name_prefix",
-                _("Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}").format(
-                    prefixes=", ".join(available_name_prefixes)
-                ),
-            )
-            return cleaned_data
-
-        return cleaned_data
-
-
-class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResourceForm):
+class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameMixin, BaseResourceForm):
     identifier = forms.CharField(
         label=_("Identifikatorius"),
         required=True,
@@ -255,8 +203,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
     class Meta:
         model = Dataset
         fields = (
-            "parent",
-            "name_prefix",
+            "codename_preview",
             "name",
             "information_system_importance",
             "information_system_type",
@@ -268,11 +215,11 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "title",
             "landing_page",
             "languages",
-            "tags",
             "category",
             "conditions",
             "rights_relation",
             "applicable_legislation",
+            "tags",
         )
         widgets = {
             "information_system_importance": Select2Widget,
@@ -283,10 +230,6 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
-
-        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
-        )
 
         self.fields["landing_page"].label = _("Tinklalapis")
         self.fields["landing_page"].help_text = _(
@@ -302,6 +245,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["information_system_type"].label_from_instance = lambda obj: str(obj.translated_label)
+        self.fields["information_system_type"].label = _("Informacinės sistemos rūšis")
 
         self.fields["information_system_importance"].required = True
         self.fields["information_system_importance"].queryset = Concept.ordered_by_label_objects.filter(
@@ -309,22 +253,27 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         ).prefetch_related("translations")
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
 
-        self.fields["information_system_assessment_url"].required = True
+        self.fields["information_system_assessment_url"].required = False
+
+        self.fields["description"].label = _("Aprašas")
 
         self.fields["languages"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_INFORMATION_SYSTEM)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_INFORMATION_SYSTEM)
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
         rights_relation = cleaned_data.get("rights_relation")
         conditions = cleaned_data.get("conditions")
         if rights_relation and conditions:
-            self.add_error("conditions", _("Užpildykite tik vieną teisių deklaracijų lauką."))
-            self.add_error("rights_relation", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+            error_message = _(
+                "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            )
+            self.add_error("conditions", error_message)
+            self.add_error("rights_relation", error_message)
         return cleaned_data
 
     def clean_identifier(self) -> str:
@@ -334,14 +283,14 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         return identifier
 
 
-class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
+class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     endpoint_url = forms.CharField(
-        label=_("API adresas"),
-        required=False,
+        label=_("Tinklalapis"),
+        required=True,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
     endpoint_description = forms.CharField(
-        label=_("API specifikacija"),
+        label=_("Prieigos taško aprašas"),
         required=False,
         help_text=_(
             "Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, aprašymas. "
@@ -367,15 +316,13 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
     class Meta:
         model = Dataset
         fields = (
-            "parent",
-            "name_prefix",
+            "codename_preview",
             "name",
             "title",
-            "agent",  # Either "agent" or "endpoint_url" is required
             "endpoint_url",
-            "endpoint_type",  # Not in DCAT
             "contact",
             "endpoint_description",
+            "endpoint_type",  # Not in DCAT
             "endpoint_description_type",  # Not in DCAT
             "tags",
             "organization",
@@ -391,7 +338,6 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         )
 
         widgets = {
-            "agent": Select2Widget,
             "endpoint_type": Select2Widget,
             "endpoint_description_type": Select2Widget,
             "organization": OrganizationSingleWidget,
@@ -404,9 +350,23 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
-        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
+        self.fields["name"].label = _("Identifikatorius")
+        self.fields["name"].help_text = _(
+            "Institucijos vidinis duomenų paslaugos identifikatorius. Formatas: kod_pav. Atitinka dct:identifier."
         )
+        self.fields["codename_preview"].label = _("Pilnas identifikatorius")
+        self.fields["codename_preview"].help_text = _(
+            "Pilnas identifikatorius, sudarytas iš tėvinio ištekliaus identifikatoriaus ir šios "
+            "duomenų paslaugos identifikatoriaus."
+        )
+
+        self.fields["contact"].label = _("Kontaktinė informacija")
+        self.fields["contact"].help_text = _(
+            "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų paslaugą. "
+            "Atitinka dcat:contactPoint."
+        )
+
+        self.fields["endpoint_description_type"].help_text = _("Prieigos taško aprašo formatas.")
 
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų teikėjas")
@@ -421,32 +381,42 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "label", any_language=True
         )
         self.fields["description"].required = False
+        self.fields["description"].label = _("Aprašas")
         self.fields["tags"].required = True
-        self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=self.organization)
+        self.fields["tags"].label = _("Raktažodis / žyma")
+        self.fields["category"].label = _("Tema / kategorija")
+        self.fields["landing_page"].label = _("Nukreipimo puslapis")
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE)
-
-    def clean(self) -> dict[str, Any]:
-        cleaned_data = super().clean()
-
-        cleaned_data = set_default_agent_endpoint_fields(cleaned_data)
-
-        errors = validate_agent_endpoint_fields(
-            agent=cleaned_data.get("agent"),
-            conforms_to=cleaned_data.get("conforms_to"),
-            endpoint_url=cleaned_data.get("endpoint_url"),
-            endpoint_type=cleaned_data.get("endpoint_type"),
-            endpoint_description=cleaned_data.get("endpoint_description"),
-            endpoint_description_type=cleaned_data.get("endpoint_description_type"),
+        self.helper.layout = Layout(
+            Field("codename_preview"),
+            Field("name"),
+            Field("title"),
+            Field("endpoint_url"),
+            Field("contact"),
+            Field("endpoint_description"),
+            Div(
+                Div(Field("endpoint_type"), css_class="column"),
+                Div(Field("endpoint_description_type"), css_class="column is-right"),
+                css_class="columns is-align-items-flex-start",
+            ),
+            Field("tags"),
+            Field("organization"),
+            Field("category"),
+            Field("access_rights"),
+            Field("conforms_to"),
+            Field("description"),
+            Field("follows"),
+            Field("landing_page"),
+            Field("license"),
+            Field("service_quality"),
+            Field("service_type"),
         )
-        for field_name, error_message in errors:
-            self.add_error(field_name, error_message)
 
-        return cleaned_data
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_SERVICE)
 
 
-class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, BaseResourceForm):
+class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     documentation = StringListField(
         label=_("Dokumentacija"),
         help_text=_("Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),
@@ -488,11 +458,10 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
     class Meta:
         model = Dataset
         fields = (
-            "parent",
-            "name_prefix",
-            "name",
+            "codename_preview",
             "description",
             "title",
+            "name",
             "tags",
             "organization",
             "temporal_start",
@@ -514,6 +483,8 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "version_notes",
             "was_generated_by",
             "applicable_legislation",
+            "has_quality_annotation",
+            "has_quality_measurement",
         )
         widgets = {
             "organization": OrganizationSingleWidget,
@@ -524,20 +495,34 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "languages": Select2MultipleWidget,
             "provenance": Select2MultipleWidget,
             "dataset_type": Select2Widget,
+            "has_quality_annotation": Select2Widget,
+            "has_quality_measurement": Select2Widget,
         }
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
-        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization,
-            subclass__name__in=[DCATResourceSubclass.INFORMATION_SYSTEM, DCATResourceSubclass.SERVICE],
-            is_public=False,
+        self.fields["codename_preview"].label = _("Kodinis pavadinimas")
+        self.fields["codename_preview"].help_text = _(
+            "Pilnas URI, pagal https://ivpk.github.io/uapi/#section/Concepts/URI, identifikuojantis duomenų rinkinį."
         )
+        self.fields["name"].label = _("Identifikatorius")
+        self.fields["name"].help_text = _(
+            "Duomenų rinkinio viešinimui naudojamas identifikatorius. Naudoti mažąsias lotyniškas raides, "
+            'žodžius atskirti žemu brūkšniu "_". Pvz.: kod_pav. Atitinka dct:identifier'
+        )
+
+        self.fields["tags"].label = _("Raktažodis")
+        self.fields["frequency"].label = _("Kaupimo periodiškumas")
 
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų skelbėjas")
         self.fields["organization"].help_text = _("Duomenų skelbėjas. Atitinka dct:publisher.")
+
+        self.fields["landing_page"].label = _("Nukreipimo puslapis")
+
+        self.fields["contact"].label = _("Kontaktas")
+        self.fields["contact"].help_text = _("Nurodo kontaktą susisiekti dėl duomenų rinkinio. Atitinka vcard:Kind.")
 
         self.fields["dataset_type"].queryset = (
             Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.DATASET_TYPE_SCHEME_URI)
@@ -557,12 +542,20 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         if self.instance.pk:
             self.initial["was_generated_by"] = list(self.instance.was_generated_by.values_list("title", flat=True))
 
+        self.fields["has_quality_annotation"].label = _("Turi kokybės anotaciją")
+        self.fields["has_quality_annotation"].help_text = _(
+            "Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka dqv:hasQualityAnnotation."
+        )
+        self.fields["has_quality_measurement"].label = _("Turi kokybės matavimą")
+        self.fields["has_quality_measurement"].help_text = _(
+            "Nurodo, kaip patikimas yra pateiktas duomenų rinkinys. Atitinka dqv:hasQualityMeasurement."
+        )
+
         self.helper.layout = Layout(
-            Field("parent"),
-            Field("name_prefix"),
-            Field("name"),
+            Field("codename_preview"),
             Field("description"),
             Field("title"),
+            Field("name"),
             Field("tags"),
             Field("organization"),
             inline_fields(
@@ -578,17 +571,19 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             Field("landing_page"),
             Field("contact"),
             Field("languages"),
-            Field("qualified_relation"),
             Field("provenance"),
+            Field("qualified_relation"),
             Field("spatial_resolution"),
             Field("temporal_resolution"),
             Field("dataset_type"),
             Field("version_notes"),
             Field("was_generated_by"),
             Field("applicable_legislation"),
+            Field("has_quality_annotation"),
+            Field("has_quality_measurement"),
         )
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_DATASET)
 
     def clean_qualified_relation(self) -> list[str]:
         urls = self.cleaned_data.get("qualified_relation", []) or []
@@ -654,6 +649,103 @@ class DatasetUpdateForm(DatasetResourceForm):
                 self.initial["creator"] = creator_attribution.organization_id
 
 
+class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
+    identifier = forms.CharField(
+        label=_("Identifikatorius"),
+        required=True,
+        help_text=_(
+            "PASIS kodas. Jei nėra - institucijos suteiktas vidinis teikiamos paslaugos identifikatorius "
+            "arba sveikas skaičius. Atitinka dct:identifier."
+        ),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = (
+            "title",
+            "identifier",
+            "description",
+            "information_system_publishers",
+            "landing_page",
+            "spatial_coverages",
+            "is_public_service_status",
+            "service_type",
+            "category",
+            "follows",
+            "contact",
+        )
+        widgets = {
+            "information_system_publishers": Select2MultipleWidget,
+            "spatial_coverages": Select2MultipleWidget,
+            "is_public_service_status": Select2Widget,
+            "service_type": Select2MultipleWidget,
+            "follows": Select2MultipleWidget,
+        }
+
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
+
+        self._parent = self.instance.get_parent() if self.instance.pk else url_parent
+
+        self.fields["information_system_publishers"].required = True
+        self.fields["information_system_publishers"].queryset = self.fields[
+            "information_system_publishers"
+        ].queryset.order_by("title")
+        self.fields["information_system_publishers"].label = _("Turi kompetentingą valdžios instituciją")
+        self.fields["information_system_publishers"].help_text = _(
+            "Viešojo administravimo institucijos, atsakingos už šią paslaugą. Atitinka cv:hasCompetentAuthority."
+        )
+
+        self.fields["landing_page"].required = True
+        self.fields["landing_page"].label = _("Pagrindinis puslapis")
+        self.fields["landing_page"].help_text = _("Pagrindinis e. paslaugos tinklalapis. Atitinka foaf:homepage.")
+
+        self.fields["service_type"].queryset = (
+            Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.SERVICE_TYPE_SCHEME_URI)
+            .prefetch_related("translations")
+            .distinct()
+        )
+        self.fields["service_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
+
+        self.fields["is_public_service_status"].queryset = (
+            Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.IS_PUBLIC_SERVICE_STATUS_SCHEME_URI)
+            .prefetch_related("translations")
+            .distinct()
+        )
+        self.fields["is_public_service_status"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
+
+        self.fields["category"].label = _("Tematinė sritis")
+        self.fields["category"].help_text = _("E. paslaugos tema. Atitinka skos:concept.")
+
+        self.fields["contact"].label = _("Turi kontaktinę informaciją")
+        self.fields["contact"].help_text = _(
+            "Su e. paslaugos teikimu susijusi kontaktinė informacija. Atitinka cv:hasContactPoint."
+        )
+
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_IS_PUBLIC_SERVICE)
+
+    def get_dataset_name(self) -> str:
+        parent_name = self._parent.name if self._parent else self.organization.name or ""
+        return f"{parent_name.removesuffix('/')}/{self.cleaned_data['identifier']}"
+
+
+class ISPublicServiceUpdateForm(ISPublicServiceResourceForm):
+    class Meta:
+        model = Dataset
+        fields = ISPublicServiceResourceForm.Meta.fields
+        widgets = ISPublicServiceResourceForm.Meta.widgets
+
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
+        if self.instance.pk:
+            pasis_identifier = self.instance.identifiers.filter(scheme_agency__code=Agency.PASIS_CODE).first()
+            self.fields["identifier"].initial = pasis_identifier.notation if pasis_identifier else ""
+
+
 class InformationSystemRelationshipForm(forms.Form):
     has_part = forms.ModelMultipleChoiceField(
         queryset=Dataset.objects.filter(
@@ -661,7 +753,7 @@ class InformationSystemRelationshipForm(forms.Form):
         ),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Priklauso duomenų katalogams"),
+        label=_("Turi sudedamąją dalį"),
         help_text=_(
             "Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
             "Pildoma, kai institucijos turi nuosavus metaduomenų katalogus. Atitinka dct:hasPart."
@@ -671,7 +763,7 @@ class InformationSystemRelationshipForm(forms.Form):
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Susijusios informacinės sistemos (teikia duomenis į)"),
+        label=_("Susijusi IS"),
         help_text=_(
             "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė sistema. Susijusios "
             "sistemos yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. "
@@ -682,10 +774,19 @@ class InformationSystemRelationshipForm(forms.Form):
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Susijusios informacinės sistemos (gauna duomenis iš)"),
+        label=_("Susijusi IS"),
         help_text=_(
             "Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos yra tos, kurios turi "
             "integracijas ir yra įvardintos nuostatuose. Atitinka dcataplt:relatesToInformationSystem."
+        ),
+    )
+    relates_to_data_service = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.SERVICE),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusi duomenų paslauga"),
+        help_text=_(
+            "Kitų IS duomenų paslaugos, kurios teikia duomenis šiai IS. Atitinka dcataplt:relatesToDataService."
         ),
     )
 
@@ -704,9 +805,13 @@ class InformationSystemRelationshipForm(forms.Form):
                 dataset_relations__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
                 dataset_relations__part_of=dataset,
             )
+            self.initial["relates_to_data_service"] = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.RELATES_TO_DATA_SERVICE,
+                related_datasets__dataset=dataset,
+            )
         self.helper = FormHelper()
         self.helper.form_tag = False
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_IS_RELATIONSHIPS)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_IS_RELATIONSHIPS)
 
 
 class ServiceRelationshipForm(forms.Form):
@@ -714,7 +819,7 @@ class ServiceRelationshipForm(forms.Form):
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Pateikia duomenų rinkinius"),
+        label=_("Pateikia duomenų rinkinį"),
         help_text=_("Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."),
     )
 
@@ -727,7 +832,7 @@ class ServiceRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE_RELATIONSHIPS)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_SERVICE_RELATIONSHIPS)
 
 
 class DatasetRelationshipForm(forms.Form):
@@ -747,4 +852,41 @@ class DatasetRelationshipForm(forms.Form):
             ).values_list("organization_id", flat=True)
         self.helper = FormHelper()
         self.helper.form_tag = False
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET_RELATIONSHIPS)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_DATASET_RELATIONSHIPS)
+
+
+class ISPublicServiceRelationshipForm(forms.Form):
+    produces_datasets = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Sukuria duomenų rinkinį"),
+        help_text=_("Duomenų rinkiniai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."),
+    )
+    produces_services = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.SERVICE),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Sukuria duomenų paslaugą"),
+        help_text=_("Paslaugos, kurias sukuria ši e. paslauga. Atitinka cpsv:produces."),
+    )
+    produces_catalogs = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Sukuria katalogą"),
+        help_text=_("Katalogai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."),
+    )
+
+    def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if dataset.pk:
+            produced = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.PRODUCES,
+                related_datasets__dataset=dataset,
+            )
+            self.initial["produces_datasets"] = produced.filter(subclass__name=DCATResourceSubclass.DATASET)
+            self.initial["produces_services"] = produced.filter(subclass__name=DCATResourceSubclass.SERVICE)
+            self.initial["produces_catalogs"] = produced.filter(subclass__name=DCATResourceSubclass.CATALOG)
+        self.helper = FormHelper()
+        self.helper.form_tag = False

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from django.conf import settings
 
@@ -25,6 +27,7 @@ from vitrina.resources.models import (
     DISTRIBUTION_STANDARD_URI,
 )
 from vitrina.structure.factories import MetadataFactory, VersionFactory
+from vitrina.structure.models import Metadata
 from vitrina.users.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -154,6 +157,7 @@ class TestDcatDistributionCreateView:
         dataset = DatasetFactory(organization=org, is_public=False)
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
+        file_format = FileFormat()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -166,6 +170,7 @@ class TestDcatDistributionCreateView:
         form["availability"] = availability.pk
         form["title"] = "My Distribution"
         form["description"] = "My description"
+        form["format"] = file_format.pk
         response = form.submit()
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
@@ -177,6 +182,7 @@ class TestDcatDistributionCreateView:
         dataset = DatasetFactory(organization=org, is_public=False)
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
+        file_format = FileFormat()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -189,6 +195,7 @@ class TestDcatDistributionCreateView:
         form["availability"] = availability.pk
         form["title"] = "My Distribution"
         form["description"] = "My description"
+        form["format"] = file_format.pk
         form.submit()
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
@@ -200,6 +207,7 @@ class TestDcatDistributionCreateView:
         dataset = DatasetFactory(organization=org, is_public=False)
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
+        file_format = FileFormat()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -212,6 +220,7 @@ class TestDcatDistributionCreateView:
         form["availability"] = availability.pk
         form["title"] = "My Distribution"
         form["description"] = "My description"
+        form["format"] = file_format.pk
         form["name"] = "myresource"
         form.submit()
 
@@ -229,7 +238,7 @@ class TestDcatDistributionCreateView:
         file_format = FileFormat()
         compression_format = CompressionFormatFactory()
         packaging_format = PackagingFormatFactory()
-        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
+        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
         status = ConceptFactory(concept_schemas=[status_schema])
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
@@ -557,7 +566,7 @@ class TestDcatDistributionUpdateView:
         fmt = FileFormat()
         compression_fmt = CompressionFormatFactory()
         packaging_fmt = PackagingFormatFactory()
-        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
+        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
         status = ConceptFactory(concept_schemas=[status_schema])
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
@@ -628,3 +637,87 @@ class TestDcatDistributionUpdateView:
         assert language in distribution.languages.all()
         assert conforms_to_concept in distribution.conforms_to.all()
         assert distribution.documentation.filter(documentation_link="https://example.com/updated-doc").exists()
+
+
+class TestDcatDistributionDeleteView:
+    def _url(self, org, dataset, distribution):
+        return reverse(
+            "dcat-distribution-delete",
+            kwargs={
+                "organization_id": org.pk,
+                "dataset_id": dataset.pk,
+                "distribution_id": distribution.pk,
+            },
+        )
+
+    def test_unauthenticated_redirects_to_login(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org, is_public=False)
+        distribution = DatasetDistributionFactory(dataset=dataset)
+
+        response = app.get(self._url(org, dataset, distribution))
+
+        assert response.status_code == 302
+        assert settings.LOGIN_URL in response.location
+        assert DatasetDistribution.objects.filter(pk=distribution.pk).exists()
+
+    def test_no_permission_returns_403(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org, is_public=False)
+        distribution = DatasetDistributionFactory(dataset=dataset)
+        app.set_user(UserFactory())
+
+        response = app.get(self._url(org, dataset, distribution), expect_errors=True)
+
+        assert response.status_code == 403
+        assert DatasetDistribution.objects.filter(pk=distribution.pk).exists()
+
+    def test_public_dataset_shows_notice(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org, is_public=True)
+        distribution = DatasetDistributionFactory(dataset=dataset)
+        app.set_user(UserFactory(is_staff=True))
+
+        response = app.get(self._url(org, dataset, distribution))
+
+        assert response.status_code == 200
+        assert DatasetDistribution.objects.filter(pk=distribution.pk).exists()
+
+    def test_post_deletes_distribution(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org, is_public=False)
+        distribution = DatasetDistributionFactory(dataset=dataset)
+        app.set_user(UserFactory(is_staff=True))
+
+        app.get(self._url(org, dataset, distribution)).forms["delete-form"].submit()
+
+        assert not DatasetDistribution.objects.filter(pk=distribution.pk).exists()
+
+    def test_post_deletes_metadata(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org, is_public=False)
+        distribution = DatasetDistributionFactory(dataset=dataset)
+        metadata = MetadataFactory(
+            content_type=ContentType.objects.get_for_model(distribution),
+            object_id=distribution.pk,
+        )
+        app.set_user(UserFactory(is_staff=True))
+
+        app.get(self._url(org, dataset, distribution)).forms["delete-form"].submit()
+
+        assert not Metadata.objects.filter(pk=metadata.pk).exists()
+
+    def test_post_renders_dataset_fragment(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        distribution = DatasetDistributionFactory(dataset=dataset)
+        app.set_user(UserFactory(is_staff=True))
+
+        response = app.get(self._url(org, dataset, distribution)).forms["delete-form"].submit()
+
+        assert response.status_code == 200
+        assert not DatasetDistribution.objects.filter(pk=distribution.pk).exists()
+        hx_trigger = json.loads(response.headers["HX-Trigger"])
+        assert "treeRefresh" in hx_trigger
+        assert hx_trigger["wizardnodecreated"]["nodeKey"] == f"dataset:{dataset.pk}"

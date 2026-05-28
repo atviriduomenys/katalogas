@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -9,13 +10,15 @@ WIZARD_NODE_IS = "is"
 WIZARD_NODE_SERVICE = "service"
 WIZARD_NODE_DATASET = "dataset"
 WIZARD_NODE_DISTRIBUTION = "distribution"
+WIZARD_NODE_IS_PUBLIC_SERVICE = "is_public_service"
 
 WIZARD_ALLOWED_CHILDREN: dict[str, list[str]] = {
     WIZARD_NODE_ORGANIZATION: [WIZARD_NODE_IS],
-    WIZARD_NODE_IS: [WIZARD_NODE_IS, WIZARD_NODE_SERVICE, WIZARD_NODE_DATASET],
+    WIZARD_NODE_IS: [WIZARD_NODE_IS, WIZARD_NODE_IS_PUBLIC_SERVICE, WIZARD_NODE_SERVICE, WIZARD_NODE_DATASET],
     WIZARD_NODE_SERVICE: [WIZARD_NODE_DATASET],
     WIZARD_NODE_DATASET: [WIZARD_NODE_DISTRIBUTION],
     WIZARD_NODE_DISTRIBUTION: [],
+    WIZARD_NODE_IS_PUBLIC_SERVICE: [],
 }
 
 WIZARD_NODE_ICONS: dict[str, str] = {
@@ -23,59 +26,124 @@ WIZARD_NODE_ICONS: dict[str, str] = {
     WIZARD_NODE_IS: "fa-server",
     WIZARD_NODE_SERVICE: "fa-cogs",
     WIZARD_NODE_DATASET: "fa-database",
-    WIZARD_NODE_DISTRIBUTION: "fa-file-lines",
+    WIZARD_NODE_DISTRIBUTION: "fa-file-alt",
+    WIZARD_NODE_IS_PUBLIC_SERVICE: "fa-globe",
 }
 
 WIZARD_NODE_LABELS: dict[str, str] = {
     WIZARD_NODE_ORGANIZATION: _("Organizacija"),
     WIZARD_NODE_IS: _("Informacinė sistema"),
-    WIZARD_NODE_SERVICE: _("Paslauga"),
+    WIZARD_NODE_SERVICE: _("Duomenų paslauga"),
     WIZARD_NODE_DATASET: _("Duomenų rinkinys"),
     WIZARD_NODE_DISTRIBUTION: _("Pateiktis"),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("E. paslauga"),
 }
 
 WIZARD_NODE_LABELS_PLURAL: dict[str, str] = {
     WIZARD_NODE_ORGANIZATION: _("Organizacija"),
     WIZARD_NODE_IS: _("Informacinės sistemos"),
-    WIZARD_NODE_SERVICE: _("Paslaugos"),
+    WIZARD_NODE_SERVICE: _("Duomenų paslaugos"),
     WIZARD_NODE_DATASET: _("Duomenų rinkiniai"),
     WIZARD_NODE_DISTRIBUTION: _("Pateiktys"),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("E. paslaugos"),
 }
 
 WIZARD_TYPE_ORDER: dict[str, int] = {
     WIZARD_NODE_ORGANIZATION: 0,
     WIZARD_NODE_IS: 1,
-    WIZARD_NODE_SERVICE: 2,
-    WIZARD_NODE_DATASET: 3,
-    WIZARD_NODE_DISTRIBUTION: 4,
+    WIZARD_NODE_IS_PUBLIC_SERVICE: 2,
+    WIZARD_NODE_SERVICE: 3,
+    WIZARD_NODE_DATASET: 4,
+    WIZARD_NODE_DISTRIBUTION: 5,
 }
 
 WIZARD_NODE_HELPERS: dict[str, str] = {
-    WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo mazgu."),
-    WIZARD_NODE_SERVICE: _("Sukurti naują paslaugą po šiuo mazgu."),
-    WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo mazgu."),
+    WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo elementu."),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("Sukurti naują e. paslaugą po šiuo elementu."),
+    WIZARD_NODE_SERVICE: _("Sukurti naują duomenų paslaugą po šiuo elementu."),
+    WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo elementu."),
     WIZARD_NODE_DISTRIBUTION: _("Pridėti naują duomenų rinkinio pateiktį."),
 }
 
 WIZARD_TYPE_TO_SUBCLASS_NAME: dict[str, str] = {
     WIZARD_NODE_IS: DCATResourceSubclass.INFORMATION_SYSTEM,
+    WIZARD_NODE_IS_PUBLIC_SERVICE: DCATResourceSubclass.IS_PUBLIC_SERVICE,
     WIZARD_NODE_SERVICE: DCATResourceSubclass.SERVICE,
     WIZARD_NODE_DATASET: DCATResourceSubclass.DATASET,
 }
 
 WIZARD_SUBCLASS_TO_NODE_TYPE: dict[str, str] = {
     DCATResourceSubclass.INFORMATION_SYSTEM: WIZARD_NODE_IS,
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: WIZARD_NODE_IS_PUBLIC_SERVICE,
     DCATResourceSubclass.SERVICE: WIZARD_NODE_SERVICE,
     DCATResourceSubclass.DATASET: WIZARD_NODE_DATASET,
 }
 
+WIZARD_CREATABLE_TYPES: list[str] = sorted(
+    {child_type for child_types in WIZARD_ALLOWED_CHILDREN.values() for child_type in child_types},
+    key=lambda node_type: WIZARD_TYPE_ORDER.get(node_type, 99),
+)
+
+
+def _build_allowed_parents() -> dict[str, list[str]]:
+    """Invert WIZARD_ALLOWED_CHILDREN: child type → parent types that allow it."""
+    allowed_parents: dict[str, list[str]] = {node_type: [] for node_type in WIZARD_ALLOWED_CHILDREN}
+    for parent_type, child_types in WIZARD_ALLOWED_CHILDREN.items():
+        for child_type in child_types:
+            allowed_parents.setdefault(child_type, []).append(parent_type)
+    return allowed_parents
+
+
+WIZARD_ALLOWED_PARENTS: dict[str, list[str]] = _build_allowed_parents()
+
+
+def _build_schema_matrix() -> dict:
+    """„Kūrimo tvarka“ legend matrix derived from WIZARD_ALLOWED_CHILDREN.
+
+    Columns are all creatable child types; rows are parent types that can have
+    children. Each cell marks whether the column type can be created under the
+    row type.
+    """
+    columns = [
+        {
+            "type": child_type,
+            "label": WIZARD_NODE_LABELS[child_type],
+            "icon": WIZARD_NODE_ICONS[child_type],
+        }
+        for child_type in WIZARD_CREATABLE_TYPES
+    ]
+    rows = [
+        {
+            "type": parent_type,
+            "label": WIZARD_NODE_LABELS[parent_type],
+            "icon": WIZARD_NODE_ICONS[parent_type],
+            "cells": [
+                {
+                    "label": WIZARD_NODE_LABELS[child_type],
+                    "allowed": child_type in allowed_children,
+                }
+                for child_type in WIZARD_CREATABLE_TYPES
+            ],
+        }
+        for parent_type, allowed_children in sorted(
+            WIZARD_ALLOWED_CHILDREN.items(), key=lambda item: WIZARD_TYPE_ORDER.get(item[0], 99)
+        )
+        if allowed_children
+    ]
+    return {"columns": columns, "rows": rows}
+
+
+WIZARD_SCHEMA_MATRIX: dict = _build_schema_matrix()
+
 _WIZARD_TREE_MAX_DEPTH = 8
 
 
-def _wizard_node_type(dataset: Dataset) -> str:
+def wizard_node_type(dataset: Dataset) -> str:
     name = dataset.subclass.name if dataset.subclass_id else None
     if name == DCATResourceSubclass.INFORMATION_SYSTEM:
         return WIZARD_NODE_IS
+    if name == DCATResourceSubclass.IS_PUBLIC_SERVICE:
+        return WIZARD_NODE_IS_PUBLIC_SERVICE
     if name == DCATResourceSubclass.SERVICE:
         return WIZARD_NODE_SERVICE
     return WIZARD_NODE_DATASET
@@ -104,6 +172,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
         for subclass in DCATResourceSubclass.objects.filter(
             name__in=[
                 DCATResourceSubclass.INFORMATION_SYSTEM,
+                DCATResourceSubclass.IS_PUBLIC_SERVICE,
                 DCATResourceSubclass.SERVICE,
                 DCATResourceSubclass.DATASET,
             ]
@@ -134,8 +203,21 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
                     )
         return urls
 
+    information_system_paths = list(
+        Dataset.objects.filter(
+            organization=organization,
+            is_public=False,
+            subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,
+        ).values_list("path", flat=True)
+    )
+    conditions = Q(organization=organization)
+    for path in information_system_paths:
+        conditions |= Q(path__startswith=path)
     org_datasets = list(
-        Dataset.objects.filter(organization=organization, is_public=False).select_related("subclass").order_by("path")
+        Dataset.objects.filter(conditions, is_public=False)
+        .select_related("subclass")
+        .prefetch_related("translations", "datasetdistribution_set__translations")
+        .order_by("path")
     )
     datasets_by_id = {dataset.pk: dataset for dataset in org_datasets}
     datasets_by_path = {dataset.path: dataset for dataset in org_datasets}
@@ -179,7 +261,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
         if depth >= _WIZARD_TREE_MAX_DEPTH or dataset.pk in visited:
             return None
         visited = visited | {dataset.pk}
-        node_type = _wizard_node_type(dataset)
+        node_type = wizard_node_type(dataset)
         node_key = f"{node_type}:{dataset.pk}"
         node_title = _wizard_dataset_title(dataset)
         my_ancestor = _wizard_ancestor_summary(node_type, dataset.pk, node_title)
@@ -199,7 +281,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
                 children.append(child_node)
 
         for dist in dataset.datasetdistribution_set.all():
-            dist_title = dist.safe_translation_getter("title", any_language=True) or f"#{dist.pk}"
+            dist_title = dist.display_title
             dist_key = f"{WIZARD_NODE_DISTRIBUTION}:{dist.pk}"
             dist_fragment_url = reverse(
                 "dcat-distribution-update",

@@ -8,16 +8,24 @@ from django.http import HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.functional import cached_property
+from django.views.generic import DeleteView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina.datasets.models import Dataset
+from vitrina.dcat.wizard import wizard_node_type
+from vitrina.orgs.models import Organization
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 
 from django.utils.translation import gettext_lazy as _, get_language
 
-from vitrina.dcat.view_helpers import wizard_breadcrumb_ancestors
+from vitrina.dcat.view_helpers import (
+    can_delete_distribution_in_wizard,
+    datasets_in_org_scope,
+    wizard_breadcrumb_ancestors,
+)
+from vitrina.dcat.views.dataset_views import _render_dataset_fragment
 from vitrina.resources.view_helpers import get_default_distribution_name
 from vitrina.structure.models import Version
 
@@ -29,9 +37,9 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
     @cached_property
     def dataset(self) -> Dataset:
+        organization = get_object_or_404(Organization, pk=self.kwargs.get("organization_id"))
         return get_object_or_404(
-            Dataset.objects.select_related("organization", "subclass"),
-            organization_id=self.kwargs.get("organization_id"),
+            datasets_in_org_scope(organization).select_related("organization", "subclass"),
             pk=self.kwargs.get("dataset_id"),
         )
 
@@ -136,11 +144,13 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet:
+        organization = get_object_or_404(Organization, pk=self.kwargs.get("organization_id"))
+        scoped_dataset_ids = datasets_in_org_scope(organization).values_list("pk", flat=True)
         return (
             super()
             .get_queryset()
             .filter(
-                dataset__organization_id=self.kwargs.get("organization_id"),
+                dataset_id__in=scoped_dataset_ids,
                 dataset_id=self.kwargs.get("dataset_id"),
             )
             .select_related("dataset__organization", "dataset__subclass")
@@ -162,6 +172,7 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
             distribution.dataset, distribution.dataset.organization, include_self=True
         )
+        context["can_delete"] = can_delete_distribution_in_wizard(distribution)
         return context
 
     def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
@@ -195,4 +206,89 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
             self.get_context_data(form=fresh_form),
         )
         response["HX-Trigger"] = "treeRefresh"
+        return response
+
+
+class DcatDistributionDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = DatasetDistribution
+    pk_url_kwarg = "distribution_id"
+    template_name = "vitrina/dcat/_wizard_dataset_delete_fragment.html"
+
+    @cached_property
+    def organization(self) -> Organization:
+        return get_object_or_404(Organization, pk=self.kwargs["organization_id"])
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.DELETE_WIZARD, self.get_object())
+
+    def _wizard_notice(self, message: str) -> HttpResponseBase:
+        distribution = self.get_object()
+        distribution.set_current_language(get_language())
+        messages.warning(self.request, message)
+        form = DatasetDistributionForm(instance=distribution, dataset=distribution.dataset)
+        form.helper.form_tag = False
+        context = {
+            "object": distribution,
+            "form": form,
+            "breadcrumb_ancestors": wizard_breadcrumb_ancestors(
+                distribution.dataset, self.organization, include_self=True
+            ),
+            "can_delete": False,
+        }
+        return render(self.request, "vitrina/dcat/_wizard_distribution_fragment.html", context)
+
+    def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
+        obj = self.get_object()
+        if not can_delete_distribution_in_wizard(obj):
+            return self._wizard_notice(str(_("Šios pateikties ištrinti negalima.")))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self) -> QuerySet:
+        scoped_dataset_ids = datasets_in_org_scope(self.organization).values_list("pk", flat=True)
+        return (
+            super()
+            .get_queryset()
+            .filter(dataset_id__in=scoped_dataset_ids, dataset_id=self.kwargs.get("dataset_id"))
+            .select_related("dataset__organization", "dataset__subclass")
+        )
+
+    def get_context_data(self, **kwargs) -> dict:
+        context = super().get_context_data(**kwargs)
+        context["organization"] = self.organization
+        context["breadcrumb_ancestors"] = wizard_breadcrumb_ancestors(
+            self.object.dataset, self.organization, include_self=True
+        )
+        context["form_title"] = _("Pateiktis")
+        context["cancel_url"] = reverse(
+            "dcat-distribution-update",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "dataset_id": self.object.dataset_id,
+                "distribution_id": self.object.pk,
+            },
+        )
+        context["delete_url"] = reverse(
+            "dcat-distribution-delete",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "dataset_id": self.object.dataset_id,
+                "distribution_id": self.object.pk,
+            },
+        )
+        return context
+
+    def form_valid(self, form) -> HttpResponseBase:
+        dataset = self.object.dataset
+        self.object.metadata.all().delete()
+        self.object.delete()
+        messages.success(self.request, _("Pateiktis ištrinta sėkmingai!"))
+
+        response = _render_dataset_fragment(self.request, dataset, self.organization)
+        dataset_node_key = f"{wizard_node_type(dataset)}:{dataset.pk}"
+        response["HX-Trigger"] = json.dumps(
+            {
+                "treeRefresh": None,
+                "wizardnodecreated": {"nodeKey": dataset_node_key},
+            }
+        )
         return response

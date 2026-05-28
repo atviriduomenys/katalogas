@@ -10,6 +10,7 @@ from vitrina import settings
 from vitrina.classifiers.factories import FrequencyFactory, CategoryFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import (
     Dataset,
     DatasetStructure,
@@ -23,6 +24,9 @@ from vitrina.datasets.models import (
     Contact,
     DCATResourceSubclass,
     DatasetGroupCategoryUri,
+    MeasurementTitle,
+    Measurement,
+    QualityMeasurement,
 )
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
@@ -113,7 +117,7 @@ class DatasetFactory(DjangoModelFactory):
         return dataset
 
     @factory.post_generation
-    def information_system_publishers(self, create: bool, extracted: list[Organization], **kwargs) -> None:
+    def information_system_publishers(self, create: bool, extracted: list[Organization] | None, **kwargs) -> None:
         if not create:
             return
         if extracted:
@@ -261,6 +265,13 @@ class ContactFactory(DjangoModelFactory):
     class Meta:
         model = Contact
 
+    kind = factory.LazyAttribute(
+        lambda o: (
+            Contact.kind_for_object(o.content_type.get_object_for_this_type(pk=o.object_id))
+            if o.content_type and o.object_id
+            else ContactKind.UNREGISTERED
+        )
+    )
     phone = factory.Faker("phone_number")
     email = factory.Faker("email")
     content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))
@@ -275,6 +286,7 @@ class DatasetServiceFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     uuid = factory.Faker("uuid4")
     is_public = True
+    access_rights = Dataset.PUBLIC
     version = 1
     service = True
     title = factory.Dict(
@@ -328,3 +340,25 @@ class DatasetServiceFactory(DjangoModelFactory):
         MetadataFactory.create(
             dataset=self, content_type=ContentType.objects.get_for_model(self), object_id=self.pk, name=name
         )
+
+
+class MeasurementTitleFactory(DjangoModelFactory):
+    class Meta:
+        model = MeasurementTitle
+
+    value = factory.Faker("word")
+
+
+class MeasurementFactory(DjangoModelFactory):
+    class Meta:
+        model = Measurement
+
+    codename = factory.Faker("slug")
+
+
+class QualityMeasurementFactory(DjangoModelFactory):
+    class Meta:
+        model = QualityMeasurement
+
+    codename = factory.Faker("slug")
+    value = factory.Faker("word")

@@ -43,7 +43,7 @@ class TestInformationSystemResourceForm:
 
         schema_uri = getattr(Dataset, schema_uri_attr)
 
-        concept_schema = ConceptSchema.objects.filter(uri=schema_uri).first()
+        concept_schema, _ = ConceptSchema.objects.get_or_create(uri=schema_uri)
         concept_schema2 = ConceptSchemaFactory(uri="foo")
         concept = ConceptFactory(concept_schemas=[concept_schema])
         wrong_schema_concept = ConceptFactory(concept_schemas=[concept_schema2])
@@ -149,11 +149,15 @@ class TestServiceResourceForm:
         request.resolver_match = resolve("/")
         request.user = user
         agent = AgentFactory(organization=organization)
+        Format.objects.get_or_create(title="JSON")
+        Format.objects.get_or_create(title="OpenAPI")
+        Concept.objects.get_or_create(code="UAPI", defaults={"valid_since": "2000-01-01"})
 
         data = {
             "agent": agent,
             "endpoint_url": "http://www.example.com",
             "endpoint_description": "http://www.example.com",
+            "access_rights": Dataset.PUBLIC,
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
@@ -172,13 +176,18 @@ class TestServiceResourceForm:
         request.resolver_match = resolve("/")
         request.user = user
         agent = AgentFactory(organization=organization)
-        concepts_schema = ConceptSchema.objects.get(uri="https://data.gov.lt/id/non-standard/DataServiceStandard")
+        Format.objects.get_or_create(title="JSON")
+        Format.objects.get_or_create(title="OpenAPI")
+        concepts_schema, _ = ConceptSchema.objects.get_or_create(
+            uri="https://data.gov.lt/id/non-standard/DataServiceStandard"
+        )
         concept = Concept.objects.create(code="test", valid_since="2000-01-01")
         concept.concept_schemas.add(concepts_schema)
 
         data = {
             "agent": agent,
             "conforms_to": concept,
+            "access_rights": Dataset.PUBLIC,
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
@@ -193,12 +202,14 @@ class TestServiceResourceForm:
         request.resolver_match = resolve("/")
         request.user = user
         agent = AgentFactory(organization=organization)
-        wrong_format = Format.objects.get(title="API")
+        wrong_format, _ = Format.objects.get_or_create(title="API")
+        Concept.objects.get_or_create(code="UAPI", defaults={"valid_since": "2000-01-01"})
 
         data = {
             "agent": agent,
             "endpoint_type": wrong_format,
             "endpoint_description_type": wrong_format,
+            "access_rights": Dataset.PUBLIC,
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
@@ -218,8 +229,15 @@ class TestServiceResourceForm:
         request.resolver_match = resolve("/")
         request.user = user
 
+        data_service_schema, _ = ConceptSchema.objects.get_or_create(
+            uri="https://data.gov.lt/id/non-standard/DataServiceStandard"
+        )
+        uapi_concept, _ = Concept.objects.get_or_create(code="UAPI", defaults={"valid_since": "2000-01-01"})
+        uapi_concept.concept_schemas.add(data_service_schema)
+
         data = {
-            "conforms_to": Concept.objects.get(code="UAPI"),
+            "conforms_to": uapi_concept,
+            "access_rights": Dataset.PUBLIC,
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
@@ -237,18 +255,22 @@ class TestServiceResourceForm:
         request.resolver_match = resolve("/")
         request.user = user
         agent = AgentFactory(organization=organization)
+        json_format, _ = Format.objects.get_or_create(title="JSON")
+        openapi_format, _ = Format.objects.get_or_create(title="OpenAPI")
+        uapi_concept, _ = Concept.objects.get_or_create(code="UAPI", defaults={"valid_since": "2000-01-01"})
 
         data = {
             "agent": agent,
+            "access_rights": Dataset.PUBLIC,
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
 
         assert not form.is_valid()
         form_cleaned_data = form.cleaned_data
-        form_cleaned_data["endpoint_type"] == Format.objects.get(title="JSON")
-        form_cleaned_data["endpoint_description_type"] == Format.objects.get(title="OpenAPI")
-        form_cleaned_data["conforms_to"] == Concept.objects.get(code="UAPI")
+        assert form_cleaned_data["endpoint_type"] == json_format
+        assert form_cleaned_data["endpoint_description_type"] == openapi_format
+        assert form_cleaned_data["conforms_to"] == uapi_concept
 
 
 class TestCatalogResourceForm:
@@ -274,7 +296,10 @@ class TestCatalogResourceForm:
         assert response.status_code == 200
         form_in_context = response.context["form"]
         assert isinstance(form_in_context, CatalogResourceForm)
-        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form_in_context.errors["conditions"]
+        assert (
+            "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            in form_in_context.errors["conditions"]
+        )
 
 
 class TestResourceSubclassForm:

@@ -1,13 +1,28 @@
 from django.urls import path
 
+from vitrina.dcat.views.contact_views import DcatContactCreateView, DcatContactUpdateView
 from vitrina.dcat.views.dataset_views import (
     DcatDatasetCreateView,
     DcatDatasetUpdateView,
-    DcatDatasetRelationshipUpdateView,
+    DcatDatasetDeleteView,
 )
-from vitrina.dcat.views.distribution_views import DcatDistributionCreateView, DcatDistributionUpdateView
+from vitrina.dcat.views.distribution_views import (
+    DcatDistributionCreateView,
+    DcatDistributionDeleteView,
+    DcatDistributionUpdateView,
+)
 
 urlpatterns = [
+    path(
+        "organization/<int:organization_id>/dcat/contact/",
+        DcatContactCreateView.as_view(),
+        name="dcat-contact-create",
+    ),
+    path(
+        "organization/<int:organization_id>/dcat/contact/<int:contact_id>/update/",
+        DcatContactUpdateView.as_view(),
+        name="dcat-contact-update",
+    ),
     path(
         "organization/<int:organization_id>/dcat/dataset/subclass/<uuid:subclass_uuid>/",
         DcatDatasetCreateView.as_view(),
@@ -24,9 +39,9 @@ urlpatterns = [
         name="dcat-dataset-update",
     ),
     path(
-        "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/relationships/update/",
-        DcatDatasetRelationshipUpdateView.as_view(),
-        name="dcat-dataset-relationships-update",
+        "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/delete/",
+        DcatDatasetDeleteView.as_view(),
+        name="dcat-dataset-delete",
     ),
     path(
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/",
@@ -37,6 +52,11 @@ urlpatterns = [
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/<int:distribution_id>/update/",
         DcatDistributionUpdateView.as_view(),
         name="dcat-distribution-update",
+    ),
+    path(
+        "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/<int:distribution_id>/delete/",
+        DcatDistributionDeleteView.as_view(),
+        name="dcat-distribution-delete",
     ),
     path(
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/<int:distribution_id>/update/version/<int:version_id>/",

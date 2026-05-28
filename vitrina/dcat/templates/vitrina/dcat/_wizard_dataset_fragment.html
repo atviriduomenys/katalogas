@@ -9,9 +9,9 @@
       hx-headers='{"X-Wizard-Request": "true"}'>
     {% csrf_token %}
 
-    <nav class="wizard-crumbs mb-4">
+    <nav class="wizard-crumbs">
         {% for crumb in breadcrumb_ancestors %}
-        <div class="is-flex is-align-items-flex-end" style="gap:.5rem;">
+        <div class="is-flex is-align-items-flex-end">
             <div class="wizard-crumb">
                 <span class="wizard-crumb-label">{{ crumb.type_label }}</span>
                 <span class="wizard-crumb-title">{{ crumb.title }}</span>
@@ -25,34 +25,49 @@
         </div>
     </nav>
 
-    <div class="mb-4">
-        <p class="is-size-5 has-text-weight-semibold">{{ dataset.title }}</p>
-        <p class="has-text-grey is-size-7 mt-1">{% translate "Redaguokite" %} {{ form_title|lower }}</p>
+    <div class="wizard-form-section-header">
+        <p class="wizard-form-section-title">{{ dataset.title }}</p>
+        <p class="wizard-form-section-sub">{% translate "Redaguokite" %} {{ form_title|lower }}</p>
     </div>
 
-    {% include "vitrina/dcat/_wizard_messages.html" %}
-    {% include "vitrina/dcat/_wizard_form_errors.html" %}
+    {% include "vitrina/_wizard_messages.html" %}
+    {% include "vitrina/_wizard_form_errors.html" %}
 
-    <div class="columns">
+    <div class="columns wizard-columns">
         <div class="column">
-            {% crispy form %}
+            <div class="wizard-form-body">
+                {% crispy form %}
+            </div>
         </div>
 
         {% if relationship_form %}
-        <div class="column is-two-fifths" id="wizard-relationship-panel">
-            <div class="wizard-relationship-panel-inner">
-                <p class="is-size-6 has-text-weight-semibold mb-1">{% translate "Susieti su duomenų rinkiniu" %}</p>
-                <p class="has-text-grey is-size-7 mb-4">{% translate "Priskirkite vieną ar kelis duomenų rinkinius prie atitinkamo ryšio." %}</p>
+            <div class="column is-two-fifths" id="wizard-relationship-panel">
+                <div class="wizard-relationship-panel-inner">
+                    <p class="is-size-6 has-text-weight-semibold mb-1">{% translate "Susieti su duomenų rinkiniu" %}</p>
+                    <p class="has-text-grey is-size-7 mb-4">{% translate "Priskirkite vieną ar kelis duomenų rinkinius prie atitinkamo ryšio." %}</p>
 
-                <hr class="mb-4">
+                    <hr class="mb-4">
 
-                {% include "vitrina/dcat/_wizard_form_errors.html" with form=relationship_form %}
+                    {% include "vitrina/_wizard_form_errors.html" with form=relationship_form %}
 
-                {% crispy relationship_form %}
+                    {% crispy relationship_form %}
+                </div>
             </div>
-        </div>
         {% else %}
-        <div class="column is-two-fifths" id="wizard-relationship-panel"></div>
+            <div class="column is-two-fifths" id="wizard-relationship-panel"></div>
         {% endif %}
     </div>
+
 </form>
+{% include "vitrina/dcat/_wizard_codename_preview_script.html" %}
+<div id="wizard-footer-extra" hx-swap-oob="innerHTML">
+    {% if can_delete %}
+        <a href="{% url 'dcat-dataset-delete' organization_id=organization.pk dataset_id=dataset.pk %}"
+           hx-get="{% url 'dcat-dataset-delete' organization_id=organization.pk dataset_id=dataset.pk %}"
+           hx-target="#wizard-main-pane"
+           hx-swap="innerHTML"
+           class="button is-danger is-light">
+            {% translate "Ištrinti" %}
+        </a>
+    {% endif %}
+</div>

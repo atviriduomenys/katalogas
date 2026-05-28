@@ -63,6 +63,7 @@ from vitrina.helpers import (
     prepare_email_by_identifier,
 )
 from vitrina.api.models import ApiKey, ApiScope
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import (
     Dataset,
     Contact,
@@ -583,6 +584,12 @@ class OrganizationContactsView(
             Contact,
             self.organization,
         )
+        context_data["has_dcat_wizard_permissions"] = has_perm(
+            self.request.user,
+            Action.CREATE_WIZARD,
+            Contact,
+            self.organization,
+        )
         context_data["parent_links"].update({None: _("Kontaktai")})
         return context_data
 
@@ -638,6 +645,7 @@ class ContactCreateView(
             email=email if email else contact.email,
             phone=phone if phone else contact.phone,
             position=position,
+            kind=Contact.kind_for_object(contact),
         )
 
         return HttpResponseRedirect(self.get_success_url())
@@ -659,6 +667,9 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
     def has_permission(self):
         contact = get_object_or_404(Contact, pk=self.kwargs.get("contact_id"))
         return has_perm(self.request.user, Action.UPDATE, contact)
+
+    def get_queryset(self):
+        return super().get_queryset().exclude(kind=ContactKind.SERVICE)
 
     def get_success_url(self):
         return reverse("organization-contacts", kwargs={"pk": self.kwargs.get("pk")})
@@ -682,6 +693,7 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
         contact_name = form.cleaned_data.get("contact_name")
         position = form.cleaned_data.get("position")
 
+        self.object.kind = Contact.kind_for_object(contact)
         self.object.email = email or contact.email
         self.object.phone = phone or contact.phone
         self.object.object_id = contact.pk if contact else None

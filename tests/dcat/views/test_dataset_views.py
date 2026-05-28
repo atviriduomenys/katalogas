@@ -1,5 +1,9 @@
+import json
 import uuid
 from unittest.mock import patch
+
+from vitrina.dcat.view_helpers import can_delete_dataset_in_wizard
+from vitrina.resources.factories import DatasetDistributionFactory
 
 import pytest
 from django.conf import settings
@@ -17,16 +21,19 @@ from vitrina.classifiers.factories import (
     ProvenanceStatementFactory,
     RuleFactory,
 )
-from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI
+from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI, SpatialCoverage
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
 from vitrina.datasets.factories import (
     AttributionFactory,
     ContactFactory,
     DatasetAttributionFactory,
     DatasetFactory,
+    DatasetQualifiedRelationFactory,
+    DatasetRelationFactory,
     DCATResourceSubclassFactory,
     RelationFactory,
 )
+from vitrina.structure.factories import MetadataFactory
 from vitrina.datasets.models import (
     Attribution,
     DatasetAttribution,
@@ -39,6 +46,7 @@ from vitrina.datasets.models import (
 from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
     InformationSystemResourceForm,
+    ISPublicServiceResourceForm,
     ServiceResourceForm,
     InformationSystemUpdateForm,
     ServiceUpdateForm,
@@ -109,8 +117,6 @@ class TestDcatDatasetCreateView:
         assert response.status_code == 404
 
     def test_coordinator_of_different_org_returns_403(self, app: DjangoTestApp):
-        from django.contrib.contenttypes.models import ContentType
-
         org = OrganizationFactory()
         other_org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
@@ -152,6 +158,7 @@ class TestDcatDatasetCreateView:
             (DCATResourceSubclass.INFORMATION_SYSTEM, InformationSystemResourceForm),
             (DCATResourceSubclass.SERVICE, ServiceResourceForm),
             (DCATResourceSubclass.DATASET, DatasetResourceForm),
+            (DCATResourceSubclass.IS_PUBLIC_SERVICE, ISPublicServiceResourceForm),
         ],
     )
     def test_get_uses_correct_form_per_subclass(self, app: DjangoTestApp, subclass_name: str, expected_form_class):
@@ -433,6 +440,37 @@ class TestDcatDatasetCreateView:
         assert child is not None
         assert child.get_parent().pk == parent.pk
 
+    def test_parent_from_different_org_returns_404(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        other_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        parent = DatasetFactory(organization=other_org, subclass=subclass, is_public=False)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create-with-parent",
+            kwargs={"organization_id": org.pk, "parent_id": parent.pk, "subclass_uuid": subclass.pk},
+        )
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 404
+
+    def test_public_parent_returns_404(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        parent = DatasetFactory(organization=org, subclass=subclass, is_public=True)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create-with-parent",
+            kwargs={"organization_id": org.pk, "parent_id": parent.pk, "subclass_uuid": subclass.pk},
+        )
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 404
+
     def test_post_saves_dataset_without_parent(self, app: DjangoTestApp):
         org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
@@ -514,6 +552,68 @@ class TestDcatDatasetCreateView:
         assert dataset is not None
         assert dataset.organization == form_org
         assert response.status_code == 200
+
+    def test_post_is_public_service_saves_all_fields(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        is_public_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        parent_is = DatasetFactory(organization=org, subclass=is_subclass, is_public=False, metadata=f"{org.name}/myis")
+        contact = ContactFactory(organization=org)
+        rule = RuleFactory()
+        category = CategoryFactory()
+        service_type_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.SERVICE_TYPE_SCHEME_URI)
+        service_type = ConceptFactory(concept_schemas=[service_type_schema])
+        adms_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.IS_PUBLIC_SERVICE_STATUS_SCHEME_URI)
+        status_concept = ConceptFactory(concept_schemas=[adms_schema])
+        spatial_coverage = SpatialCoverage.objects.create(name="Vilnius", order=0)
+        pasis_agency, _ = Agency.objects.get_or_create(
+            code=Agency.PASIS_CODE,
+            defaults={"name": "PASIS", "uri": "https://www.pasis.lt", "identifier_validation_type": None},
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create-with-parent",
+            kwargs={
+                "organization_id": org.pk,
+                "subclass_uuid": is_public_service_subclass.pk,
+                "parent_id": parent_is.pk,
+            },
+        )
+        form = app.get(url).forms["wizard-fragment-form"]
+        form["title"] = "IS Public Service All Fields"
+        form["description"] = "IS public service description"
+        form["identifier"] = "paslauga_1"
+        form["information_system_publishers"].force_value([str(publisher_org.pk)])
+        form["landing_page"] = "https://example.com/service"
+        form["contact"] = contact.pk
+        form["follows"].force_value([str(rule.pk)])
+        form["category"].force_value([str(category.pk)])
+        form["service_type"].force_value([str(service_type.pk)])
+        form["is_public_service_status"].force_value(str(status_concept.pk))
+        form["spatial_coverages"].force_value([str(spatial_coverage.pk)])
+        with patch("vitrina.datasets.models.update_applicable_legislation_description"):
+            form.submit()
+
+        dataset = Dataset.objects.filter(translations__title="IS Public Service All Fields").first()
+        assert dataset is not None
+        assert dataset.organization == org
+        assert dataset.subclass == is_public_service_subclass
+        assert dataset.is_public is False
+        assert dataset.catalog == Catalog.objects.get(identifier=Catalog.IDENTIFIER_ISRIS)
+        assert dataset.get_parent() == parent_is
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
+        assert dataset.landing_page == "https://example.com/service"
+        assert dataset.contact == contact
+        assert dataset.follows.filter(pk=rule.pk).exists()
+        assert dataset.category.filter(pk=category.pk).exists()
+        assert dataset.service_type.filter(pk=service_type.pk).exists()
+        assert dataset.is_public_service_status == status_concept
+        assert dataset.spatial_coverages.filter(pk=spatial_coverage.pk).exists()
+        assert Identifier.objects.filter(resource=dataset, notation="paslauga_1", scheme_agency=pasis_agency).exists()
+        assert Metadata.objects.get(dataset=dataset).name == f"{org.name}/myis/paslauga_1"
 
 
 class TestDcatDatasetUpdateView:
@@ -870,11 +970,14 @@ class TestDcatDatasetUpdateView:
         agency = Agency.objects.get(code=Agency.RISR_CODE)
         IdentifierFactory(resource=dataset, scheme_agency=agency, notation="1111")
         catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         catalog_dataset = DatasetFactory(organization=org, subclass=catalog_subclass, is_public=False)
         other_is = DatasetFactory(organization=org, subclass=subclass, is_public=False)
         other_is2 = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        related_service_dataset = DatasetFactory(organization=org, subclass=service_subclass, is_public=False)
         catalog_relation = RelationFactory(name=Relation.CATALOG)
-        rti_relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
+        relates_to_information_system_relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
+        relates_to_data_service_relation = Relation.objects.get(name=Relation.RELATES_TO_DATA_SERVICE)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -900,6 +1003,7 @@ class TestDcatDatasetUpdateView:
         form["has_part"].force_value([str(catalog_dataset.pk)])
         form["relates_to_information_system"].force_value([str(other_is.pk)])
         form["related_information_system"].force_value([str(other_is2.pk)])
+        form["relates_to_data_service"].force_value([str(related_service_dataset.pk)])
         form["category"].force_value([str(category.pk)])
 
         with patch("vitrina.datasets.models.update_applicable_legislation_description"):
@@ -926,8 +1030,15 @@ class TestDcatDatasetUpdateView:
         assert DatasetRelation.objects.filter(
             relation=catalog_relation, dataset=dataset, part_of=catalog_dataset
         ).exists()
-        assert DatasetRelation.objects.filter(relation=rti_relation, dataset=other_is, part_of=dataset).exists()
-        assert DatasetRelation.objects.filter(relation=rti_relation, dataset=dataset, part_of=other_is2).exists()
+        assert DatasetRelation.objects.filter(
+            relation=relates_to_information_system_relation, dataset=other_is, part_of=dataset
+        ).exists()
+        assert DatasetRelation.objects.filter(
+            relation=relates_to_information_system_relation, dataset=dataset, part_of=other_is2
+        ).exists()
+        assert DatasetRelation.objects.filter(
+            relation=relates_to_data_service_relation, dataset=dataset, part_of=related_service_dataset
+        ).exists()
 
     def test_post_service_updates_all_fields(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -1111,73 +1222,6 @@ class TestDcatDatasetUpdateView:
         assert metadata.name == f"{org.name}newname"
         assert metadata.draft is True
 
-    def test_post_changes_parent(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
-        importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
-        importance = ConceptFactory(concept_schemas=[importance_schema])
-        is_type_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        is_type = ConceptFactory(concept_schemas=[is_type_schema])
-        parent = DatasetFactory(organization=org, subclass=subclass, is_public=False)
-        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
-        )
-        form = app.get(url).forms["wizard-fragment-form"]
-        form["title"] = "IS Title"
-        form["description"] = "IS description"
-        form["name_prefix"].force_value(f"{parent.name}")
-        form["name"] = "updateis"
-        form["identifier"] = "1234"
-        form["information_system_importance"] = importance.pk
-        form["information_system_type"] = is_type.pk
-        form["information_system_publishers"] = [str(org.pk)]
-        form["creator"].force_value(str(org.pk))
-        form["information_system_assessment_url"] = "https://example.com/assessment"
-        form["parent"] = parent.pk
-        form.submit()
-
-        dataset.refresh_from_db()
-        assert dataset.get_parent().pk == parent.pk
-
-    def test_post_removes_parent(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
-        importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
-        importance = ConceptFactory(concept_schemas=[importance_schema])
-        is_type_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        is_type = ConceptFactory(concept_schemas=[is_type_schema])
-        parent = DatasetFactory(organization=org, subclass=subclass, is_public=True)
-        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
-        dataset.move(parent, "sorted-child")
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
-        )
-        form = app.get(url).forms["wizard-fragment-form"]
-        form["title"] = "IS Title"
-        form["description"] = "IS description"
-        form["name_prefix"].force_value(f"{org.name}")
-        form["name"] = "updateis"
-        form["identifier"] = "1234"
-        form["information_system_importance"] = importance.pk
-        form["information_system_type"] = is_type.pk
-        form["information_system_publishers"] = [str(org.pk)]
-        form["creator"].force_value(str(org.pk))
-        form["information_system_assessment_url"] = "https://example.com/assessment"
-        form["parent"].force_value("")
-        form.submit()
-
-        dataset.refresh_from_db()
-        assert dataset.get_parent() is None
-
     def test_post_sets_status_has_data_when_endpoint_url_changes_on_service(self, app: DjangoTestApp):
         org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
@@ -1272,3 +1316,322 @@ class TestDcatDatasetUpdateView:
         dataset.refresh_from_db()
         assert dataset.published is None
         assert dataset.status == Dataset.UNASSIGNED
+
+    def test_post_is_public_service_updates_all_fields(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        is_public_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        parent_is = DatasetFactory(organization=org, subclass=is_subclass, is_public=False, metadata=f"{org.name}/myis")
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=is_public_service_subclass,
+            is_public=False,
+            metadata=f"{org.name}/myis/old_paslauga",
+        )
+        dataset.move(parent_is, "sorted-child")
+        dataset.refresh_from_db()
+        contact = ContactFactory(organization=org)
+        rule = RuleFactory()
+        category = CategoryFactory()
+        service_type_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.SERVICE_TYPE_SCHEME_URI)
+        service_type = ConceptFactory(concept_schemas=[service_type_schema])
+        adms_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.IS_PUBLIC_SERVICE_STATUS_SCHEME_URI)
+        status_concept = ConceptFactory(concept_schemas=[adms_schema])
+        spatial_coverage = SpatialCoverage.objects.create(name="Kaunas", order=1)
+        pasis_agency, _ = Agency.objects.get_or_create(
+            code=Agency.PASIS_CODE,
+            defaults={"name": "PASIS", "uri": "https://www.pasis.lt", "identifier_validation_type": None},
+        )
+        IdentifierFactory(resource=dataset, scheme_agency=pasis_agency, notation="old_paslauga")
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        produced_dataset = DatasetFactory(subclass=dataset_subclass)
+        produces_relation = Relation.objects.get(name=Relation.PRODUCES)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["wizard-fragment-form"]
+        form["title"] = "Updated IS Public Service"
+        form["description"] = "Updated description"
+        form["identifier"] = "new_paslauga"
+        form["information_system_publishers"].force_value([str(publisher_org.pk)])
+        form["landing_page"] = "https://example.com/updated-service"
+        form["contact"] = contact.pk
+        form["follows"].force_value([str(rule.pk)])
+        form["category"].force_value([str(category.pk)])
+        form["service_type"].force_value([str(service_type.pk)])
+        form["is_public_service_status"].force_value(str(status_concept.pk))
+        form["spatial_coverages"].force_value([str(spatial_coverage.pk)])
+        form["produces_datasets"].force_value([str(produced_dataset.pk)])
+        form.submit()
+
+        dataset.refresh_from_db()
+        assert dataset.title == "Updated IS Public Service"
+        assert dataset.description == "Updated description"
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
+        assert dataset.landing_page == "https://example.com/updated-service"
+        assert dataset.contact == contact
+        assert dataset.follows.filter(pk=rule.pk).exists()
+        assert dataset.category.filter(pk=category.pk).exists()
+        assert dataset.service_type.filter(pk=service_type.pk).exists()
+        assert dataset.is_public_service_status == status_concept
+        assert dataset.spatial_coverages.filter(pk=spatial_coverage.pk).exists()
+        assert Identifier.objects.filter(resource=dataset).count() == 1
+        assert Identifier.objects.filter(resource=dataset, notation="new_paslauga", scheme_agency=pasis_agency).exists()
+        assert DatasetRelation.objects.filter(
+            relation=produces_relation, dataset=dataset, part_of=produced_dataset
+        ).exists()
+
+    def test_post_invalid_rel_form_does_not_save_dataset(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=subclass,
+            is_public=False,
+            title="Original Title",
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["wizard-fragment-form"]
+        form["title"] = "New Title"
+        form["has_part"].force_value(["999999"])  # non-existent PK — fails rel form validation
+
+        response = form.submit()
+
+        assert response.status_code == 200
+        dataset.refresh_from_db()
+        assert dataset.title == "Original Title"
+
+
+class TestDcatDatasetDeleteView:
+    def test_unauthenticated_redirects_to_login(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": dataset.pk})
+        response = app.get(url)
+
+        assert response.status_code == 302
+        assert settings.LOGIN_URL in response.location
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+
+    def test_no_permission_returns_403(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        user = UserFactory()
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": dataset.pk})
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 403
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+
+    def test_public_dataset_shows_notice(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=True)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": dataset.pk})
+        response = app.get(url)
+
+        assert response.status_code == 200
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+
+    def test_dataset_with_children_shows_notice(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        parent = DatasetFactory(organization=org, subclass=is_subclass, is_public=False)
+        child = Dataset(
+            organization=org,
+            subclass=dataset_subclass,
+            is_public=False,
+            uuid=str(uuid.uuid4()),
+            version=1,
+            will_be_financed=False,
+            status=Dataset.HAS_DATA,
+            access_rights=Dataset.PUBLIC,
+        )
+        parent.add_child(instance=child)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": parent.pk})
+        response = app.get(url)
+
+        assert response.status_code == 200
+        assert Dataset.objects.filter(pk=parent.pk).exists()
+
+    def test_dataset_with_distributions_shows_notice(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        DatasetDistributionFactory(dataset=dataset)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": dataset.pk})
+        response = app.get(url)
+
+        assert response.status_code == 200
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+
+    def test_get_shows_confirmation_page(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": dataset.pk})
+        response = app.get(url)
+
+        assert response.status_code == 200
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+
+    def test_post_deletes_dataset(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        parent = DatasetFactory(organization=org, subclass=is_subclass, is_public=False)
+        child = Dataset(
+            organization=org,
+            subclass=dataset_subclass,
+            is_public=False,
+            uuid=str(uuid.uuid4()),
+            version=1,
+            will_be_financed=False,
+            status=Dataset.HAS_DATA,
+            access_rights=Dataset.PUBLIC,
+        )
+        parent.add_child(instance=child)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": child.pk})
+        app.get(url).forms["delete-form"].submit()
+
+        assert not Dataset.objects.filter(pk=child.pk).exists()
+
+    def test_post_redirects_to_parent_after_delete(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        parent = DatasetFactory(organization=org, subclass=is_subclass, is_public=False)
+        child = Dataset(
+            organization=org,
+            subclass=dataset_subclass,
+            is_public=False,
+            uuid=str(uuid.uuid4()),
+            version=1,
+            will_be_financed=False,
+            status=Dataset.HAS_DATA,
+            access_rights=Dataset.PUBLIC,
+        )
+        parent.add_child(instance=child)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": child.pk})
+        response = app.get(url).forms["delete-form"].submit()
+
+        assert response.status_code == 200
+        assert not Dataset.objects.filter(pk=child.pk).exists()
+        hx_trigger = json.loads(response.headers["HX-Trigger"])
+        assert "treeRefresh" in hx_trigger
+        assert hx_trigger["wizardnodecreated"]["nodeKey"] == f"is:{parent.pk}"
+
+    def test_post_redirects_to_org_when_no_parent(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": dataset.pk})
+        response = app.get(url).forms["delete-form"].submit()
+
+        assert not Dataset.objects.filter(pk=dataset.pk).exists()
+        assert response.status_code == 200
+        assert reverse("organization-detail", kwargs={"pk": org.pk}) in response.headers["HX-Redirect"]
+
+    def test_post_deletes_related_objects(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        attribution = DatasetAttributionFactory(dataset=dataset)
+        metadata = MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+        )
+        dataset_relation = DatasetRelationFactory(dataset=dataset)
+        qualified_relation = DatasetQualifiedRelationFactory(dataset=dataset)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dcat-dataset-delete", kwargs={"organization_id": org.pk, "dataset_id": dataset.pk})
+        app.get(url).forms["delete-form"].submit()
+
+        assert not DatasetAttribution.objects.filter(pk=attribution.pk).exists()
+        assert not Metadata.objects.filter(pk=metadata.pk).exists()
+        assert not DatasetRelation.objects.filter(pk=dataset_relation.pk).exists()
+        assert not DatasetQualifiedRelation.objects.filter(pk=qualified_relation.pk).exists()
+
+
+class TestCanDeleteDatasetInWizard:
+    def test_returns_true_when_not_public_no_children_no_distributions(self):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+
+        assert can_delete_dataset_in_wizard(dataset) is True
+
+    def test_returns_false_when_dataset_is_public(self):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=True)
+
+        assert can_delete_dataset_in_wizard(dataset) is False
+
+    def test_returns_false_when_dataset_has_children(self):
+        org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        parent = DatasetFactory(organization=org, subclass=is_subclass, is_public=False)
+        child = Dataset(
+            organization=org,
+            subclass=dataset_subclass,
+            is_public=False,
+            uuid=str(uuid.uuid4()),
+            version=1,
+            will_be_financed=False,
+            status=Dataset.HAS_DATA,
+            access_rights=Dataset.PUBLIC,
+        )
+        parent.add_child(instance=child)
+
+        assert can_delete_dataset_in_wizard(parent) is False
+
+    def test_returns_false_when_dataset_has_distributions(self):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        DatasetDistributionFactory(dataset=dataset)
+
+        assert can_delete_dataset_in_wizard(dataset) is False

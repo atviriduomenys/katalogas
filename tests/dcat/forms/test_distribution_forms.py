@@ -2,8 +2,8 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import override as translation_override
 
-from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, FormFieldHelpTextFactory, LicenceFactory
-from vitrina.classifiers.models import ConceptSchema, FormFieldHelpText
+from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, FormFieldTextFactory, LicenceFactory
+from vitrina.classifiers.models import ConceptSchema, FormFieldText
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.factories import OrganizationFactory
@@ -15,23 +15,17 @@ pytestmark = pytest.mark.django_db
 
 
 class TestDatasetDistributionForm:
-    def test_access_url_availability_title_description_are_required(self):
+    def test_required_and_optional_fields(self):
         dataset = DatasetFactory()
 
         form = DatasetDistributionForm(dataset)
 
-        assert form.fields["access_url"].required is True
-        assert form.fields["availability"].required is True
-        assert form.fields["title"].required is True
-        assert form.fields["description"].required is True
+        assert form.fields["access_url"].required
+        assert form.fields["description"].required
 
-    def test_data_service_and_format_not_required(self):
-        dataset = DatasetFactory()
-
-        form = DatasetDistributionForm(dataset)
-
+        assert not form.fields["availability"].required
         assert not form.fields["data_service"].required
-        assert not form.fields["format"].required
+        assert form.fields["format"].required
 
     def test_default_licence_set_as_initial_when_creating(self):
         dataset = DatasetFactory()
@@ -130,7 +124,7 @@ class TestDatasetDistributionForm:
 
     def test_status_queryset_filtered_to_distribution_status_concepts(self):
         dataset = DatasetFactory()
-        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
+        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
         matching_concept = ConceptFactory(concept_schemas=[status_schema])
         other_concept = ConceptFactory()
 
@@ -138,6 +132,18 @@ class TestDatasetDistributionForm:
 
         assert matching_concept in form.fields["status"].queryset
         assert other_concept not in form.fields["status"].queryset
+
+    def test_status_queryset_includes_non_distribution_status_concept_that_is_currently_saved(self):
+        dataset = DatasetFactory()
+        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
+        matching_concept = ConceptFactory(concept_schemas=[status_schema])
+        other_concept = ConceptFactory()
+        distribution = DatasetDistributionFactory(dataset=dataset, status=other_concept)
+
+        form = DatasetDistributionForm(dataset, instance=distribution)
+
+        assert matching_concept in form.fields["status"].queryset
+        assert other_concept in form.fields["status"].queryset
 
     def test_duplicate_download_url_in_same_dataset_raises_error(self):
         dataset = DatasetFactory()
@@ -185,8 +191,14 @@ class TestDatasetDistributionForm:
         assert not form.is_valid()
         assert "rights_relation" in form.errors
         assert "conditions" in form.errors
-        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form.errors["rights_relation"]
-        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form.errors["conditions"]
+        assert (
+            "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            in form.errors["rights_relation"]
+        )
+        assert (
+            "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            in form.errors["conditions"]
+        )
 
     def test_non_ascii_name_raises_error(self):
         dataset = DatasetFactory()
@@ -262,8 +274,8 @@ class TestDatasetDistributionForm:
 
     def test_dynamic_help_text_applied(self):
         dataset = DatasetFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_DISTRIBUTION,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DISTRIBUTION,
             field_name="documentation",
             help_text_lt="Dinaminis tekstas",
         )

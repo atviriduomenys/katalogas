@@ -9,9 +9,9 @@
       hx-headers='{"X-Wizard-Request": "true"}'>
     {% csrf_token %}
 
-    <nav class="wizard-crumbs mb-4">
+    <nav class="wizard-crumbs">
         {% for crumb in breadcrumb_ancestors %}
-        <div class="is-flex is-align-items-flex-end" style="gap:.5rem;">
+        <div class="is-flex is-align-items-flex-end">
             <div class="wizard-crumb">
                 <span class="wizard-crumb-label">{{ crumb.type_label }}</span>
                 <span class="wizard-crumb-title">{{ crumb.title }}</span>
@@ -25,13 +25,16 @@
         </div>
     </nav>
 
-    <div class="mb-4">
-        <p class="is-size-5 has-text-weight-semibold">{% translate "Nauja Pateiktis" %}</p>
-        <p class="has-text-grey is-size-7 mt-1">{% translate "Pildykite pateiktį" %}</p>
+    <div class="wizard-form-section-header">
+        <p class="wizard-form-section-title">{% translate "Nauja Pateiktis" %}</p>
+        <p class="wizard-form-section-sub">{% translate "Pildykite pateiktį" %}</p>
     </div>
 
-    {% include "vitrina/dcat/_wizard_messages.html" %}
-    {% include "vitrina/dcat/_wizard_form_errors.html" %}
+    {% include "vitrina/_wizard_messages.html" %}
+    {% include "vitrina/_wizard_form_errors.html" %}
 
-    {% crispy form %}
+    <div class="wizard-form-body">
+        {% crispy form %}
+    </div>
 </form>
+<div id="wizard-footer-extra" hx-swap-oob="innerHTML"></div>

@@ -360,7 +360,7 @@ class Activity(UUIDBaseModel):
         return self.title
 
 
-class FormFieldHelpText(TranslatableModel):
+class FormFieldText(TranslatableModel):
     DCAT_INFORMATION_SYSTEM = "dcat_information_system"
     DCAT_SERVICE = "dcat_service"
     DCAT_DATASET = "dcat_dataset"
@@ -368,6 +368,8 @@ class FormFieldHelpText(TranslatableModel):
     DCAT_IS_RELATIONSHIPS = "dcat_is_relationships"
     DCAT_SERVICE_RELATIONSHIPS = "dcat_service_relationships"
     DCAT_DATASET_RELATIONSHIPS = "dcat_dataset_relationships"
+    DCAT_IS_PUBLIC_SERVICE = "dcat_is_public_service"
+    DCAT_CONTACT = "dcat_contact"
 
     FORM_NAME_CHOICES = [
         (DCAT_INFORMATION_SYSTEM, _("DCAT: Informacinė sistema")),
@@ -377,6 +379,8 @@ class FormFieldHelpText(TranslatableModel):
         (DCAT_IS_RELATIONSHIPS, _("DCAT: IS ryšiai")),
         (DCAT_SERVICE_RELATIONSHIPS, _("DCAT: Paslaugos ryšiai")),
         (DCAT_DATASET_RELATIONSHIPS, _("DCAT: Duomenų rinkinio ryšiai")),
+        (DCAT_IS_PUBLIC_SERVICE, _("DCAT: E. paslauga")),
+        (DCAT_CONTACT, _("DCAT: Kontaktas")),
     ]
 
     form_name = models.CharField(
@@ -389,6 +393,11 @@ class FormFieldHelpText(TranslatableModel):
         verbose_name=_("Lauko pavadinimas"),
     )
     translations = TranslatedFields(
+        label=models.CharField(
+            max_length=255,
+            verbose_name=_("Lauko antraštė"),
+            blank=True,
+        ),
         help_text=models.TextField(
             verbose_name=_("Pagalbinis tekstas"),
             blank=True,
@@ -404,8 +413,21 @@ class FormFieldHelpText(TranslatableModel):
 
     class Meta:
         unique_together = [("form_name", "field_name")]
-        verbose_name = _("Formos lauko pagalbinis tekstas")
-        verbose_name_plural = _("Formų laukų pagalbiniai tekstai")
+        verbose_name = _("Formos lauko tekstas")
+        verbose_name_plural = _("Formų laukų tekstai")
 
     def __str__(self) -> str:
         return f"{self.form_name} / {self.field_name}"
+
+
+class SpatialCoverage(UUIDBaseModel):
+    name = models.CharField(max_length=255, unique=True, verbose_name=_("Pavadinimas"))
+    order = models.PositiveIntegerField(verbose_name=_("Eilės numeris"))
+
+    class Meta:
+        verbose_name = _("Teritorinė aprėptis")
+        verbose_name_plural = _("Teritorinės aprėptys")
+        ordering = ["order"]
+
+    def __str__(self) -> str:
+        return self.name

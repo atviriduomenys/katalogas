@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from django.contrib import messages
 from django.core.handlers.wsgi import WSGIRequest
 from django.db import transaction
+from django.db.models import Q, QuerySet
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.datasets.models import (
@@ -14,18 +15,36 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
+from vitrina.resources.models import DatasetDistribution
 
 if TYPE_CHECKING:
-    from vitrina.dcat.forms.dataset_forms import BaseResourceForm
-
-_SUBCLASS_CRUMB_LABELS = {
-    DCATResourceSubclass.INFORMATION_SYSTEM: _("Informacinė sistema"),
-    DCATResourceSubclass.SERVICE: _("Paslauga"),
-    DCATResourceSubclass.DATASET: _("Duomenų rinkinys"),
-}
+    from vitrina.orgs.models import Organization
+    from vitrina.dcat.forms.dataset_forms import BaseResourceForm, ISPublicServiceRelationshipForm
 
 
-def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include_self: bool = False) -> list[dict]:
+def datasets_in_org_scope(organization: "Organization") -> QuerySet:
+    """Return a Dataset queryset scoped to the wizard organization.
+
+    Includes datasets directly owned by the org AND datasets that are
+    descendants of IS nodes owned by the org (which may have a different
+    organization FK set as their data provider).
+    """
+    is_paths = list(
+        Dataset.objects.filter(
+            organization=organization,
+            is_public=False,
+            subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,
+        ).values_list("path", flat=True)
+    )
+    conditions = Q(organization=organization)
+    for path in is_paths:
+        conditions |= Q(path__startswith=path)
+    return Dataset.objects.filter(conditions)
+
+
+def wizard_breadcrumb_ancestors(
+    dataset: "Dataset | None", organization: "Organization", include_self: bool = False
+) -> list[dict]:
     """Build the breadcrumb ancestor list for wizard fragment templates.
 
     Returns one dict per crumb that precedes the current item (the last shown separately in the template).
@@ -34,9 +53,9 @@ def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include
     """
 
     def _crumb(ds: Dataset) -> dict:
-        subclass_name = ds.subclass.name if ds.subclass_id else None
+        type_label = (ds.subclass.translated_title if ds.subclass_id else None) or str(_("Duomenų rinkinys"))
         return {
-            "type_label": str(_SUBCLASS_CRUMB_LABELS.get(subclass_name, _("Duomenų rinkinys"))),
+            "type_label": type_label,
             "title": ds.safe_translation_getter("title", any_language=True) or f"#{ds.pk}",
         }
 
@@ -44,7 +63,7 @@ def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include
     if dataset is None:
         return crumbs
 
-    for ancestor in dataset.get_ancestors().select_related("subclass"):
+    for ancestor in dataset.get_ancestors().select_related("subclass").prefetch_related("subclass__translations"):
         crumbs.append(_crumb(ancestor))
 
     if include_self:
@@ -58,6 +77,7 @@ RELATION_FIELD_MAP = [
     ("has_part", Relation.CATALOG, False),
     ("relates_to_information_system", Relation.RELATES_TO_INFORMATION_SYSTEM, True),
     ("related_information_system", Relation.RELATES_TO_INFORMATION_SYSTEM, False),
+    ("relates_to_data_service", Relation.RELATES_TO_DATA_SERVICE, False),
     ("serves_datasets", Relation.SERVICE, False),
 ]
 
@@ -98,6 +118,38 @@ def save_dataset_relations(request: WSGIRequest, dataset: Dataset, form: "BaseRe
     dataset.save()
 
 
+PRODUCES_FIELDS = ["produces_datasets", "produces_services", "produces_catalogs"]
+
+
+@transaction.atomic
+def save_produces_relations(request: WSGIRequest, dataset: Dataset, form: "ISPublicServiceRelationshipForm") -> None:
+    if not any(field in form.changed_data for field in PRODUCES_FIELDS):
+        return
+
+    try:
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+    except Relation.DoesNotExist:
+        warning_message = _(
+            "Ryšio tipas '{relation_name}' nerastas, todėl laukų '{datasets}', '{services}', '{catalogs}' "
+            "reikšmės neišsaugotos. Susisiekite su administratoriumi."
+        ).format(
+            relation_name=Relation.PRODUCES,
+            datasets=form.fields["produces_datasets"].label,
+            services=form.fields["produces_services"].label,
+            catalogs=form.fields["produces_catalogs"].label,
+        )
+        messages.warning(request, warning_message)
+        return
+
+    DatasetRelation.objects.filter(relation=relation, dataset=dataset).delete()
+    for field_name in PRODUCES_FIELDS:
+        for selected_dataset in form.cleaned_data.get(field_name) or []:
+            dataset_relation = DatasetRelation.objects.create(
+                relation=relation, dataset=dataset, part_of=selected_dataset
+            )
+            dataset.part_of.add(dataset_relation)
+
+
 @transaction.atomic
 def save_dataset_attribution(request: WSGIRequest, dataset: Dataset, form: "BaseResourceForm") -> None:
     if "qualified_attribution" not in form.cleaned_data or "qualified_attribution" not in form.changed_data:
@@ -130,3 +182,13 @@ def save_dataset_qualified_relations(dataset: Dataset, form: "BaseResourceForm")
     for url in form.cleaned_data["qualified_relation"]:
         DatasetQualifiedRelation.objects.get_or_create(dataset=dataset, url=url)
     dataset.save()
+
+
+def can_delete_dataset_in_wizard(dataset: Dataset) -> bool:
+    return (
+        not dataset.is_public and not dataset.get_children().exists() and not dataset.datasetdistribution_set.exists()
+    )
+
+
+def can_delete_distribution_in_wizard(distribution: DatasetDistribution) -> bool:
+    return not distribution.dataset.is_public

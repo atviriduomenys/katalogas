@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-03 10:19+0300\n"
+"POT-Creation-Date: 2026-06-22 15:45+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -302,11 +302,20 @@ msgstr "DCAT: Service relationships"
 msgid "DCAT: Duomenų rinkinio ryšiai"
 msgstr "DCAT: Dataset relations"
 
+msgid "DCAT: E. paslauga"
+msgstr "DCAT: E-service"
+
+msgid "DCAT: Kontaktas"
+msgstr "DCAT: Contact"
+
 msgid "Formos pavadinimas"
 msgstr "Form name"
 
 msgid "Lauko pavadinimas"
 msgstr "Field name"
+
+msgid "Lauko antraštė"
+msgstr "Field label"
 
 msgid "Pagalbinis tekstas"
 msgstr "Help text"
@@ -321,11 +330,20 @@ msgstr ""
 "Extended help text will be shown as a popup when the 'i' icon is clicked, if "
 "the form supports it"
 
-msgid "Formos lauko pagalbinis tekstas"
-msgstr "Form field help text"
+msgid "Formos lauko tekstas"
+msgstr "Form field text"
 
-msgid "Formų laukų pagalbiniai tekstai"
-msgstr "Form field help texts"
+msgid "Formų laukų tekstai"
+msgstr "Form fields texts"
+
+msgid "Eilės numeris"
+msgstr "Order number"
+
+msgid "Teritorinė aprėptis"
+msgstr "Spatial coverage"
+
+msgid "Teritorinės aprėptys"
+msgstr "Spatial coverages"
 
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
@@ -667,6 +685,15 @@ msgstr "Your organization was not added to request organization list"
 msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
 msgstr "Your organization was added to request organization list"
 
+msgid "Registruotas naudotojas"
+msgstr "Registered user"
+
+msgid "Neregistruotas naudotojas"
+msgstr "Non registered user"
+
+msgid "Paslauga"
+msgstr "Service"
+
 msgid "Vėluoja"
 msgstr "Is late"
 
@@ -741,6 +768,21 @@ msgstr "Contact object type"
 
 msgid "Kontaktinis objektas"
 msgstr "Contact object"
+
+msgid "Pasirinkite arba duomenų rinkinį, arba pateiktį — ne abu."
+msgstr "Select either a dataset, or a distribution - not both."
+
+msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
+msgstr "At least one of dataset, or distribution must be selected."
+
+msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
+msgstr "At least one measurement must be selected."
+
+msgid "Turi būti nurodytas bent vienas duomenų rinkinys."
+msgstr "At least one dataset must be selected."
+
+msgid "Turi būti nurodyta bent viena pateiktis."
+msgstr "At least one distribution must be selected."
 
 msgid "Datasets"
 msgstr "Datasets"
@@ -934,8 +976,12 @@ msgstr "Metadata catalog codename"
 msgid "Detalus metaduomenų katalogo aprašas"
 msgstr "Detailed description of the metadata catalog"
 
-msgid "Užpildykite tik vieną teisių deklaracijų lauką."
-msgstr "Please fill in only one field for rights."
+msgid ""
+"Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - "
+"Susijęs dokumentas]."
+msgstr ""
+"Only one of the following fields is allowed to be filled in: [Rights - "
+"Description] or [Rights - Related document]"
 
 msgid "Atsakingas subjektas"
 msgstr "Responsible entity"
@@ -1137,11 +1183,9 @@ msgid "Teisės - Aprašymas"
 msgstr "Rights - Description"
 
 msgid ""
-"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka "
-"dct:rights / dct:description."
+"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights."
 msgstr ""
-"The description of the declaration of rights. Corresponds to dct:rights  / "
-"dct:description."
+"The description of the declaration of rights. Corresponds to dct:rights."
 
 msgid "Katalogas"
 msgstr "Directory"
@@ -1222,11 +1266,15 @@ msgid "Agentas"
 msgstr "Agent"
 
 msgid ""
-"Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba "
-"Agentą arba API adresą. Atitinka dcat:endpointURL"
+"Duomenų publikavimo paslaugą teikiantis agentas. UDTS standartą "
+"atitinkančios paslaugos privalo būti susietos su agentu. Pasirinkite agentą "
+"arba pasirinkite kitą 'Atitinka' lauko reikšmę, privaloma nurodyti arba "
+"Agentą arba API adresą.  Atitinka dcat:endpointURL."
 msgstr ""
-"Agent providing the data publishing service. Either the Agent or the API "
-"address must be specified. Corresponds to dcat:endpointURL."
+"The agent providing the data publishing service. Services that comply with "
+"the UDTS standard must be associated with an agent. Select an agent or "
+"choose a different value for the 'Conforms to' field — either an Agent or an "
+"API address must be specified. Corresponds to dcat:endpointURL."
 
 msgid "API formatas"
 msgstr "API format"
@@ -1244,14 +1292,14 @@ msgstr "DataService dataset"
 msgid "DataSeries rinkinys"
 msgstr "DataSeries dataset"
 
-msgid "Informacinės sistemos tipas"
+msgid "Informacinės sistemos rūšis"
 msgstr "Information system type"
 
 msgid ""
-"Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo "
+"Informacinės sistemos rūšis pagal Valstybės informacinių išteklių valdymo "
 "įstatymo reikalavimus. Atitinka dcataplt:Type."
 msgstr ""
-"Information systems types according to the data processed in them by Article "
+"Information systems type according to the data processed in them by Article "
 "9 of the Law on State Information Resources Management of the Republic of "
 "Lithuania. Corresponds to dcataplt:Type."
 
@@ -1295,8 +1343,8 @@ msgstr ""
 "This property indicates the end date covered by the dataset. Corresponds to "
 "dct:temporal."
 
-msgid "Informacinės sistemos tvarkytojai"
-msgstr "Information system publishers"
+msgid "Tvarkytojas"
+msgstr "Publisher"
 
 msgid ""
 "Ši savybė nurodo subjektus (organizacijas), atsakingus už IS prieinamumą. "
@@ -1311,24 +1359,40 @@ msgstr "Version notes"
 msgid "Versijos skirtumų aprašymas. Atitinka adms:versionNotes."
 msgstr "Description of version changes. Corresponds to adms:versionNotes."
 
-msgid "Laiko skiriamoji geba (sekundėmis)"
-msgstr "Temporal resolution (in seconds)"
-
-msgid "Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."
-msgstr ""
-"Temporal resolution (in seconds). Corresponds to dcat:temporalResolution."
-
-msgid "Erdvinė skiriamoji geba (metrais)"
-msgstr "Spatial resolution (in meters)"
+msgid "Laiko raiška"
+msgstr "Temporal resolution"
 
 msgid ""
-"Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
+"Laiko raiška. Formatas: ISO 8601-2:2019. Atitinka dcat:temporalResolution."
 msgstr ""
-"Spatial resolution (in meters). Corresponds to "
-"dcat:spatialResolutionInMeters."
+"Temporal resolution. Format: ISO 8601-2:2019. Corresponds to "
+"dcat:temporalResolution."
+
+msgid "Erdvinė raiška"
+msgstr "Spatial resolution"
+
+msgid "Erdvinė raiška metrais. Atitinka dcat:spatialResolutionInMeters."
+msgstr ""
+"Spatial resolution in meters. Corresponds to dcat:spatialResolutionInMeters."
+
+msgid "Laikosi"
+msgstr "Follows"
 
 msgid "Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."
 msgstr "Specifies the rule that is followed. Corresponds to cpsv:follows."
+
+msgid "Statusas"
+msgstr "Status"
+
+msgid "Nurodo e. paslaugos statusą. Atitinka adms:status."
+msgstr "Indicates the status of e-service. Corresponds to adms:status."
+
+msgid "Erdvinė / geografinė aprėptis"
+msgstr "Spatial / Geographical coverage"
+
+msgid "Regionas, kurį apima taikoma e. paslauga. Atitinka dct:spatial."
+msgstr ""
+"Region covered by the applicable e-service. Corresponds to dct:spatial."
 
 msgid "Licencija"
 msgstr "License"
@@ -1455,26 +1519,73 @@ msgstr "Full Name"
 msgid "Pareigos"
 msgstr "Position"
 
+msgid "El. pašto adresas"
+msgstr "E-mail address"
+
+msgid "Phone"
+msgstr "Telefono numeris"
+
+msgid "Aptarnaujama vietovė"
+msgstr "Served area"
+
+msgid ""
+"Laisvu tekstu pateikiama teikiamos paslaugos geografinė sritis. Atitinka "
+"schema:areaServed."
+msgstr ""
+"The geographical area of the service provided. Corresponds to "
+"schema:areaServed."
+
+msgid "Galimos kalbos"
+msgstr "Available languages"
+
+msgid ""
+"Kalbos, kuriomis gali būti suteikta informacija. Atitinka "
+"schema:availableLanguages."
+msgstr ""
+"Languages in which information can be provided. Corresponds to "
+"schema:availableLanguages."
+
+msgid "Kontaktiniai pasirinkimai"
+msgstr "Contact options"
+
+msgid ""
+"Šiame kontaktiniame taške pasiekiama parinktis (pvz., nemokamas numeris arba "
+"pagalba skambinantiems su klausos negalia). Atitinka schema:contactOption."
+msgstr ""
+"The option available at this contact point (e.g., toll-free number or "
+"support for hearing-impaired callers). Corresponds to schema:contactOption."
+
+msgid "Kontaktinės informacijos tipas"
+msgstr "Contact type"
+
+msgid ""
+"Kontaktinės informacijos tipas (pvz. pardavimo kontaktinis punktas arba PR "
+"kontaktinis punktas). Atitinka schema:contactType."
+msgstr ""
+"The type of contact information (e.g. sales contact point or PR contact "
+"point). Corresponds to schema:contactType."
+
+msgid "Darbo valandos"
+msgstr "Work hours"
+
+msgid ""
+"Valandos, kuriomis pasiekiama ši paslauga arba kontaktas. Atitinka "
+"schema:hoursAvailable."
+msgstr ""
+"Hours during which this service or contact is available. Corresponds to "
+"schema:hoursAvailable."
+
+msgid "Kontakto tipas"
+msgstr "Contact kind"
+
 msgid "Content Type"
 msgstr "Turinio tipas"
 
 msgid "Object ID"
 msgstr "Object ID"
 
-msgid "Email"
-msgstr "El. pašto adresas"
-
-msgid "Phone"
-msgstr "Telefono numeris"
-
 msgid "Kontaktas"
 msgstr "Contact"
-
-msgid "Naudotojas"
-msgstr "User"
-
-msgid "Neregistruotas naudotojas"
-msgstr "Non registered user"
 
 msgid "Geoportalo API formatas"
 msgstr "Geoportal API format"
@@ -1490,6 +1601,115 @@ msgstr "Geoportal API format value"
 
 msgid "Geoportalo API formato reikšmės"
 msgstr "Geoportal API format values"
+
+msgid ""
+"Laisvu tekstu pateikiamas vertinimo komentaras arba nuoroda į vertinimo "
+"failą."
+msgstr "A free-text assessment comment or a reference to an assessment file."
+
+msgid "Kokybės anotacijos reikšmė"
+msgstr "Quality annotation value"
+
+msgid "Kokybės anotacijos reikšmės"
+msgstr "Quality annotation values"
+
+msgid ""
+"Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
+"Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
+"pasikartojančių reikšmių. Formatas: kod_pav."
+msgstr ""
+"A free-text code name entered in lowercase Latin letters. For ease of "
+"initial data collection. This column cannot contain duplicate values. "
+"Format: kod_pav."
+
+msgid "Turi vertinamą duomenų rinkinį"
+msgstr "Has target dataset"
+
+msgid "Atitinka oa:hasTarget."
+msgstr "Conforms to oa:hasTarget."
+
+msgid "Turi vertinamą pateiktį"
+msgstr "Has target distribution"
+
+msgid "Turi turinį"
+msgstr "Has body"
+
+msgid "Atitinka oa:hasBody."
+msgstr "Conforms to oa:hasBody."
+
+msgid "Kokybės anotacija"
+msgstr "Quality annotation"
+
+msgid "Kokybės anotacijos"
+msgstr "Quality annotations"
+
+msgid "Laisvu tekstu pateikiamas matavimo pavadinimas."
+msgstr "A free-text measurement title."
+
+msgid "Matavimo pavadinimas"
+msgstr "Measurement title"
+
+msgid "Matavimo pavadinimai"
+msgstr "Measurement titles"
+
+msgid "Matavimas"
+msgstr "Measurement"
+
+msgid "Matavimai"
+msgstr "Measurements"
+
+msgid ""
+"Laisvu tekstu įvedamas kodinis pavadinimas pagal egzemplioriaus reikšmę. "
+"Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
+"pasikartojančių reikšmių. Formatas: KodPav."
+msgstr ""
+"A free-text code name entered according to the instance value. For ease of "
+"initial data collection. This column cannot contain duplicate values. "
+"Format: KodPav."
+
+msgid "Matuoja"
+msgstr "Measures"
+
+msgid "Nurodo stebimą rodiklį. Atitinka dqv:isMeasurementOf."
+msgstr "Specifies the measured indicator. Corresponds to dqv:isMeasurementOf."
+
+msgid "Apskaičiuota duomenų rinkiniui"
+msgstr "Calculated for dataset"
+
+msgid ""
+"Nurodo išteklius, kuriems atliekamas kokybės matavimas. DQV kontekste ši "
+"savybė paprastai turėtų būti naudojama teiginiuose, kuriuose objektai yra "
+"dcat:Dataset arba dcat:Distribution egzemplioriai. Atitinka dqv:computedOn."
+msgstr ""
+"Indicates the resources on which a quality measurement is performed. In the "
+"DQV context, this property should typically be used in statements where the "
+"subjects are instances of dcat:Dataset or dcat:Distribution. Corresponds to "
+"dqv:computedOn."
+
+msgid "Apskaičiuota pateikčiai"
+msgstr "Calculated for distribution"
+
+msgid ""
+"Nurodo išteklius, kuriems atliekamas kokybės matavimas. DQV kontekste ši "
+"savybė paprastai turėtų būti naudojama teiginiuose, kuriuose objektai yra "
+"dcat:Dataset arba dcat:Distribution egzemplioriai.Atitinka dqv:computedOn."
+msgstr ""
+"Indicates the resources on which a quality measurement is performed. In the "
+"DQV context, this property should typically be used in statements where the "
+"subjects are instances of dcat:Dataset or dcat:Distribution. Corresponds to "
+"dqv:computedOn."
+
+msgid "Vertė"
+msgstr "Value"
+
+msgid "Nurodo rodiklio vertę. Atitinka dqv:value."
+msgstr "Indicates the value of the metric. Corresponds to dqv:value."
+
+msgid "Kokybės matavimas"
+msgstr "Quality measurement"
+
+msgid "Kokybės matavimai"
+msgstr "Quality measurements"
 
 msgid "Organizacijai gali būti suteikta tik tvarkytojo rolė"
 msgstr "The organization can only be assigned the role of a data editor"
@@ -1615,6 +1835,9 @@ msgstr "Harvested"
 msgid "Atlikto darbo būsena"
 msgstr "Harvesting status"
 
+msgid "Informacinės sistemos tvarkytojai"
+msgstr "Information system publishers"
+
 msgid "Informacinės sistemos valdytojas"
 msgstr "Information system creator"
 
@@ -1630,8 +1853,14 @@ msgstr ""
 "Specifies the specific information system – a state information system or "
 "registry – within which the resources are managed."
 
+msgid "Laiko skiriamoji geba (sekundėmis)"
+msgstr "Temporal resolution (in seconds)"
+
 msgid "Mažiausias laiko tarpas tarp objektų duomenų ištekliuje"
 msgstr "Minimum time period resolvable in the resource."
+
+msgid "Erdvinė skiriamoji geba (metrais)"
+msgstr "Spatial resolution (in meters)"
 
 msgid "Mažiausias atstumas tarp objektų duomenų ištekliuje, matuojamas metrais"
 msgstr ""
@@ -2054,7 +2283,7 @@ msgid "Duomenų ištekliaus redagavimas"
 msgstr "Resource edit"
 
 msgid "Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."
-msgstr "Can not import structure, when the version status is draft"
+msgstr "Can not import structure, when the version status isn't draft."
 
 msgid "Struktūros importas"
 msgstr "Structure import"
@@ -2146,17 +2375,31 @@ msgstr "Organizations"
 msgid "vaikiniai duomenų ištekliai"
 msgstr "child resources"
 
-msgid "Kodinio pavadinimo prefiksas"
-msgstr "Codename prefix"
+msgid "Palaikomas produktas ar paslauga"
+msgstr "Supported product or service"
 
 msgid ""
-"Kodinio pavadinimo prefiksas, kuris kartu su kodiniu pavadinimu sudaro pilną "
-"ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas automatiškai "
-"pagal pasirinktą tėvinį išteklių arba organizaciją."
+"Produktas arba paslauga, su kuria yra susijęs šis palaikymo kontaktinis "
+"taškas (pvz., produkto palaikymas tam tikrai produktų linijai). Tai gali "
+"būti konkretus produktas arba produktų linija arba bendra produktų ar "
+"paslaugų kategorija"
 msgstr ""
-"Codename prefix used together with codename makes full codename for a "
-"resource. If not provided - will be automatically filled by selected parent "
-"or organization."
+"The product or service associated with this support contact point (e.g. "
+"product support for a particular product line). This can be a specific "
+"product or product line, or a general category of products or services."
+
+msgid "Formatas 0... arba +370..."
+msgstr "Format 0... or +370..."
+
+msgid "Pilnas kodinis pavadinimas"
+msgstr "Full codename"
+
+msgid ""
+"Pilnas kodinis pavadinimas, sudarytas iš prefikso ir kodinio pavadinimo."
+msgstr "Full codename is made of prefix and codename"
+
+msgid "Duomenų ištekliaus kodinis pavadinimas"
+msgstr "Resource codename"
 
 msgid ""
 "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
@@ -2165,9 +2408,6 @@ msgstr ""
 "Codename must contain only lowercase Latin letters and (or) underscores, "
 "separating words with underscores"
 
-msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
-msgstr "Specifies one or multiple categories. Corresponds to dcat:theme."
-
 msgid ""
 "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
 "pavadinimą organizacijai ir bandykite iš naujo"
@@ -2175,9 +2415,8 @@ msgstr ""
 "Organization does not have specified codename. Add codename for organization "
 "and try again"
 
-#, python-brace-format
-msgid "Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}"
-msgstr "Codename prefix must be one of: {prefixes}"
+msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
+msgstr "Specifies one or multiple categories. Corresponds to dcat:theme."
 
 msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
 msgstr ""
@@ -2190,11 +2429,53 @@ msgid "Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."
 msgstr ""
 "Organization, that is the creator of the IS. Corresponds to dct:creator."
 
+msgid "Aprašas"
+msgstr "Description"
+
+msgid "Prieigos taško aprašas"
+msgstr "Endpoint description"
+
+msgid ""
+"Institucijos vidinis duomenų paslaugos identifikatorius. Formatas: kod_pav. "
+"Atitinka dct:identifier."
+msgstr ""
+"Internal identifier of the institution's data service. Format: kod_pav. "
+"Corresponds to dct:identifier."
+
+msgid "Pilnas identifikatorius"
+msgstr "Full identifier"
+
+msgid ""
+"Pilnas identifikatorius, sudarytas iš tėvinio ištekliaus identifikatoriaus "
+"ir šios duomenų paslaugos identifikatoriaus."
+msgstr ""
+"Full identifier, composed of the parent resource's identifier and this data "
+"service's identifier."
+
+msgid ""
+"Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų "
+"paslaugą. Atitinka dcat:contactPoint."
+msgstr ""
+"Contact information that can be used for sending comments about the service. "
+"Corresponds to dcat:contactPoint"
+
+msgid "Prieigos taško aprašo formatas."
+msgstr "Endpoint description format."
+
 msgid "Duomenų teikėjas"
 msgstr "Data provider"
 
 msgid "Duomenų teikėjas. Atitinka dct:publisher."
 msgstr "Data provider. Corresponds to dct:publisher."
+
+msgid "Raktažodis / žyma"
+msgstr "Keyword / tag"
+
+msgid "Tema / kategorija"
+msgstr "Theme / category"
+
+msgid "Nukreipimo puslapis"
+msgstr "Landing page"
 
 msgid ""
 "Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."
@@ -2208,11 +2489,97 @@ msgstr ""
 "Organization responsible for creation of this dataset. Corresponds to "
 "dct:creator."
 
+msgid ""
+"Pilnas URI, pagal https://ivpk.github.io/uapi/#section/Concepts/URI, "
+"identifikuojantis duomenų rinkinį."
+msgstr ""
+"Full URI, according to https://ivpk.github.io/uapi/#section/Concepts/URI, "
+"identifying the dataset."
+
+msgid ""
+"Duomenų rinkinio viešinimui naudojamas identifikatorius. Naudoti mažąsias "
+"lotyniškas raides, žodžius atskirti žemu brūkšniu \"_\". Pvz.: kod_pav. "
+"Atitinka dct:identifier"
+msgstr ""
+"Identifier used for publishing the dataset. Use lowercase Latin letters, "
+"separate words with an underscore \"_\". E.g.: cod_pav. Corresponds to "
+"dct:identifier."
+
+msgid "Raktažodis"
+msgstr "Keyword"
+
+msgid "Kaupimo periodiškumas"
+msgstr "Accrual periodicity"
+
 msgid "Duomenų skelbėjas. Atitinka dct:publisher."
 msgstr "Data publisher. Corresponds to dct:publisher."
 
-msgid "Priklauso duomenų katalogams"
-msgstr "Belongs to data catalog"
+msgid "Nurodo kontaktą susisiekti dėl duomenų rinkinio. Atitinka vcard:Kind."
+msgstr ""
+"Specifies a contact to reach regarding the dataset. Corresponds to "
+"vcard:Kind."
+
+msgid "Turi kokybės anotaciją"
+msgstr "Has quality annotation"
+
+msgid ""
+"Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka "
+"dqv:hasQualityAnnotation."
+msgstr ""
+"Indicates how consistent the dataset is across the system. Corresponds to "
+"dqv:hasQualityAnnotation"
+
+msgid "Turi kokybės matavimą"
+msgstr "Has quality annotation"
+
+msgid ""
+"Nurodo, kaip patikimas yra pateiktas duomenų rinkinys. Atitinka "
+"dqv:hasQualityMeasurement."
+msgstr ""
+"Indicates how reliable the provided dataset is. Corresponds to "
+"dqv:hasQualityMeasurement."
+
+msgid ""
+"PASIS kodas. Jei nėra - institucijos suteiktas vidinis teikiamos paslaugos "
+"identifikatorius arba sveikas skaičius. Atitinka dct:identifier."
+msgstr ""
+"PASIS code. If not available – an internal service identifier assigned by "
+"the institution, or an integer. Corresponds to dct:identifier."
+
+msgid "Turi kompetentingą valdžios instituciją"
+msgstr "Has competent authority"
+
+msgid ""
+"Viešojo administravimo institucijos, atsakingos už šią paslaugą. Atitinka "
+"cv:hasCompetentAuthority."
+msgstr ""
+"Public administration institutions responsible for this service. Corresponds "
+"to cv:hasCompetentAuthority."
+
+msgid "Pagrindinis puslapis"
+msgstr "Landing page"
+
+msgid "Pagrindinis e. paslaugos tinklalapis. Atitinka foaf:homepage."
+msgstr "The main page of e-service. Corresponds to foaf:homepage."
+
+msgid "Tematinė sritis"
+msgstr "Thematic area"
+
+msgid "E. paslaugos tema. Atitinka skos:concept."
+msgstr "Thematic area of e-service. Corresponds to skos:concept."
+
+msgid "Turi kontaktinę informaciją"
+msgstr "Has contact information"
+
+msgid ""
+"Su e. paslaugos teikimu susijusi kontaktinė informacija. Atitinka "
+"cv:hasContactPoint."
+msgstr ""
+"Contact information related to the provision of the e-service. Corresponds "
+"to cv:hasContactPoint."
+
+msgid "Turi sudedamąją dalį"
+msgstr "Has part"
 
 msgid ""
 "Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
@@ -2223,8 +2590,8 @@ msgstr ""
 "catalog. Filled in when institutions have their own metadata catalogs. "
 "Corresponds to dct:hasPart."
 
-msgid "Susijusios informacinės sistemos (teikia duomenis į)"
-msgstr "Related information systems (provides data to)"
+msgid "Susijusi IS"
+msgstr "Related IS"
 
 msgid ""
 "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė "
@@ -2235,9 +2602,6 @@ msgstr ""
 "system. Related systems are those that have integrations and are named in "
 "the regulations. Corresponds to dcataplt:informationSystem."
 
-msgid "Susijusios informacinės sistemos (gauna duomenis iš)"
-msgstr "Related information systems (receives data from)"
-
 msgid ""
 "Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos "
 "yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. Atitinka "
@@ -2247,8 +2611,18 @@ msgstr ""
 "that have integrations and are named in the regulations. Corresponds to "
 "dcataplt:relatesToInformationSystem."
 
-msgid "Pateikia duomenų rinkinius"
-msgstr "Provides datasets"
+msgid "Susijusi duomenų paslauga"
+msgstr "Related service"
+
+msgid ""
+"Kitų IS duomenų paslaugos, kurios teikia duomenis šiai IS. Atitinka "
+"dcataplt:relatesToDataService."
+msgstr ""
+"Other IS data services that provide data to this IS. Corresponds to "
+"dcataplt:relatesToDataService."
+
+msgid "Pateikia duomenų rinkinį"
+msgstr "Provides dataset"
 
 msgid ""
 "Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."
@@ -2264,17 +2638,53 @@ msgstr ""
 "Organization responsible for this dataset. Corresponds to "
 "prov:qualifiedAttribution."
 
+msgid "Sukuria duomenų rinkinį"
+msgstr "Produces dataset"
+
+msgid ""
+"Duomenų rinkiniai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr "Datasets produced by this e-service. Corresponds to cpsv:produces."
+
+msgid "Sukuria duomenų paslaugą"
+msgstr "Produces data service"
+
+msgid "Paslaugos, kurias sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr "Servoces produced by this e-service. Corresponds to cpsv:produces."
+
+msgid "Sukuria katalogą"
+msgstr "Produces catalog"
+
+msgid "Katalogai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr "Catalogs produced by this e-service. Corresponds to cpsv:produces."
+
 msgid "Puslapis (dokumentacija)"
 msgstr "Page (documentation)"
 
 msgid "Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."
 msgstr "URL to documents about distribution. Corresponds to foaf:page."
 
+msgid "Prieigos URL"
+msgstr "Access URL"
+
+msgid "Prieigos paslauga"
+msgstr "Access service"
+
+msgid "Suspaudimo formatas"
+msgstr "Compress format"
+
+msgid "Parsisiuntimo URL"
+msgstr "Download URL"
+
 msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
 msgstr "Distribution with this download link already exists."
 
 msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
 msgstr "Checksum value can only include lowercase letters."
+
+#, python-format
+msgid "Ar tikrai norite ištrinti „%(title)s\"? Šio veiksmo atšaukti negalima."
+msgstr ""
+"Are you sure you want to delete \"%(title)s\"? This action cannot be undone."
 
 msgid "Redaguokite"
 msgstr "Edit"
@@ -2300,9 +2710,6 @@ msgstr "Fill in distribution"
 msgid "Redaguokite pateiktį"
 msgstr "Edit distribution"
 
-msgid "Paslauga"
-msgstr "Service"
-
 #, python-brace-format
 msgid ""
 "Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
@@ -2311,8 +2718,71 @@ msgstr ""
 "Field's '{label}' relation '{relation_name}' does not exist. Field's value "
 "is not saved. Contact the administrator."
 
+#, python-brace-format
+msgid ""
+"Ryšio tipas '{relation_name}' nerastas, todėl laukų '{datasets}', "
+"'{services}', '{catalogs}' reikšmės neišsaugotos. Susisiekite su "
+"administratoriumi."
+msgstr ""
+"Relation '{relation_name}' does not exist. Values of fields '{datasets}', "
+"'{services}', '{catalogs}' are not saved. Contact the administrator."
+
+msgid "Kontaktinės informacijos pridėjimas"
+msgstr "Add contact information"
+
+msgid "Kontaktinė informacija sėkmingai išsaugota!"
+msgstr "Contact information saved successfully!"
+
+msgid "Kontaktinės informacijos redagavimas"
+msgstr "Contact information editing"
+
+msgid "Kontaktinė informacija sėkmingai atnaujinta!"
+msgstr "Contact information updated successfully!"
+
 msgid "Naujas"
 msgstr "New"
+
+#, python-brace-format
+msgid "Informacinė sistema sukurta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr "Information system created successfully! Codename: {0}"
+
+#, python-brace-format
+msgid "Duomenų paslauga sukurta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr "Service created successfully! Codename: {0}"
+
+#, python-brace-format
+msgid "Duomenų rinkinys sukurtas sėkmingai! Kodinis pavadinimas: {0}"
+msgstr "Dataset created successfully! Codename: {0}"
+
+msgid "E. paslauga sukurta sėkmingai!"
+msgstr "E-service was created successfully!"
+
+#, python-brace-format
+msgid "Informacinė sistema atnaujinta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr "Information system updated successfully! Codename: {0}"
+
+#, python-brace-format
+msgid "Duomenų paslauga atnaujinta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr "Service updated successfully! Codename: {0}"
+
+#, python-brace-format
+msgid "Duomenų rinkinys atnaujintas sėkmingai! Kodinis pavadinimas: {0}"
+msgstr "Dataset updated successfully! Codename: {0}"
+
+msgid "E. paslauga atnaujinta sėkmingai!"
+msgstr "E-service updated successfully!"
+
+msgid "Informacinė sistema ištrinta sėkmingai!"
+msgstr "Information system deleted successfully!"
+
+msgid "Duomenų paslauga ištrinta sėkmingai!"
+msgstr "Service deleted successfully!"
+
+msgid "Duomenų rinkinys ištrintas sėkmingai!"
+msgstr "Dataset deleted successfully!"
+
+msgid "E. paslauga ištrinta sėkmingai!"
+msgstr "E-service deleted successfully!"
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
 msgstr "Form creation tool cannot be used for this resource subclass"
@@ -2320,22 +2790,14 @@ msgstr "Form creation tool cannot be used for this resource subclass"
 msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
 msgstr "Given resource subclass does not have a defined form."
 
-#, python-brace-format
-msgid "Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}"
-msgstr "Resource created successfully. Codename: {0}"
-
 msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais."
 msgstr "Form creation tool cannot be used with open data resources."
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu."
 msgstr "Form creation tool cannot be used for this resource subclass."
 
-#, python-brace-format
-msgid "Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}"
-msgstr "Resource updated successfully. Codename: {0}"
-
-msgid "Ryšiai atnaujinti sėkmingai"
-msgstr "Relations updated successfully"
+msgid "Šio duomenų ištekliaus ištrinti negalima."
+msgstr "Cannot delete this resource."
 
 msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
 msgstr "Form creation tool cannot be used with open data resources"
@@ -2355,13 +2817,25 @@ msgstr "Dataset distribution edit"
 msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr "Distribution updated successfully!"
 
-msgid "Duomenų pildymo aplinka"
-msgstr "Data entry environment"
+msgid "Šios pateikties ištrinti negalima."
+msgstr "Cannot delete this distribution."
+
+msgid "Pateiktis ištrinta sėkmingai!"
+msgstr "Distribution deleted successfully!"
+
+msgid "IS metaduomenys"
+msgstr "IS metadata"
+
+msgid "Duomenų paslauga"
+msgstr "Data service"
+
+msgid "E. paslauga"
+msgstr "E-service"
 
 msgid "Informacinės sistemos"
 msgstr "Information systems"
 
-msgid "Paslaugos"
+msgid "Duomenų paslaugos"
 msgstr "Services"
 
 msgid "Duomenų rinkiniai"
@@ -2370,14 +2844,20 @@ msgstr "Datasets"
 msgid "Pateiktys"
 msgstr "Distributions"
 
-msgid "Sukurti naują informacinę sistemą po šiuo mazgu."
-msgstr "Create new information system under this node."
+msgid "E. paslaugos"
+msgstr "E-services"
 
-msgid "Sukurti naują paslaugą po šiuo mazgu."
-msgstr "Create a new service under this node."
+msgid "Sukurti naują informacinę sistemą po šiuo elementu."
+msgstr "Create a new information system under this element."
 
-msgid "Sukurti naują duomenų rinkinį po šiuo mazgu."
-msgstr "Create new dataset under this node."
+msgid "Sukurti naują e. paslaugą po šiuo elementu."
+msgstr "Create a new e-service under this element."
+
+msgid "Sukurti naują duomenų paslaugą po šiuo elementu."
+msgstr "Create a new data service under this element."
+
+msgid "Sukurti naują duomenų rinkinį po šiuo elementu."
+msgstr "Create a new dataset under this element."
 
 msgid "Pridėti naują duomenų rinkinio pateiktį."
 msgstr "Add new dataset distribution."
@@ -2774,6 +3254,9 @@ msgstr "Grant the role of data opening service provider"
 msgid "Duomenų teikėjų prašymų sąrašas"
 msgstr "List of data providers’ requests"
 
+msgid "Naudotojas"
+msgstr "User"
+
 msgid "Pridėtas dokumentas"
 msgstr "Added data"
 
@@ -2852,9 +3335,6 @@ msgstr "Subscribe to notifications"
 
 msgid "Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"
 msgstr "Allow to sign data service agreements"
-
-msgid "Formatas 0... arba +370..."
-msgstr "Format 0... or +370..."
 
 msgid ""
 "Negalima panaikinti koordinatoriaus rolės naudotojui, jei tai yra "
@@ -2954,12 +3434,6 @@ msgid ""
 msgstr ""
 "If a registered person or organization is selected, their profile email is "
 "used. When editing the contact, the profile email does not change."
-
-msgid ""
-"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
-"0XXXXXXXX)"
-msgstr ""
-"Incorrect phone number format. Acceptable formats: +3706XXXXXXX, 0XXXXXXXX"
 
 msgid ""
 "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
@@ -3081,6 +3555,9 @@ msgstr "The unique codename, which can be used while creating data resources."
 
 msgid "Redaguokite organizacijos informaciją"
 msgstr "Edit organization information"
+
+msgid "Gali turėti"
+msgstr "Can contain"
 
 msgid "Šioje organizacijoje dar nėra turinio."
 msgstr "This organisation has no content yet."
@@ -3240,14 +3717,17 @@ msgstr "Organization members list"
 msgid "Pridėti kontaktą"
 msgstr "Add contact"
 
+msgid "Pridėti kontaktinę informaciją"
+msgstr "Add contact information"
+
 msgid "Organizacijos vietinė rinkinio vardų erdvė"
 msgstr "Local namespace of the organization"
 
 msgid "Organizacijos vietinių rinkinių leidžiamų vardų erdvių sąrašas."
 msgstr "List of namespaces allowed by the organization's local collections."
 
-msgid "Atidaryti formų valdymą"
-msgstr "Open data-filling environment"
+msgid "Tvarkyti IS metaduomenis"
+msgstr "Manage IS metadata"
 
 msgid "Redaguoti organizaciją"
 msgstr "Edit organization"
@@ -3379,8 +3859,20 @@ msgstr "Agents"
 msgid "Raktas duomenų įkėlimui į saugyklą"
 msgstr "Key for uploading data to storage"
 
-msgid "Supildykite duomenų rinkinius"
-msgstr "Enter datasets"
+msgid ""
+"Organizacijos informacinių sistemų metaduomenų pildymas pagal DCAT-AP-LT"
+msgstr ""
+"Entry of the organization's information system metadata according to DCAT-AP-"
+"LT"
+
+msgid "Kūrimo tvarka"
+msgstr "Creation order"
+
+msgid "Suskleisti viską"
+msgstr "Collapse all"
+
+msgid "Išskleisti viską"
+msgstr "Expand all"
 
 msgid "Įkeliama forma..."
 msgstr "Loading form..."
@@ -3388,17 +3880,21 @@ msgstr "Loading form..."
 msgid "Pasirinkite formą"
 msgstr "Select a form"
 
-msgid "Pasirinkite objektą"
-msgstr "Select an object"
+msgid "Pasirinkite elementą"
+msgstr "Select an element"
 
 msgid "Pasirinkite ką norite sukurti"
 msgstr "Select what to create"
 
-msgid "Žemiau rodomi objektų tipai, kuriuos galima sukurti po šiuo mazgu."
-msgstr "The object types that can be created under this node are shown below."
+msgid "Žemiau rodomi elementai, kuriuos galima sukurti po"
+msgstr "Below are the elements that can be created under"
 
-msgid "Šiam mazgui nėra leidžiamų vaikinių elementų."
-msgstr "This node has no allowed child types."
+msgid "Galima sukurti tik po šiais elementais:"
+msgstr "Can only be created under these elements:"
+
+msgid "Naują elementą galima sukurti tik turint aukštesnio lygio elementą."
+msgstr ""
+"A new element can only be created under an existing higher-level element."
 
 msgid "Atšaukti pakeitimus"
 msgstr "Cancel changes"
@@ -4159,9 +4655,6 @@ msgstr ""
 "storage. You must provide a direct link to the data. Smaller (5Mb or less) "
 "data files, can be stored inside the catalog"
 
-msgid "Duomenų paslauga"
-msgstr "Data service"
-
 msgid ""
 "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
 "<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
@@ -4248,6 +4741,12 @@ msgstr "Media type"
 
 msgid "Medijos tipai"
 msgstr "Media types"
+
+msgid "Pateikties pavadinimas. Atitinka dct:title."
+msgstr "Distribution title. Corresponds to dct:title."
+
+msgid "Pateikties aprašymas. Atitinka dct:description."
+msgstr "Distribution description. Corresponds to dct:description."
 
 msgid ""
 "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "
@@ -4343,8 +4842,18 @@ msgstr ""
 "Specifies which standard the distribution conforms to. Corresponds to "
 "dct:conformsTo."
 
-msgid "Statusas"
-msgstr "Status"
+msgid "Laiko skiriamoji geba"
+msgstr "Temporal resolution"
+
+msgid "Minimali laiko skiriamoji geba. Atitinka dcat:temporalResolution."
+msgstr "Minimal temporal resolution. Corresponds to dcat:temporalResolution."
+
+msgid ""
+"Minimali erdvinė skiriamoji geba metrais. Atitinka "
+"dcat:spatialResolutionInMeters."
+msgstr ""
+"Minimal spatial resolution in meters. Corresponds to "
+"dcat:spatialResolutionInMeters."
 
 msgid "Nurodomas pateikties brandos lygmuo. Atitinka adms:status."
 msgstr ""
@@ -4392,6 +4901,16 @@ msgstr "Period start"
 
 msgid "Periodo pabaiga"
 msgstr "Period end"
+
+msgid "Politika"
+msgstr "Policy"
+
+msgid ""
+"Pateikiama duomenų naudojimo politika, kuri yra susijusių taisyklių "
+"rinkinys, aprašoma pagal ODRL. Atitinka odrl:hasPolicy"
+msgstr ""
+"Provides the data usage policy, which is a set of related rules described "
+"according to ODRL. Corresponds to odrl:hasPolicy."
 
 msgid "Prieiga"
 msgstr "Access"
@@ -7004,6 +7523,12 @@ msgstr "Change user password"
 
 msgid "Slaptažodžio keitimas sėkmingas"
 msgstr "Password was changed successfully"
+
+msgid ""
+"Neteisingas telefono numerio formatas. Priimtini formatai: +370XXXXXXXX, "
+"0XXXXXXXX"
+msgstr ""
+"Incorrect phone number format. Acceptable formats: +370XXXXXXXX, 0XXXXXXXX"
 
 msgid ""
 "Slaptažodyje turi būti panaudota bent viena didžioji lotyniška raidė (A - Z)."

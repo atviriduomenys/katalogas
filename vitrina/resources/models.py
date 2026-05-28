@@ -145,6 +145,7 @@ class MediaType(UUIDBaseModel):
 
 class DatasetDistribution(TranslatableModel):
     DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
+    DISTRIBUTION_DCAT_STATUS_URI = "http://purl.org/adms/status/"
     CHECKSUM_ALGORITHM_CHOICES = [
         ("SHA1", "SHA1"),
         ("SHA224", "SHA224"),
@@ -173,13 +174,20 @@ class DatasetDistribution(TranslatableModel):
     deleted_on = models.DateTimeField(blank=True, null=True)
     dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE)
     translations = TranslatedFields(
-        title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
-        description=models.TextField(_("Aprašymas"), blank=True),
+        title=models.CharField(
+            _("Pavadinimas"),
+            help_text=_("Pateikties pavadinimas. Atitinka dct:title."),
+            blank=True,
+            max_length=255,
+        ),
+        description=models.TextField(
+            _("Aprašymas"),
+            help_text=_("Pateikties aprašymas. Atitinka dct:description."),
+            blank=True,
+        ),
         conditions=models.TextField(
             _("Teisės - Aprašymas"),
-            help_text=_(
-                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
-            ),
+            help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights."),
             blank=True,
             null=True,
         ),
@@ -331,8 +339,8 @@ class DatasetDistribution(TranslatableModel):
         max_length=255,
         blank=True,
         null=True,
-        verbose_name=_("Laiko skiriamoji geba (sekundėmis)"),
-        help_text=_("Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."),
+        verbose_name=_("Laiko skiriamoji geba"),
+        help_text=_("Minimali laiko skiriamoji geba. Atitinka dcat:temporalResolution."),
     )
 
     spatial_resolution = models.CharField(
@@ -340,7 +348,7 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
-        help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
+        help_text=_("Minimali erdvinė skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
 
     status = models.ForeignKey(
@@ -413,6 +421,15 @@ class DatasetDistribution(TranslatableModel):
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
+    policy = models.TextField(
+        verbose_name=_("Politika"),
+        help_text=_(
+            "Pateikiama duomenų naudojimo politika, kuri yra susijusių taisyklių rinkinys, "
+            "aprašoma pagal ODRL. Atitinka odrl:hasPolicy"
+        ),
+        blank=True,
+        null=True,
+    )
 
     metadata = GenericRelation("vitrina_structure.Metadata")
     params = GenericRelation("vitrina_structure.Param")
@@ -444,6 +461,14 @@ class DatasetDistribution(TranslatableModel):
 
     def __str__(self):
         return self.safe_translation_getter("title", language_code=self.get_current_language()) or ""
+
+    @property
+    def display_title(self) -> str:
+        return (
+            self.safe_translation_getter("title", language_code=self.get_current_language())
+            or self.access_url
+            or f"#{self.pk}"
+        )
 
     def extension(self) -> str:
         if self.file and self.file.file:

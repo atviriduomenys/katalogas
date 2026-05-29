@@ -1,6 +1,6 @@
 import secrets
 from collections import OrderedDict
-from typing import List, Any, Dict, Iterable, Type
+from typing import List, Any, Dict, Iterable, Mapping, Type
 
 import numpy as np
 from django.db import transaction
@@ -176,29 +176,35 @@ def get_query_for_frequency(frequency, field, label):
 
 
 def get_period_key(frequency: str, field: str, label: Any) -> tuple:
-    if frequency == "Y":
-        return (label.year,)
-    elif frequency == "Q":
-        return (label.year, label.quarter)
-    elif frequency == "M":
-        return (label.year, label.month)
-    elif frequency == "W":
-        return (label.year, label.month, label.week)
-    else:  # "D"
-        return (label.year, label.month, label.day)
+    match frequency:
+        case "Y":
+            return (label.year,)
+        case "Q":
+            return (label.year, label.quarter)
+        case "M":
+            return (label.year, label.month)
+        case "W":
+            return (label.year, label.month, label.week)
+        case "D":
+            return (label.year, label.month, label.day)
+        case _:
+            raise ValueError(f"Unexpected frequency: {frequency!r}")
 
 
 def row_period_key(row: Mapping[str, Any], frequency: str, field: str) -> tuple:
-    if frequency == "Y":
-        return (row[f"{field}__year"],)
-    elif frequency == "Q":
-        return (row[f"{field}__year"], row[f"{field}__quarter"])
-    elif frequency == "M":
-        return (row[f"{field}__year"], row[f"{field}__month"])
-    elif frequency == "W":
-        return (row[f"{field}__year"], row[f"{field}__month"], row[f"{field}__week"])
-    else:  # "D"
-        return (row[f"{field}__year"], row[f"{field}__month"], row[f"{field}__day"])
+    match frequency:
+        case "Y":
+            return (row[f"{field}__year"],)
+        case "Q":
+            return (row[f"{field}__year"], row[f"{field}__quarter"])
+        case "M":
+            return (row[f"{field}__year"], row[f"{field}__month"])
+        case "W":
+            return (row[f"{field}__year"], row[f"{field}__month"], row[f"{field}__week"])
+        case "D":
+            return (row[f"{field}__year"], row[f"{field}__month"], row[f"{field}__day"])
+        case _:
+            raise ValueError(f"Unexpected frequency: {frequency!r}")
 
 
 def bucket_grouped_rows(

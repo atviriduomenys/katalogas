@@ -4,9 +4,9 @@ import operator
 
 import numpy as np
 import pandas as pd
-import pytz
 from collections import OrderedDict
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -427,23 +427,23 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
                 period = str(pd.to_datetime(created).to_period(frequency))
                 stats_for_period[period] = stats_for_period.get(period, 0) + 1
         if indicator != "request-count":
-            tz_vilnius = pytz.timezone("Europe/Vilnius")
+            tz_vilnius = ZoneInfo("Europe/Vilnius")
             year_to_request_ids: dict = {}
-            for yr in year_stats.keys():
-                yr_start = datetime.strptime(str(yr) + "-1-1", "%Y-%m-%d")
-                yr_end = datetime.strptime(str(yr) + "-12-31", "%Y-%m-%d")
+            for year in year_stats.keys():
+                year_start = datetime.strptime(str(year) + "-1-1", "%Y-%m-%d")
+                year_end = datetime.strptime(str(year) + "-12-31", "%Y-%m-%d")
                 filtered_requests = requests.filter(
-                    created__range=[tz_vilnius.localize(yr_start), tz_vilnius.localize(yr_end)]
+                    created__range=[year_start.replace(tzinfo=tz_vilnius), year_end.replace(tzinfo=tz_vilnius)]
                 )
-                year_to_request_ids[yr] = [int(fd.pk) for fd in filtered_requests]
+                year_to_request_ids[year] = [int(filtered_request.pk) for filtered_request in filtered_requests]
 
             if indicator == "request-count-open":
                 all_ids = [pk for ids in year_to_request_ids.values() for pk in ids]
                 open_ids = set(
                     Request.objects.filter(pk__in=all_ids, status=Request.CREATED).values_list("pk", flat=True)
                 )
-                for yr, request_ids in year_to_request_ids.items():
-                    year_stats[yr] = sum(1 for pk in request_ids if pk in open_ids)
+                for year, request_ids in year_to_request_ids.items():
+                    year_stats[year] = sum(1 for pk in request_ids if pk in open_ids)
             else:
                 all_ids = [pk for ids in year_to_request_ids.values() for pk in ids]
                 late_counts = dict(
@@ -455,8 +455,8 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
                     .annotate(n=Count("id"))
                     .values_list("request_id", "n")
                 )
-                for yr, request_ids in year_to_request_ids.items():
-                    year_stats[yr] = sum(late_counts.get(pk, 0) for pk in request_ids)
+                for year, request_ids in year_to_request_ids.items():
+                    year_stats[year] = sum(late_counts.get(pk, 0) for pk in request_ids)
         if year_stats:
             keys = list(year_stats.keys())
             values = list(year_stats.values())

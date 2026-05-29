@@ -100,7 +100,7 @@ VISIBILITY_LEVEL_CHOICES = (
 
 
 class EnumForm(forms.ModelForm):
-    value = forms.CharField(label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė."))
+    value = forms.CharField(label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė."), required=False)
     source = forms.CharField(
         label=_("Reikšmė šaltinyje"),
         required=False,

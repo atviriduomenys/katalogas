@@ -53,12 +53,12 @@
 
 /* ── Header ── */
 .wizard-card-header {
-    display: flex !important;
+    display: flex;
     align-items: center;
     gap: 0;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border-bottom: 1px solid #ccdae4 !important;
+    padding: 0;
+    box-shadow: none;
+    border-bottom: 1px solid #ccdae4;
     flex: 0 0 auto;
 }
 .wizard-header-org {
@@ -250,7 +250,7 @@
    Scope to form inputs only — .button.is-danger (formset delete btn) must not trigger this. */
 .wizard-form-body .field.is-danger,
 .wizard-form-body .field:has(.input.is-danger, .textarea.is-danger, select.is-danger) {
-    border-color: #f14668 !important;
+    border-color: #f14668;
     box-shadow: 0 0 0 2px rgba(241,70,104,0.08);
 }
 .wizard-form-body .help.is-danger {
@@ -260,23 +260,23 @@
 /* Inline formsets render nested .field elements inside an outer .field.
    Strip the card treatment from them so they appear flat within the card. */
 .wizard-form-body .field .field {
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-    min-height: auto !important;
-    box-shadow: none !important;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    min-height: auto;
+    box-shadow: none;
     margin-bottom: 0.25rem;
     display: block;
 }
 .wizard-form-body .field .field:focus-within {
-    border: none !important;
-    box-shadow: none !important;
+    border: none;
+    box-shadow: none;
 }
 .wizard-form-body .field .field.is-danger,
 .wizard-form-body .field .field:has(.is-danger) {
-    border: none !important;
-    box-shadow: none !important;
+    border: none;
+    box-shadow: none;
 }
 
 /* Label — small caption at top of each field card */
@@ -291,12 +291,12 @@
 /* Remove native borders — the .field card is the visible border */
 .wizard-form-body .input,
 .wizard-form-body .textarea {
-    border: none !important;
-    box-shadow: none !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    background: transparent !important;
-    color: #375677 !important;
+    border: none;
+    box-shadow: none;
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+    color: #375677;
     font-size: 1rem;
     height: auto;
 }
@@ -305,29 +305,29 @@
     resize: vertical;
 }
 .wizard-form-body .select select {
-    border: none !important;
-    box-shadow: none !important;
-    padding-left: 0 !important;
-    background: transparent !important;
-    color: #375677 !important;
+    border: none;
+    box-shadow: none;
+    padding-left: 0;
+    background: transparent;
+    color: #375677;
 }
-.wizard-form-body .select::after { right: 0.25rem; border-color: #375677 !important; }
+.wizard-form-body .select::after { right: 0.25rem; border-color: #375677; }
 .wizard-form-body .select2.select2-container .select2-selection--single {
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    background: transparent !important;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
 }
 .wizard-form-body .select2.select2-container .select2-selection--single .select2-selection__rendered {
-    padding-left: 0 !important;
-    color: #375677 !important;
+    padding-left: 0;
+    color: #375677;
 }
 .wizard-form-body .select2.select2-container .select2-selection--multiple {
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
+    border: none;
+    box-shadow: none;
+    background: transparent;
     min-height: auto;
-    padding: 0 !important;
+    padding: 0;
 }
 .wizard-form-body .help {
     font-size: 0.75rem;
@@ -406,16 +406,16 @@
     width: 100% !important;
 }
 #wizard-relationship-panel .select2.select2-container .select2-selection--multiple {
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
+    border: none;
+    box-shadow: none;
+    background: transparent;
     min-height: auto;
 }
 .wizard-relationship-panel-inner .select2-selection__choice {
-    background: #f5f5f4 !important;
-    color: #375677 !important;
-    border: none !important;
-    border-radius: 8px !important;
+    background: #f5f5f4;
+    color: #375677;
+    border: none;
+    border-radius: 8px;
 }
 
 /* ── Breadcrumbs ── */

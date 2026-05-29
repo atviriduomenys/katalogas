@@ -15,6 +15,7 @@ from vitrina.dcat.view_helpers import (
     save_dataset_attribution,
     save_dataset_qualified_relations,
     save_dataset_relations,
+    save_produces_relations,
 )
 from vitrina.orgs.factories import OrganizationFactory
 
@@ -130,6 +131,130 @@ class TestSaveDatasetRelations:
         save_dataset_relations(Mock(), dataset, form)
 
         assert not DatasetRelation.objects.filter(pk=old_dr.pk).exists()
+
+
+class TestSaveProducesRelations:
+    def test_skips_when_no_produces_field_in_changed_data(self):
+        dataset = DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [DatasetFactory()]},
+            changed_data=[],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert DatasetRelation.objects.filter(dataset=dataset).count() == 0
+
+    def test_triggers_when_any_produces_field_in_changed_data(self):
+        dataset = DatasetFactory()
+        other = DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [], "produces_services": [other], "produces_catalogs": []},
+            changed_data=["produces_services"],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert DatasetRelation.objects.filter(dataset=dataset).count() == 1
+
+    def test_warns_when_produces_relation_type_does_not_exist(self):
+        Relation.objects.filter(name=Relation.PRODUCES).delete()
+        dataset = DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [DatasetFactory()], "produces_services": [], "produces_catalogs": []},
+            changed_data=["produces_datasets"],
+        )
+        request = Mock()
+
+        with patch("vitrina.dcat.view_helpers.messages") as mock_messages:
+            save_produces_relations(request, dataset, form)
+
+        mock_messages.warning.assert_called_once()
+        assert DatasetRelation.objects.filter(dataset=dataset).count() == 0
+
+    def test_creates_relation_for_produces_datasets(self):
+        dataset = DatasetFactory()
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+        produced = DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [produced], "produces_services": [], "produces_catalogs": []},
+            changed_data=["produces_datasets"],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert DatasetRelation.objects.filter(relation=relation, dataset=dataset, part_of=produced).exists()
+
+    def test_creates_relation_for_produces_services(self):
+        dataset = DatasetFactory()
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+        produced = DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [], "produces_services": [produced], "produces_catalogs": []},
+            changed_data=["produces_services"],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert DatasetRelation.objects.filter(relation=relation, dataset=dataset, part_of=produced).exists()
+
+    def test_creates_relation_for_produces_catalogs(self):
+        dataset = DatasetFactory()
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+        produced = DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [], "produces_services": [], "produces_catalogs": [produced]},
+            changed_data=["produces_catalogs"],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert DatasetRelation.objects.filter(relation=relation, dataset=dataset, part_of=produced).exists()
+
+    def test_creates_relations_across_all_three_fields(self):
+        dataset = DatasetFactory()
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+        d1, d2, d3 = DatasetFactory(), DatasetFactory(), DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [d1], "produces_services": [d2], "produces_catalogs": [d3]},
+            changed_data=["produces_datasets", "produces_services", "produces_catalogs"],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert DatasetRelation.objects.filter(relation=relation, dataset=dataset).count() == 3
+
+    def test_deletes_old_produces_relations(self):
+        dataset = DatasetFactory()
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+        old = DatasetFactory()
+        old_dr = DatasetRelationFactory(relation=relation, dataset=dataset, part_of=old)
+        dataset.part_of.add(old_dr)
+        form = make_form(
+            cleaned_data={"produces_datasets": [], "produces_services": [], "produces_catalogs": []},
+            changed_data=["produces_datasets"],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert not DatasetRelation.objects.filter(pk=old_dr.pk).exists()
+
+    def test_replaces_old_produces_relations_with_new(self):
+        dataset = DatasetFactory()
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+        old = DatasetFactory()
+        old_dr = DatasetRelationFactory(relation=relation, dataset=dataset, part_of=old)
+        dataset.part_of.add(old_dr)
+        new = DatasetFactory()
+        form = make_form(
+            cleaned_data={"produces_datasets": [new], "produces_services": [], "produces_catalogs": []},
+            changed_data=["produces_datasets"],
+        )
+
+        save_produces_relations(Mock(), dataset, form)
+
+        assert not DatasetRelation.objects.filter(pk=old_dr.pk).exists()
+        assert DatasetRelation.objects.filter(relation=relation, dataset=dataset, part_of=new).exists()
 
 
 class TestSaveDatasetAttribution:

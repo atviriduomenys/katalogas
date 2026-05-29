@@ -91,6 +91,38 @@ def save_dataset_relations(request: WSGIRequest, dataset: Dataset, form: "BaseRe
     dataset.save()
 
 
+PRODUCES_FIELDS = ["produces_datasets", "produces_services", "produces_catalogs"]
+
+
+@transaction.atomic
+def save_produces_relations(request: WSGIRequest, dataset: Dataset, form) -> None:
+    if not any(f in form.changed_data for f in PRODUCES_FIELDS):
+        return
+
+    try:
+        relation = Relation.objects.get(name=Relation.PRODUCES)
+    except Relation.DoesNotExist:
+        warning_message = _(
+            "Ryšio tipas '{relation_name}' nerastas, todėl laukų '{datasets}', '{services}', '{catalogs}' "
+            "reikšmės neišsaugotos. Susisiekite su administratoriumi."
+        ).format(
+            relation_name=Relation.PRODUCES,
+            datasets=form.fields["produces_datasets"].label,
+            services=form.fields["produces_services"].label,
+            catalogs=form.fields["produces_catalogs"].label,
+        )
+        messages.warning(request, warning_message)
+        return
+
+    DatasetRelation.objects.filter(relation=relation, dataset=dataset).delete()
+    for field_name in PRODUCES_FIELDS:
+        for selected_dataset in form.cleaned_data.get(field_name) or []:
+            dataset_relation = DatasetRelation.objects.create(
+                relation=relation, dataset=dataset, part_of=selected_dataset
+            )
+            dataset.part_of.add(dataset_relation)
+
+
 @transaction.atomic
 def save_dataset_attribution(request: WSGIRequest, dataset: Dataset, form: "BaseResourceForm") -> None:
     if "qualified_attribution" not in form.cleaned_data or "qualified_attribution" not in form.changed_data:

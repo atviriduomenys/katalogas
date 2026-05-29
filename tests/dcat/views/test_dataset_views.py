@@ -17,7 +17,7 @@ from vitrina.classifiers.factories import (
     ProvenanceStatementFactory,
     RuleFactory,
 )
-from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI
+from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI, SpatialCoverage
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
 from vitrina.datasets.factories import (
     AttributionFactory,
@@ -39,6 +39,7 @@ from vitrina.datasets.models import (
 from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
     InformationSystemResourceForm,
+    ISPublicServiceResourceForm,
     ServiceResourceForm,
     InformationSystemUpdateForm,
     ServiceUpdateForm,
@@ -150,6 +151,7 @@ class TestDcatDatasetCreateView:
             (DCATResourceSubclass.INFORMATION_SYSTEM, InformationSystemResourceForm),
             (DCATResourceSubclass.SERVICE, ServiceResourceForm),
             (DCATResourceSubclass.DATASET, DatasetResourceForm),
+            (DCATResourceSubclass.IS_PUBLIC_SERVICE, ISPublicServiceResourceForm),
         ],
     )
     def test_get_uses_correct_form_per_subclass(self, app: DjangoTestApp, subclass_name: str, expected_form_class):
@@ -512,6 +514,65 @@ class TestDcatDatasetCreateView:
         assert dataset is not None
         assert dataset.organization == form_org
         assert response.status_code == 200
+
+    def test_post_is_public_service_saves_all_fields(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        is_public_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        parent_is = DatasetFactory(organization=org, subclass=is_subclass, is_public=False, metadata=f"{org.name}/myis")
+        contact = ContactFactory(organization=org)
+        rule = RuleFactory()
+        category = CategoryFactory()
+        service_type_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.SERVICE_TYPE_SCHEME_URI)
+        service_type = ConceptFactory(concept_schemas=[service_type_schema])
+        adms_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.IS_PUBLIC_SERVICE_STATUS_SCHEME_URI)
+        status_concept = ConceptFactory(concept_schemas=[adms_schema])
+        spatial_coverage = SpatialCoverage.objects.create(name="Vilnius", order=0)
+        pasis_agency, _ = Agency.objects.get_or_create(
+            code=Agency.PASIS_CODE,
+            defaults={"name": "PASIS", "uri": "https://www.pasis.lt", "identifier_validation_type": None},
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create",
+            kwargs={"organization_id": org.pk, "subclass_uuid": is_public_service_subclass.pk},
+        )
+        form = app.get(url).forms["wizard-fragment-form"]
+        form["title"] = "IS Public Service All Fields"
+        form["description"] = "IS public service description"
+        form["parent"] = str(parent_is.pk)
+        form["identifier"] = "paslauga_1"
+        form["information_system_publishers"].force_value([str(publisher_org.pk)])
+        form["landing_page"] = "https://example.com/service"
+        form["contact"] = contact.pk
+        form["follows"].force_value([str(rule.pk)])
+        form["category"].force_value([str(category.pk)])
+        form["service_type"].force_value([str(service_type.pk)])
+        form["is_public_service_status"].force_value(str(status_concept.pk))
+        form["spatial_coverages"].force_value([str(spatial_coverage.pk)])
+        with patch("vitrina.datasets.models.update_applicable_legislation_description"):
+            form.submit()
+
+        dataset = Dataset.objects.filter(translations__title="IS Public Service All Fields").first()
+        assert dataset is not None
+        assert dataset.organization == org
+        assert dataset.subclass == is_public_service_subclass
+        assert dataset.is_public is False
+        assert dataset.catalog == Catalog.objects.get(identifier=Catalog.IDENTIFIER_ISRIS)
+        assert dataset.get_parent() == parent_is
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
+        assert dataset.landing_page == "https://example.com/service"
+        assert dataset.contact == contact
+        assert dataset.follows.filter(pk=rule.pk).exists()
+        assert dataset.category.filter(pk=category.pk).exists()
+        assert dataset.service_type.filter(pk=service_type.pk).exists()
+        assert dataset.is_public_service_status == status_concept
+        assert dataset.spatial_coverages.filter(pk=spatial_coverage.pk).exists()
+        assert Identifier.objects.filter(resource=dataset, notation="paslauga_1", scheme_agency=pasis_agency).exists()
+        assert Metadata.objects.get(dataset=dataset).name == f"{org.name}/myis/paslauga_1"
 
 
 class TestDcatDatasetUpdateView:
@@ -1270,3 +1331,73 @@ class TestDcatDatasetUpdateView:
         dataset.refresh_from_db()
         assert dataset.published is None
         assert dataset.status == Dataset.UNASSIGNED
+
+    def test_post_is_public_service_updates_all_fields(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        is_public_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        parent_is = DatasetFactory(organization=org, subclass=is_subclass, is_public=False, metadata=f"{org.name}/myis")
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=is_public_service_subclass,
+            is_public=False,
+            metadata=f"{org.name}/myis/old_paslauga",
+        )
+        dataset.move(parent_is, "sorted-child")
+        dataset.refresh_from_db()
+        contact = ContactFactory(organization=org)
+        rule = RuleFactory()
+        category = CategoryFactory()
+        service_type_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.SERVICE_TYPE_SCHEME_URI)
+        service_type = ConceptFactory(concept_schemas=[service_type_schema])
+        adms_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.IS_PUBLIC_SERVICE_STATUS_SCHEME_URI)
+        status_concept = ConceptFactory(concept_schemas=[adms_schema])
+        spatial_coverage = SpatialCoverage.objects.create(name="Kaunas", order=1)
+        pasis_agency, _ = Agency.objects.get_or_create(
+            code=Agency.PASIS_CODE,
+            defaults={"name": "PASIS", "uri": "https://www.pasis.lt", "identifier_validation_type": None},
+        )
+        IdentifierFactory(resource=dataset, scheme_agency=pasis_agency, notation="old_paslauga")
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        produced_dataset = DatasetFactory(subclass=dataset_subclass)
+        produces_relation = Relation.objects.get(name=Relation.PRODUCES)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["wizard-fragment-form"]
+        form["title"] = "Updated IS Public Service"
+        form["description"] = "Updated description"
+        form["parent"] = str(parent_is.pk)
+        form["identifier"] = "new_paslauga"
+        form["information_system_publishers"].force_value([str(publisher_org.pk)])
+        form["landing_page"] = "https://example.com/updated-service"
+        form["contact"] = contact.pk
+        form["follows"].force_value([str(rule.pk)])
+        form["category"].force_value([str(category.pk)])
+        form["service_type"].force_value([str(service_type.pk)])
+        form["is_public_service_status"].force_value(str(status_concept.pk))
+        form["spatial_coverages"].force_value([str(spatial_coverage.pk)])
+        form["produces_datasets"].force_value([str(produced_dataset.pk)])
+        form.submit()
+
+        dataset.refresh_from_db()
+        assert dataset.title == "Updated IS Public Service"
+        assert dataset.description == "Updated description"
+        assert dataset.information_system_publishers.filter(pk=publisher_org.pk).exists()
+        assert dataset.landing_page == "https://example.com/updated-service"
+        assert dataset.contact == contact
+        assert dataset.follows.filter(pk=rule.pk).exists()
+        assert dataset.category.filter(pk=category.pk).exists()
+        assert dataset.service_type.filter(pk=service_type.pk).exists()
+        assert dataset.is_public_service_status == status_concept
+        assert dataset.spatial_coverages.filter(pk=spatial_coverage.pk).exists()
+        assert Identifier.objects.filter(resource=dataset).count() == 1
+        assert Identifier.objects.filter(resource=dataset, notation="new_paslauga", scheme_agency=pasis_agency).exists()
+        assert DatasetRelation.objects.filter(
+            relation=produces_relation, dataset=dataset, part_of=produced_dataset
+        ).exists()

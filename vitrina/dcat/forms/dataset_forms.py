@@ -28,6 +28,7 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
+from vitrina.identifiers.models import Agency
 from vitrina.classifiers.models import FormFieldHelpText
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts, get_available_dcat_name_prefixes
 from vitrina.dcat.widgets import (
@@ -659,6 +660,108 @@ class DatasetUpdateForm(DatasetResourceForm):
                 self.initial["creator"] = creator_attribution.organization_id
 
 
+class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
+    identifier = forms.CharField(
+        label=_("Identifikatorius"),
+        required=True,
+        help_text=_(
+            "PASIS kodas. Jei nėra - institucijos suteiktas vidinis teikiamos paslaugos identifikatorius "
+            "arba sveikas skaičius. Atitinka dct:identifier."
+        ),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = (
+            "parent",
+            "title",
+            "identifier",
+            "description",
+            "information_system_publishers",
+            "landing_page",
+            "spatial_coverages",
+            "is_public_service_status",
+            "service_type",
+            "category",
+            "follows",
+            "contact",
+        )
+        widgets = {
+            "information_system_publishers": Select2MultipleWidget,
+            "spatial_coverages": Select2MultipleWidget,
+            "is_public_service_status": Select2Widget,
+            "service_type": Select2MultipleWidget,
+            "follows": Select2MultipleWidget,
+        }
+
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
+
+        self.fields["parent"].required = True
+        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
+            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
+        )
+
+        self.fields["information_system_publishers"].required = True
+        self.fields["information_system_publishers"].queryset = self.fields[
+            "information_system_publishers"
+        ].queryset.order_by("title")
+        self.fields["information_system_publishers"].label = _("Kompetentingos valdžios institucijos")
+        self.fields["information_system_publishers"].help_text = _(
+            "Viešojo administravimo institucijos, atsakingos už šią paslaugą. Atitinka cv:hasCompetentAuthority."
+        )
+
+        self.fields["landing_page"].required = True
+        self.fields["landing_page"].label = _("Pagrindinis puslapis")
+        self.fields["landing_page"].help_text = _("Pagrindinis e. paslaugos tinklalapis. Atitinka foaf:homepage.")
+
+        self.fields["service_type"].queryset = (
+            Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.SERVICE_TYPE_SCHEME_URI)
+            .prefetch_related("translations")
+            .distinct()
+        )
+        self.fields["service_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
+
+        self.fields["is_public_service_status"].queryset = (
+            Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.IS_PUBLIC_SERVICE_STATUS_SCHEME_URI)
+            .prefetch_related("translations")
+            .distinct()
+        )
+        self.fields["is_public_service_status"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
+
+        self.fields["category"].label = _("Tematinė sritis")
+        self.fields["category"].help_text = _("E. paslaugos tema. Atitinka skos:concept.")
+
+        self.fields["contact"].help_text = _(
+            "Su e. paslaugos teikimu susijusi kontaktinė informacija. Atitinka cv:hasContactPoint."
+        )
+
+        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_IS_PUBLIC_SERVICE)
+
+    def get_dataset_name(self) -> str:
+        identifier = self.cleaned_data["identifier"]
+        parent = self.cleaned_data["parent"]
+
+        return f"{parent.name.removesuffix('/')}/{identifier}"
+
+
+class ISPublicServiceUpdateForm(ISPublicServiceResourceForm):
+    class Meta:
+        model = Dataset
+        fields = ISPublicServiceResourceForm.Meta.fields
+        widgets = ISPublicServiceResourceForm.Meta.widgets
+
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(organization, url_parent, *args, **kwargs)
+        if self.instance.pk:
+            pasis_identifier = self.instance.identifiers.filter(scheme_agency__code=Agency.PASIS_CODE).first()
+            self.fields["identifier"].initial = pasis_identifier.notation if pasis_identifier else ""
+
+
 class InformationSystemRelationshipForm(forms.Form):
     has_part = forms.ModelMultipleChoiceField(
         queryset=Dataset.objects.filter(
@@ -753,3 +856,40 @@ class DatasetRelationshipForm(forms.Form):
         self.helper = FormHelper()
         self.helper.form_tag = False
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET_RELATIONSHIPS)
+
+
+class ISPublicServiceRelationshipForm(forms.Form):
+    produces_datasets = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Sukuria duomenų rinkinius"),
+        help_text=_("Duomenų rinkiniai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."),
+    )
+    produces_services = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.SERVICE),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Sukuria paslaugas"),
+        help_text=_("Paslaugos, kurias sukuria ši e. paslauga. Atitinka cpsv:produces."),
+    )
+    produces_catalogs = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Sukuria katalogus"),
+        help_text=_("Katalogai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."),
+    )
+
+    def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if dataset.pk:
+            produced = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.PRODUCES,
+                related_datasets__dataset=dataset,
+            )
+            self.initial["produces_datasets"] = produced.filter(subclass__name=DCATResourceSubclass.DATASET)
+            self.initial["produces_services"] = produced.filter(subclass__name=DCATResourceSubclass.SERVICE)
+            self.initial["produces_catalogs"] = produced.filter(subclass__name=DCATResourceSubclass.CATALOG)
+        self.helper = FormHelper()
+        self.helper.form_tag = False

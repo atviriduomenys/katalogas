@@ -105,7 +105,7 @@ class ContactFormMixin(forms.Form):
             )
 
 
-class BaseResourceForm(TranslatableModelForm):
+class DatasetNameMixin(forms.Form):
     name_prefix = forms.ChoiceField(
         required=False,
         widget=Select2Widget,
@@ -129,47 +129,9 @@ class BaseResourceForm(TranslatableModelForm):
             )
         ],
     )
-    parent = forms.ModelChoiceField(
-        Dataset.objects.all().prefetch_related("translations"),
-        label=_("Tėvinis išteklius"),
-        widget=Select2Widget(),
-        required=False,
-        help_text=_("Ši savybė nurodo susijusį resursą. Atitinka dct:relation."),
-    )
-    category = forms.ModelMultipleChoiceField(
-        queryset=Category.objects.order_by("title"),
-        label=_("Kategorija"),
-        help_text=_("Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."),
-        widget=CategoryMultipleWidget,
-        required=False,
-    )
-    description = TranslatedField(required=True)
-    title = TranslatedField(
-        form_class=forms.CharField,
-        required=True,
-        widget=forms.TextInput(),
-    )
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.attrs["novalidate"] = ""
-        self.helper.form_id = "dataset-form"
-        self.helper.form_tag = False
-        self.organization = organization
-
-        if self.language_code == "en":
-            self.fields["description"].required = False
-
-        if url_parent:
-            self.fields["parent"].initial = url_parent.pk
-        elif self.instance.pk:
-            self.fields["parent"].initial = self.instance.get_parent()
-            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
-
-        if self.instance.pk:
-            self.initial["category"] = self.instance.category.all()
-
+        super().__init__(organization, url_parent, *args, **kwargs)
         instance_name = self.instance.name if self.instance.pk else None
         prefix_source_dataset = self._resolve_prefix_source_dataset(url_parent)
         available_prefixes = get_available_dcat_name_prefixes(prefix_source_dataset, self.organization)
@@ -238,7 +200,50 @@ class BaseResourceForm(TranslatableModelForm):
         return cleaned_data
 
 
-class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResourceForm):
+class BaseResourceForm(TranslatableModelForm):
+    parent = forms.ModelChoiceField(
+        Dataset.objects.all().prefetch_related("translations"),
+        label=_("Tėvinis išteklius"),
+        widget=Select2Widget(),
+        required=False,
+        help_text=_("Ši savybė nurodo susijusį resursą. Atitinka dct:relation."),
+    )
+    category = forms.ModelMultipleChoiceField(
+        queryset=Category.objects.order_by("title"),
+        label=_("Kategorija"),
+        help_text=_("Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."),
+        widget=CategoryMultipleWidget,
+        required=False,
+    )
+    description = TranslatedField(required=True)
+    title = TranslatedField(
+        form_class=forms.CharField,
+        required=True,
+        widget=forms.TextInput(),
+    )
+
+    def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs["novalidate"] = ""
+        self.helper.form_id = "dataset-form"
+        self.helper.form_tag = False
+        self.organization = organization
+
+        if self.language_code == "en":
+            self.fields["description"].required = False
+
+        if url_parent:
+            self.fields["parent"].initial = url_parent.pk
+        elif self.instance.pk:
+            self.fields["parent"].initial = self.instance.get_parent()
+            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
+
+        if self.instance.pk:
+            self.initial["category"] = self.instance.category.all()
+
+
+class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameMixin, BaseResourceForm):
     identifier = forms.CharField(
         label=_("Identifikatorius"),
         required=True,
@@ -334,7 +339,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         return identifier
 
 
-class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
+class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
@@ -446,7 +451,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         return cleaned_data
 
 
-class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, BaseResourceForm):
+class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     documentation = StringListField(
         label=_("Dokumentacija"),
         help_text=_("Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),

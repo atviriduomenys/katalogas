@@ -120,6 +120,35 @@ class TestBaseResourceForm:
 
         assert form.fields["description"].required is True
 
+    def test_category_initial_set_from_instance(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        cat1 = CategoryFactory()
+        cat2 = CategoryFactory()
+        dataset.category.set([cat1, cat2])
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert set(form.initial["category"]) == {cat1, cat2}
+
+    def test_category_initial_empty_when_instance_has_no_categories(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert list(form.initial["category"]) == []
+
+
+class TestDatasetNameMixin:
     def test_name_with_non_ascii_raises_error(self):
         organization = OrganizationFactory()
 
@@ -405,33 +434,6 @@ class TestBaseResourceForm:
         assert form.errors["name_prefix"] == [
             f"Nurodykite tinkamą reikšmę. {organization.name} nėra galimas pasirinkimas."
         ]
-
-    def test_category_initial_set_from_instance(self):
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        cat1 = CategoryFactory()
-        cat2 = CategoryFactory()
-        dataset.category.set([cat1, cat2])
-
-        form = InformationSystemResourceForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
-
-        assert set(form.initial["category"]) == {cat1, cat2}
-
-    def test_category_initial_empty_when_instance_has_no_categories(self):
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-
-        form = InformationSystemResourceForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
-
-        assert list(form.initial["category"]) == []
 
 
 class TestInformationSystemResourceForm:

@@ -89,12 +89,11 @@ class TestEnumForm:
     @pytest.mark.parametrize(
         "given_value, saved_value",
         [
-            ("First", '"First"'),
             ("'First'", "'First'"),
             ('"First"', '"First"'),
         ],
     )
-    def test_creating_string_enum_automatically_adds_quotes_if_not_quoted(
+    def test_creating_string_enum_stores_quoted_value_as_is(
         self, app: DjangoTestApp, string_property: Property, given_value: str, saved_value: str
     ):
         user = UserFactory(is_staff=True)
@@ -153,7 +152,7 @@ class TestEnumForm:
         form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, string_property.name])).forms[
             "enum-form"
         ]
-        form["value"] = "First"
+        form["value"] = '"First"'
         form["source"] = "TEST"
         form["access"] = Metadata.OPEN
         form["title"] = "Test value"
@@ -242,7 +241,7 @@ class TestEnumForm:
         form = app.get(
             reverse("enum-update", args=[dataset.pk, version.pk, model.name, string_property.name, enum_item.pk])
         ).forms["enum-form"]
-        form["value"] = "First2"
+        form["value"] = '"First2"'
         resp = form.submit()
 
         assert resp.url == string_property.get_absolute_url()
@@ -286,57 +285,3 @@ class TestEnumForm:
         resp = form.submit()
 
         assert resp.url == string_property.get_absolute_url()
-
-    @pytest.mark.parametrize("non_integer_value", ["abc", '"First"', "1.33", "1.0", 1.1])
-    def test_cannot_save_non_integer_item_values_for_integer_enum(
-        self, app: DjangoTestApp, integer_property: Property, non_integer_value: str | float
-    ):
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        version = integer_property.metadata_version
-        model = integer_property.model
-        dataset = model.dataset
-
-        form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, integer_property.name])).forms[
-            "enum-form"
-        ]
-        form["value"] = non_integer_value
-        form["source"] = "TEST"
-        form["access"] = Metadata.OPEN
-        form["title"] = "Test value"
-        form["description"] = "For testing"
-
-        resp = form.submit()
-
-        form = resp.context["form"]
-        assert not form.is_valid()
-        assert form.errors == {"value": [f'Reikšmė "{non_integer_value}" turi būti integer tipo.']}
-
-    @pytest.mark.parametrize("non_boolean_value", [True, False, 1, 0, "True", "False", "abc"])
-    def test_cannot_save_values_other_than_true_false_for_boolean_enum(
-        self, app: DjangoTestApp, boolean_property: Property, non_boolean_value: bool | str | int
-    ):
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        version = boolean_property.metadata_version
-        model = boolean_property.model
-        dataset = model.dataset
-
-        form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, boolean_property.name])).forms[
-            "enum-form"
-        ]
-        form["value"] = non_boolean_value
-        form["source"] = "TEST"
-        form["access"] = Metadata.OPEN
-        form["title"] = "Test value"
-        form["description"] = "For testing"
-
-        resp = form.submit()
-
-        form = resp.context["form"]
-        assert not form.is_valid()
-        assert form.errors == {
-            "value": [f'Reikšmė "{non_boolean_value}" turi būti boolean tipo. Viena iš: true, false']
-        }

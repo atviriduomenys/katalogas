@@ -1607,7 +1607,7 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
     ) == [
         {
             "metadata_version_id": version.pk,
-            "metadata__prepare": '"test"',
+            "metadata__prepare": "test",
             "metadata__source": "TEST",
             "metadata__access": Metadata.OPEN,
             "metadata__title": "Test value",
@@ -5500,7 +5500,6 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
         ",,,,,,enum,,,'''SMALL''',,,,,,,,,\n"
-        ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))

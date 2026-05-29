@@ -910,6 +910,25 @@ def test_structure_with_property_enum_ref_value_adds_comment_about_error(app: Dj
 
 
 @pytest.mark.django_db
+def test_structure_with_enum_with_wrong_type_prepare_adds_comment_about_error(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,,,,\n"
+        "1,,,,,type,integer,,,,5,,,,,,,,\n"
+        ",,,,,,enum,,one,hello,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
+        'Reikšmė "hello" turi būti integer tipo.',
+    ]
+
+
+@pytest.mark.django_db
 def test_structure_with_boolean_enum_with_invalid_value_adds_comment_about_error(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"

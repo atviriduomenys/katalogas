@@ -18,8 +18,6 @@ from vitrina.structure.helpers import get_type_repr
 from vitrina.users.models import User
 from enum import Enum
 
-from vitrina.structure.utils import TypeChecker, get_type_checker_for_type
-
 
 class StatusCode(str, Enum):
     DEVELOP = "develop"
@@ -147,9 +145,6 @@ class Metadata(models.Model):
         if self.type:
             return get_type_repr(self)
         return ""
-
-    def get_type_checker(self) -> TypeChecker:
-        return get_type_checker_for_type(self.type)
 
 
 class Base(models.Model):

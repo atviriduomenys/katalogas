@@ -1446,3 +1446,100 @@ class PublishForm(forms.ModelForm):
         if latest_version and released < latest_version.released:
             raise ValidationError(_("Versija negali įsigalioti anksčiau už praėjusią versiją."))
         return released
+
+
+class ModelScopeForm(forms.ModelForm):
+    dataset_id = forms.IntegerField(widget=forms.HiddenInput)
+    model_id = forms.IntegerField(widget=forms.HiddenInput)
+    ref = forms.CharField(
+        label=_("Kodinis pavadinimas"),
+        help_text=_("Savybė nurodanti duomenų lauko pavadinimą, modelio atributas. DSA: `ref`"),
+    )
+    prepare = forms.CharField(
+        label=_("Duomenų atranka"),
+        required=True,
+        help_text=_("Formulė skirta suteikti leidimą modelio laukams. DSA: `prepare`"),
+    )
+    eli = forms.URLField(
+        label=_("Europos teisės akto identifikatorius (ELI)"),
+        required=False,
+        help_text=_(
+            "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
+            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
+            "Tais atvejais, kai yra keli dokumentai su priedais: "
+            """ "#priedas1/17.2" """
+            """ "17.2/17.2.5", """
+            """kur "priedas1" yra dokumento failo pavadinimas. DSA: `eli`"""
+        ),
+    )
+    title = forms.CharField(
+        label=_("Pavadinimas"),
+        required=False,
+        help_text=_(
+            "Duomenų lauko pavadinimas. "
+            "Šis pavadinimas yra skirtas skaityti žmonėms ir bus rodomas duomenų laukų sąrašuose ir antraštėse. "
+            "Jei nenurodyta, bus naudojamas scope kodinis pavadinimas. DSA: `title`"
+        ),
+    )
+    description = forms.CharField(
+        label=_("Aprašymas"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 8}),
+        help_text=_("Duomenų lauko aprašymas. DSA: `description`"),
+    )
+
+    class Meta:
+        model = Metadata
+        fields = (
+            "dataset_id",
+            "ref",
+            "prepare",
+            "eli",
+            "title",
+            "description",
+        )
+
+    def __init__(self, user: User | AnonymousUser, model: Model, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.user = user
+        self.model = model
+        self.helper = FormHelper()
+        self.helper.attrs["novalidate"] = ""
+        self.helper.form_id = "property-form"
+        self.helper.layout = Layout(
+            Field("dataset_id"),
+            Field("model_id"),
+            Field("ref"),
+            Field("prepare"),
+            Field("eli"),
+            Field("title"),
+            Field("description"),
+            Submit(
+                "submit",
+                _("Redaguoti") if instance else _("Sukurti"),
+                css_class="button is-primary",
+            ),
+        )
+
+        self.initial["dataset_id"] = self.model.dataset.pk
+        self.initial["model_id"] = self.model.pk
+
+    def clean_ref(self) -> str:
+        ref = self.cleaned_data.get("ref")
+        if ref:
+            if not ref[0].islower():
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any([ch.isupper() for ch in ref]):
+                raise ValidationError(_("Kodiniame pavadinime negali būti naudojamos didžiosios raidės."))
+            elif any((not c.isalnum() and c != "_") for c in ref):
+                raise ValidationError(
+                    _(
+                        "Pavadinime gali būti mažosios raidės ir skaičiai, "
+                        "žodžiai gali būti atskirti _ simboliu, "
+                        "jokie kiti simboliai negalimi."
+                    )
+                )
+            elif not ref.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+        return ref

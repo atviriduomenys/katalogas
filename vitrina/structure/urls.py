@@ -1,7 +1,14 @@
 from django.urls import path
 
 from vitrina.api_example.views import YamlFileImportView
-from vitrina.structure.views import DatasetStructureView, PublishVersionView
+from vitrina.structure.views import (
+    DatasetStructureView,
+    PublishVersionView,
+    ModelScopeCreateView,
+    ModelScopeUpdateView,
+    ModelScopeDeleteView,
+    ModelScopeDetailView,
+)
 from vitrina.structure.views import DatasetStructureExportView
 from vitrina.structure.views import DatasetStructureExportOpenAPIView
 from vitrina.structure.views import ModelStructureView
@@ -244,5 +251,25 @@ urlpatterns = [
         "datasets/<int:pk>/versions/<int:version_id>/structure/uml/",
         DatasetStructureUMLView.as_view(),
         name="dataset-structure-uml-view",
+    ),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/scope/add/",
+        ModelScopeCreateView.as_view(),
+        name="model-scope-create",
+    ),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/scope/<int:scope_id>/change/",
+        ModelScopeUpdateView.as_view(),
+        name="model-scope-update",
+    ),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/scope/<int:scope_id>/delete/",
+        ModelScopeDeleteView.as_view(),
+        name="model-scope-delete",
+    ),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/scope/<int:scope_id>/",
+        ModelScopeDetailView.as_view(),
+        name="model-scope-detail",
     ),
 ]

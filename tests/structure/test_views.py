@@ -30,6 +30,7 @@ from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import VersionStatus, UMLDiagramStatus
 from vitrina.structure.factories import (
     ModelFactory,
+    ModelScopeFactory,
     MetadataFactory,
     PropertyFactory,
     EnumFactory,
@@ -43,6 +44,7 @@ from vitrina.structure.factories import (
 )
 from vitrina.structure.models import (
     Metadata,
+    ModelScope,
     Enum,
     EnumItem,
     VersionType,
@@ -5121,6 +5123,43 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_manifest_export_openapi_with_scopes(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,,scope,public,,open,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(content_type=ct, object_id=structure.dataset.pk)
+    app.set_user(representative.user)
+    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk, version.pk]))
+
+    assert resp.status_code == HTTPStatus.OK
+    assert resp.content_type == "application/json"
+
+    openapi_spec = resp.json
+    expected_keys = ["openapi", "info", "externalDocs", "servers", "tags", "components", "paths"]
+    assert list(openapi_spec.keys()) == expected_keys
+
+    model_paths = {
+        "/datasets/gov/ivpk/adp/Country",
+        "/datasets/gov/ivpk/adp/Country/{id}",
+    }
+    assert model_paths <= set(openapi_spec["paths"].keys())
+
+
+@pytest.mark.django_db
 def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -8680,3 +8719,286 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         assert response.status_code == 200
         assert "text/html" in response["Content-Type"]
         assert "attachment" not in response.headers.get("Content-Disposition", "")
+
+
+class TestModelScopeCreate:
+    def test_success(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+
+        form = app.get(reverse("model-scope-create", args=[dataset.pk, version.pk, "TestModel"])).forms["property-form"]
+        form["ref"] = "test_scope"
+        form["prepare"] = "open"
+        resp = form.submit()
+
+        assert resp.status_code == HTTPStatus.FOUND
+        assert model.model_scopes.count() == 1
+        scope = model.model_scopes.first()
+        assert scope.metadata.first().ref == "test_scope"
+        assert scope.metadata.first().prepare == "open"
+
+    def test_permission_denied(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=False)
+        app.set_user(user)
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+
+        resp = app.get(
+            reverse("model-scope-create", args=[dataset.pk, version.pk, "TestModel"]),
+            expect_errors=True,
+        )
+        assert resp.status_code == HTTPStatus.FORBIDDEN
+        assert model.model_scopes.count() == 0
+
+    @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+    def test_non_draft_version(self, app: DjangoTestApp, status: str):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        version = VersionFactory(status=status)
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        url = reverse("model-scope-create", args=[dataset.pk, version.pk, "TestModel"])
+
+        get_resp = app.get(url)
+        post_resp = app.post(
+            url, {"dataset_id": dataset.pk, "model_id": model.pk, "ref": "test_scope", "prepare": "open"}
+        )
+
+        assert get_resp.status_code == HTTPStatus.FOUND
+        assert post_resp.status_code == HTTPStatus.FOUND
+        assert model.model_scopes.count() == 0
+
+    def test_requires_login(self, app: DjangoTestApp):
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+
+        resp = app.get(reverse("model-scope-create", args=[dataset.pk, version.pk, "TestModel"]))
+        assert resp.status_code == HTTPStatus.FOUND
+        assert model.model_scopes.count() == 0
+
+
+class TestModelScopeUpdate:
+    def test_success(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        scope = ModelScopeFactory(model=model, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(ModelScope),
+            object_id=scope.pk,
+            dataset=dataset,
+            ref="test_scope",
+            prepare="open",
+            metadata_version=version,
+        )
+
+        form = app.get(reverse("model-scope-update", args=[dataset.pk, version.pk, "TestModel", scope.pk])).forms[
+            "property-form"
+        ]
+        form["ref"] = "updated_scope"
+        form["prepare"] = "closed"
+        resp = form.submit()
+
+        assert resp.status_code == HTTPStatus.FOUND
+        updated_metadata = scope.metadata.first()
+        assert updated_metadata.ref == "updated_scope"
+        assert updated_metadata.prepare == "closed"
+
+    def test_permission_denied(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=False)
+        app.set_user(user)
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        scope = ModelScopeFactory(model=model, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(ModelScope),
+            object_id=scope.pk,
+            dataset=dataset,
+            ref="test_scope",
+            prepare="open",
+            metadata_version=version,
+        )
+
+        resp = app.get(
+            reverse("model-scope-update", args=[dataset.pk, version.pk, "TestModel", scope.pk]),
+            expect_errors=True,
+        )
+        assert resp.status_code == 403
+        assert scope.metadata.first().ref == "test_scope"
+
+    @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+    def test_non_draft_version(self, app: DjangoTestApp, status: str):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        version = VersionFactory(status=status)
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        scope = ModelScopeFactory(model=model, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(ModelScope),
+            object_id=scope.pk,
+            dataset=dataset,
+            ref="test_scope",
+            prepare="open",
+            metadata_version=version,
+        )
+        url = reverse("model-scope-update", args=[dataset.pk, version.pk, "TestModel", scope.pk])
+
+        get_resp = app.get(url)
+        post_resp = app.post(
+            url, {"dataset_id": dataset.pk, "model_id": model.pk, "ref": "updated_scope", "prepare": "closed"}
+        )
+
+        assert get_resp.status_code == HTTPStatus.FOUND
+        assert post_resp.status_code == HTTPStatus.FOUND
+        assert scope.metadata.first().ref == "test_scope"
+
+
+class TestModelScopeDelete:
+    def test_success(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        scope = ModelScopeFactory(model=model, metadata_version=version)
+        scope_metadata = MetadataFactory(
+            content_type=ContentType.objects.get_for_model(ModelScope),
+            object_id=scope.pk,
+            dataset=dataset,
+            ref="test_scope",
+            prepare="open",
+            metadata_version=version,
+        )
+
+        resp = app.post(reverse("model-scope-delete", args=[dataset.pk, version.pk, "TestModel", scope.pk]))
+
+        assert resp.status_code == HTTPStatus.FOUND
+        assert not ModelScope.objects.filter(pk=scope.pk).exists()
+        assert not Metadata.objects.filter(pk=scope_metadata.pk).exists()
+
+    def test_permission_denied(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=False)
+        app.set_user(user)
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        scope = ModelScopeFactory(model=model, metadata_version=version)
+
+        resp = app.post(
+            reverse("model-scope-delete", args=[dataset.pk, version.pk, "TestModel", scope.pk]),
+            expect_errors=True,
+        )
+
+        assert resp.status_code == 403
+        assert ModelScope.objects.filter(pk=scope.pk).exists()
+
+    def test_requires_login(self, app: DjangoTestApp):
+        version = VersionFactory()
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        scope = ModelScopeFactory(model=model, metadata_version=version)
+
+        resp = app.post(reverse("model-scope-delete", args=[dataset.pk, version.pk, "TestModel", scope.pk]))
+
+        assert resp.status_code == HTTPStatus.FOUND
+        assert ModelScope.objects.filter(pk=scope.pk).exists()
+
+    @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+    def test_non_draft_version(self, app: DjangoTestApp, status: str):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        version = VersionFactory(status=status)
+        dataset = version.dataset
+        model = ModelFactory(dataset=dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            dataset=dataset,
+            name="dataset/TestModel",
+            metadata_version=version,
+        )
+        scope = ModelScopeFactory(model=model, metadata_version=version)
+
+        post_resp = app.post(reverse("model-scope-delete", args=[dataset.pk, version.pk, "TestModel", scope.pk]))
+
+        assert post_resp.status_code == HTTPStatus.FOUND
+        assert ModelScope.objects.filter(pk=scope.pk).exists()

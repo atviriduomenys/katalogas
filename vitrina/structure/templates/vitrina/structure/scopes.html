@@ -1,0 +1,81 @@
+{% load i18n %}
+{% load markdown_tags %}
+<div class="mt-5">
+    <h4 class="custom-title is-size-4-mobile">{% translate "Leidimai" %}</h4>
+    <div class="mb-5">
+        {% if scopes %}
+            <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding">
+                <thead>
+                    <tr>
+                        <th>{% translate "Kodinis pavadinimas" %}</th>
+                        <th>{% translate "Formulė" %}</th>
+                        <th>{% translate "Pavadinimas" %}</th>
+                        <th>{% translate "Versija" %}</th>
+                        {% if can_manage_structure %}<td></td>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scope in scopes %}
+                        {% with meta=scope.metadata.first %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'model-scope-detail' dataset.pk version_id model.name scope.pk %}">{{ meta.ref }}</a>
+                            </td>
+                            <td>
+                                {% if meta.prepare %}
+                                    <code>{{ meta.prepare }}</code>
+                                {% endif %}
+                            </td>
+                            <td>{{ meta.title }}</td>
+                            <td>
+                                {% if meta.metadata_version %}
+                                    {% if meta.metadata_version.status == "DRAFT" %}
+                                        <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                                    {% elif meta.draft and meta.metadata_version.status != "DRAFT" %}
+                                        <span class="tag is-danger is-light">{{ meta.metadata_version.external_version }} ({% translate "rengiama" %})</span>
+                                    {% elif meta.metadata_version.external_version and not meta.draft %}
+                                        <span class="tag is-success is-light">{{ meta.metadata_version.external_version }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            {% if can_manage_structure %}
+                            <td>
+                                <div class="buttons is-right">
+                                    {% if not is_disabled %}
+                                        <a href="{% url 'model-scope-update' dataset.pk version_id model.name scope.pk %}"
+                                           class="button is-link is-small">
+                                            {% translate "Keisti" %}
+                                        </a>
+                                        <form method="post" action="{% url 'model-scope-delete' dataset.pk version_id model.name scope.pk %}">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="button is-link is-small"
+                                                    onclick="return confirm('{% translate "Ar tikrai norite ištrinti?" %}')">
+                                                {% translate "Ištrinti" %}
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <a class="button is-link is-small is-disabled"
+                                           style="pointer-events: none; opacity: 0.5;"
+                                           aria-disabled="true">
+                                            {% translate "Keisti" %}
+                                        </a>
+                                        <a class="button is-link is-small is-disabled"
+                                           style="pointer-events: none; opacity: 0.5;"
+                                           aria-disabled="true">
+                                            {% translate "Ištrinti" %}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{% translate "Leidimų nėra." %}</p>
+        {% endif %}
+    </div>
+</div>

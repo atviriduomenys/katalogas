@@ -485,7 +485,25 @@
 
         {% if model.is_parameterized %}
             {% include 'vitrina/structure/params.html' %}
-         {% endif %}
+        {% endif %}
+
+        {% if scopes %}
+            {% include 'vitrina/structure/scopes.html' %}
+        {% endif %}
+
+        {% if can_manage_structure and model.name %}
+            <div class="buttons is-right mt-5">
+                {% if not is_disabled %}
+                    <a href="{% url 'model-scope-create' dataset.pk version_id model.name %}" class="button is-primary">
+                        {% translate "Naujas leidimas" %}
+                    </a>
+                {% else %}
+                    <a class="button is-primary is-disabled" style="pointer-events: none; opacity: 0.5;" aria-disabled="true">
+                        {% translate "Naujas leidimas" %}
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
 
         <div class="mt-6">
             {% comments obj=model user=request.user is_structure=True %}

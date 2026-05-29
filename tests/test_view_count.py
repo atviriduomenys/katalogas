@@ -1,3 +1,4 @@
+from django.conf import LazySettings
 import pytest
 from django.urls import reverse
 
@@ -11,7 +12,10 @@ from vitrina.users.models import User
 
 
 @pytest.mark.django_db
-def test_view_count_dataset(app: DjangoTestApp):
+def test_view_count_dataset(app: DjangoTestApp, settings: LazySettings):
+    # Allow session cookies over HTTP in tests (secure cookies are HTTPS-only)
+    settings.SESSION_COOKIE_SECURE = False
+
     dataset = DatasetFactory()
     hit_count = HitCount.objects.create(content_object=dataset)
 
@@ -27,7 +31,7 @@ def test_view_count_dataset(app: DjangoTestApp):
 
     # visit with the same user
     resp = app.post(reverse("hitcount:hit_ajax"), {"hitcountPK": hit_count.pk}, xhr=True)
-    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}'
+    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: hits per session limit reached."}'
     assert HitCount.objects.get(pk=hit_count.pk).hits == 1
 
     # visit with another user
@@ -38,7 +42,10 @@ def test_view_count_dataset(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_view_count_request(app: DjangoTestApp):
+def test_view_count_request(app: DjangoTestApp, settings: LazySettings):
+    # Allow session cookies over HTTP in tests (secure cookies are HTTPS-only)
+    settings.SESSION_COOKIE_SECURE = False
+    
     request = RequestFactory()
     hit_count = HitCount.objects.create(content_object=request)
 
@@ -54,7 +61,7 @@ def test_view_count_request(app: DjangoTestApp):
 
     # visit with the same user
     resp = app.post(reverse("hitcount:hit_ajax"), {"hitcountPK": hit_count.pk}, xhr=True)
-    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}'
+    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: hits per session limit reached."}'
     assert HitCount.objects.get(pk=hit_count.pk).hits == 1
 
     # visit with another user
@@ -65,7 +72,10 @@ def test_view_count_request(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_view_count_project(app: DjangoTestApp):
+def test_view_count_project(app: DjangoTestApp, settings: LazySettings):
+    # Allow session cookies over HTTP in tests (secure cookies are HTTPS-only)
+    settings.SESSION_COOKIE_SECURE = False
+    
     project = ProjectFactory()
     hit_count = HitCount.objects.create(content_object=project)
 
@@ -81,7 +91,7 @@ def test_view_count_project(app: DjangoTestApp):
 
     # visit with the same user
     resp = app.post(reverse("hitcount:hit_ajax"), {"hitcountPK": hit_count.pk}, xhr=True)
-    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}'
+    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: hits per session limit reached."}'
     assert HitCount.objects.get(pk=hit_count.pk).hits == 1
 
     # visit with another user

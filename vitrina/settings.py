@@ -780,6 +780,8 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access (XSS protection)
 # Note: CSRF_COOKIE_HTTPONLY not set - jquery.postcsrf.js needs to read it for hitcount
 
+HITCOUNT_HITS_PER_SESSION_LIMIT = 1
+
 CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt"]
 LANGUAGE_COOKIE_SECURE = True
 

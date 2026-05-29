@@ -113,7 +113,7 @@ class DatasetFactory(DjangoModelFactory):
         return dataset
 
     @factory.post_generation
-    def information_system_publishers(self, create: bool, extracted: list[Organization], **kwargs) -> None:
+    def information_system_publishers(self, create: bool, extracted: list[Organization] | None, **kwargs) -> None:
         if not create:
             return
         if extracted:

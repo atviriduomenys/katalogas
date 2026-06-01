@@ -184,7 +184,7 @@ class DatasetGroupFactory(DjangoModelFactory):
         fake = faker.Faker()
         for lang in reversed(settings.LANGUAGES):
             group.set_current_language(lang[0])
-            group.title = fake.word()
+            group.title = fake.uuid4()
         group.save()
         return group
 
@@ -210,7 +210,7 @@ class TypeFactory(DjangoModelFactory):
         fake = faker.Faker()
         for lang in reversed(settings.LANGUAGES):
             type.set_current_language(lang[0])
-            type.title = fake.word()
+            type.title = fake.uuid4()
         type.save()
         return type
 
@@ -227,8 +227,8 @@ class RelationFactory(DjangoModelFactory):
         fake = faker.Faker()
         for lang in reversed(settings.LANGUAGES):
             relation.set_current_language(lang[0])
-            relation.title = fake.word()
-            relation.inverse_title = fake.word()
+            relation.title = fake.uuid4()
+            relation.inverse_title = fake.uuid4()
         relation.save()
         return relation
 

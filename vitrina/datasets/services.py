@@ -1,6 +1,6 @@
 import secrets
 from collections import OrderedDict
-from typing import List, Any, Dict, Type
+from typing import List, Any, Dict, Iterable, Type
 
 import numpy as np
 from django.db import transaction
@@ -383,7 +383,7 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
     return apply_terms_filter(datasets, "django_id", allowed_dataset_pks)
 
 
-def apply_terms_filter(searchqueryset: SearchQuerySet, field: str, values) -> SearchQuerySet:
+def apply_terms_filter(searchqueryset: SearchQuerySet, field: str, values: Iterable[Any]) -> SearchQuerySet:
     clone = searchqueryset._clone()
     clone.query.add_terms_filter(field, values)
     return clone

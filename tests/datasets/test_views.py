@@ -13,6 +13,7 @@ from filer.models import File
 from reversion.models import Version
 from webtest import Upload
 from unittest.mock import patch
+from elasticsearch.client import Elasticsearch
 
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import (
@@ -624,6 +625,52 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
         resp = resp.click(linkid="manager-dataset-url")
         assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted([dataset.pk, dataset2.pk])
+
+    def test_manager_dataset_list_uses_terms_query_not_or_expansion(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset_ct = ContentType.objects.get_for_model(Dataset)
+        user = User.objects.create_user(email="manyreps@test.com", password="test123")
+        datasets = [DatasetFactory(organization=org) for _ in range(5)]
+        for dataset in datasets:
+            RepresentativeFactory(
+                content_type=dataset_ct,
+                object_id=dataset.pk,
+                role=Representative.RESOURCE_MANAGER,
+                user=user,
+            )
+
+        captured_bodies: list[dict] = []
+        original_search = Elasticsearch.search
+
+        def _capture_search(self_, *args, **kwargs):
+            captured_bodies.append(kwargs.get("body") or (args[0] if args else None))
+            return original_search(self_, *args, **kwargs)
+
+        app.set_user(user)
+        with patch.object(Elasticsearch, "search", _capture_search):
+            resp = app.get(reverse("manager-dataset-list"))
+
+        assert resp.status_code == 200
+
+        def _terms_field_names(node):
+            names = set()
+            if isinstance(node, dict):
+                if "terms" in node and isinstance(node["terms"], dict):
+                    names.update(node["terms"].keys())
+                for value in node.values():
+                    names.update(_terms_field_names(value))
+            elif isinstance(node, list):
+                for item in node:
+                    names.update(_terms_field_names(item))
+            return names
+
+        django_id_terms_seen = any("django_id" in _terms_field_names(body) for body in captured_bodies if body)
+        assert django_id_terms_seen, "Expected a terms clause on django_id; found OR-expansion or none"
+
+        body_dump = repr(captured_bodies)
+
+        assert "django_id:(" not in body_dump
+        assert "id:(" not in body_dump
 
     def test_search_without_query(self, app: DjangoTestApp, search_datasets: list[Dataset]):
         resp = app.get(reverse("dataset-list"))

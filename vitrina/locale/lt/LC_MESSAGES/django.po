@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-28 11:34+0300\n"
+"POT-Creation-Date: 2026-06-01 08:07+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2111,9 +2111,6 @@ msgstr ""
 msgid "Redaguokite pateiktį"
 msgstr ""
 
-msgid "Paslauga"
-msgstr ""
-
 #, python-brace-format
 msgid ""
 "Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
@@ -2165,6 +2162,9 @@ msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr ""
 
 msgid "Duomenų pildymo aplinka"
+msgstr ""
+
+msgid "Paslauga"
 msgstr ""
 
 msgid "Informacinės sistemos"
@@ -4856,6 +4856,34 @@ msgstr ""
 msgid "Versija negali įsigalioti anksčiau už praėjusią versiją."
 msgstr ""
 
+msgid ""
+"Savybė nurodanti duomenų lauko pavadinimą, modelio atributas. DSA: `ref`"
+msgstr ""
+
+msgid "Duomenų atranka"
+msgstr ""
+
+msgid "Formulė skirta suteikti leidimą modelio laukams. DSA: `prepare`"
+msgstr ""
+
+msgid ""
+"Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį "
+"teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> Pateikti "
+"konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "
+"\"#17.2\" <br>Tais atvejais, kai yra keli dokumentai su priedais:  "
+"\"#priedas1/17.2\"  \"17.2/17.2.5\", kur \"priedas1\" yra dokumento failo "
+"pavadinimas. DSA: `eli`"
+msgstr ""
+
+msgid ""
+"Duomenų lauko pavadinimas. Šis pavadinimas yra skirtas skaityti žmonėms ir "
+"bus rodomas duomenų laukų sąrašuose ir antraštėse. Jei nenurodyta, bus "
+"naudojamas scope kodinis pavadinimas. DSA: `title`"
+msgstr ""
+
+msgid "Duomenų lauko aprašymas. DSA: `description`"
+msgstr ""
+
 msgid "URI"
 msgstr ""
 
@@ -4989,6 +5017,12 @@ msgid "UML diagramos"
 msgstr ""
 
 msgid "UML diagrama mermaid sintaksės formatu."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Reikšmių sąrašas \"{0}\" negali turėti pavadinimo (ref), kai yra "
+"deklaruojamas savybės dimensijoje."
 msgstr ""
 
 msgid ""
@@ -5139,6 +5173,12 @@ msgstr ""
 msgid "Nauja reikšmė"
 msgstr ""
 
+msgid "Metaduomenys nerasti."
+msgstr ""
+
+msgid "Leidimų nėra."
+msgstr ""
+
 msgid "Įvyko klaida generuojant diagramą. Susisiekite su administracija."
 msgstr ""
 
@@ -5275,6 +5315,15 @@ msgstr ""
 
 #, python-brace-format
 msgid "'{0}' struktūros UML diagrama"
+msgstr ""
+
+msgid "Duomenų leidimo pridėjimas"
+msgstr ""
+
+msgid "Negalima redaguoti, kai versijos būsena nėra juodraštis."
+msgstr ""
+
+msgid "Negalima ištrinti, kai versijos būsena nėra juodraštis."
 msgstr ""
 
 msgid "Vyr. koordinatorius"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-28 11:34+0300\n"
+"POT-Creation-Date: 2026-06-01 08:07+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2291,9 +2291,6 @@ msgstr "Fill in distribution"
 msgid "Redaguokite pateiktį"
 msgstr "Edit distribution"
 
-msgid "Paslauga"
-msgstr "Service"
-
 #, python-brace-format
 msgid ""
 "Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
@@ -2348,6 +2345,9 @@ msgstr "Distribution updated successfully!"
 
 msgid "Duomenų pildymo aplinka"
 msgstr "Data entry environment"
+
+msgid "Paslauga"
+msgstr "Service"
 
 msgid "Informacinės sistemos"
 msgstr "Information systems"

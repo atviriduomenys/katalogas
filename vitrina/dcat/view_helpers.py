@@ -96,7 +96,7 @@ PRODUCES_FIELDS = ["produces_datasets", "produces_services", "produces_catalogs"
 
 @transaction.atomic
 def save_produces_relations(request: WSGIRequest, dataset: Dataset, form) -> None:
-    if not any(f in form.changed_data for f in PRODUCES_FIELDS):
+    if not any(field in form.changed_data for field in PRODUCES_FIELDS):
         return
 
     try:

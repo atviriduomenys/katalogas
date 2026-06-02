@@ -9,13 +9,15 @@ WIZARD_NODE_IS = "is"
 WIZARD_NODE_SERVICE = "service"
 WIZARD_NODE_DATASET = "dataset"
 WIZARD_NODE_DISTRIBUTION = "distribution"
+WIZARD_NODE_IS_PUBLIC_SERVICE = "is_public_service"
 
 WIZARD_ALLOWED_CHILDREN: dict[str, list[str]] = {
     WIZARD_NODE_ORGANIZATION: [WIZARD_NODE_IS],
-    WIZARD_NODE_IS: [WIZARD_NODE_IS, WIZARD_NODE_SERVICE, WIZARD_NODE_DATASET],
+    WIZARD_NODE_IS: [WIZARD_NODE_IS, WIZARD_NODE_IS_PUBLIC_SERVICE, WIZARD_NODE_SERVICE, WIZARD_NODE_DATASET],
     WIZARD_NODE_SERVICE: [WIZARD_NODE_DATASET],
     WIZARD_NODE_DATASET: [WIZARD_NODE_DISTRIBUTION],
     WIZARD_NODE_DISTRIBUTION: [],
+    WIZARD_NODE_IS_PUBLIC_SERVICE: [],
 }
 
 WIZARD_NODE_ICONS: dict[str, str] = {
@@ -24,6 +26,7 @@ WIZARD_NODE_ICONS: dict[str, str] = {
     WIZARD_NODE_SERVICE: "fa-cogs",
     WIZARD_NODE_DATASET: "fa-database",
     WIZARD_NODE_DISTRIBUTION: "fa-file-lines",
+    WIZARD_NODE_IS_PUBLIC_SERVICE: "fa-globe",
 }
 
 WIZARD_NODE_LABELS: dict[str, str] = {
@@ -32,6 +35,7 @@ WIZARD_NODE_LABELS: dict[str, str] = {
     WIZARD_NODE_SERVICE: _("Paslauga"),
     WIZARD_NODE_DATASET: _("Duomenų rinkinys"),
     WIZARD_NODE_DISTRIBUTION: _("Pateiktis"),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("E. paslauga"),
 }
 
 WIZARD_NODE_LABELS_PLURAL: dict[str, str] = {
@@ -40,18 +44,21 @@ WIZARD_NODE_LABELS_PLURAL: dict[str, str] = {
     WIZARD_NODE_SERVICE: _("Paslaugos"),
     WIZARD_NODE_DATASET: _("Duomenų rinkiniai"),
     WIZARD_NODE_DISTRIBUTION: _("Pateiktys"),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("E. paslaugos"),
 }
 
 WIZARD_TYPE_ORDER: dict[str, int] = {
     WIZARD_NODE_ORGANIZATION: 0,
     WIZARD_NODE_IS: 1,
-    WIZARD_NODE_SERVICE: 2,
-    WIZARD_NODE_DATASET: 3,
-    WIZARD_NODE_DISTRIBUTION: 4,
+    WIZARD_NODE_IS_PUBLIC_SERVICE: 2,
+    WIZARD_NODE_SERVICE: 3,
+    WIZARD_NODE_DATASET: 4,
+    WIZARD_NODE_DISTRIBUTION: 5,
 }
 
 WIZARD_NODE_HELPERS: dict[str, str] = {
     WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo mazgu."),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("Sukurti naują e. paslaugą po šiuo mazgu."),
     WIZARD_NODE_SERVICE: _("Sukurti naują paslaugą po šiuo mazgu."),
     WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo mazgu."),
     WIZARD_NODE_DISTRIBUTION: _("Pridėti naują duomenų rinkinio pateiktį."),
@@ -59,12 +66,14 @@ WIZARD_NODE_HELPERS: dict[str, str] = {
 
 WIZARD_TYPE_TO_SUBCLASS_NAME: dict[str, str] = {
     WIZARD_NODE_IS: DCATResourceSubclass.INFORMATION_SYSTEM,
+    WIZARD_NODE_IS_PUBLIC_SERVICE: DCATResourceSubclass.IS_PUBLIC_SERVICE,
     WIZARD_NODE_SERVICE: DCATResourceSubclass.SERVICE,
     WIZARD_NODE_DATASET: DCATResourceSubclass.DATASET,
 }
 
 WIZARD_SUBCLASS_TO_NODE_TYPE: dict[str, str] = {
     DCATResourceSubclass.INFORMATION_SYSTEM: WIZARD_NODE_IS,
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: WIZARD_NODE_IS_PUBLIC_SERVICE,
     DCATResourceSubclass.SERVICE: WIZARD_NODE_SERVICE,
     DCATResourceSubclass.DATASET: WIZARD_NODE_DATASET,
 }
@@ -76,6 +85,8 @@ def _wizard_node_type(dataset: Dataset) -> str:
     name = dataset.subclass.name if dataset.subclass_id else None
     if name == DCATResourceSubclass.INFORMATION_SYSTEM:
         return WIZARD_NODE_IS
+    if name == DCATResourceSubclass.IS_PUBLIC_SERVICE:
+        return WIZARD_NODE_IS_PUBLIC_SERVICE
     if name == DCATResourceSubclass.SERVICE:
         return WIZARD_NODE_SERVICE
     return WIZARD_NODE_DATASET
@@ -104,6 +115,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
         for subclass in DCATResourceSubclass.objects.filter(
             name__in=[
                 DCATResourceSubclass.INFORMATION_SYSTEM,
+                DCATResourceSubclass.IS_PUBLIC_SERVICE,
                 DCATResourceSubclass.SERVICE,
                 DCATResourceSubclass.DATASET,
             ]

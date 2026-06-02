@@ -33,6 +33,7 @@ from vitrina.classifiers.models import (
     ProvenanceStatement,
     Activity,
     ServiceQualityPage,
+    SpatialCoverage,
 )
 from vitrina.utils import translate_text
 from vitrina.datasets.managers import (
@@ -214,6 +215,7 @@ class Dataset(Resource):
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
     SERVICE_TYPE_SCHEME_URI = "http://publications.europa.eu/resource/authority/data-service-type"
     DATASET_TYPE_SCHEME_URI = "http://publications.europa.eu/resource/authority/dataset-type"
+    IS_PUBLIC_SERVICE_STATUS_SCHEME_URI = "http://purl.org/adms/status/"
 
     translations = TranslatedFields(
         title=models.TextField(
@@ -560,6 +562,23 @@ class Dataset(Resource):
         related_name="datasets",
         verbose_name=_("Taisyklė"),
         help_text=_("Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."),
+    )
+    is_public_service_status = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="is_public_service_status_datasets",
+        verbose_name=_("Statusas"),
+        help_text=_("Nurodo e. paslaugos statusą. Atitinka adms:status."),
+        limit_choices_to={"concept_schemas__uri": IS_PUBLIC_SERVICE_STATUS_SCHEME_URI},
+    )
+    spatial_coverages = models.ManyToManyField(
+        SpatialCoverage,
+        blank=True,
+        related_name="datasets",
+        verbose_name=_("Erdvinė / geografinė aprėptis"),
+        help_text=_("Regionas, kurį apima taikoma e. paslauga. Atitinka dct:spatial."),
     )
     license = models.ForeignKey(
         Licence,
@@ -2106,6 +2125,7 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     DATASET = "dataset"
     INFORMATION_SYSTEM = "information_system"
     CATALOG = "catalog"
+    IS_PUBLIC_SERVICE = "is_public_service"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255, unique=True)
     uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
@@ -2153,6 +2173,7 @@ class Relation(TranslatableModel):
     SERVICE = "service"
     CATALOG = "hasPart"
     RELATES_TO_INFORMATION_SYSTEM = "relatesToInformationSystem"
+    PRODUCES = "produces"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
     uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)

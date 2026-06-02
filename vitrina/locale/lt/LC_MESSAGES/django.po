@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-01 08:07+0300\n"
+"POT-Creation-Date: 2026-06-01 10:16+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -290,6 +290,9 @@ msgstr ""
 msgid "DCAT: Duomenų rinkinio ryšiai"
 msgstr ""
 
+msgid "DCAT: E. paslauga"
+msgstr ""
+
 msgid "Formos pavadinimas"
 msgstr ""
 
@@ -311,6 +314,15 @@ msgid "Formos lauko pagalbinis tekstas"
 msgstr ""
 
 msgid "Formų laukų pagalbiniai tekstai"
+msgstr ""
+
+msgid "Eilės numeris"
+msgstr ""
+
+msgid "Teritorinė aprėptis"
+msgstr ""
+
+msgid "Teritorinės aprėptys"
 msgstr ""
 
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
@@ -1219,6 +1231,18 @@ msgstr ""
 msgid "Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."
 msgstr ""
 
+msgid "Statusas"
+msgstr ""
+
+msgid "Nurodo e. paslaugos statusą. Atitinka adms:status."
+msgstr ""
+
+msgid "Erdvinė / geografinė aprėptis"
+msgstr ""
+
+msgid "Regionas, kurį apima taikoma e. paslauga. Atitinka dct:spatial."
+msgstr ""
+
 msgid "Licencija"
 msgstr ""
 
@@ -1995,9 +2019,6 @@ msgid ""
 "(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
 msgstr ""
 
-msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
-msgstr ""
-
 msgid ""
 "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
 "pavadinimą organizacijai ir bandykite iš naujo"
@@ -2005,6 +2026,9 @@ msgstr ""
 
 #, python-brace-format
 msgid "Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}"
+msgstr ""
+
+msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
 msgstr ""
 
 msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
@@ -2031,6 +2055,36 @@ msgid ""
 msgstr ""
 
 msgid "Duomenų skelbėjas. Atitinka dct:publisher."
+msgstr ""
+
+msgid ""
+"PASIS kodas. Jei nėra - institucijos suteiktas vidinis teikiamos paslaugos "
+"identifikatorius arba sveikas skaičius. Atitinka dct:identifier."
+msgstr ""
+
+msgid "Kompetentingos valdžios institucijos"
+msgstr ""
+
+msgid ""
+"Viešojo administravimo institucijos, atsakingos už šią paslaugą. Atitinka "
+"cv:hasCompetentAuthority."
+msgstr ""
+
+msgid "Pagrindinis puslapis"
+msgstr ""
+
+msgid "Pagrindinis e. paslaugos tinklalapis. Atitinka foaf:homepage."
+msgstr ""
+
+msgid "Tematinė sritis"
+msgstr ""
+
+msgid "E. paslaugos tema. Atitinka skos:concept."
+msgstr ""
+
+msgid ""
+"Su e. paslaugos teikimu susijusi kontaktinė informacija. Atitinka "
+"cv:hasContactPoint."
 msgstr ""
 
 msgid "Priklauso duomenų katalogams"
@@ -2075,6 +2129,25 @@ msgid ""
 "prov:qualifiedAttribution."
 msgstr ""
 
+msgid "Sukuria duomenų rinkinius"
+msgstr ""
+
+msgid ""
+"Duomenų rinkiniai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr ""
+
+msgid "Sukuria paslaugas"
+msgstr ""
+
+msgid "Paslaugos, kurias sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr ""
+
+msgid "Sukuria katalogus"
+msgstr ""
+
+msgid "Katalogai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr ""
+
 msgid "Puslapis (dokumentacija)"
 msgstr ""
 
@@ -2115,6 +2188,13 @@ msgstr ""
 msgid ""
 "Lauko '{label}' ryšio tipas '{relation_name}' nerastas, todėl šio lauko "
 "reikšmė neišsaugota. Susisiekite su administratoriumi."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Ryšio tipas '{relation_name}' nerastas, todėl laukų '{datasets}', "
+"'{services}', '{catalogs}' reikšmės neišsaugotos. Susisiekite su "
+"administratoriumi."
 msgstr ""
 
 msgid "Naujas"
@@ -2167,6 +2247,9 @@ msgstr ""
 msgid "Paslauga"
 msgstr ""
 
+msgid "E. paslauga"
+msgstr ""
+
 msgid "Informacinės sistemos"
 msgstr ""
 
@@ -2179,7 +2262,13 @@ msgstr ""
 msgid "Pateiktys"
 msgstr ""
 
+msgid "E. paslaugos"
+msgstr ""
+
 msgid "Sukurti naują informacinę sistemą po šiuo mazgu."
+msgstr ""
+
+msgid "Sukurti naują e. paslaugą po šiuo mazgu."
 msgstr ""
 
 msgid "Sukurti naują paslaugą po šiuo mazgu."
@@ -4013,9 +4102,6 @@ msgstr ""
 
 msgid ""
 "Nurodo, kokį standartą ar schemą atitinka pateiktis. Atitinka dct:conformsTo."
-msgstr ""
-
-msgid "Statusas"
 msgstr ""
 
 msgid "Nurodomas pateikties brandos lygmuo. Atitinka adms:status."

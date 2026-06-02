@@ -367,6 +367,7 @@ class FormFieldHelpText(TranslatableModel):
     DCAT_IS_RELATIONSHIPS = "dcat_is_relationships"
     DCAT_SERVICE_RELATIONSHIPS = "dcat_service_relationships"
     DCAT_DATASET_RELATIONSHIPS = "dcat_dataset_relationships"
+    DCAT_IS_PUBLIC_SERVICE = "dcat_is_public_service"
 
     FORM_NAME_CHOICES = [
         (DCAT_INFORMATION_SYSTEM, _("DCAT: Informacinė sistema")),
@@ -376,6 +377,7 @@ class FormFieldHelpText(TranslatableModel):
         (DCAT_IS_RELATIONSHIPS, _("DCAT: IS ryšiai")),
         (DCAT_SERVICE_RELATIONSHIPS, _("DCAT: Paslaugos ryšiai")),
         (DCAT_DATASET_RELATIONSHIPS, _("DCAT: Duomenų rinkinio ryšiai")),
+        (DCAT_IS_PUBLIC_SERVICE, _("DCAT: E. paslauga")),
     ]
 
     form_name = models.CharField(
@@ -408,3 +410,16 @@ class FormFieldHelpText(TranslatableModel):
 
     def __str__(self) -> str:
         return f"{self.form_name} / {self.field_name}"
+
+
+class SpatialCoverage(UUIDBaseModel):
+    name = models.CharField(max_length=255, unique=True, verbose_name=_("Pavadinimas"))
+    order = models.PositiveIntegerField(verbose_name=_("Eilės numeris"))
+
+    class Meta:
+        verbose_name = _("Teritorinė aprėptis")
+        verbose_name_plural = _("Teritorinės aprėptys")
+        ordering = ["order"]
+
+    def __str__(self) -> str:
+        return self.name

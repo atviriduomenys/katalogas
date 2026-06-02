@@ -30,6 +30,7 @@ from vitrina.dcat.view_helpers import (
     save_dataset_relations,
     save_dataset_attribution,
     save_dataset_qualified_relations,
+    save_produces_relations,
     wizard_breadcrumb_ancestors,
 )
 from vitrina.dcat.wizard import WIZARD_SUBCLASS_TO_NODE_TYPE
@@ -38,10 +39,13 @@ from vitrina.dcat.forms.dataset_forms import (
     BaseResourceForm,
     ServiceResourceForm,
     DatasetResourceForm,
+    ISPublicServiceResourceForm,
     InformationSystemUpdateForm,
     ServiceUpdateForm,
     DatasetUpdateForm,
+    ISPublicServiceUpdateForm,
     InformationSystemRelationshipForm,
+    ISPublicServiceRelationshipForm,
     ServiceRelationshipForm,
     DatasetRelationshipForm,
 )
@@ -57,18 +61,21 @@ DCAT_SUBCLASS_FORM_MAP = {
     DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemResourceForm,
     DCATResourceSubclass.SERVICE: ServiceResourceForm,
     DCATResourceSubclass.DATASET: DatasetResourceForm,
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: ISPublicServiceResourceForm,
 }
 
 DCAT_SUBCLASS_UPDATE_FORM_MAP = {
     DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemUpdateForm,
     DCATResourceSubclass.SERVICE: ServiceUpdateForm,
     DCATResourceSubclass.DATASET: DatasetUpdateForm,
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: ISPublicServiceUpdateForm,
 }
 
 DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP = {
     DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemRelationshipForm,
     DCATResourceSubclass.SERVICE: ServiceRelationshipForm,
     DCATResourceSubclass.DATASET: DatasetRelationshipForm,
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: ISPublicServiceRelationshipForm,
 }
 
 # Lithuanian grammatical gender for the word "new" per subclass
@@ -76,6 +83,7 @@ DCAT_SUBCLASS_NEW_WORD = {
     DCATResourceSubclass.INFORMATION_SYSTEM: _("Nauja"),
     DCATResourceSubclass.SERVICE: _("Nauja"),
     DCATResourceSubclass.DATASET: _("Naujas"),
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: _("Nauja"),
 }
 
 
@@ -123,6 +131,7 @@ class DcatDatasetCreateView(
             DCATResourceSubclass.INFORMATION_SYSTEM,
             DCATResourceSubclass.SERVICE,
             DCATResourceSubclass.DATASET,
+            DCATResourceSubclass.IS_PUBLIC_SERVICE,
         ]
 
         if not is_valid_subclass:
@@ -200,6 +209,9 @@ class DcatDatasetCreateView(
                 self.object.access_rights = Dataset.CONFIDENTIAL
                 self.object.frequency = Frequency.objects.filter(code=Frequency.CODE_UNKNOWN).first()
 
+            if self.subclass.name == DCATResourceSubclass.IS_PUBLIC_SERVICE:
+                self.object.organization = self.organization
+
             if self.subclass.name == DCATResourceSubclass.SERVICE:
                 self.object.service = True
 
@@ -209,17 +221,28 @@ class DcatDatasetCreateView(
             else:
                 Dataset.add_root(instance=self.object)
 
-            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
-                if identifier := form.cleaned_data.get("identifier"):
-                    agency = get_object_or_404(Agency, code=Agency.RISR_CODE)
-                    Identifier.objects.create(
-                        resource=self.object,
-                        notation=identifier,
-                        scheme_agency=agency,
-                        identifier_type=Identifier.IdentifierType.OTHER,
-                    )
-            tags = form.cleaned_data.get("tags")
-            self.object.tags.set(tags)
+            if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (
+                identifier := form.cleaned_data.get("identifier")
+            ):
+                agency = get_object_or_404(Agency, code=Agency.RISR_CODE)
+                Identifier.objects.create(
+                    resource=self.object,
+                    notation=identifier,
+                    scheme_agency=agency,
+                    identifier_type=Identifier.IdentifierType.OTHER,
+                )
+
+            if self.subclass.name == DCATResourceSubclass.IS_PUBLIC_SERVICE and (
+                identifier := form.cleaned_data.get("identifier")
+            ):
+                agency = get_object_or_404(Agency, code=Agency.PASIS_CODE)
+                Identifier.objects.create(
+                    resource=self.object,
+                    notation=identifier,
+                    scheme_agency=agency,
+                    identifier_type=Identifier.IdentifierType.OTHER,
+                )
+            self.object.tags.set(form.cleaned_data.get("tags") or [])
             self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
             dataset_name = form.get_dataset_name()
@@ -258,6 +281,9 @@ class DcatDatasetCreateView(
 
             if "follows" in form.changed_data:
                 self.object.follows.set(form.cleaned_data.get("follows"))
+
+            if "spatial_coverages" in form.changed_data:
+                self.object.spatial_coverages.set(form.cleaned_data.get("spatial_coverages") or [])
 
             if "service_quality" in form.changed_data:
                 self.object.update_service_quality(form.cleaned_data.get("service_quality"))
@@ -343,6 +369,7 @@ class DcatDatasetUpdateView(
             DCATResourceSubclass.INFORMATION_SYSTEM,
             DCATResourceSubclass.SERVICE,
             DCATResourceSubclass.DATASET,
+            DCATResourceSubclass.IS_PUBLIC_SERVICE,
         ):
             return self._wizard_notice(str(_("Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu.")))
         return super().dispatch(request, *args, **kwargs)
@@ -394,8 +421,8 @@ class DcatDatasetUpdateView(
 
     def form_valid(self, form: BaseResourceForm) -> HttpResponseBase:
         self.object = form.save(commit=False)
-        tags = form.cleaned_data["tags"]
-        self.object.tags.set(tags)
+        tags = form.cleaned_data.get("tags")
+        self.object.tags.set(tags or [])
         self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
 
         if "endpoint_url" in form.changed_data:
@@ -423,6 +450,22 @@ class DcatDatasetUpdateView(
                     "scheme_agency": agency,
                 },
             )
+
+        if self.object.subclass.name == DCATResourceSubclass.IS_PUBLIC_SERVICE and (
+            identifier := form.cleaned_data.get("identifier")
+        ):
+            agency = get_object_or_404(Agency, code=Agency.PASIS_CODE)
+            Identifier.objects.update_or_create(
+                resource=self.object,
+                scheme_agency=agency,
+                defaults={
+                    "notation": identifier,
+                    "identifier_type": Identifier.IdentifierType.OTHER,
+                    "resource": self.object,
+                    "scheme_agency": agency,
+                },
+            )
+
         if "applicable_legislation" in form.changed_data:
             self.object.update_applicable_legislation(form.cleaned_data.get("applicable_legislation"))
 
@@ -436,6 +479,9 @@ class DcatDatasetUpdateView(
 
         if "follows" in form.changed_data:
             self.object.follows.set(form.cleaned_data.get("follows"))
+
+        if "spatial_coverages" in form.changed_data:
+            self.object.spatial_coverages.set(form.cleaned_data.get("spatial_coverages") or [])
 
         if "service_quality" in form.changed_data:
             self.object.update_service_quality(form.cleaned_data.get("service_quality"))
@@ -502,6 +548,7 @@ class DcatDatasetUpdateView(
             if rel_form.is_valid():
                 save_dataset_relations(self.request, self.object, rel_form)
                 save_dataset_attribution(self.request, self.object, rel_form)
+                save_produces_relations(self.request, self.object, rel_form)
 
         messages.success(
             self.request, _("Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)

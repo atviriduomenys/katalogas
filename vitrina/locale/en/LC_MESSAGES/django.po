@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-01 08:07+0300\n"
+"POT-Creation-Date: 2026-06-01 10:16+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -302,6 +302,9 @@ msgstr "DCAT: Service relationships"
 msgid "DCAT: Duomenų rinkinio ryšiai"
 msgstr "DCAT: Dataset relations"
 
+msgid "DCAT: E. paslauga"
+msgstr "DCAT: E-service"
+
 msgid "Formos pavadinimas"
 msgstr "Form name"
 
@@ -326,6 +329,15 @@ msgstr "Form field help text"
 
 msgid "Formų laukų pagalbiniai tekstai"
 msgstr "Form field help texts"
+
+msgid "Eilės numeris"
+msgstr "Order number"
+
+msgid "Teritorinė aprėptis"
+msgstr "Spacial coverage"
+
+msgid "Teritorinės aprėptys"
+msgstr "Spacial coverages"
 
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
@@ -1330,6 +1342,19 @@ msgstr ""
 msgid "Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."
 msgstr "Specifies the rule that is followed. Corresponds to cpsv:follows."
 
+msgid "Statusas"
+msgstr "Status"
+
+msgid "Nurodo e. paslaugos statusą. Atitinka adms:status."
+msgstr "Indicates the status of e-service. Corresponds to adms:status."
+
+msgid "Erdvinė / geografinė aprėptis"
+msgstr "Spacial / Geographical coverage"
+
+msgid "Regionas, kurį apima taikoma e. paslauga. Atitinka dct:spatial."
+msgstr ""
+"Region covered by the applicable e-service. Corresponds to dct:spatial."
+
 msgid "Licencija"
 msgstr "License"
 
@@ -2156,9 +2181,6 @@ msgstr ""
 "Codename must contain only lowercase Latin letters and (or) underscores, "
 "separating words with underscores"
 
-msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
-msgstr "Specifies one or multiple categories. Corresponds to dcat:theme."
-
 msgid ""
 "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
 "pavadinimą organizacijai ir bandykite iš naujo"
@@ -2169,6 +2191,9 @@ msgstr ""
 #, python-brace-format
 msgid "Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}"
 msgstr "Codename prefix must be one of: {prefixes}"
+
+msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
+msgstr "Specifies one or multiple categories. Corresponds to dcat:theme."
 
 msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
 msgstr ""
@@ -2201,6 +2226,42 @@ msgstr ""
 
 msgid "Duomenų skelbėjas. Atitinka dct:publisher."
 msgstr "Data publisher. Corresponds to dct:publisher."
+
+msgid ""
+"PASIS kodas. Jei nėra - institucijos suteiktas vidinis teikiamos paslaugos "
+"identifikatorius arba sveikas skaičius. Atitinka dct:identifier."
+msgstr ""
+"PASIS code. If not available – an internal service identifier assigned by "
+"the institution, or an integer. Corresponds to dct:identifier."
+
+msgid "Kompetentingos valdžios institucijos"
+msgstr "Competent authorities"
+
+msgid ""
+"Viešojo administravimo institucijos, atsakingos už šią paslaugą. Atitinka "
+"cv:hasCompetentAuthority."
+msgstr ""
+"Public administration institutions responsible for this service. Corresponds "
+"to cv:hasCompetentAuthority."
+
+msgid "Pagrindinis puslapis"
+msgstr "Landing page"
+
+msgid "Pagrindinis e. paslaugos tinklalapis. Atitinka foaf:homepage."
+msgstr "The main page of e-service. Corresponds to foaf:homepage."
+
+msgid "Tematinė sritis"
+msgstr "Thematic area"
+
+msgid "E. paslaugos tema. Atitinka skos:concept."
+msgstr "Thematic area of e-service. Corresponds to skos:concept."
+
+msgid ""
+"Su e. paslaugos teikimu susijusi kontaktinė informacija. Atitinka "
+"cv:hasContactPoint."
+msgstr ""
+"Contact information related to the provision of the e-service. Corresponds "
+"to cv:hasContactPoint."
 
 msgid "Priklauso duomenų katalogams"
 msgstr "Belongs to data catalog"
@@ -2255,6 +2316,25 @@ msgstr ""
 "Organization responsible for this dataset. Corresponds to "
 "prov:qualifiedAttribution."
 
+msgid "Sukuria duomenų rinkinius"
+msgstr "Produces datasets"
+
+msgid ""
+"Duomenų rinkiniai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr "Datasets produced by this e-service. Corresponds to cpsv:produces."
+
+msgid "Sukuria paslaugas"
+msgstr "Produces services"
+
+msgid "Paslaugos, kurias sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr "Servoces produced by this e-service. Corresponds to cpsv:produces."
+
+msgid "Sukuria katalogus"
+msgstr "Produces catalogs"
+
+msgid "Katalogai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
+msgstr "Catalogs produced by this e-service. Corresponds to cpsv:produces."
+
 msgid "Puslapis (dokumentacija)"
 msgstr "Page (documentation)"
 
@@ -2298,6 +2378,15 @@ msgid ""
 msgstr ""
 "Field's '{label}' relation '{relation_name}' does not exist. Field's value "
 "is not saved. Contact the administrator."
+
+#, python-brace-format
+msgid ""
+"Ryšio tipas '{relation_name}' nerastas, todėl laukų '{datasets}', "
+"'{services}', '{catalogs}' reikšmės neišsaugotos. Susisiekite su "
+"administratoriumi."
+msgstr ""
+"Relation '{relation_name}' does not exist. Values of fields '{datasets}', "
+"'{services}', '{catalogs}' are not saved. Contact the administrator."
 
 msgid "Naujas"
 msgstr "New"
@@ -2349,6 +2438,9 @@ msgstr "Data entry environment"
 msgid "Paslauga"
 msgstr "Service"
 
+msgid "E. paslauga"
+msgstr "E-service"
+
 msgid "Informacinės sistemos"
 msgstr "Information systems"
 
@@ -2361,8 +2453,14 @@ msgstr "Datasets"
 msgid "Pateiktys"
 msgstr "Distributions"
 
+msgid "E. paslaugos"
+msgstr "E-services"
+
 msgid "Sukurti naują informacinę sistemą po šiuo mazgu."
 msgstr "Create new information system under this node."
+
+msgid "Sukurti naują e. paslaugą po šiuo mazgu."
+msgstr "Create a new e-service under this node."
 
 msgid "Sukurti naują paslaugą po šiuo mazgu."
 msgstr "Create a new service under this node."
@@ -4333,9 +4431,6 @@ msgid ""
 msgstr ""
 "Specifies which standard the distribution conforms to. Corresponds to "
 "dct:conformsTo."
-
-msgid "Statusas"
-msgstr "Status"
 
 msgid "Nurodomas pateikties brandos lygmuo. Atitinka adms:status."
 msgstr ""

@@ -32,6 +32,9 @@ from vitrina.dcat.forms.dataset_forms import (
     InformationSystemRelationshipForm,
     InformationSystemResourceForm,
     InformationSystemUpdateForm,
+    ISPublicServiceRelationshipForm,
+    ISPublicServiceResourceForm,
+    ISPublicServiceUpdateForm,
     ServiceRelationshipForm,
     ServiceResourceForm,
     ServiceUpdateForm,
@@ -120,6 +123,35 @@ class TestBaseResourceForm:
 
         assert form.fields["description"].required is True
 
+    def test_category_initial_set_from_instance(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        cat1 = CategoryFactory()
+        cat2 = CategoryFactory()
+        dataset.category.set([cat1, cat2])
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert set(form.initial["category"]) == {cat1, cat2}
+
+    def test_category_initial_empty_when_instance_has_no_categories(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert list(form.initial["category"]) == []
+
+
+class TestDatasetNameMixin:
     def test_name_with_non_ascii_raises_error(self):
         organization = OrganizationFactory()
 
@@ -405,33 +437,6 @@ class TestBaseResourceForm:
         assert form.errors["name_prefix"] == [
             f"Nurodykite tinkamą reikšmę. {organization.name} nėra galimas pasirinkimas."
         ]
-
-    def test_category_initial_set_from_instance(self):
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        cat1 = CategoryFactory()
-        cat2 = CategoryFactory()
-        dataset.category.set([cat1, cat2])
-
-        form = InformationSystemResourceForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
-
-        assert set(form.initial["category"]) == {cat1, cat2}
-
-    def test_category_initial_empty_when_instance_has_no_categories(self):
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-
-        form = InformationSystemResourceForm(
-            organization=organization,
-            url_parent=None,
-            instance=dataset,
-        )
-
-        assert list(form.initial["category"]) == []
 
 
 class TestInformationSystemResourceForm:
@@ -1385,3 +1390,214 @@ class TestInformationSystemUpdate:
         form = InformationSystemRelationshipForm(dataset=dataset)
 
         assert not form.initial["related_information_system"].exists()
+
+
+class TestISPublicServiceResourceForm:
+    def test_identifier_is_required(self):
+        organization = OrganizationFactory()
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["identifier"].required is True
+
+    def test_parent_queryset_only_includes_non_public_is_from_same_org(self):
+        organization = OrganizationFactory()
+        other_organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+
+        matching = DatasetFactory(organization=organization, subclass=is_subclass, is_public=False)
+        different_org = DatasetFactory(organization=other_organization, subclass=is_subclass, is_public=False)
+        non_is_subclass = DatasetFactory(organization=organization, subclass=service_subclass, is_public=False)
+        public_is = DatasetFactory(organization=organization, subclass=is_subclass, is_public=True)
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+
+        assert matching in form.fields["parent"].queryset
+        assert different_org not in form.fields["parent"].queryset
+        assert non_is_subclass not in form.fields["parent"].queryset
+        assert public_is not in form.fields["parent"].queryset
+
+    def test_parent_is_required(self):
+        organization = OrganizationFactory()
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["parent"].required is True
+
+    def test_information_system_publishers_is_required(self):
+        organization = OrganizationFactory()
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["information_system_publishers"].required is True
+
+    def test_landing_page_is_required(self):
+        organization = OrganizationFactory()
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["landing_page"].required is True
+
+    def test_is_public_service_status_queryset_filtered_to_adms_scheme(self):
+        organization = OrganizationFactory()
+        adms_schema = ConceptSchema.objects.get_or_create(uri=Dataset.IS_PUBLIC_SERVICE_STATUS_SCHEME_URI)[0]
+        adms_concept = ConceptFactory(concept_schemas=[adms_schema])
+        other_concept = ConceptFactory()
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+
+        assert adms_concept in form.fields["is_public_service_status"].queryset
+        assert other_concept not in form.fields["is_public_service_status"].queryset
+
+    def test_service_type_queryset_filtered_to_service_type_scheme(self):
+        organization = OrganizationFactory()
+        service_type_schema = ConceptSchema.objects.get_or_create(uri=Dataset.SERVICE_TYPE_SCHEME_URI)[0]
+        service_type_concept = ConceptFactory(concept_schemas=[service_type_schema])
+        other_concept = ConceptFactory()
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+
+        assert service_type_concept in form.fields["service_type"].queryset
+        assert other_concept not in form.fields["service_type"].queryset
+
+    def test_get_dataset_name_combines_parent_name_and_identifier(self):
+        organization = OrganizationFactory()
+        parent = DatasetFactory(metadata="gov/ivpk/is_name")
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+        form.cleaned_data = {"parent": parent, "identifier": "paslauga"}
+
+        assert form.get_dataset_name() == "gov/ivpk/is_name/paslauga"
+
+    def test_get_dataset_name_strips_trailing_slash_from_parent_name(self):
+        organization = OrganizationFactory()
+        parent = DatasetFactory(metadata="gov/ivpk/is_name/")
+
+        form = ISPublicServiceResourceForm(organization=organization, url_parent=None)
+        form.cleaned_data = {"parent": parent, "identifier": "paslauga"}
+
+        assert form.get_dataset_name() == "gov/ivpk/is_name/paslauga"
+
+
+class TestISPublicServiceUpdateForm:
+    def test_identifier_initial_set_from_pasis_identifier(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        dataset = DatasetFactory(organization=organization, subclass=subclass)
+        agency, _ = Agency.objects.get_or_create(
+            code=Agency.PASIS_CODE,
+            defaults={
+                "name": "Paslaugų ir gaminių informacinė sistema",
+                "uri": "https://www.pasis.lt",
+                "identifier_validation_type": None,
+            },
+        )
+        Identifier.objects.create(
+            resource=dataset,
+            scheme_agency=agency,
+            notation="paslauga_1",
+            identifier_type=Identifier.IdentifierType.OTHER,
+        )
+
+        form = ISPublicServiceUpdateForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert form.fields["identifier"].initial == "paslauga_1"
+
+    def test_identifier_initial_empty_when_no_pasis_identifier(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        dataset = DatasetFactory(organization=organization, subclass=subclass)
+
+        form = ISPublicServiceUpdateForm(
+            organization=organization,
+            url_parent=None,
+            instance=dataset,
+        )
+
+        assert form.fields["identifier"].initial == ""
+
+
+class TestISPublicServiceRelationshipForm:
+    def test_produces_datasets_queryset_only_includes_dataset_subclass(self):
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        matching = DatasetFactory(subclass=dataset_subclass)
+        excluded_service = DatasetFactory(subclass=service_subclass)
+        dataset = DatasetFactory(subclass=is_subclass)
+
+        form = ISPublicServiceRelationshipForm(dataset=dataset)
+
+        assert matching in form.fields["produces_datasets"].queryset
+        assert excluded_service not in form.fields["produces_datasets"].queryset
+
+    def test_produces_services_queryset_only_includes_service_subclass(self):
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        matching = DatasetFactory(subclass=service_subclass)
+        excluded_dataset = DatasetFactory(subclass=dataset_subclass)
+        dataset = DatasetFactory(subclass=is_subclass)
+
+        form = ISPublicServiceRelationshipForm(dataset=dataset)
+
+        assert matching in form.fields["produces_services"].queryset
+        assert excluded_dataset not in form.fields["produces_services"].queryset
+
+    def test_produces_catalogs_queryset_only_includes_catalog_subclass(self):
+        catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        matching = DatasetFactory(subclass=catalog_subclass)
+        excluded_dataset = DatasetFactory(subclass=dataset_subclass)
+        dataset = DatasetFactory(subclass=is_subclass)
+
+        form = ISPublicServiceRelationshipForm(dataset=dataset)
+
+        assert matching in form.fields["produces_catalogs"].queryset
+        assert excluded_dataset not in form.fields["produces_catalogs"].queryset
+
+    def test_initial_set_from_existing_produces_relations(self):
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+        dataset = DatasetFactory(subclass=is_subclass)
+        produced_dataset = DatasetFactory(subclass=dataset_subclass)
+        produced_service = DatasetFactory(subclass=service_subclass)
+        produced_catalog = DatasetFactory(subclass=catalog_subclass)
+        relation = RelationFactory(name=Relation.PRODUCES)
+        DatasetRelationFactory(relation=relation, dataset=dataset, part_of=produced_dataset)
+        DatasetRelationFactory(relation=relation, dataset=dataset, part_of=produced_service)
+        DatasetRelationFactory(relation=relation, dataset=dataset, part_of=produced_catalog)
+
+        form = ISPublicServiceRelationshipForm(dataset=dataset)
+
+        assert produced_dataset in form.initial["produces_datasets"]
+        assert produced_service in form.initial["produces_services"]
+        assert produced_catalog in form.initial["produces_catalogs"]
+
+    def test_initial_empty_when_no_produces_relations(self):
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        dataset = DatasetFactory(subclass=is_subclass)
+
+        form = ISPublicServiceRelationshipForm(dataset=dataset)
+
+        assert not form.initial["produces_datasets"].exists()
+        assert not form.initial["produces_services"].exists()
+        assert not form.initial["produces_catalogs"].exists()
+
+    def test_initial_not_set_when_dataset_has_no_pk(self):
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        dataset = DatasetFactory.build(subclass=is_subclass)
+
+        form = ISPublicServiceRelationshipForm(dataset=dataset)
+
+        assert "produces_datasets" not in form.initial
+        assert "produces_services" not in form.initial
+        assert "produces_catalogs" not in form.initial

@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -146,9 +147,17 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
                     )
         return urls
 
-    org_datasets = list(
-        Dataset.objects.filter(organization=organization, is_public=False).select_related("subclass").order_by("path")
+    information_system_paths = list(
+        Dataset.objects.filter(
+            organization=organization,
+            is_public=False,
+            subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,
+        ).values_list("path", flat=True)
     )
+    conditions = Q(organization=organization)
+    for path in information_system_paths:
+        conditions |= Q(path__startswith=path)
+    org_datasets = list(Dataset.objects.filter(conditions, is_public=False).select_related("subclass").order_by("path"))
     datasets_by_id = {dataset.pk: dataset for dataset in org_datasets}
     datasets_by_path = {dataset.path: dataset for dataset in org_datasets}
 

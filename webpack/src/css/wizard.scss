@@ -340,6 +340,41 @@
     margin-top: 0.25rem;
     line-height: 1.4;
 }
+.wizard-help-popup {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+}
+.wizard-help-popup-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9aabb4;
+    padding: 0 0 0 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.wizard-help-popup-btn:hover { color: #375677; }
+.wizard-help-popup-content {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 1px solid #ccdae4;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    color: #59656e;
+    line-height: 1.5;
+    width: 280px;
+    box-shadow: 0 4px 12px rgba(55,86,119,0.12);
+    z-index: 100;
+    white-space: normal;
+}
 .wizard-form-body .field:has(input[type=file]) {
     border: none;
     padding: 0;

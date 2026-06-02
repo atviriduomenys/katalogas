@@ -9,6 +9,7 @@ from vitrina.orgs.models import Organization
 
 
 def apply_dynamic_help_texts(form: forms.BaseForm, form_name: str) -> None:
+    # Extended help text popup uses Alpine.js — this function is only called from wizard views.
     for entry in FormFieldHelpText.objects.filter(form_name=form_name).prefetch_related("translations"):
         if entry.field_name not in form.fields:
             continue
@@ -23,7 +24,7 @@ def apply_dynamic_help_texts(form: forms.BaseForm, form_name: str) -> None:
         if extended and field.help_text:
             popup_html = (
                 f' <span class="wizard-help-popup" x-data="{{open:false}}" @click.outside="open=false">'
-                f'<button type="button" class="wizard-help-popup-btn" @click.stop="open=!open">'
+                f'<button type="button" class="wizard-help-popup-btn" aria-label="Daugiau informacijos" @click.stop="open=!open">'
                 f'<i class="fas fa-question-circle"></i></button>'
                 f'<span class="wizard-help-popup-content" x-show="open" x-cloak>'
                 f'{escape(extended)}</span></span>'

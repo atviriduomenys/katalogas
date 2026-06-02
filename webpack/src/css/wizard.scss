@@ -63,10 +63,10 @@
     border-bottom: 1px solid #ccdae4;
     flex: 0 0 auto;
 }
-.wizard-header-org {
+.wizard-header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    align-self: stretch;
     padding: 1rem 1.5rem;
     border-right: 1px solid #ccdae4;
     min-width: 0;
@@ -115,13 +115,18 @@
     text-transform: none;
     letter-spacing: 0;
 }
-.wizard-header-title {
+.wizard-header-right {
     flex: 1 1 auto;
     min-width: 0;
     padding: 1rem 2rem;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+}
+.wizard-header-identity {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
 }
 .wizard-card-title {
     font-size: 1.375rem;
@@ -172,7 +177,7 @@
    This rule adds .wizard-main for 0-3-0 specificity, winning at equal !important. */
 .columns.is-gapless > .column.wizard-main,
 .wizard-main {
-    padding: 2rem 2.5rem !important;
+    padding: 1.5rem 2.5rem 2rem !important;
 }
 
 /* ── Footer ── */
@@ -370,7 +375,8 @@
     font-size: 0.75rem;
     color: #59656e;
     line-height: 1.5;
-    width: 280px;
+    width: max-content;
+    max-width: 280px;
     box-shadow: 0 4px 12px rgba(55,86,119,0.12);
     z-index: 100;
     white-space: normal;
@@ -540,7 +546,7 @@
     padding: 0.5rem 0.4rem 0.2rem;
     user-select: none;
 }
-.wizard-tree-group-root { padding-top: 0; }
+.wizard-tree-group-root { padding-top: 1rem; }
 .wizard-tree-row {
     padding: 0.25rem 0.4rem;
     border-radius: 6px;

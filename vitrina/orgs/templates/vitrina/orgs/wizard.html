@@ -23,7 +23,7 @@
     <div class="wizard-card card">
         <header class="card-header wizard-card-header">
             {# Left — wizard title #}
-            <div class="wizard-header-org">
+            <div class="wizard-header-left">
                 <div class="wizard-org-info">
                     <p class="wizard-card-title">{% translate "Duomenų pildymo aplinka" %}</p>
                     <p class="wizard-card-subtitle-label">{% translate "Supildykite duomenų rinkinius" %}</p>
@@ -31,9 +31,9 @@
             </div>
 
             {# Right — org identity #}
-            <div class="wizard-header-title">
-                <div class="is-flex is-align-items-center" style="gap:1rem; min-width:0;">
-                    <div class="wizard-org-avatar" style="flex-shrink:0;">
+            <div class="wizard-header-right">
+                <div class="wizard-header-identity">
+                    <div class="wizard-org-avatar">
                         {% if organization.image %}
                             <img src="{{ organization.image.url }}"
                                  alt="{{ organization.title }}"
@@ -43,7 +43,7 @@
                             <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
                         {% endif %}
                     </div>
-                    <div class="wizard-org-info" style="min-width:0;">
+                    <div class="wizard-org-info">
                         <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
                         <p class="wizard-org-type">{% translate "Organizacija" %}</p>
                     </div>

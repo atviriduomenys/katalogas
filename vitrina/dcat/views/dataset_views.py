@@ -27,6 +27,7 @@ from vitrina.datasets.view_helpers import (
     save_dataset_creator,
 )
 from vitrina.dcat.view_helpers import (
+    datasets_in_org_scope,
     save_dataset_relations,
     save_dataset_attribution,
     save_dataset_qualified_relations,
@@ -403,7 +404,10 @@ class DcatDatasetUpdateView(
         return context
 
     def get_queryset(self) -> QuerySet[Dataset]:
-        return super().get_queryset().filter(organization=self.organization).select_related("organization", "subclass")
+        return (
+            datasets_in_org_scope(self.organization)
+            .select_related("organization", "subclass")
+        )
 
     def get_object(self, queryset: QuerySet[Dataset] | None = None) -> Dataset:
         obj = super().get_object(queryset)

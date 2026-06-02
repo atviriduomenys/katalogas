@@ -11,13 +11,14 @@ from django.utils.functional import cached_property
 from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Organization
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 
 from django.utils.translation import gettext_lazy as _, get_language
 
-from vitrina.dcat.view_helpers import wizard_breadcrumb_ancestors
+from vitrina.dcat.view_helpers import datasets_in_org_scope, wizard_breadcrumb_ancestors
 from vitrina.resources.view_helpers import get_default_distribution_name
 from vitrina.structure.models import Version
 
@@ -29,9 +30,9 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
     @cached_property
     def dataset(self) -> Dataset:
+        organization = get_object_or_404(Organization, pk=self.kwargs.get("organization_id"))
         return get_object_or_404(
-            Dataset.objects.select_related("organization", "subclass"),
-            organization_id=self.kwargs.get("organization_id"),
+            datasets_in_org_scope(organization).select_related("organization", "subclass"),
             pk=self.kwargs.get("dataset_id"),
         )
 
@@ -136,11 +137,13 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet:
+        organization = get_object_or_404(Organization, pk=self.kwargs.get("organization_id"))
+        scoped_dataset_ids = datasets_in_org_scope(organization).values_list("pk", flat=True)
         return (
             super()
             .get_queryset()
             .filter(
-                dataset__organization_id=self.kwargs.get("organization_id"),
+                dataset_id__in=scoped_dataset_ids,
                 dataset_id=self.kwargs.get("dataset_id"),
             )
             .select_related("dataset__organization", "dataset__subclass")

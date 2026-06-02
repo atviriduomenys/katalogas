@@ -437,6 +437,9 @@ ELASTIC_FACET_SIZE = 50
 
 HAYSTACK_SIGNAL_PROCESSOR = "vitrina.datasets.search_indexes.CustomSignalProcessor"
 
+# Number of hits Haystack pulls per Elasticsearch request when iterating a SearchQuerySet.
+HAYSTACK_ITERATOR_LOAD_PER_QUERY = env.int("HAYSTACK_ITERATOR_LOAD_PER_QUERY", default=5000)
+
 BLOG_USE_PLACEHOLDER = False
 META_USE_SITES = True
 

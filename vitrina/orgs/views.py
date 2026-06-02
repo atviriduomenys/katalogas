@@ -74,7 +74,8 @@ from vitrina import settings
 from vitrina.datasets.services import (
     get_frequency_and_format,
     get_values_for_frequency,
-    get_query_for_frequency,
+    get_period_key,
+    bucket_grouped_rows,
 )
 from vitrina.datasets.services import (
     manage_subscriptions_for_representative as manage_dataset_subscriptions,
@@ -384,7 +385,7 @@ class OrganizationManagementsView(OrganizationListView):
     parameter_select_template_name = "vitrina/orgs/stats_parameter_select.html"
     paginate_by = 0
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         jurisdictions = context.get("jurisdictions")
 
@@ -442,14 +443,9 @@ class OrganizationManagementsView(OrganizationListView):
                 chart_title = _("Tvarkytojų skaičius pagal valdymo sritį laike")
                 yAxis_title = _("Tvarkytojų skaičius")
 
+            buckets = bucket_grouped_rows(items, frequency, "created")
             for label in labels:
-                count = 0
-                label_query = get_query_for_frequency(frequency, "created", label)
-                label_count_data = items.filter(**label_query)
-
-                if label_count_data:
-                    count += sum(item.get("count", 0) for item in label_count_data)
-
+                count = buckets.get(get_period_key(frequency, "created", label), 0)
                 if frequency == "W":
                     data.append({"x": _date(label.start_time, ff), "y": count})
                 else:

@@ -1,6 +1,6 @@
 import secrets
 from collections import OrderedDict
-from typing import List, Any, Dict, Iterable, Type
+from typing import List, Any, Dict, Iterable, Mapping, Type
 
 import numpy as np
 from django.db import transaction
@@ -175,6 +175,47 @@ def get_query_for_frequency(frequency, field, label):
     return query
 
 
+def get_period_key(frequency: str, field: str, label: Any) -> tuple:
+    match frequency:
+        case "Y":
+            return (label.year,)
+        case "Q":
+            return (label.year, label.quarter)
+        case "M":
+            return (label.year, label.month)
+        case "W":
+            return (label.year, label.month, label.week)
+        case "D":
+            return (label.year, label.month, label.day)
+        case _:
+            raise ValueError(f"Unexpected frequency: {frequency!r}")
+
+
+def row_period_key(row: Mapping[str, Any], frequency: str, field: str) -> tuple:
+    match frequency:
+        case "Y":
+            return (row[f"{field}__year"],)
+        case "Q":
+            return (row[f"{field}__year"], row[f"{field}__quarter"])
+        case "M":
+            return (row[f"{field}__year"], row[f"{field}__month"])
+        case "W":
+            return (row[f"{field}__year"], row[f"{field}__month"], row[f"{field}__week"])
+        case "D":
+            return (row[f"{field}__year"], row[f"{field}__month"], row[f"{field}__day"])
+        case _:
+            raise ValueError(f"Unexpected frequency: {frequency!r}")
+
+
+def bucket_grouped_rows(
+    rows: Iterable[Mapping[str, Any]], frequency: str, field: str, value: str = "count"
+) -> dict[tuple, Any]:
+    buckets: dict[tuple, Any] = {}
+    for row in rows:
+        buckets[row_period_key(row, frequency, field)] = row.get(value) or 0
+    return buckets
+
+
 def sort_publication_stats(sorting, values, keys, stats, sorted_value_index):
     if sorting == "sort-year-desc":
         stats = OrderedDict(sorted(stats.items(), reverse=True))
@@ -304,6 +345,7 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
             elif role in open_data_roles:
                 open_data_dataset_ids.add(object_id)
 
+    # Get user's org memberships with their roles, to restrict effective role
     user_organization_map = dict(
         Representative.objects.filter(
             user=user,

@@ -285,8 +285,8 @@
 
 /* Label — small caption at top of each field card */
 .wizard-form-body .label {
-    font-size: 0.75rem;
-    font-weight: 400;
+    font-size: 0.875rem;
+    font-weight: 600;
     color: #375677;
     margin-bottom: 0.1rem;
     letter-spacing: 0.6px;
@@ -335,7 +335,7 @@
 }
 .wizard-form-body .help {
     font-size: 0.75rem;
-    color: #59656e;
+    color: #9aabb4;
     margin-top: 0.25rem;
     line-height: 1.4;
 }
@@ -387,13 +387,13 @@
 }
 #wizard-relationship-panel .label {
     font-size: 1rem;
-    font-weight: 400;
+    font-weight: 600;
     color: #0f181f;
     margin-bottom: 0.25rem;
 }
 #wizard-relationship-panel .help {
     font-size: 0.875rem;
-    color: #59656e;
+    color: #9aabb4;
     margin-bottom: 0.5rem;
     line-height: 1.4;
 }
@@ -635,9 +635,11 @@ div.select, div.select select, .select2.select2-container {
 .select2.select2-container:hover .select2-selection--multiple:hover {
     border-color: #375677;
 }
+/* Select2 calculates dropdown top via JS (getBoundingClientRect), but our field card
+   padding/border shifts the visual position. This offset compensates for that gap. */
 .select2-container .select2-dropdown {
     border-color: #ccdae4;
-    margin-top: 46px;
+    margin-top: 35px;
 }
 .select2-selection__arrow { display: none; }
 .select2.select2-container--default .select2-selection--single .select2-selection__placeholder {

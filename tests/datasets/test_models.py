@@ -8,8 +8,13 @@ from django.urls import reverse
 
 
 from vitrina.classifiers.factories import ConceptFactory
-from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory, DatasetServiceFactory
-from vitrina.datasets.models import DCATResourceSubclass, Dataset
+from vitrina.datasets.factories import (
+    DatasetFactory,
+    DCATResourceSubclassFactory,
+    DatasetServiceFactory,
+    ContactFactory,
+)
+from vitrina.datasets.models import DCATResourceSubclass, Dataset, Contact
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.users.factories import UserFactory
@@ -402,3 +407,100 @@ class TestDCATResourceSubclass:
     def test_is_catalog(self, name: str, result: bool) -> None:
         subclass = DCATResourceSubclassFactory(name=name)
         assert subclass.is_catalog is result
+
+
+class TestContact:
+    def test_str_individual(self):
+        user = UserFactory(first_name="Jonas", last_name="Jonaitis")
+        org = OrganizationFactory()
+        contact = ContactFactory(
+            kind=Contact.Kind.INDIVIDUAL,
+            position="Manager",
+            organization=org,
+            content_type=ContentType.objects.get_for_model(user),
+            object_id=user.pk,
+        )
+        assert str(contact) == "Jonas Jonaitis (Manager)"
+
+    def test_str_org(self):
+        linked_org = OrganizationFactory(title="My Org")
+        org = OrganizationFactory()
+        contact = ContactFactory(
+            kind=Contact.Kind.ORG,
+            organization=org,
+            content_type=ContentType.objects.get_for_model(linked_org),
+            object_id=linked_org.pk,
+        )
+        assert str(contact) == "My Org"
+
+    def test_str_unregistered(self):
+        org = OrganizationFactory()
+        contact = ContactFactory(
+            kind=Contact.Kind.UNREGISTERED,
+            contact_name="Petras Petraitis",
+            position="Analyst",
+            organization=org,
+            content_type=None,
+            object_id=None,
+        )
+        assert str(contact) == "Petras Petraitis (Analyst)"
+
+    def test_str_service(self):
+        org = OrganizationFactory()
+        contact = ContactFactory(
+            kind=Contact.Kind.SERVICE,
+            contact_name="Help Desk",
+            organization=org,
+            content_type=None,
+            object_id=None,
+        )
+        assert str(contact) == "Help Desk"
+
+    def test_get_email_returns_own_email_when_set(self):
+        contact = ContactFactory(email="direct@example.com")
+        assert contact.get_email() == "direct@example.com"
+
+    def test_get_email_falls_back_to_content_object_email(self):
+        user = UserFactory(email="user@example.com")
+        org = OrganizationFactory()
+        contact = ContactFactory(
+            email="",
+            organization=org,
+            content_type=ContentType.objects.get_for_model(user),
+            object_id=user.pk,
+        )
+        assert contact.get_email() == "user@example.com"
+
+    def test_get_email_returns_empty_string_when_no_email(self):
+        org = OrganizationFactory()
+        contact = ContactFactory(
+            kind=Contact.Kind.UNREGISTERED,
+            email="",
+            organization=org,
+            content_type=None,
+            object_id=None,
+        )
+        assert contact.get_email() == ""
+
+    def test_kind_for_object_org(self):
+        org = OrganizationFactory()
+        assert Contact.kind_for_object(org) == Contact.Kind.ORG
+
+    def test_kind_for_object_user(self):
+        user = UserFactory()
+        assert Contact.kind_for_object(user) == Contact.Kind.INDIVIDUAL
+
+    def test_kind_for_object_other(self):
+        assert Contact.kind_for_object(object()) == Contact.Kind.UNREGISTERED
+
+    def test_get_type_returns_kind_display(self):
+        contact = ContactFactory(kind=Contact.Kind.SERVICE)
+        assert contact.get_type() == contact.get_kind_display()
+
+    def test_is_service_kind_true(self):
+        contact = ContactFactory(kind=Contact.Kind.SERVICE)
+        assert contact.is_service_kind() is True
+
+    def test_is_service_kind_false(self):
+        contact = ContactFactory(kind=Contact.Kind.UNREGISTERED)
+        assert contact.is_service_kind() is False

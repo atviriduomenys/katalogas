@@ -1,9 +1,17 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from vitrina.users.models import OldPassword
 from django.contrib.auth.hashers import check_password
 from zxcvbn import zxcvbn
 import re
+
+phone_validator = RegexValidator(
+    regex=r"^\+370[56]\d{7}$|^0[56]\d{7}$",
+    message=_(
+        "Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, +3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
+    ),
+)
 
 
 class UppercaseValidator:

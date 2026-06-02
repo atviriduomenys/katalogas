@@ -1,5 +1,6 @@
 from django.urls import path
 
+from vitrina.dcat.views.contact_views import DcatContactCreateView, DcatContactUpdateView
 from vitrina.dcat.views.dataset_views import (
     DcatDatasetCreateView,
     DcatDatasetUpdateView,
@@ -8,6 +9,16 @@ from vitrina.dcat.views.dataset_views import (
 from vitrina.dcat.views.distribution_views import DcatDistributionCreateView, DcatDistributionUpdateView
 
 urlpatterns = [
+    path(
+        "organization/<int:organization_id>/dcat/contact/",
+        DcatContactCreateView.as_view(),
+        name="dcat-contact-create",
+    ),
+    path(
+        "organization/<int:organization_id>/dcat/contact/<int:contact_id>/update/",
+        DcatContactUpdateView.as_view(),
+        name="dcat-contact-update",
+    ),
     path(
         "organization/<int:organization_id>/dcat/dataset/subclass/<uuid:subclass_uuid>/",
         DcatDatasetCreateView.as_view(),

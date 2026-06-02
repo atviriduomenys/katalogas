@@ -2264,17 +2264,84 @@ class DatasetStructureMapping(models.Model):
 
 
 class Contact(models.Model):
+    class Kind(models.TextChoices):
+        INDIVIDUAL = "individual", _("Registruotas naudotojas")
+        ORG = "org", _("Organizacija")
+        UNREGISTERED = "unregistered", _("Neregistruotas naudotojas")
+        SERVICE = "service", _("Paslauga")
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
         verbose_name=_("Organizacija"),
     )
-    contact_name = models.CharField(_("Vardas Pavardė"), max_length=255, blank=True)
-    position = models.CharField(_("Pareigos"), max_length=255, blank=True)
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    deleted = models.BooleanField(blank=True, null=True)
-    deleted_on = models.DateTimeField(blank=True, null=True)
-    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    contact_name = models.CharField(
+        blank=True,
+        max_length=255,
+        verbose_name=_("Vardas Pavardė"),
+    )
+    position = models.CharField(
+        blank=True,
+        max_length=255,
+        verbose_name=_("Pareigos"),
+    )
+    email = models.EmailField(
+        blank=True,
+        verbose_name=_("El. pašto adresas"),
+    )
+    phone = models.CharField(
+        blank=True,
+        max_length=50,
+        verbose_name=_("Phone"),
+    )
+
+    served_area = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        verbose_name=_("Aptarnaujama vietovė"),
+        help_text=_("Laisvu tekstu pateikiama teikiamos paslaugos geografinė sritis. Atitinka schema:areaServed."),
+    )
+    languages = models.ManyToManyField(
+        Concept,
+        blank=True,
+        related_name="contact_languages",
+        verbose_name=_("Galimos kalbos"),
+        help_text=_("Kalbos, kuriomis gali būti suteikta informacija. Atitinka schema:availableLanguages."),
+        limit_choices_to={"concept_schemas__uri": LANGUAGE_CONCEPT_SCHEMA_URI},
+    )
+    contact_options = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        verbose_name=_("Kontaktiniai pasirinkimai"),
+        help_text=_(
+            "Šiame kontaktiniame taške pasiekiama parinktis (pvz., nemokamas numeris arba "
+            "pagalba skambinantiems su klausos negalia). Atitinka schema:contactOption."
+        ),
+    )
+    contact_type = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        verbose_name=_("Kontaktinės informacijos tipas"),
+        help_text=_(
+            "Kontaktinės informacijos tipas (pvz. pardavimo kontaktinis punktas arba PR kontaktinis punktas). "
+            "Atitinka schema:contactType."
+        ),
+    )
+    work_hours = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("Darbo valandos"),
+        help_text=_("Valandos, kuriomis pasiekiama ši paslauga arba kontaktas. Atitinka schema:hoursAvailable."),
+    )
+
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        verbose_name=_("Kontakto tipas"),
+    )
 
     content_type = models.ForeignKey(
         ContentType,
@@ -2286,41 +2353,52 @@ class Contact(models.Model):
     )
     object_id = models.PositiveIntegerField(verbose_name=_("Object ID"), null=True, blank=True)
     content_object = GenericForeignKey("content_type", "object_id")
-    email = models.EmailField(_("Email"), blank=True)
-    phone = models.CharField(_("Phone"), max_length=50, blank=True)
+
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    deleted = models.BooleanField(blank=True, null=True)
+    deleted_on = models.DateTimeField(blank=True, null=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
 
     class Meta:
         verbose_name = _("Kontaktas")
         verbose_name_plural = _("Kontaktai")
         constraints = [models.UniqueConstraint(fields=["email", "organization"], name="unique_email_per_organization")]
 
-    def __str__(self):
-        if self.content_type:
-            if self.content_type.model == "organization":
+    def __str__(self) -> str:
+        match self.kind:
+            case Contact.Kind.ORG:
                 return self.content_object.title
-            elif self.content_type.model == "user":
+            case Contact.Kind.INDIVIDUAL:
                 return f"{self.content_object.get_full_name()} ({self.position})"
-            return self.content_object.get_full_name()
-        return f"{self.contact_name} ({self.position})"
+            case Contact.Kind.UNREGISTERED:
+                return f"{self.contact_name} ({self.position})"
+            case Contact.Kind.SERVICE:
+                return self.contact_name
+            case _:
+                return f"{self.contact_name} ({self.position})"
 
-    def get_email(self):
+    def get_email(self) -> str:
         if self.email:
             return self.email
         if hasattr(self.content_object, "email"):
             return self.content_object.email
         return ""
 
-    def get_type(self):
-        if self.content_type == ContentType.objects.get_for_model(Organization):
-            return _("Organizacija")
-        elif self.content_type == ContentType.objects.get_for_model(User):
-            return _("Naudotojas")
-        return _("Neregistruotas naudotojas")
+    @staticmethod
+    def kind_for_object(obj) -> "Contact.Kind":
+        if isinstance(obj, Organization):
+            return Contact.Kind.ORG
+        if isinstance(obj, User):
+            return Contact.Kind.INDIVIDUAL
+        return Contact.Kind.UNREGISTERED
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+    def get_type(self) -> str:
+        return self.get_kind_display()
 
-    def get_acl_parents(self):
+    def is_service_kind(self) -> bool:
+        return self.kind == Contact.Kind.SERVICE
+
+    def get_acl_parents(self) -> "list[Contact | Organization]":
         parents = [self]
         parents.extend(self.organization.get_acl_parents())
         if isinstance(self.content_object, Organization):

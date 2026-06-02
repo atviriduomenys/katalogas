@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-01 10:16+0300\n"
+"POT-Creation-Date: 2026-06-02 16:57+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -304,6 +304,9 @@ msgstr "DCAT: Dataset relations"
 
 msgid "DCAT: E. paslauga"
 msgstr "DCAT: E-service"
+
+msgid "DCAT: Kontaktas"
+msgstr "DCAT: Contact"
 
 msgid "Formos pavadinimas"
 msgstr "Form name"
@@ -1474,11 +1477,71 @@ msgstr "Qualified relation"
 msgid "Kvalifikuoti ryšiai"
 msgstr "Qualified relations"
 
+msgid "Registruotas naudotojas"
+msgstr "Registered user"
+
+msgid "Neregistruotas naudotojas"
+msgstr "Non registered user"
+
+msgid "Paslauga"
+msgstr "Service"
+
 msgid "Vardas Pavardė"
 msgstr "Full Name"
 
 msgid "Pareigos"
 msgstr "Position"
+
+msgid "El. pašto adresas"
+msgstr "E-mail address"
+
+msgid "Phone"
+msgstr "Telefono numeris"
+
+msgid "Aptarnaujama vietovė"
+msgstr "Served area"
+
+msgid ""
+"Laisvu tekstu pateikiama teikiamos paslaugos geografinė sritis. Atitinka "
+"schema:areaServed."
+msgstr ""
+"The geographical area of the service provided. Corresponds "
+"to schema:areaServed."
+
+msgid "Galimos kalbos"
+msgstr "Available languages"
+
+msgid ""
+"Kalbos, kuriomis gali būti suteikta informacija. Atitinka "
+"schema:availableLanguages."
+msgstr "Languages in which information can be provided. Corresponds to schema:availableLanguages."
+
+msgid "Kontaktiniai pasirinkimai"
+msgstr "Contact options"
+
+msgid ""
+"Šiame kontaktiniame taške pasiekiama parinktis (pvz., nemokamas numeris arba "
+"pagalba skambinantiems su klausos negalia). Atitinka schema:contactOption."
+msgstr "The option available at this contact point (e.g., toll-free number or support for hearing-impaired callers). Corresponds to schema:contactOption."
+
+msgid "Kontaktinės informacijos tipas"
+msgstr "Contact type"
+
+msgid ""
+"Kontaktinės informacijos tipas (pvz. pardavimo kontaktinis punktas arba PR "
+"kontaktinis punktas). Atitinka schema:contactType."
+msgstr "The type of contact information (e.g. sales contact point or PR contact point). Corresponds to schema:contactType."
+
+msgid "Darbo valandos"
+msgstr "Work hours"
+
+msgid ""
+"Valandos, kuriomis pasiekiama ši paslauga arba kontaktas. Atitinka "
+"schema:hoursAvailable."
+msgstr "Hours during which this service or contact is available. Corresponds to schema:hoursAvailable."
+
+msgid "Kontakto tipas"
+msgstr "Contact kind"
 
 msgid "Content Type"
 msgstr "Turinio tipas"
@@ -1486,20 +1549,8 @@ msgstr "Turinio tipas"
 msgid "Object ID"
 msgstr "Object ID"
 
-msgid "Email"
-msgstr "El. pašto adresas"
-
-msgid "Phone"
-msgstr "Telefono numeris"
-
 msgid "Kontaktas"
 msgstr "Contact"
-
-msgid "Naudotojas"
-msgstr "User"
-
-msgid "Neregistruotas naudotojas"
-msgstr "Non registered user"
 
 msgid "Geoportalo API formatas"
 msgstr "Geoportal API format"
@@ -2162,6 +2213,20 @@ msgstr "Organizations"
 msgid "vaikiniai duomenų ištekliai"
 msgstr "child resources"
 
+msgid "Palaikomas produktas ar paslauga"
+msgstr "Supported product or service"
+
+msgid ""
+"Produktas arba paslauga, su kuria yra susijęs šis palaikymo kontaktinis "
+"taškas (pvz., produkto palaikymas tam tikrai produktų linijai). Tai gali "
+"būti konkretus produktas arba produktų linija arba bendra produktų ar "
+"paslaugų kategorija"
+msgstr "The product or service associated with this support contact point (e.g. product support for a particular product line). "
+"This can be a specific product or product line, or a general category of products or services."
+
+msgid "Formatas 0... arba +370..."
+msgstr "Format 0... or +370..."
+
 msgid "Kodinio pavadinimo prefiksas"
 msgstr "Codename prefix"
 
@@ -2388,6 +2453,18 @@ msgstr ""
 "Relation '{relation_name}' does not exist. Values of fields '{datasets}', "
 "'{services}', '{catalogs}' are not saved. Contact the administrator."
 
+msgid "Kontaktinės informacijos pridėjimas"
+msgstr "Add contact information"
+
+msgid "Kontaktinė informacija sėkmingai išsaugota!"
+msgstr "Contact information saved successfully!"
+
+msgid "Kontaktinės informacijos redagavimas"
+msgstr "Contact information editing"
+
+msgid "Kontaktinė informacija sėkmingai atnaujinta!"
+msgstr "Contact information updated successfully!"
+
 msgid "Naujas"
 msgstr "New"
 
@@ -2434,9 +2511,6 @@ msgstr "Distribution updated successfully!"
 
 msgid "Duomenų pildymo aplinka"
 msgstr "Data entry environment"
-
-msgid "Paslauga"
-msgstr "Service"
 
 msgid "E. paslauga"
 msgstr "E-service"
@@ -2863,6 +2937,9 @@ msgstr "Grant the role of data opening service provider"
 msgid "Duomenų teikėjų prašymų sąrašas"
 msgstr "List of data providers’ requests"
 
+msgid "Naudotojas"
+msgstr "User"
+
 msgid "Pridėtas dokumentas"
 msgstr "Added data"
 
@@ -2941,9 +3018,6 @@ msgstr "Subscribe to notifications"
 
 msgid "Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"
 msgstr "Allow to sign data service agreements"
-
-msgid "Formatas 0... arba +370..."
-msgstr "Format 0... or +370..."
 
 msgid ""
 "Negalima panaikinti koordinatoriaus rolės naudotojui, jei tai yra "
@@ -3043,12 +3117,6 @@ msgid ""
 msgstr ""
 "If a registered person or organization is selected, their profile email is "
 "used. When editing the contact, the profile email does not change."
-
-msgid ""
-"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
-"0XXXXXXXX)"
-msgstr ""
-"Incorrect phone number format. Acceptable formats: +3706XXXXXXX, 0XXXXXXXX"
 
 msgid ""
 "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
@@ -3328,6 +3396,9 @@ msgstr "Organization members list"
 
 msgid "Pridėti kontaktą"
 msgstr "Add contact"
+
+msgid "Pridėti kontaktinę informaciją"
+msgstr "Add contact information"
 
 msgid "Organizacijos vietinė rinkinio vardų erdvė"
 msgstr "Local namespace of the organization"
@@ -7079,6 +7150,12 @@ msgstr "Change user password"
 
 msgid "Slaptažodžio keitimas sėkmingas"
 msgstr "Password was changed successfully"
+
+msgid ""
+"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
+"+3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
+msgstr ""
+"Incorrect phone number format. Acceptable formats: +3706XXXXXXX, +3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
 
 msgid ""
 "Slaptažodyje turi būti panaudota bent viena didžioji lotyniška raidė (A - Z)."

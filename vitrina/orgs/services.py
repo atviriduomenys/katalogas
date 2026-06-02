@@ -421,6 +421,8 @@ acl: ACL = (
             Role.OPEN_DATA_COORDINATOR,
             Role.OPEN_DATA_MANAGER,
         ),
+        (Contact, Action.CREATE_WIZARD): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
+        (Contact, Action.UPDATE_WIZARD): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
         (Request, Action.CREATE): (Role.AUTHENTICATED,),
         (Request, Action.REQUEST_UPDATE): (Role.AUTHOR,),
         (Request, Action.DELETE): (Role.AUTHOR,),

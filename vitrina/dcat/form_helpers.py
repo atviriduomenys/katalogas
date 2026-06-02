@@ -27,7 +27,7 @@ def apply_dynamic_help_texts(form: forms.BaseForm, form_name: str) -> None:
                 f'<button type="button" class="wizard-help-popup-btn" aria-label="Daugiau informacijos" @click.stop="open=!open">'
                 f'<i class="fas fa-question-circle"></i></button>'
                 f'<span class="wizard-help-popup-content" x-show="open" x-cloak>'
-                f'{escape(extended)}</span></span>'
+                f"{escape(extended)}</span></span>"
             )
             field.help_text = mark_safe(f"{conditional_escape(field.help_text)}{popup_html}")
 

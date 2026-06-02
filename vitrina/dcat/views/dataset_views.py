@@ -404,10 +404,7 @@ class DcatDatasetUpdateView(
         return context
 
     def get_queryset(self) -> QuerySet[Dataset]:
-        return (
-            datasets_in_org_scope(self.organization)
-            .select_related("organization", "subclass")
-        )
+        return datasets_in_org_scope(self.organization).select_related("organization", "subclass")
 
     def get_object(self, queryset: QuerySet[Dataset] | None = None) -> Dataset:
         obj = super().get_object(queryset)

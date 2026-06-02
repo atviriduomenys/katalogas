@@ -22,28 +22,32 @@
         <div class="wizard-overlay-inner">
     <div class="wizard-card card">
         <header class="card-header wizard-card-header">
-            {# Left — org identity #}
+            {# Left — wizard title #}
             <div class="wizard-header-org">
-                <div class="wizard-org-avatar">
-                    {% if organization.image %}
-                        <img src="{{ organization.image.url }}"
-                             alt="{{ organization.title }}"
-                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                        <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
-                    {% else %}
-                        <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
-                    {% endif %}
-                </div>
                 <div class="wizard-org-info">
-                    <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
-                    <p class="wizard-org-type">{% translate "Organizacija" %}</p>
+                    <p class="wizard-card-title">{% translate "Duomenų pildymo aplinka" %}</p>
+                    <p class="wizard-card-subtitle-label">{% translate "Supildykite duomenų rinkinius" %}</p>
                 </div>
             </div>
 
-            {# Right — wizard title #}
+            {# Right — org identity #}
             <div class="wizard-header-title">
-                <p class="wizard-card-title">{% translate "Duomenų pildymo aplinka" %}</p>
-                <p class="wizard-card-subtitle-label">{% translate "Supildykite duomenų rinkinius" %}</p>
+                <div class="is-flex is-align-items-center" style="gap:1rem; min-width:0;">
+                    <div class="wizard-org-avatar" style="flex-shrink:0;">
+                        {% if organization.image %}
+                            <img src="{{ organization.image.url }}"
+                                 alt="{{ organization.title }}"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
+                        {% else %}
+                            <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="wizard-org-info" style="min-width:0;">
+                        <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
+                        <p class="wizard-org-type">{% translate "Organizacija" %}</p>
+                    </div>
+                </div>
             </div>
 
             {# Close button #}

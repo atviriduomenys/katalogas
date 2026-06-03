@@ -28,6 +28,10 @@ https://github.com/atviriduomenys/katalogas/issues/2588
 - Add database indexes on ``dataset_statistic.dataset_id`` and ``model_download_statistic.model``.
 - Raise the Haystack Elasticsearch iterator batch size (env-configurable via ``HAYSTACK_ITERATOR_LOAD_PER_QUERY``) to cut Elasticsearch round-trips when loading statistics pages.
 
+https://github.com/atviriduomenys/katalogas/issues/2652
+
+- Adjust HTML form to display the edit/delete buttons for enum values even if the `enum.prepare` is not set.
+
 v 1.21.0 (2026-05-18)
 ==================
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-03 11:35+0300\n"
+"POT-Creation-Date: 2026-06-03 14:41+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1081,8 +1081,7 @@ msgid "Teisės - Aprašymas"
 msgstr ""
 
 msgid ""
-"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka "
-"dct:rights / dct:description."
+"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights."
 msgstr ""
 
 msgid "Katalogas"
@@ -1173,11 +1172,11 @@ msgstr ""
 msgid "DataSeries rinkinys"
 msgstr ""
 
-msgid "Informacinės sistemos tipas"
+msgid "Informacinės sistemos rūšis"
 msgstr ""
 
 msgid ""
-"Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo "
+"Informacinės sistemos rūšis pagal Valstybės informacinių išteklių valdymo "
 "įstatymo reikalavimus. Atitinka dcataplt:Type."
 msgstr ""
 
@@ -1213,7 +1212,7 @@ msgid ""
 "dct:temporal."
 msgstr ""
 
-msgid "Informacinės sistemos tvarkytojai"
+msgid "Tvarkytojas"
 msgstr ""
 
 msgid ""
@@ -1227,17 +1226,20 @@ msgstr ""
 msgid "Versijos skirtumų aprašymas. Atitinka adms:versionNotes."
 msgstr ""
 
-msgid "Laiko skiriamoji geba (sekundėmis)"
-msgstr ""
-
-msgid "Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."
-msgstr ""
-
-msgid "Erdvinė skiriamoji geba (metrais)"
+msgid "Laiko raiška"
 msgstr ""
 
 msgid ""
-"Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
+"Laiko raiška. Formatas: ISO 8601-2:2019. Atitinka dcat:temporalResolution."
+msgstr ""
+
+msgid "Erdvinė raiška"
+msgstr ""
+
+msgid "Erdvinė raiška metrais. Atitinka dcat:spatialResolutionInMeters."
+msgstr ""
+
+msgid "Laikosi"
 msgstr ""
 
 msgid "Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."
@@ -1544,6 +1546,9 @@ msgstr ""
 msgid "Atlikto darbo būsena"
 msgstr ""
 
+msgid "Informacinės sistemos tvarkytojai"
+msgstr ""
+
 msgid "Informacinės sistemos valdytojas"
 msgstr ""
 
@@ -1555,7 +1560,13 @@ msgid ""
 "registras, kurio apimtyje yra tvarkomi duomenų ištekliai"
 msgstr ""
 
+msgid "Laiko skiriamoji geba (sekundėmis)"
+msgstr ""
+
 msgid "Mažiausias laiko tarpas tarp objektų duomenų ištekliuje"
+msgstr ""
+
+msgid "Erdvinė skiriamoji geba (metrais)"
 msgstr ""
 
 msgid "Mažiausias atstumas tarp objektų duomenų ištekliuje, matuojamas metrais"
@@ -2076,6 +2087,9 @@ msgid ""
 "pagal pasirinktą tėvinį išteklių arba organizaciją."
 msgstr ""
 
+msgid "Duomenų ištekliaus kodinis pavadinimas"
+msgstr ""
+
 msgid ""
 "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
 "(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais"
@@ -2102,10 +2116,21 @@ msgstr ""
 msgid "Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."
 msgstr ""
 
+msgid "Aprašas"
+msgstr ""
+
+msgid ""
+"Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų "
+"paslaugą. Atitinka dcat:contactPoint."
+msgstr ""
+
 msgid "Duomenų teikėjas"
 msgstr ""
 
 msgid "Duomenų teikėjas. Atitinka dct:publisher."
+msgstr ""
+
+msgid "Nukreipimo puslapis"
 msgstr ""
 
 msgid ""
@@ -2117,6 +2142,9 @@ msgid ""
 msgstr ""
 
 msgid "Duomenų skelbėjas. Atitinka dct:publisher."
+msgstr ""
+
+msgid "Nurodo kontaktą susisiekti dėl duomenų rinkinio. Atitinka vcard:Kind."
 msgstr ""
 
 msgid ""
@@ -2142,6 +2170,9 @@ msgid "Tematinė sritis"
 msgstr ""
 
 msgid "E. paslaugos tema. Atitinka skos:concept."
+msgstr ""
+
+msgid "Turi kontaktinę informaciją"
 msgstr ""
 
 msgid ""
@@ -2274,24 +2305,46 @@ msgstr ""
 msgid "Naujas"
 msgstr ""
 
+#, python-brace-format
+msgid "Informacinė sistema sukurta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Duomenų paslauga sukurta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Duomenų rinkinys sukurtas sėkmingai! Kodinis pavadinimas: {0}"
+msgstr ""
+
+msgid "E. paslauga sukurta sėkmingai!"
+msgstr ""
+
+#, python-brace-format
+msgid "Informacinė sistema atnaujinta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Duomenų paslauga atnaujinta sėkmingai! Kodinis pavadinimas: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Duomenų rinkinys atnaujintas sėkmingai! Kodinis pavadinimas: {0}"
+msgstr ""
+
+msgid "E. paslauga atnaujinta sėkmingai!"
+msgstr ""
+
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
 msgstr ""
 
 msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
 msgstr ""
 
-#, python-brace-format
-msgid "Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}"
-msgstr ""
-
 msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais."
 msgstr ""
 
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu."
-msgstr ""
-
-#, python-brace-format
-msgid "Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}"
 msgstr ""
 
 msgid "Ryšiai atnaujinti sėkmingai"
@@ -2318,13 +2371,16 @@ msgstr ""
 msgid "Duomenų pildymo aplinka"
 msgstr ""
 
+msgid "Duomenų paslauga"
+msgstr ""
+
 msgid "E. paslauga"
 msgstr ""
 
 msgid "Informacinės sistemos"
 msgstr ""
 
-msgid "Paslaugos"
+msgid "Duomenų paslaugos"
 msgstr ""
 
 msgid "Duomenų rinkiniai"
@@ -2342,7 +2398,7 @@ msgstr ""
 msgid "Sukurti naują e. paslaugą po šiuo mazgu."
 msgstr ""
 
-msgid "Sukurti naują paslaugą po šiuo mazgu."
+msgid "Sukurti naują duomenų paslaugą po šiuo mazgu."
 msgstr ""
 
 msgid "Sukurti naują duomenų rinkinį po šiuo mazgu."
@@ -4011,9 +4067,6 @@ msgid ""
 "nedidelės apimties (iki 5Mb) duomenų failus, galima talpinti ir kataloge."
 msgstr ""
 
-msgid "Duomenų paslauga"
-msgstr ""
-
 msgid ""
 "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
 "<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
@@ -4171,6 +4224,17 @@ msgstr ""
 
 msgid ""
 "Nurodo, kokį standartą ar schemą atitinka pateiktis. Atitinka dct:conformsTo."
+msgstr ""
+
+msgid "Laiko skiriamoji geba"
+msgstr ""
+
+msgid "Minimali laiko skiriamoji geba. Atitinka dcat:temporalResolution."
+msgstr ""
+
+msgid ""
+"Minimali erdvinė skiriamoji geba metrais. Atitinka "
+"dcat:spatialResolutionInMeters."
 msgstr ""
 
 msgid "Nurodomas pateikties brandos lygmuo. Atitinka adms:status."

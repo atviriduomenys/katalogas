@@ -99,6 +99,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         )
 
         self.fields["title"].required = True
+        self.fields["description"].label = _("Aprašas")
         self.fields["description"].required = True
 
         self.fields["data_service"].queryset = Dataset.objects.filter(

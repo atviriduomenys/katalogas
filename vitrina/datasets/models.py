@@ -233,9 +233,7 @@ class Dataset(Resource):
             verbose_name=_("Teisės - Aprašymas"),
             blank=True,
             null=True,
-            help_text=_(
-                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
-            ),
+            help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights."),
         ),
     )
 
@@ -483,9 +481,9 @@ class Dataset(Resource):
     information_system_type = models.ForeignKey(
         Concept,
         on_delete=models.PROTECT,
-        verbose_name=_("Informacinės sistemos tipas"),
+        verbose_name=_("Informacinės sistemos rūšis"),
         help_text=_(
-            "Informacinės sistemos tipas pagal Valstybės informacinių "
+            "Informacinės sistemos rūšis pagal Valstybės informacinių "
             "išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Type."
         ),
         related_name="information_system_types",
@@ -525,7 +523,7 @@ class Dataset(Resource):
         Organization,
         related_name="information_system_publisher_datasets",
         blank=True,
-        verbose_name=_("Informacinės sistemos tvarkytojai"),
+        verbose_name=_("Tvarkytojas"),
         help_text=_("Ši savybė nurodo subjektus (organizacijas), atsakingus už IS prieinamumą. Atitinka dct:publisher"),
     )
     version_notes = models.TextField(
@@ -539,16 +537,16 @@ class Dataset(Resource):
         max_length=255,
         blank=True,
         null=True,
-        verbose_name=_("Laiko skiriamoji geba (sekundėmis)"),
-        help_text=_("Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."),
+        verbose_name=_("Laiko raiška"),
+        help_text=_("Laiko raiška. Formatas: ISO 8601-2:2019. Atitinka dcat:temporalResolution."),
     )
 
     spatial_resolution = models.CharField(
         max_length=255,
         blank=True,
         null=True,
-        verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
-        help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
+        verbose_name=_("Erdvinė raiška"),
+        help_text=_("Erdvinė raiška metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
 
     applicable_legislation = models.ManyToManyField(
@@ -561,7 +559,7 @@ class Dataset(Resource):
         Rule,
         blank=True,
         related_name="datasets",
-        verbose_name=_("Taisyklė"),
+        verbose_name=_("Laikosi"),
         help_text=_("Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."),
     )
     is_public_service_status = models.ForeignKey(

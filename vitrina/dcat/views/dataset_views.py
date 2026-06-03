@@ -87,6 +87,20 @@ DCAT_SUBCLASS_NEW_WORD = {
     DCATResourceSubclass.IS_PUBLIC_SERVICE: _("Nauja"),
 }
 
+DCAT_SUBCLASS_CREATE_SUCCESS_MAP = {
+    DCATResourceSubclass.INFORMATION_SYSTEM: _("Informacinė sistema sukurta sėkmingai! Kodinis pavadinimas: {0}"),
+    DCATResourceSubclass.SERVICE: _("Duomenų paslauga sukurta sėkmingai! Kodinis pavadinimas: {0}"),
+    DCATResourceSubclass.DATASET: _("Duomenų rinkinys sukurtas sėkmingai! Kodinis pavadinimas: {0}"),
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: _("E. paslauga sukurta sėkmingai!"),
+}
+
+DCAT_SUBCLASS_UPDATE_SUCCESS_MAP = {
+    DCATResourceSubclass.INFORMATION_SYSTEM: _("Informacinė sistema atnaujinta sėkmingai! Kodinis pavadinimas: {0}"),
+    DCATResourceSubclass.SERVICE: _("Duomenų paslauga atnaujinta sėkmingai! Kodinis pavadinimas: {0}"),
+    DCATResourceSubclass.DATASET: _("Duomenų rinkinys atnaujintas sėkmingai! Kodinis pavadinimas: {0}"),
+    DCATResourceSubclass.IS_PUBLIC_SERVICE: _("E. paslauga atnaujinta sėkmingai!"),
+}
+
 
 class DcatDatasetCreateView(
     LoginRequiredMixin,
@@ -300,9 +314,7 @@ class DcatDatasetCreateView(
 
         self.object.category.set(form.cleaned_data.get("category") or [])
 
-        messages.success(
-            self.request, _("Duomenų išteklius sukurtas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)
-        )
+        messages.success(self.request, DCAT_SUBCLASS_CREATE_SUCCESS_MAP.get(self.subclass.name).format(dataset_name))
 
         self.object.set_current_language(get_language())
         self.object.refresh_from_db(fields=["path", "depth"])
@@ -551,9 +563,7 @@ class DcatDatasetUpdateView(
                 save_dataset_attribution(self.request, self.object, rel_form)
                 save_produces_relations(self.request, self.object, rel_form)
 
-        messages.success(
-            self.request, _("Duomenų išteklius atnaujintas sėkmingai. Kodinis pavadinimas: {0}").format(dataset_name)
-        )
+        messages.success(self.request, DCAT_SUBCLASS_UPDATE_SUCCESS_MAP.get(self.subclass.name).format(dataset_name))
 
         self.object.set_current_language(get_language())
         fresh_form = DCAT_SUBCLASS_UPDATE_FORM_MAP[self.subclass.name](self.organization, None, instance=self.object)

@@ -177,9 +177,7 @@ class DatasetDistribution(TranslatableModel):
         description=models.TextField(_("Aprašymas"), blank=True),
         conditions=models.TextField(
             _("Teisės - Aprašymas"),
-            help_text=_(
-                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
-            ),
+            help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights."),
             blank=True,
             null=True,
         ),
@@ -331,8 +329,8 @@ class DatasetDistribution(TranslatableModel):
         max_length=255,
         blank=True,
         null=True,
-        verbose_name=_("Laiko skiriamoji geba (sekundėmis)"),
-        help_text=_("Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."),
+        verbose_name=_("Laiko skiriamoji geba"),
+        help_text=_("Minimali laiko skiriamoji geba. Atitinka dcat:temporalResolution."),
     )
 
     spatial_resolution = models.CharField(
@@ -340,7 +338,7 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
-        help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
+        help_text=_("Minimali erdvinė skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
 
     status = models.ForeignKey(

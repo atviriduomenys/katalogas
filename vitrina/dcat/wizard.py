@@ -33,7 +33,7 @@ WIZARD_NODE_ICONS: dict[str, str] = {
 WIZARD_NODE_LABELS: dict[str, str] = {
     WIZARD_NODE_ORGANIZATION: _("Organizacija"),
     WIZARD_NODE_IS: _("Informacinė sistema"),
-    WIZARD_NODE_SERVICE: _("Paslauga"),
+    WIZARD_NODE_SERVICE: _("Duomenų paslauga"),
     WIZARD_NODE_DATASET: _("Duomenų rinkinys"),
     WIZARD_NODE_DISTRIBUTION: _("Pateiktis"),
     WIZARD_NODE_IS_PUBLIC_SERVICE: _("E. paslauga"),
@@ -42,7 +42,7 @@ WIZARD_NODE_LABELS: dict[str, str] = {
 WIZARD_NODE_LABELS_PLURAL: dict[str, str] = {
     WIZARD_NODE_ORGANIZATION: _("Organizacija"),
     WIZARD_NODE_IS: _("Informacinės sistemos"),
-    WIZARD_NODE_SERVICE: _("Paslaugos"),
+    WIZARD_NODE_SERVICE: _("Duomenų paslaugos"),
     WIZARD_NODE_DATASET: _("Duomenų rinkiniai"),
     WIZARD_NODE_DISTRIBUTION: _("Pateiktys"),
     WIZARD_NODE_IS_PUBLIC_SERVICE: _("E. paslaugos"),
@@ -60,7 +60,7 @@ WIZARD_TYPE_ORDER: dict[str, int] = {
 WIZARD_NODE_HELPERS: dict[str, str] = {
     WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo mazgu."),
     WIZARD_NODE_IS_PUBLIC_SERVICE: _("Sukurti naują e. paslaugą po šiuo mazgu."),
-    WIZARD_NODE_SERVICE: _("Sukurti naują paslaugą po šiuo mazgu."),
+    WIZARD_NODE_SERVICE: _("Sukurti naują duomenų paslaugą po šiuo mazgu."),
     WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo mazgu."),
     WIZARD_NODE_DISTRIBUTION: _("Pridėti naują duomenų rinkinio pateiktį."),
 }

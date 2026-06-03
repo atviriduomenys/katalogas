@@ -119,7 +119,7 @@ class DatasetNameMixin(forms.Form):
     )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
-        help_text=_("Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."),
+        help_text=_("Duomenų ištekliaus kodinis pavadinimas"),
         required=True,
         validators=[
             RegexValidator(
@@ -308,6 +308,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
         ).prefetch_related("translations")
         self.fields["information_system_type"].label_from_instance = lambda obj: str(obj.translated_label)
+        self.fields["information_system_type"].label = _("Informacinės sistemos rūšis")
 
         self.fields["information_system_importance"].required = True
         self.fields["information_system_importance"].queryset = Concept.ordered_by_label_objects.filter(
@@ -316,6 +317,8 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
 
         self.fields["information_system_assessment_url"].required = True
+
+        self.fields["description"].label = _("Aprašas")
 
         self.fields["languages"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI
@@ -414,6 +417,12 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
         )
 
+        self.fields["contact"].label = _("Kontaktinė informacija")
+        self.fields["contact"].help_text = _(
+            "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų paslaugą. "
+            "Atitinka dcat:contactPoint."
+        )
+
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų teikėjas")
         self.fields["organization"].help_text = _("Duomenų teikėjas. Atitinka dct:publisher.")
@@ -427,8 +436,10 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             "label", any_language=True
         )
         self.fields["description"].required = False
+        self.fields["description"].label = _("Aprašas")
         self.fields["tags"].required = True
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=self.organization)
+        self.fields["landing_page"].label = _("Nukreipimo puslapis")
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE)
@@ -544,6 +555,11 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų skelbėjas")
         self.fields["organization"].help_text = _("Duomenų skelbėjas. Atitinka dct:publisher.")
+
+        self.fields["landing_page"].label = _("Nukreipimo puslapis")
+
+        self.fields["contact"].label = _("Kontaktas")
+        self.fields["contact"].help_text = _("Nurodo kontaktą susisiekti dėl duomenų rinkinio. Atitinka vcard:Kind.")
 
         self.fields["dataset_type"].queryset = (
             Concept.ordered_by_label_objects.filter(concept_schemas__uri=Dataset.DATASET_TYPE_SCHEME_URI)
@@ -736,6 +752,7 @@ class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["category"].label = _("Tematinė sritis")
         self.fields["category"].help_text = _("E. paslaugos tema. Atitinka skos:concept.")
 
+        self.fields["contact"].label = _("Turi kontaktinę informaciją")
         self.fields["contact"].help_text = _(
             "Su e. paslaugos teikimu susijusi kontaktinė informacija. Atitinka cv:hasContactPoint."
         )

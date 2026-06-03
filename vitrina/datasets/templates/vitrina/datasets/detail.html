@@ -69,10 +69,10 @@
                     </span>
                 </p>
             </div>
-            <div class="content">
+            <div class="content dataset-description">
                 <p class="no-margin-bottom">
                     {% objectlanguage dataset LANGUAGE_CODE %}
-                    {{ dataset.description | markdown | safe | urlizetrunc:42 }}
+                    {{ dataset.description | markdown | safe }}
                 {% endobjectlanguage %}
             </p>
             {# tags #}

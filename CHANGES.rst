@@ -32,6 +32,11 @@ https://github.com/atviriduomenys/katalogas/issues/2652
 
 - Adjust HTML form to display the edit/delete buttons for enum values even if the `enum.prepare` is not set.
 
+https://github.com/atviriduomenys/katalogas/issues/2642
+
+- Fix dataset description rendering: a URL in the description is no longer linkified twice.
+- Truncate long description links via CSS (``text-overflow: ellipsis``) instead, keeping the full URL in ``href``.
+
 v 1.21.0 (2026-05-18)
 ==================
 

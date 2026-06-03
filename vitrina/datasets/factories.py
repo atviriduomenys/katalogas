@@ -264,6 +264,13 @@ class ContactFactory(DjangoModelFactory):
     class Meta:
         model = Contact
 
+    kind = factory.LazyAttribute(
+        lambda o: (
+            Contact.kind_for_object(o.content_type.get_object_for_this_type(pk=o.object_id))
+            if o.content_type and o.object_id
+            else Contact.Kind.UNREGISTERED
+        )
+    )
     phone = factory.Faker("phone_number")
     email = factory.Faker("email")
     content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))

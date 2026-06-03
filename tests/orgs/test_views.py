@@ -25,6 +25,7 @@ from vitrina.api.models import ApiKey
 from vitrina.classifiers.factories import AreaOfManagementFactory
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.factories import DatasetFactory, ContactFactory
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import Contact, Dataset
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
@@ -1020,7 +1021,7 @@ def test_contact_create_for_org(app, representative_data):
     assert contact.email == "org@test.com"
     assert contact.phone == "+37061234567"
     assert contact.organization == org
-    assert contact.kind == Contact.Kind.ORG
+    assert contact.kind == ContactKind.ORG
 
     resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
@@ -1047,7 +1048,7 @@ def test_contact_create_for_user_valid_data(app, representative_data):
     assert contact.object_id == coordinator.pk
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
-    assert contact.kind == Contact.Kind.INDIVIDUAL
+    assert contact.kind == ContactKind.INDIVIDUAL
 
     resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
@@ -1078,7 +1079,7 @@ def test_contact_create_for_non_registered_contact(app, representative_data):
     assert contact.position == "Tester"
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
-    assert contact.kind == Contact.Kind.UNREGISTERED
+    assert contact.kind == ContactKind.UNREGISTERED
 
     resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
@@ -1116,7 +1117,7 @@ def test_contact_update_org(app, representative_data):
     contact.refresh_from_db()
     assert contact.email == "updated@test.com"
     assert contact.phone == "+37067654321"
-    assert contact.kind == Contact.Kind.ORG
+    assert contact.kind == ContactKind.ORG
 
 
 def test_contact_update_user(app, representative_data):
@@ -1140,7 +1141,7 @@ def test_contact_update_user(app, representative_data):
 
     contact.refresh_from_db()
     assert contact.email == "updated@test.com"
-    assert contact.kind == Contact.Kind.INDIVIDUAL
+    assert contact.kind == ContactKind.INDIVIDUAL
 
 
 def test_contact_delete(app, representative_data):

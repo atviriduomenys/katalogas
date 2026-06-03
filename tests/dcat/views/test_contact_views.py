@@ -7,6 +7,7 @@ from django_webtest import DjangoTestApp
 from vitrina.classifiers.factories import ConceptFactory
 from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI
 from vitrina.datasets.factories import ContactFactory
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import Contact
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
@@ -105,7 +106,7 @@ class TestDcatContactCreateView:
         assert contact.work_hours == "I-V 9:00-17:00"
         assert language in contact.languages.all()
         assert contact.organization == org
-        assert contact.kind == Contact.Kind.SERVICE
+        assert contact.kind == ContactKind.SERVICE
         assert contact.content_type is None
         assert contact.object_id is None
 
@@ -125,7 +126,7 @@ class TestDcatContactCreateView:
 class TestDcatContactUpdateView:
     def test_unauthenticated_redirects_to_login(self, app: DjangoTestApp):
         org = OrganizationFactory()
-        contact = ContactFactory(organization=org, kind=Contact.Kind.SERVICE)
+        contact = ContactFactory(organization=org, kind=ContactKind.SERVICE)
         url = reverse("dcat-contact-update", kwargs={"organization_id": org.pk, "contact_id": contact.pk})
 
         response = app.get(url)
@@ -135,7 +136,7 @@ class TestDcatContactUpdateView:
 
     def test_no_permission_returns_403(self, app: DjangoTestApp):
         org = OrganizationFactory()
-        contact = ContactFactory(organization=org, kind=Contact.Kind.SERVICE)
+        contact = ContactFactory(organization=org, kind=ContactKind.SERVICE)
         app.set_user(UserFactory())
 
         response = app.get(
@@ -158,7 +159,7 @@ class TestDcatContactUpdateView:
 
     def test_non_service_contact_returns_404(self, app: DjangoTestApp):
         org = OrganizationFactory()
-        contact = ContactFactory(organization=org, kind=Contact.Kind.UNREGISTERED)
+        contact = ContactFactory(organization=org, kind=ContactKind.UNREGISTERED)
         app.set_user(UserFactory(is_staff=True))
 
         response = app.get(
@@ -171,7 +172,7 @@ class TestDcatContactUpdateView:
     @pytest.mark.parametrize("role", [Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER])
     def test_authorized_role_gets_200(self, app: DjangoTestApp, role: str):
         org = OrganizationFactory()
-        contact = ContactFactory(organization=org, kind=Contact.Kind.SERVICE)
+        contact = ContactFactory(organization=org, kind=ContactKind.SERVICE)
         rep = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(org),
             object_id=org.pk,
@@ -185,7 +186,7 @@ class TestDcatContactUpdateView:
 
     def test_valid_post_updates_contact(self, app: DjangoTestApp):
         org = OrganizationFactory()
-        contact = ContactFactory(organization=org, kind=Contact.Kind.SERVICE, phone="+37061234567")
+        contact = ContactFactory(organization=org, kind=ContactKind.SERVICE, phone="+37061234567")
         language_schema, _ = ConceptSchema.objects.get_or_create(uri=LANGUAGE_CONCEPT_SCHEMA_URI)
         language = ConceptFactory(concept_schemas=[language_schema])
         app.set_user(UserFactory(is_staff=True))
@@ -212,11 +213,11 @@ class TestDcatContactUpdateView:
         assert contact.contact_type == "PR kontaktas"
         assert contact.work_hours == "II-VI 10:00-18:00"
         assert language in contact.languages.all()
-        assert contact.kind == Contact.Kind.SERVICE
+        assert contact.kind == ContactKind.SERVICE
 
     def test_valid_post_redirects_to_contacts(self, app: DjangoTestApp):
         org = OrganizationFactory()
-        contact = ContactFactory(organization=org, kind=Contact.Kind.SERVICE, phone="+37061234567")
+        contact = ContactFactory(organization=org, kind=ContactKind.SERVICE, phone="+37061234567")
         app.set_user(UserFactory(is_staff=True))
 
         form = app.get(

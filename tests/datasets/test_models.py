@@ -14,6 +14,7 @@ from vitrina.datasets.factories import (
     DatasetServiceFactory,
     ContactFactory,
 )
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import DCATResourceSubclass, Dataset, Contact
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
@@ -414,7 +415,7 @@ class TestContact:
         user = UserFactory(first_name="Jonas", last_name="Jonaitis")
         org = OrganizationFactory()
         contact = ContactFactory(
-            kind=Contact.Kind.INDIVIDUAL,
+            kind=ContactKind.INDIVIDUAL,
             position="Manager",
             organization=org,
             content_type=ContentType.objects.get_for_model(user),
@@ -426,7 +427,7 @@ class TestContact:
         linked_org = OrganizationFactory(title="My Org")
         org = OrganizationFactory()
         contact = ContactFactory(
-            kind=Contact.Kind.ORG,
+            kind=ContactKind.ORG,
             organization=org,
             content_type=ContentType.objects.get_for_model(linked_org),
             object_id=linked_org.pk,
@@ -436,7 +437,7 @@ class TestContact:
     def test_str_unregistered(self):
         org = OrganizationFactory()
         contact = ContactFactory(
-            kind=Contact.Kind.UNREGISTERED,
+            kind=ContactKind.UNREGISTERED,
             contact_name="Petras Petraitis",
             position="Analyst",
             organization=org,
@@ -448,7 +449,7 @@ class TestContact:
     def test_str_service(self):
         org = OrganizationFactory()
         contact = ContactFactory(
-            kind=Contact.Kind.SERVICE,
+            kind=ContactKind.SERVICE,
             contact_name="Help Desk",
             organization=org,
             content_type=None,
@@ -474,7 +475,7 @@ class TestContact:
     def test_get_email_returns_empty_string_when_no_email(self):
         org = OrganizationFactory()
         contact = ContactFactory(
-            kind=Contact.Kind.UNREGISTERED,
+            kind=ContactKind.UNREGISTERED,
             email="",
             organization=org,
             content_type=None,
@@ -484,23 +485,23 @@ class TestContact:
 
     def test_kind_for_object_org(self):
         org = OrganizationFactory()
-        assert Contact.kind_for_object(org) == Contact.Kind.ORG
+        assert Contact.kind_for_object(org) == ContactKind.ORG
 
     def test_kind_for_object_user(self):
         user = UserFactory()
-        assert Contact.kind_for_object(user) == Contact.Kind.INDIVIDUAL
+        assert Contact.kind_for_object(user) == ContactKind.INDIVIDUAL
 
     def test_kind_for_object_other(self):
-        assert Contact.kind_for_object(object()) == Contact.Kind.UNREGISTERED
+        assert Contact.kind_for_object(object()) == ContactKind.UNREGISTERED
 
     def test_get_type_returns_kind_display(self):
-        contact = ContactFactory(kind=Contact.Kind.SERVICE)
+        contact = ContactFactory(kind=ContactKind.SERVICE)
         assert contact.get_type() == contact.get_kind_display()
 
     def test_is_service_kind_true(self):
-        contact = ContactFactory(kind=Contact.Kind.SERVICE)
+        contact = ContactFactory(kind=ContactKind.SERVICE)
         assert contact.is_service_kind() is True
 
     def test_is_service_kind_false(self):
-        contact = ContactFactory(kind=Contact.Kind.UNREGISTERED)
+        contact = ContactFactory(kind=ContactKind.UNREGISTERED)
         assert contact.is_service_kind() is False

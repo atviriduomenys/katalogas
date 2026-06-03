@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-02 16:57+0300\n"
+"POT-Creation-Date: 2026-06-03 11:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -631,6 +631,15 @@ msgid "Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą
 msgstr ""
 
 msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
+msgstr ""
+
+msgid "Registruotas naudotojas"
+msgstr ""
+
+msgid "Neregistruotas naudotojas"
+msgstr ""
+
+msgid "Paslauga"
 msgstr ""
 
 msgid "Vėluoja"
@@ -1351,15 +1360,6 @@ msgid "Kvalifikuotas ryšys"
 msgstr ""
 
 msgid "Kvalifikuoti ryšiai"
-msgstr ""
-
-msgid "Registruotas naudotojas"
-msgstr ""
-
-msgid "Neregistruotas naudotojas"
-msgstr ""
-
-msgid "Paslauga"
 msgstr ""
 
 msgid "Vardas Pavardė"

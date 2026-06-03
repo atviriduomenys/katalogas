@@ -7,6 +7,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView, UpdateView
 
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import Contact
 from vitrina.dcat.forms.contact_forms import DcatContactForm, DcatContactUpdateForm
 from vitrina.orgs.models import Organization
@@ -47,7 +48,7 @@ class DcatContactCreateView(
         contact.organization = self.organization
         contact.content_type = None
         contact.object_id = None
-        contact.kind = Contact.Kind.SERVICE
+        contact.kind = ContactKind.SERVICE
         contact.save()
         form.save_m2m()
         messages.success(self.request, _("Kontaktinė informacija sėkmingai išsaugota!"))
@@ -68,7 +69,7 @@ class DcatContactUpdateView(
         return get_object_or_404(Organization, pk=self.kwargs["organization_id"])
 
     def get_queryset(self):
-        return super().get_queryset().filter(organization=self.organization, kind=Contact.Kind.SERVICE)
+        return super().get_queryset().filter(organization=self.organization, kind=ContactKind.SERVICE)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE_WIZARD, self.get_object())
@@ -87,7 +88,7 @@ class DcatContactUpdateView(
 
     def form_valid(self, form: DcatContactUpdateForm) -> HttpResponseRedirect:
         contact = form.save(commit=False)
-        contact.kind = Contact.Kind.SERVICE
+        contact.kind = ContactKind.SERVICE
         contact.save()
         form.save_m2m()
         messages.success(self.request, _("Kontaktinė informacija sėkmingai atnaujinta!"))

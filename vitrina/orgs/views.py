@@ -63,6 +63,7 @@ from vitrina.helpers import (
     prepare_email_by_identifier,
 )
 from vitrina.api.models import ApiKey, ApiScope
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import (
     Dataset,
     Contact,
@@ -672,7 +673,7 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
         return has_perm(self.request.user, Action.UPDATE, contact)
 
     def get_queryset(self):
-        return super().get_queryset().exclude(kind=Contact.Kind.SERVICE)
+        return super().get_queryset().exclude(kind=ContactKind.SERVICE)
 
     def get_success_url(self):
         return reverse("organization-contacts", kwargs={"pk": self.kwargs.get("pk")})

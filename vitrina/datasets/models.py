@@ -36,6 +36,7 @@ from vitrina.classifiers.models import (
     SpatialCoverage,
 )
 from vitrina.utils import translate_text
+from vitrina.datasets import ContactKind
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
@@ -2264,12 +2265,6 @@ class DatasetStructureMapping(models.Model):
 
 
 class Contact(models.Model):
-    class Kind(models.TextChoices):
-        INDIVIDUAL = "individual", _("Registruotas naudotojas")
-        ORG = "org", _("Organizacija")
-        UNREGISTERED = "unregistered", _("Neregistruotas naudotojas")
-        SERVICE = "service", _("Paslauga")
-
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -2339,7 +2334,7 @@ class Contact(models.Model):
 
     kind = models.CharField(
         max_length=20,
-        choices=Kind.choices,
+        choices=ContactKind.choices,
         verbose_name=_("Kontakto tipas"),
     )
 
@@ -2366,13 +2361,13 @@ class Contact(models.Model):
 
     def __str__(self) -> str:
         match self.kind:
-            case Contact.Kind.ORG:
+            case ContactKind.ORG:
                 return self.content_object.title
-            case Contact.Kind.INDIVIDUAL:
+            case ContactKind.INDIVIDUAL:
                 return f"{self.content_object.get_full_name()} ({self.position})"
-            case Contact.Kind.UNREGISTERED:
+            case ContactKind.UNREGISTERED:
                 return f"{self.contact_name} ({self.position})"
-            case Contact.Kind.SERVICE:
+            case ContactKind.SERVICE:
                 return self.contact_name
             case _:
                 return f"{self.contact_name} ({self.position})"
@@ -2385,18 +2380,18 @@ class Contact(models.Model):
         return ""
 
     @staticmethod
-    def kind_for_object(obj) -> "Contact.Kind":
+    def kind_for_object(obj) -> ContactKind:
         if isinstance(obj, Organization):
-            return Contact.Kind.ORG
+            return ContactKind.ORG
         if isinstance(obj, User):
-            return Contact.Kind.INDIVIDUAL
-        return Contact.Kind.UNREGISTERED
+            return ContactKind.INDIVIDUAL
+        return ContactKind.UNREGISTERED
 
     def get_type(self) -> str:
         return self.get_kind_display()
 
     def is_service_kind(self) -> bool:
-        return self.kind == Contact.Kind.SERVICE
+        return self.kind == ContactKind.SERVICE
 
     def get_acl_parents(self) -> "list[Contact | Organization]":
         parents = [self]

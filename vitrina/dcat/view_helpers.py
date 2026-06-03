@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from django.contrib import messages
 from django.core.handlers.wsgi import WSGIRequest
 from django.db import transaction
+from django.db.models import Q, QuerySet
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.datasets.models import (
@@ -11,11 +12,33 @@ from vitrina.datasets.models import (
     DatasetAttribution,
     DatasetQualifiedRelation,
     DatasetRelation,
+    DCATResourceSubclass,
     Relation,
 )
 
 if TYPE_CHECKING:
+    from vitrina.orgs.models import Organization
     from vitrina.dcat.forms.dataset_forms import BaseResourceForm
+
+
+def datasets_in_org_scope(organization: "Organization") -> QuerySet:
+    """Return a Dataset queryset scoped to the wizard organization.
+
+    Includes datasets directly owned by the org AND datasets that are
+    descendants of IS nodes owned by the org (which may have a different
+    organization FK set as their data provider).
+    """
+    is_paths = list(
+        Dataset.objects.filter(
+            organization=organization,
+            is_public=False,
+            subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,
+        ).values_list("path", flat=True)
+    )
+    conditions = Q(organization=organization)
+    for path in is_paths:
+        conditions |= Q(path__startswith=path)
+    return Dataset.objects.filter(conditions)
 
 
 def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include_self: bool = False) -> list[dict]:

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-01 10:16+0300\n"
+"POT-Creation-Date: 2026-06-03 11:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -291,6 +291,9 @@ msgid "DCAT: Duomenų rinkinio ryšiai"
 msgstr ""
 
 msgid "DCAT: E. paslauga"
+msgstr ""
+
+msgid "DCAT: Kontaktas"
 msgstr ""
 
 msgid "Formos pavadinimas"
@@ -628,6 +631,15 @@ msgid "Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą
 msgstr ""
 
 msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
+msgstr ""
+
+msgid "Registruotas naudotojas"
+msgstr ""
+
+msgid "Neregistruotas naudotojas"
+msgstr ""
+
+msgid "Paslauga"
 msgstr ""
 
 msgid "Vėluoja"
@@ -1356,25 +1368,62 @@ msgstr ""
 msgid "Pareigos"
 msgstr ""
 
+msgid "El. pašto adresas"
+msgstr ""
+
+msgid "Phone"
+msgstr ""
+
+msgid "Aptarnaujama vietovė"
+msgstr ""
+
+msgid ""
+"Laisvu tekstu pateikiama teikiamos paslaugos geografinė sritis. Atitinka "
+"schema:areaServed."
+msgstr ""
+
+msgid "Galimos kalbos"
+msgstr ""
+
+msgid ""
+"Kalbos, kuriomis gali būti suteikta informacija. Atitinka "
+"schema:availableLanguages."
+msgstr ""
+
+msgid "Kontaktiniai pasirinkimai"
+msgstr ""
+
+msgid ""
+"Šiame kontaktiniame taške pasiekiama parinktis (pvz., nemokamas numeris arba "
+"pagalba skambinantiems su klausos negalia). Atitinka schema:contactOption."
+msgstr ""
+
+msgid "Kontaktinės informacijos tipas"
+msgstr ""
+
+msgid ""
+"Kontaktinės informacijos tipas (pvz. pardavimo kontaktinis punktas arba PR "
+"kontaktinis punktas). Atitinka schema:contactType."
+msgstr ""
+
+msgid "Darbo valandos"
+msgstr ""
+
+msgid ""
+"Valandos, kuriomis pasiekiama ši paslauga arba kontaktas. Atitinka "
+"schema:hoursAvailable."
+msgstr ""
+
+msgid "Kontakto tipas"
+msgstr ""
+
 msgid "Content Type"
 msgstr ""
 
 msgid "Object ID"
 msgstr ""
 
-msgid "Email"
-msgstr ""
-
-msgid "Phone"
-msgstr ""
-
 msgid "Kontaktas"
-msgstr ""
-
-msgid "Naudotojas"
-msgstr ""
-
-msgid "Neregistruotas naudotojas"
 msgstr ""
 
 msgid "Geoportalo API formatas"
@@ -2005,6 +2054,19 @@ msgstr ""
 msgid "vaikiniai duomenų ištekliai"
 msgstr ""
 
+msgid "Palaikomas produktas ar paslauga"
+msgstr ""
+
+msgid ""
+"Produktas arba paslauga, su kuria yra susijęs šis palaikymo kontaktinis "
+"taškas (pvz., produkto palaikymas tam tikrai produktų linijai). Tai gali "
+"būti konkretus produktas arba produktų linija arba bendra produktų ar "
+"paslaugų kategorija"
+msgstr ""
+
+msgid "Formatas 0... arba +370..."
+msgstr ""
+
 msgid "Kodinio pavadinimo prefiksas"
 msgstr ""
 
@@ -2197,6 +2259,18 @@ msgid ""
 "administratoriumi."
 msgstr ""
 
+msgid "Kontaktinės informacijos pridėjimas"
+msgstr ""
+
+msgid "Kontaktinė informacija sėkmingai išsaugota!"
+msgstr ""
+
+msgid "Kontaktinės informacijos redagavimas"
+msgstr ""
+
+msgid "Kontaktinė informacija sėkmingai atnaujinta!"
+msgstr ""
+
 msgid "Naujas"
 msgstr ""
 
@@ -2242,9 +2316,6 @@ msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr ""
 
 msgid "Duomenų pildymo aplinka"
-msgstr ""
-
-msgid "Paslauga"
 msgstr ""
 
 msgid "E. paslauga"
@@ -2646,6 +2717,9 @@ msgstr ""
 msgid "Duomenų teikėjų prašymų sąrašas"
 msgstr ""
 
+msgid "Naudotojas"
+msgstr ""
+
 msgid "Pridėtas dokumentas"
 msgstr ""
 
@@ -2717,9 +2791,6 @@ msgid "Prenumeruoti pranešimus"
 msgstr ""
 
 msgid "Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"
-msgstr ""
-
-msgid "Formatas 0... arba +370..."
 msgstr ""
 
 msgid ""
@@ -2813,11 +2884,6 @@ msgstr ""
 msgid ""
 "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
 "el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
-msgstr ""
-
-msgid ""
-"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
-"0XXXXXXXX)"
 msgstr ""
 
 msgid ""
@@ -3085,6 +3151,9 @@ msgid "Organizacijos narių sąrašas"
 msgstr ""
 
 msgid "Pridėti kontaktą"
+msgstr ""
+
+msgid "Pridėti kontaktinę informaciją"
 msgstr ""
 
 msgid "Organizacijos vietinė rinkinio vardų erdvė"
@@ -6548,6 +6617,11 @@ msgid "Naudotojo slaptažodžio keitimas"
 msgstr ""
 
 msgid "Slaptažodžio keitimas sėkmingas"
+msgstr ""
+
+msgid ""
+"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
+"+3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
 msgstr ""
 
 msgid ""

@@ -25,6 +25,7 @@ from vitrina.api.models import ApiKey
 from vitrina.classifiers.factories import AreaOfManagementFactory
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.factories import DatasetFactory, ContactFactory
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import Contact, Dataset
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
@@ -869,7 +870,7 @@ def test_contact_tab_display_org_contacts(app, representative_data):
     app.set_user(representative_data["open_data_coordinator"])
     organization = representative_data["organization"]
 
-    Contact.objects.create(
+    ContactFactory(
         organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
@@ -890,7 +891,7 @@ def test_contact_tab_display_user_contacts(app, representative_data):
     organization = representative_data["organization"]
     user = representative_data["open_data_manager"]
 
-    Contact.objects.create(
+    ContactFactory(
         organization=organization,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.pk,
@@ -913,21 +914,21 @@ def test_contact_tab_display_multiple_contacts(app, representative_data):
     user2 = UserFactory(organization=organization)
 
     contacts = [
-        Contact.objects.create(
+        ContactFactory(
             organization=organization,
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
             email="org@test.com",
             phone="+37061234567",
         ),
-        Contact.objects.create(
+        ContactFactory(
             organization=organization,
             content_type=ContentType.objects.get_for_model(user1),
             object_id=user1.pk,
             email="user1@test.com",
             phone="+37067654321",
         ),
-        Contact.objects.create(
+        ContactFactory(
             organization=organization,
             content_type=ContentType.objects.get_for_model(user2),
             object_id=user2.pk,
@@ -955,7 +956,7 @@ def test_contact_tab_pagination(app, representative_data):
 
     for i in range(15):
         user = UserFactory(organization=organization)
-        Contact.objects.create(
+        ContactFactory(
             organization=organization,
             content_type=ContentType.objects.get_for_model(user),
             object_id=user.pk,
@@ -987,7 +988,7 @@ def test_contact_tab_actions_coordinator(app, representative_data):
     app.set_user(representative_data["open_data_coordinator"])
     organization = representative_data["organization"]
 
-    contact = Contact.objects.create(
+    contact = ContactFactory(
         organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
@@ -1020,6 +1021,7 @@ def test_contact_create_for_org(app, representative_data):
     assert contact.email == "org@test.com"
     assert contact.phone == "+37061234567"
     assert contact.organization == org
+    assert contact.kind == ContactKind.ORG
 
     resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
@@ -1046,6 +1048,7 @@ def test_contact_create_for_user_valid_data(app, representative_data):
     assert contact.object_id == coordinator.pk
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
+    assert contact.kind == ContactKind.INDIVIDUAL
 
     resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
@@ -1076,6 +1079,7 @@ def test_contact_create_for_non_registered_contact(app, representative_data):
     assert contact.position == "Tester"
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
+    assert contact.kind == ContactKind.UNREGISTERED
 
     resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
@@ -1094,7 +1098,7 @@ def test_contact_create_no_permission(app, representative_data):
 def test_contact_update_org(app, representative_data):
     app.set_user(representative_data["open_data_coordinator"])
     org = representative_data["organization"]
-    contact = Contact.objects.create(
+    contact = ContactFactory(
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
@@ -1113,13 +1117,14 @@ def test_contact_update_org(app, representative_data):
     contact.refresh_from_db()
     assert contact.email == "updated@test.com"
     assert contact.phone == "+37067654321"
+    assert contact.kind == ContactKind.ORG
 
 
 def test_contact_update_user(app, representative_data):
     coordinator = representative_data["open_data_coordinator"]
     app.set_user(coordinator)
     org = representative_data["organization"]
-    contact = Contact.objects.create(
+    contact = ContactFactory(
         organization=org,
         content_type=ContentType.objects.get_for_model(coordinator),
         object_id=coordinator.pk,
@@ -1136,12 +1141,13 @@ def test_contact_update_user(app, representative_data):
 
     contact.refresh_from_db()
     assert contact.email == "updated@test.com"
+    assert contact.kind == ContactKind.INDIVIDUAL
 
 
 def test_contact_delete(app, representative_data):
     app.set_user(representative_data["open_data_coordinator"])
     org = representative_data["organization"]
-    contact = Contact.objects.create(
+    contact = ContactFactory(
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
@@ -1161,7 +1167,7 @@ def test_contact_delete(app, representative_data):
 def test_contact_delete_no_permission(app, representative_data):
     app.set_user(representative_data["open_data_manager"])  # Manager shouldn't have permission
     org = representative_data["organization"]
-    contact = Contact.objects.create(
+    contact = ContactFactory(
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,

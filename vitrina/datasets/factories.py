@@ -10,6 +10,7 @@ from vitrina import settings
 from vitrina.classifiers.factories import FrequencyFactory, CategoryFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.datasets import ContactKind
 from vitrina.datasets.models import (
     Dataset,
     DatasetStructure,
@@ -264,6 +265,13 @@ class ContactFactory(DjangoModelFactory):
     class Meta:
         model = Contact
 
+    kind = factory.LazyAttribute(
+        lambda o: (
+            Contact.kind_for_object(o.content_type.get_object_for_this_type(pk=o.object_id))
+            if o.content_type and o.object_id
+            else ContactKind.UNREGISTERED
+        )
+    )
     phone = factory.Faker("phone_number")
     email = factory.Faker("email")
     content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))

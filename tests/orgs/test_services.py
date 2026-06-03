@@ -2,7 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Contact, Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm
@@ -2508,3 +2508,24 @@ def test_dataset_perm_via_org_chain_non_manager_role_does_not_crash(org_role: st
     )
 
     assert has_perm(user, Action.VIEW, dataset) is False
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,action,expected",
+    [
+        (Representative.RESOURCE_COORDINATOR, Action.CREATE_WIZARD, True),
+        (Representative.RESOURCE_MANAGER, Action.CREATE_WIZARD, True),
+        (Representative.OPEN_DATA_COORDINATOR, Action.CREATE_WIZARD, False),
+        (Representative.OPEN_DATA_MANAGER, Action.CREATE_WIZARD, False),
+        (Representative.RESOURCE_COORDINATOR, Action.UPDATE_WIZARD, True),
+        (Representative.RESOURCE_MANAGER, Action.UPDATE_WIZARD, True),
+        (Representative.OPEN_DATA_COORDINATOR, Action.UPDATE_WIZARD, False),
+        (Representative.OPEN_DATA_MANAGER, Action.UPDATE_WIZARD, False),
+    ],
+)
+def test_contact_wizard_permissions(role: str, action: Action, expected: bool):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
+    assert has_perm(representative.user, action, Contact, organization) is expected

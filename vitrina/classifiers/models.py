@@ -368,6 +368,7 @@ class FormFieldHelpText(TranslatableModel):
     DCAT_SERVICE_RELATIONSHIPS = "dcat_service_relationships"
     DCAT_DATASET_RELATIONSHIPS = "dcat_dataset_relationships"
     DCAT_IS_PUBLIC_SERVICE = "dcat_is_public_service"
+    DCAT_CONTACT = "dcat_contact"
 
     FORM_NAME_CHOICES = [
         (DCAT_INFORMATION_SYSTEM, _("DCAT: Informacinė sistema")),
@@ -378,6 +379,7 @@ class FormFieldHelpText(TranslatableModel):
         (DCAT_SERVICE_RELATIONSHIPS, _("DCAT: Paslaugos ryšiai")),
         (DCAT_DATASET_RELATIONSHIPS, _("DCAT: Duomenų rinkinio ryšiai")),
         (DCAT_IS_PUBLIC_SERVICE, _("DCAT: E. paslauga")),
+        (DCAT_CONTACT, _("DCAT: Kontaktas")),
     ]
 
     form_name = models.CharField(

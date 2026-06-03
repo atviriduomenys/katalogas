@@ -298,6 +298,17 @@
             _setDirty();
         });
 
+        // Prevent Enter in single-line inputs from submitting the wizard form
+        // prematurely (which otherwise saves, re-renders the pane and scrolls to
+        // the top). Delegated off document so it survives HTMX pane swaps.
+        // Textarea fields, Select2 search (rendered outside the form) and the
+        // submit button keep their default behaviour.
+        $(document).on('keydown', '#wizard-fragment-form input:not([type=submit]):not([type=button])', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+
         // Block HTMX GET navigations into the main pane when dirty
         document.body.addEventListener('htmx:beforeRequest', function(e) {
             if (!window.wizardFormDirty) return;

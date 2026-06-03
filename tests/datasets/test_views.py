@@ -277,6 +277,12 @@ class TestDatasetDetailView:
         assert f'<a href="{url}" rel="nofollow noopener noreferrer">{url}</a>' in content
         assert 'href="<a' not in content
 
+    def test_dataset_detail_includes_comments_js_once(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        resp = app.get(dataset.get_absolute_url()).follow()
+        content = resp.content.decode("utf-8")
+        assert content.count("js/comments.js") == 1
+
     def test_dataset_resource_create_button(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
         app.set_user(user)

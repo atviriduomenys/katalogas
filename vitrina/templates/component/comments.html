@@ -50,10 +50,6 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-        $('.show-reply-form').click(function () {
-            $('#media-' + this.id).toggleClass('is-hidden');
-        });
-
         $('.media-content').submit(function () {
             $(this).find(":submit").attr('disabled', 'disabled');
         });

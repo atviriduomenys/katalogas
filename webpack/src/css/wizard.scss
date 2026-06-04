@@ -577,6 +577,15 @@
     align-items: center;
     width: 1rem;
     flex: 0 0 1rem;
+    align-self: stretch;
+}
+.wizard-tree-caret i,
+.wizard-tree-caret svg {
+    transition: transform 0.15s ease;
+}
+.wizard-tree-caret.is-open i,
+.wizard-tree-caret.is-open svg {
+    transform: rotate(90deg);
 }
 .wizard-tree-actions { margin-left: auto; gap: 0.25rem; flex: 0 0 auto; }
 .wizard-tree-count {

@@ -102,9 +102,13 @@
                                  hx-swap="innerHTML"
                                  hx-headers='{"X-Wizard-Request": "true"}'
                                  @click.stop="select('org:{{ organization.pk }}'){% if wizard_tree %}; open = !open{% endif %}">
-                                <span class="wizard-tree-caret has-text-grey">
+                                <span class="wizard-tree-caret has-text-grey"
+                                      {% if wizard_tree %}
+                                      :class="open ? 'is-open' : ''"
+                                      @click.stop="open = !open"
+                                      {% endif %}>
                                     {% if wizard_tree %}
-                                        <i class="fas fa-xs" :class="open ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                        <i class="fas fa-chevron-right fa-xs"></i>
                                     {% endif %}
                                 </span>
                                 <span class="wizard-tree-label has-text-dark" title="{{ organization.title }}">

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-03 14:41+0300\n"
+"POT-Creation-Date: 2026-06-04 14:42+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -114,9 +114,11 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -342,21 +344,27 @@ msgstr "Spacial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spacial coverages"
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -2575,8 +2583,8 @@ msgstr "Dataset distribution edit"
 msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr "Distribution updated successfully!"
 
-msgid "Duomenų pildymo aplinka"
-msgstr "Data entry environment"
+msgid "IS metaduomenys"
+msgstr "IS metadata"
 
 msgid "Duomenų paslauga"
 msgstr "Data service"
@@ -3475,8 +3483,8 @@ msgstr "Local namespace of the organization"
 msgid "Organizacijos vietinių rinkinių leidžiamų vardų erdvių sąrašas."
 msgstr "List of namespaces allowed by the organization's local collections."
 
-msgid "Atidaryti formų valdymą"
-msgstr "Open data-filling environment"
+msgid "Tvarkyti IS metaduomenis"
+msgstr "Manage IS metadata"
 
 msgid "Redaguoti organizaciją"
 msgstr "Edit organization"
@@ -3608,8 +3616,11 @@ msgstr "Agents"
 msgid "Raktas duomenų įkėlimui į saugyklą"
 msgstr "Key for uploading data to storage"
 
-msgid "Supildykite duomenų rinkinius"
-msgstr "Enter datasets"
+msgid ""
+"Organizacijos informacinių sistemų metaduomenų pildymas pagal DCAT-AP-LT"
+msgstr ""
+"Entry of the organization's information system metadata according to DCAT-"
+"AP-LT"
 
 msgid "Įkeliama forma..."
 msgstr "Loading form..."

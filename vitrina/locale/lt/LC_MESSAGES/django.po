@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-03 14:41+0300\n"
+"POT-Creation-Date: 2026-06-04 14:42+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -113,9 +113,11 @@ msgstr ""
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr ""
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
@@ -328,21 +330,27 @@ msgstr ""
 msgid "Teritorinės aprėptys"
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
@@ -2368,7 +2376,7 @@ msgstr ""
 msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr ""
 
-msgid "Duomenų pildymo aplinka"
+msgid "IS metaduomenys"
 msgstr ""
 
 msgid "Duomenų paslauga"
@@ -3218,7 +3226,7 @@ msgstr ""
 msgid "Organizacijos vietinių rinkinių leidžiamų vardų erdvių sąrašas."
 msgstr ""
 
-msgid "Atidaryti formų valdymą"
+msgid "Tvarkyti IS metaduomenis"
 msgstr ""
 
 msgid "Redaguoti organizaciją"
@@ -3339,7 +3347,8 @@ msgstr ""
 msgid "Raktas duomenų įkėlimui į saugyklą"
 msgstr ""
 
-msgid "Supildykite duomenų rinkinius"
+msgid ""
+"Organizacijos informacinių sistemų metaduomenų pildymas pagal DCAT-AP-LT"
 msgstr ""
 
 msgid "Įkeliama forma..."

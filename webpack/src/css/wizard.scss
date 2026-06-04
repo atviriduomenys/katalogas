@@ -129,10 +129,10 @@
     min-width: 0;
 }
 .wizard-card-title {
-    font-size: 1.375rem;
+    font-size: 1.5rem;
     font-weight: 500;
     color: #1c1c1c;
-    line-height: 1.6rem;
+    line-height: 1.75rem;
     letter-spacing: 0.15px;
 }
 .wizard-card-subtitle-label {
@@ -140,6 +140,7 @@
     font-weight: 400;
     color: #59656e;
     line-height: 1.25rem;
+    text-wrap: balance;
 }
 .wizard-header-close {
     flex: 0 0 auto;

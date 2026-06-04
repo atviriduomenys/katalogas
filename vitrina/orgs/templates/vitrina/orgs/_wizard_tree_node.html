@@ -2,7 +2,7 @@
 {# Recursive wizard tree node partial. Expects `node` = dict from _build_wizard_tree. #}
 <li class="wizard-tree-node"
     data-node-key="{{ node.key }}"
-    {% if node.children %}x-data="{ open: false }"{% endif %}>
+    {% if node.children %}x-data="{ open: false }" @treetoggleall.window="open = $event.detail"{% endif %}>
     <div class="wizard-tree-row is-flex is-align-items-center"
          :class="selected && selected.key === '{{ node.key }}' && mode === 'detail' ? 'is-active' : ''"
          {% if node.fragment_url %}

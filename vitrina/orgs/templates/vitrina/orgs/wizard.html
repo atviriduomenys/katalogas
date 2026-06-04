@@ -65,6 +65,7 @@
                  selected: null,
                  mode: 'detail',
                  createAttempt: null,
+                 treeExpanded: false,
                  select(key, nextMode) {
                      this.selected = this.nodes[key] || { key: key };
                      this.mode = nextMode || 'detail';
@@ -91,10 +92,21 @@
                 {# Left sidebar — tree navigation #}
                 <aside class="column is-one-quarter wizard-sidebar p-4">
                     <ul class="wizard-tree">
-                        <li class="wizard-tree-group wizard-tree-group-root" aria-hidden="true">
-                            {% translate "Organizacija" %}
+                        <li class="wizard-tree-group wizard-tree-group-root">
+                            <span aria-hidden="true">{% translate "Organizacija" %}</span>
+                            {% if wizard_tree %}
+                                <button type="button" class="wizard-tree-expand-toggle"
+                                        :title="treeExpanded ? '{% translate 'Suskleisti viską' %}' : '{% translate 'Išskleisti viską' %}'"
+                                        :aria-label="treeExpanded ? '{% translate 'Suskleisti viską' %}' : '{% translate 'Išskleisti viską' %}'"
+                                        @click="treeExpanded = !treeExpanded; $dispatch('treetoggleall', treeExpanded)">
+                                    <span class="wizard-tree-expand-icon" :class="treeExpanded ? 'is-open' : ''">
+                                        <i class="fas fa-angle-double-down fa-xs"></i>
+                                    </span>
+                                </button>
+                            {% endif %}
                         </li>
-                        <li class="wizard-tree-node wizard-tree-root" x-data="{ open: true }">
+                        <li class="wizard-tree-node wizard-tree-root" x-data="{ open: true }"
+                            @treetoggleall.window="if ($event.detail) open = true">
                             <div class="wizard-tree-row is-flex is-align-items-center"
                                  :class="selected && selected.key === 'org:{{ organization.pk }}' && mode === 'detail' ? 'is-active' : ''"
                                  hx-get="{% url 'organization-change' pk=organization.pk %}"

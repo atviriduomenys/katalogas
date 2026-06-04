@@ -235,6 +235,7 @@
     display: flex;
     align-items: flex-start;
     gap: 1.5rem;
+    margin: 0;
 }
 .wizard-columns > .column {
     padding: 0;
@@ -257,10 +258,8 @@
     border-color: #375677;
     box-shadow: 0 0 0 2px rgba(55,86,119,0.08);
 }
-/* crispy forms puts is-danger on the input/textarea/select, not the .field wrapper.
-   Scope to form inputs only — .button.is-danger (formset delete btn) must not trigger this. */
 .wizard-form-body .field.is-danger,
-.wizard-form-body .field:has(.input.is-danger, .textarea.is-danger, select.is-danger) {
+.wizard-form-body .field:has(.input.is-danger, .textarea.is-danger, .select.is-danger, select.is-danger) {
     border-color: #f14668;
     box-shadow: 0 0 0 2px rgba(241,70,104,0.08);
 }

@@ -16,6 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from parler.admin import TranslatableAdmin
 
 from vitrina import settings
+from vitrina.datasets.admin_forms import QualityAnnotationAdminForm
 from vitrina.datasets.forms import DatasetAdminForm
 from vitrina.datasets.models import (
     Dataset,
@@ -28,6 +29,8 @@ from vitrina.datasets.models import (
     GeoportalDataServiceTypeValue,
     DCATResourceSubclass,
     DatasetRelation,
+    QualityAnnotation,
+    QualityAnnotationBody,
 )
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
@@ -557,6 +560,18 @@ class DatasetTagAdmin(RevisionCommentVersionAdmin):
         if not request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags"):
             return [field.name for field in self.model._meta.fields]
         return []
+
+
+@admin.register(QualityAnnotationBody)
+class QualityAnnotationBodyAdmin(RevisionCommentVersionAdmin):
+    list_display = ["uuid", "value"]
+
+
+@admin.register(QualityAnnotation)
+class QualityAnnotationAdmin(RevisionCommentVersionAdmin):
+    form = QualityAnnotationAdminForm
+    list_display = ["uuid", "codename"]
+    filter_horizontal = ["has_target_dataset", "has_target_distribution", "has_body"]
 
 
 admin.site.register(Dataset, DatasetAdmin)

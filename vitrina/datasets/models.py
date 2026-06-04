@@ -704,6 +704,13 @@ class Dataset(Resource):
         blank=True,
         default=False,
     )
+    has_quality_annotation = models.ForeignKey(
+        "QualityAnnotation",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="primary_datasets",
+    )
     # --------------------------->8-------------------------------------
 
     metadata = GenericRelation(
@@ -2438,3 +2445,62 @@ class DatasetExcludedGroups(models.Model):
     class Meta:
         unique_together = ("dataset", "group")
         db_table = "dataset_excluded_groups"
+
+
+class QualityAnnotationBody(UUIDBaseModel):
+    value = models.TextField(
+        verbose_name=_("Reikšmė"),
+        help_text=_("Laisvu tekstu pateikiamas vertinimo komentaras arba nuoroda į vertinimo failą."),
+    )
+
+    class Meta:
+        db_table = "vitrina_quality_annotation_body"
+        verbose_name = _("Kokybės anotacijos reikšmė")
+        verbose_name_plural = _("Kokybės anotacijos reikšmės")
+
+    def __str__(self) -> str:
+        limit = 20
+        return self.value if len(self.value) < limit else f"{self.value[:limit]}..."
+
+
+class QualityAnnotation(UUIDBaseModel):
+    codename = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Kodinis pavadinimas"),
+        help_text=_(
+            "Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
+            "Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti pasikartojančių reikšmių. "
+            "Formatas: kod_pav"
+        ),
+    )
+    has_target_dataset = models.ManyToManyField(
+        "vitrina_datasets.Dataset",
+        verbose_name=_("Turi vertinamą duomenų rinkinį"),
+        help_text=_("Atitinka oa:hasTarget"),
+        blank=True,
+        related_name="quality_annotations",
+        limit_choices_to={"subclass__name": DCATResourceSubclass.DATASET},
+    )
+    has_target_distribution = models.ManyToManyField(
+        "vitrina_resources.DatasetDistribution",
+        verbose_name=_("Turi vertinamą pateiktį"),
+        help_text=_("Atitinka oa:hasTarget"),
+        blank=True,
+        related_name="quality_annotations",
+    )
+    has_body = models.ManyToManyField(
+        QualityAnnotationBody,
+        verbose_name=_("Turi turinį"),
+        help_text=_("Atitinka oa:hasBody"),
+        blank=True,
+        related_name="quality_annotations",
+    )
+
+    class Meta:
+        db_table = "vitrina_quality_annotation"
+        verbose_name = _("Kokybės anotacija")
+        verbose_name_plural = _("Kokybės anotacijos")
+
+    def __str__(self) -> str:
+        return self.codename

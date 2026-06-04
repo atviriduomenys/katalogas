@@ -230,9 +230,8 @@ class DcatDatasetCreateView(
             if self.subclass.name == DCATResourceSubclass.SERVICE:
                 self.object.service = True
 
-            parent: Dataset | None = form.cleaned_data.get("parent", None)
-            if parent:
-                parent.add_child(instance=self.object)
+            if self.dataset_parent:
+                self.dataset_parent.add_child(instance=self.object)
             else:
                 Dataset.add_root(instance=self.object)
 
@@ -542,14 +541,6 @@ class DcatDatasetUpdateView(
 
         create_tasks_and_notify_subscribers_about_dataset_update(self.request, self.object)
         self.object.save()
-
-        selected_parent = form.cleaned_data.get("parent")
-        if self.object.get_parent() != selected_parent:
-            if not selected_parent:
-                self.object.add_self_as_root()
-            else:
-                self.object.move(selected_parent, "sorted-child")
-            self.object.refresh_from_db()  # Refresh needed after moving tree nodes
 
         save_dataset_relations(self.request, self.object, form)
         save_dataset_attribution(self.request, self.object, form)

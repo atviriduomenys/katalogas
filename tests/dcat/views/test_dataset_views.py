@@ -537,13 +537,16 @@ class TestDcatDatasetCreateView:
         app.set_user(user)
 
         url = reverse(
-            "dcat-dataset-create",
-            kwargs={"organization_id": org.pk, "subclass_uuid": is_public_service_subclass.pk},
+            "dcat-dataset-create-with-parent",
+            kwargs={
+                "organization_id": org.pk,
+                "subclass_uuid": is_public_service_subclass.pk,
+                "parent_id": parent_is.pk,
+            },
         )
         form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "IS Public Service All Fields"
         form["description"] = "IS public service description"
-        form["parent"] = str(parent_is.pk)
         form["identifier"] = "paslauga_1"
         form["information_system_publishers"].force_value([str(publisher_org.pk)])
         form["landing_page"] = "https://example.com/service"
@@ -1170,73 +1173,6 @@ class TestDcatDatasetUpdateView:
         assert metadata.name == f"{org.name}newname"
         assert metadata.draft is True
 
-    def test_post_changes_parent(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
-        importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
-        importance = ConceptFactory(concept_schemas=[importance_schema])
-        is_type_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        is_type = ConceptFactory(concept_schemas=[is_type_schema])
-        parent = DatasetFactory(organization=org, subclass=subclass, is_public=False)
-        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
-        )
-        form = app.get(url).forms["wizard-fragment-form"]
-        form["title"] = "IS Title"
-        form["description"] = "IS description"
-        form["name_prefix"].force_value(f"{parent.name}")
-        form["name"] = "updateis"
-        form["identifier"] = "1234"
-        form["information_system_importance"] = importance.pk
-        form["information_system_type"] = is_type.pk
-        form["information_system_publishers"] = [str(org.pk)]
-        form["creator"].force_value(str(org.pk))
-        form["information_system_assessment_url"] = "https://example.com/assessment"
-        form["parent"] = parent.pk
-        form.submit()
-
-        dataset.refresh_from_db()
-        assert dataset.get_parent().pk == parent.pk
-
-    def test_post_removes_parent(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
-        importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
-        importance = ConceptFactory(concept_schemas=[importance_schema])
-        is_type_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        is_type = ConceptFactory(concept_schemas=[is_type_schema])
-        parent = DatasetFactory(organization=org, subclass=subclass, is_public=True)
-        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
-        dataset.move(parent, "sorted-child")
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        url = reverse(
-            "dcat-dataset-update",
-            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
-        )
-        form = app.get(url).forms["wizard-fragment-form"]
-        form["title"] = "IS Title"
-        form["description"] = "IS description"
-        form["name_prefix"].force_value(f"{org.name}")
-        form["name"] = "updateis"
-        form["identifier"] = "1234"
-        form["information_system_importance"] = importance.pk
-        form["information_system_type"] = is_type.pk
-        form["information_system_publishers"] = [str(org.pk)]
-        form["creator"].force_value(str(org.pk))
-        form["information_system_assessment_url"] = "https://example.com/assessment"
-        form["parent"].force_value("")
-        form.submit()
-
-        dataset.refresh_from_db()
-        assert dataset.get_parent() is None
-
     def test_post_sets_status_has_data_when_endpoint_url_changes_on_service(self, app: DjangoTestApp):
         org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
@@ -1372,7 +1308,6 @@ class TestDcatDatasetUpdateView:
         form = app.get(url).forms["wizard-fragment-form"]
         form["title"] = "Updated IS Public Service"
         form["description"] = "Updated description"
-        form["parent"] = str(parent_is.pk)
         form["identifier"] = "new_paslauga"
         form["information_system_publishers"].force_value([str(publisher_org.pk)])
         form["landing_page"] = "https://example.com/updated-service"

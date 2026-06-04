@@ -1,0 +1,8 @@
+<script>
+    (function() {
+        var prefix = "{{ form.codename_prefix|escapejs }}";
+        $("#id_name").on("input", function() {
+            $("#id_codename_preview").val(prefix.replace(/\/$/, "") + "/" + $(this).val());
+        });
+    })();
+</script>

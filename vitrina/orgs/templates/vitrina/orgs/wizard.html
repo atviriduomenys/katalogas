@@ -220,13 +220,13 @@
                             </div>
                             <div class="wizard-crumb is-current">
                                 <span class="wizard-crumb-label">{% translate "Pasirinkite formą" %}</span>
-                                <span class="wizard-crumb-title">{% translate "Pasirinkite objektą" %}</span>
+                                <span class="wizard-crumb-title">{% translate "Pasirinkite elementą" %}</span>
                             </div>
                         </nav>
 
                         <h2 class="wizard-picker-title">{% translate "Pasirinkite ką norite sukurti" %}</h2>
                         <p class="wizard-picker-sub">
-                            {% translate "Žemiau rodomi objektų tipai, kuriuos galima sukurti po" %}
+                            {% translate "Žemiau rodomi elementai, kuriuos galima sukurti po" %}
                             „<span x-text="selected && selected.title"></span>“.
                         </p>
 
@@ -251,7 +251,7 @@
                                     <i class="fas fa-chevron-right"></i>
                                 </span>
                                 <span class="wizard-picker-card-locks" x-show="!canCreate(type)"
-                                      title="{% translate 'Naują įrašą galima sukurti tik turint aukštesnio lygio įrašą.' %}">
+                                      title="{% translate 'Naują elementą galima sukurti tik turint aukštesnio lygio elementą.' %}">
                                     <i class="fas fa-lock"></i>
                                 </span>
                             </div>

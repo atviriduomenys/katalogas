@@ -58,10 +58,10 @@ WIZARD_TYPE_ORDER: dict[str, int] = {
 }
 
 WIZARD_NODE_HELPERS: dict[str, str] = {
-    WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo mazgu."),
-    WIZARD_NODE_IS_PUBLIC_SERVICE: _("Sukurti naują e. paslaugą po šiuo mazgu."),
-    WIZARD_NODE_SERVICE: _("Sukurti naują duomenų paslaugą po šiuo mazgu."),
-    WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo mazgu."),
+    WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo elementu."),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("Sukurti naują e. paslaugą po šiuo elementu."),
+    WIZARD_NODE_SERVICE: _("Sukurti naują duomenų paslaugą po šiuo elementu."),
+    WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo elementu."),
     WIZARD_NODE_DISTRIBUTION: _("Pridėti naują duomenų rinkinio pateiktį."),
 }
 

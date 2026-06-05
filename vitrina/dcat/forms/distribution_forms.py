@@ -1,5 +1,4 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet, Q
@@ -85,11 +84,9 @@ class DatasetDistributionForm(TranslatableModelForm):
         super().__init__(*args, **kwargs)
         self.resource = self.instance if self.instance and self.instance.pk else None
 
-        button = _("Redaguoti") if self.resource else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
-        self.helper.add_input(Submit("submit", button, css_class="button is-primary"))
 
         self.fields["access_url"].required = True
         self.fields["access_url"].label = _("Prieigos URL")

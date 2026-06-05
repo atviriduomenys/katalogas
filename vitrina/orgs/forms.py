@@ -179,7 +179,7 @@ class OrganizationBaseForm(ModelForm):
     )
     image = FilerImageField(label=_("Paveiksliukas"), upload_to=Organization.UPLOAD_TO, required=False)
     email = CharField(label=_("Elektroninis paštas"), required=True)
-    phone = CharField(label=_("Telefono numeris"), required=True)
+    phone = CharField(label=_("Telefono numeris"), required=True, validators=[phone_validator])
     address = CharField(label=_("Adresas"), required=True)
     description = CharField(label=_("Aprašymas"), widget=Textarea(), required=False)
 

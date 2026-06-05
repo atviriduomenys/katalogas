@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-05 14:21+0300\n"
+"POT-Creation-Date: 2026-06-05 16:28+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -776,9 +776,6 @@ msgstr "Select either a dataset, or a distribution - not both."
 
 msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
 msgstr "At least one of dataset, or distribution must be selected."
-
-msgid "Būtina pridėti bent vieną pavadinimą."
-msgstr "At least one title must be selected"
 
 msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
 msgstr "At least one measurement must be selected."
@@ -4798,6 +4795,16 @@ msgstr "Period start"
 
 msgid "Periodo pabaiga"
 msgstr "Period end"
+
+msgid "Politika"
+msgstr "Policy"
+
+msgid ""
+"Pateikiama duomenų naudojimo politika, kuri yra susijusių taisyklių "
+"rinkinys, aprašoma pagal ODRL. Atitinka odrl:hasPolicy"
+msgstr ""
+"Provides the data usage policy, which is a set of related rules described "
+"according to ODRL. Corresponds to odrl:hasPolicy."
 
 msgid "Prieiga"
 msgstr "Access"

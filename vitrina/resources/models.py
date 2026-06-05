@@ -411,6 +411,15 @@ class DatasetDistribution(TranslatableModel):
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
+    policy = models.TextField(
+        verbose_name=_("Politika"),
+        help_text=_(
+            "Pateikiama duomenų naudojimo politika, kuri yra susijusių taisyklių rinkinys, "
+            "aprašoma pagal ODRL. Atitinka odrl:hasPolicy"
+        ),
+        blank=True,
+        null=True,
+    )
 
     metadata = GenericRelation("vitrina_structure.Metadata")
     params = GenericRelation("vitrina_structure.Param")

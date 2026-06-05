@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-05 14:21+0300\n"
+"POT-Creation-Date: 2026-06-05 16:28+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -726,9 +726,6 @@ msgid "Pasirinkite arba duomenų rinkinį, arba pateiktį — ne abu."
 msgstr ""
 
 msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
-msgstr ""
-
-msgid "Būtina pridėti bent vieną pavadinimą."
 msgstr ""
 
 msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
@@ -4421,6 +4418,14 @@ msgid "Periodo pradžia"
 msgstr ""
 
 msgid "Periodo pabaiga"
+msgstr ""
+
+msgid "Politika"
+msgstr ""
+
+msgid ""
+"Pateikiama duomenų naudojimo politika, kuri yra susijusių taisyklių "
+"rinkinys, aprašoma pagal ODRL. Atitinka odrl:hasPolicy"
 msgstr ""
 
 msgid "Prieiga"

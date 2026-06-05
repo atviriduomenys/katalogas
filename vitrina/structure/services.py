@@ -1,7 +1,6 @@
 import csv
 import json
 import logging
-import tempfile
 import uuid
 from io import StringIO
 from json import JSONDecodeError
@@ -348,34 +347,15 @@ def _get_manifest_datasets_to_import(
     """
     Get manifest datasets to import.
 
-    Prefers exact name match with dataset.name.
-    Falls back to UUID match (for re-imports where the dataset name changed).
+    Requires an exact name match with dataset.name.
     Also returns all manifest dataset names for error reporting.
     """
     datasets = list(state.manifest.datasets.values())
     result: list[tuple[int, struct.Dataset]] = []
     all_manifest_names: list[str] = [meta.name for meta in datasets if meta.name]
-
-    # First pass: exact name match.
     for order, meta in enumerate(datasets, 1):
         if meta.name == dataset.name:
             result.append((order, meta))
-
-    if result:
-        return result, all_manifest_names
-
-    # Second pass: UUID match (handles re-imports where the dataset name changed).
-    ct = ContentType.objects.get_for_model(Dataset)
-    existing_uuids: set[str] = set(
-        Metadata.objects.filter(content_type=ct, object_id=dataset.pk)
-        .exclude(uuid="")
-        .values_list("uuid", flat=True)
-        .distinct()
-    )
-    for order, meta in enumerate(datasets, 1):
-        if meta.id and str(meta.id) in existing_uuids:
-            result.append((order, meta))
-
     return result, all_manifest_names
 
 
@@ -1469,7 +1449,7 @@ def _link_base(
             else:
                 meta.errors.append(
                     _(
-                        f"Nepavyko susieti bazinio modelio „{meta.name}”. "
+                        f"Nepavyko susieti bazinio modelio „{meta.name}“. "
                         f"Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
                     )
                 )
@@ -1570,7 +1550,7 @@ def _link_properties(
                         ).delete()
                 else:
                     message = _(
-                        "Nepavyko susieti savybės „%(name)s” per nurodytą ryšį „%(ref)s”. "
+                        "Nepavyko susieti savybės „%(name)s“ per nurodytą ryšį „%(ref)s“. "
                         "Įsitikinkite, kad nurodytas modelis egzistuoja."
                     ) % {"name": prop_meta.name, "ref": prop_meta.ref}
                     _create_errors([message], model)
@@ -2510,7 +2490,7 @@ def _to_relative_model_name(name: str, dataset: Dataset) -> str:
             return name
         prefix = dataset.name + "/"
         if name.startswith(prefix):
-            return name[len(prefix):]
+            return name[len(prefix) :]
     return name
 
 
@@ -2607,11 +2587,7 @@ def generate_mermaid_diagram(dataset: Dataset, version: Version) -> str:
         verbose=False,
         check_config=False,
     )
-    with tempfile.NamedTemporaryFile(mode="r", suffix=".mmd", delete=False) as tmp:
-        tmp_path = tmp.name
-    write_mermaid_manifest(context, tmp_path, manifest)
-    with open(tmp_path) as f:
-        mermaid = f.read()
+    mermaid = write_mermaid_manifest(context, manifest, dataset.name)
     mermaid_click_links = _generate_mermaid_model_click_links(dataset, version)
     return mermaid + "\n" + mermaid_click_links
 

@@ -1,6 +1,4 @@
-import csv
 import datetime
-import io
 import json
 import uuid
 from http import HTTPStatus
@@ -66,18 +64,11 @@ class BaseTestCreateManifest:
     def _create_manifest(
         self, manifest: str, title: str = "", description: str = "", whitelisted_names: list[str] | None = None
     ) -> Dataset:
-        reader = csv.DictReader(io.StringIO(manifest))
-        dataset_code_name = next(
-            (row["dataset"] for row in reader if row.get("dataset")),
-            "datasets/gov/test/dataset",
-        )
-        org_prefix, _, code_name = dataset_code_name.rpartition("/")
         dataset = DatasetFactory(
-            title=code_name,
+            title=title,
             description=description,
-            organization=OrganizationFactory(
-                name=org_prefix, whitelisted_names=whitelisted_names if whitelisted_names else []
-            ),
+            metadata=False,
+            organization=OrganizationFactory(whitelisted_names=whitelisted_names if whitelisted_names else []),
         )
         structure = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
@@ -368,8 +359,8 @@ def test_model_data_page_contains_correct_table_url(client):
     client.force_login(user)
 
     dataset = DatasetFactory(metadata="test/dataset")
-    version = VersionFactory(dataset=dataset)
-    dataset.metadata.update(metadata_version=version)
+    dataset_metadata = Metadata.objects.get(object_id=dataset.pk, dataset=dataset)
+    version = dataset_metadata.metadata_version
     model = ModelFactory(dataset=dataset, metadata_version=version)
 
     MetadataFactory(
@@ -895,7 +886,7 @@ def test_private_model(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -920,7 +911,7 @@ def test_private_model_with_access(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -953,7 +944,7 @@ def test_private_property(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -977,7 +968,7 @@ def test_private_property_with_access(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -1011,7 +1002,7 @@ def test_private_comment(app: DjangoTestApp):
         ",,,,,,comment,type,,,,,,private,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -1037,7 +1028,7 @@ def test_private_comment_with_access(app: DjangoTestApp):
         ",,,,,,comment,type,,,,private,,,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -2113,8 +2104,7 @@ def test_model_create(app: DjangoTestApp):
     app.set_user(user)
 
     dataset = DatasetFactory(metadata="test/dataset")
-    version = VersionFactory(dataset=dataset)
-    dataset.metadata.update(metadata_version=version)
+    version = dataset.metadata.first().metadata_version
     model = ModelFactory(dataset=dataset, metadata_version=version)
     PrefixFactory(name="dcat", metadata_version=version)
 
@@ -2191,8 +2181,7 @@ def test_model_update(app: DjangoTestApp):
     app.set_user(user)
 
     dataset = DatasetFactory(metadata="test/dataset")
-    version = VersionFactory(dataset=dataset)
-    dataset.metadata.update(metadata_version=version)
+    version = dataset.metadata.first().metadata_version
     model = ModelFactory(dataset=dataset, metadata_version=version)
     PrefixFactory(name="dcat", metadata_version=version)
 
@@ -3956,7 +3945,7 @@ def test_visibility_without_access(app: DjangoTestApp):
         ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -4074,7 +4063,7 @@ def test_model_visibility_with_manager_access(app: DjangoTestApp):
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
 
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -4199,7 +4188,7 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
     organization = OrganizationFactory(kind=Organization.GOV)
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.organization = organization
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -4323,7 +4312,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
     organization = OrganizationFactory(kind=Organization.GOV)
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.organization = organization
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -4991,7 +4980,7 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5056,7 +5045,7 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
     )
     city_structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"]), metadata="datasets/gov/test/city"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
     )
     city_structure.dataset.current_structure = city_structure
     city_structure.dataset.save()
@@ -5071,7 +5060,7 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,city,ref,/datasets/gov/test/city/City,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=main_manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=main_manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
@@ -5110,7 +5099,7 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5145,7 +5134,7 @@ def test_manifest_export_openapi_with_scopes(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5189,7 +5178,7 @@ def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5239,7 +5228,7 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5301,7 +5290,7 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5367,7 +5356,7 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
         ",,,,,,enum,,,'SMALL',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5452,7 +5441,7 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
         ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5513,7 +5502,7 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         ",,,,,,enum,,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5578,7 +5567,7 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
         ",,,,,,,,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6009,7 +5998,7 @@ def test_publish_form_shows_all_metadata_rows_params(app: DjangoTestApp):
         "8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         "9,,,,,type,string,,,,5,,,open,dct:type,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6034,7 +6023,7 @@ def test_publish_form_shows_all_metadata_rows_base(app: DjangoTestApp):
         ",,,,,id,integer,,,,3,,,,,,,,,\n"
         ",,,,,title,string,,,,2,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6060,7 +6049,7 @@ def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
         "10,,,,,,enum,,,'''CREATED''',,,,,,,,,\n"
         "11,,,,,,,,,'''MODIFIED''',,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6087,7 +6076,7 @@ def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: Djang
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6116,7 +6105,7 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6151,7 +6140,7 @@ def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6704,12 +6693,11 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    init_version = structure.dataset.metadata.first().metadata_version
-    version = create_structure_objects(structure, init_version)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     original_metadata_count = 4
     original_model_count = 2
@@ -6759,12 +6747,11 @@ def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    init_version = structure.dataset.metadata.first().metadata_version
-    version = create_structure_objects(structure, init_version)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     assert Metadata.objects.filter(dataset=structure.dataset).count() == 5
     assert Model.objects.filter(dataset=structure.dataset).count() == 2
@@ -6807,13 +6794,11 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"]), metadata="datasets/gov/ivpk/adp"),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    init_version = VersionFactory(dataset=structure.dataset)
-    structure.dataset.metadata.update(metadata_version=init_version)
-    version = create_structure_objects(structure, init_version)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     assert Metadata.objects.filter(dataset=structure.dataset).count() == 3
     assert Model.objects.filter(dataset=structure.dataset).count() == 2
@@ -6944,6 +6929,7 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
     app.set_user(user)
     first_dataset = DatasetFactory()
     first_version = first_dataset.metadata.first().metadata_version
+    first_dataset.metadata.first()
     first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
@@ -7215,6 +7201,7 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
     app.set_user(user)
     first_dataset = DatasetFactory()
     first_version = first_dataset.metadata.first().metadata_version
+    first_dataset.metadata.first()
     first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
@@ -7365,7 +7352,7 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        metadata_version = VersionFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
         model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
@@ -7383,7 +7370,7 @@ class TestModelDelete:
         user = UserFactory(is_staff=False)
         app.set_user(user)
         dataset = DatasetFactory()
-        metadata_version = VersionFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
         model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
@@ -7405,7 +7392,7 @@ class TestModelDelete:
         user = UserFactory(is_staff=False)
         app.set_user(user)
         dataset = DatasetFactory()
-        metadata_version = VersionFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
         metadata_version.status = status
         model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
@@ -7427,7 +7414,7 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        metadata_version = VersionFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
         resp = app.post(
             reverse("model-delete", args=[dataset.pk, metadata_version.pk, "NonExistent"]), expect_errors=True
         )
@@ -7435,7 +7422,7 @@ class TestModelDelete:
 
     def test_requires_login(self, app: DjangoTestApp):
         dataset = DatasetFactory()
-        metadata_version = VersionFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
         model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
@@ -7453,7 +7440,7 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        metadata_version = VersionFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
         model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         metadata = MetadataFactory(
             dataset=dataset,
@@ -7472,7 +7459,7 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        metadata_version = VersionFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
         model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
@@ -7511,7 +7498,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset with ref property",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,",
             "3,,,,Country,,,id,,,,,,,develop,,,,,,",
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,",
@@ -7545,7 +7532,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,test,Description",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Title,Description",
             "2,,resource_wsdl,,,,wsdl,,http://127.0.0.1:8001/api/v1/test/testing/?wsdl,,,,,,,,,,,resource_wsdl,",
             "3,,resource_soap,,,,soap,,TestTesting.TestPort.TestPort.test,,wsdl(rc_wsdl),,,,,,,,,resource_soap,",
             "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
@@ -7592,7 +7579,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,test,Description",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Title,Description",
             "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,service,",
         ]
 
@@ -7623,7 +7610,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,test,Dataset with ref property",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,nested_read,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read,",
             "3,,,,,,param,nested_xml,GetData,,read().response_data,,,,develop,,,,,,",
             "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
@@ -7660,7 +7647,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,example,Dataset with ref property",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,,,Animal,,,,,,,,,0,completed,public,,,,,",
             "3,,,,,id,string,,source_animal_id,,,,,4,completed,package,protected,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7705,9 +7692,9 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,example,Dataset that defines base model.",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Model Dataset,Dataset that defines base model.",
             "2,,,,Animal,,,,,,,,,0,completed,public,,,,,",
-            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,example2,Dataset that references model with base",
+            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
             "2,,,datasets/gov/ivpk/example/Animal,,,,,,,,,,,,,,,,,",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
             "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
@@ -7746,7 +7733,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,example2,Dataset that references model with base",
+            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
             "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7755,7 +7742,7 @@ class TestStructure(BaseTestCreateManifest):
         error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
         assert error_comment.type == Comment.STRUCTURE_ERROR
         assert error_comment.body == (
-            "Nepavyko susieti bazinio modelio „datasets/gov/ivpk/example/Animal”. "
+            "Nepavyko susieti bazinio modelio „datasets/gov/ivpk/example/Animal“. "
             "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
         )
 
@@ -7779,7 +7766,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [  # Base could not be linked, so it is missing.
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,example,Dataset with ref property",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
             "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7788,7 +7775,7 @@ class TestStructure(BaseTestCreateManifest):
         error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
         assert error_comment.type == Comment.STRUCTURE_ERROR
         assert error_comment.body == (
-            "Nepavyko susieti bazinio modelio „datasets/gov/ivpk/example/Animal”. "
+            "Nepavyko susieti bazinio modelio „datasets/gov/ivpk/example/Animal“. "
             "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
         )
 
@@ -7813,7 +7800,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,test,Dataset with ref property",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,,,Animal,,,,source_animal_model,,,,,,develop,,,,,,",
             '3,,,,,,comment,model,,,"update(model: ""Animal/:part"")",,,2,develop,,open,https://github.com/example/issues/1,,,',
             "4,,,,,id,string,,source_animal_id,,,,,4,develop,,,,,,",
@@ -7844,7 +7831,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Approver,,,,,,,,,1,develop,,,,,,",
             "3,,,,,is_active,boolean,,IsActive/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,True,,true,,,,develop,,,,,,",
@@ -7871,7 +7858,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,example,Dataset",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Dataset,,,,,,,,,1,develop,,,,,,",
             "3,,,,,type,number required,,TypeID/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,1.1,,1.2,,,,develop,,,,,,",
@@ -7901,7 +7888,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,,,enum,DatasetEnum,,,1,,,,develop,,,,,,",
             "3,,,,,,,,,,2,,,,develop,,,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7932,7 +7919,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Dataset,,,,,,,,,1,develop,,,,,,",
             "3,,,,,code,integer,,,,,,,4,develop,,,,,,",
             "4,,,,,,enum,,,,10,,,,develop,,,,,,",
@@ -7989,10 +7976,10 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
-            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset that will be referenced\r\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dataset that will be referenced\r\n"
             "8,,,,Continent,,,id,,,,,,,develop,,,,,,\r\n"
             "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
-            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset with reference to other dataset\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
@@ -8040,11 +8027,11 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
-            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset that will be referenced\r\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dataset that will be referenced\r\n"
             '8,,,,Continent,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "10,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset with reference to other dataset\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
@@ -8096,14 +8083,14 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
-            "12,datasets/gov/other/dataset,,,,,,,,,,,,,,,,,,dataset,Dependent dataset depth 2\r\n"
+            "12,datasets/gov/other/dataset,,,,,,,,,,,,,,,,,,Other Dataset,Dependent dataset depth 2\r\n"
             "13,,,,Other,,,title,,,,,,,develop,,,,,,\r\n"
             "14,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,dataset,Dependent dataset depth 1\r\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dependent dataset depth 1\r\n"
             '8,,,,Continent,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "10,,,,,title,ref,/datasets/gov/other/dataset/Other,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,dataset,Root dataset\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Root dataset\r\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
@@ -8136,7 +8123,7 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
-            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset with reference to other dataset\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
@@ -8189,7 +8176,7 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
-            "7,datasets/gov/ref/d1,,,,,,,,,,,,,,,,,,d1,Dataset with reference to other dataset\r\n"
+            "7,datasets/gov/ref/d1,,,,,,,,,,,,,,,,,,Referenced Dataset,Dataset with reference to other dataset\r\n"
             "8,,,,D1BaseModel,,,id,,,,,,,develop,,,,,,\r\n"
             "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "11,,,D1BaseModel,,,,,,,,,,,,,,,,,\r\n"
@@ -8198,7 +8185,7 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             '15,,,,D1Model2,,,"id, prop2",,,,,,,develop,,,,,,\r\n'
             "16,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "17,,,,,prop2,string,,,,,,,5,develop,,open,dct:prop2,,,\r\n"
-            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,dataset,Dataset with reference to other dataset\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
             '3,,,,MainModel,,,"id, prop1",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
@@ -8541,8 +8528,7 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         user = UserFactory(is_staff=True)
         app.set_user(user)
         structure = DatasetStructureFactory(
-            file=FilerFileFactory(file=FileField(filename="file.csv", data=self.MANIFEST)),
-            dataset__metadata="datasets/gov/ivpk/adp",
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=self.MANIFEST))
         )
         structure.dataset.current_structure = structure
         structure.dataset.save()
@@ -8563,7 +8549,7 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)
@@ -8589,7 +8575,7 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)
@@ -8619,7 +8605,7 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)
@@ -8647,7 +8633,7 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset__metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)

@@ -130,7 +130,7 @@ class DatasetFactory(DjangoModelFactory):
     def metadata(self, create: bool, extracted: str, **kwargs) -> None:
         if not create:
             return
-        name = extracted if extracted is not None else ((self.organization.name or "datasets/gov/ivpk/") + "adp")
+        name = extracted if extracted is not None else "datasets/gov/ivpk/adp"
         MetadataFactory.create(
             dataset=self, content_type=ContentType.objects.get_for_model(self), object_id=self.pk, name=name
         )

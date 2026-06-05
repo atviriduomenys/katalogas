@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-04 14:55+0300\n"
+"POT-Creation-Date: 2026-06-04 16:27+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,12 +19,6 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < "
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
-
-msgid "Organizacija"
-msgstr ""
-
-msgid "Duomenų skelbėjas"
-msgstr ""
 
 msgid "Versijos duomenys"
 msgstr ""
@@ -57,6 +51,9 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
+msgstr ""
+
+msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -1451,6 +1448,44 @@ msgstr ""
 msgid "Geoportalo API formato reikšmės"
 msgstr ""
 
+msgid ""
+"Laisvu tekstu pateikiamas vertinimo komentaras arba nuoroda į vertinimo "
+"failą."
+msgstr ""
+
+msgid "Kokybės anotacijos reikšmė"
+msgstr ""
+
+msgid "Kokybės anotacijos reikšmės"
+msgstr ""
+
+msgid ""
+"Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
+"Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
+"pasikartojančių reikšmių. Formatas: kod_pav"
+msgstr ""
+
+msgid "Turi vertinamą duomenų rinkinį"
+msgstr ""
+
+msgid "Atitinka oa:hasTarget"
+msgstr ""
+
+msgid "Turi vertinamą pateiktį"
+msgstr ""
+
+msgid "Turi turinį"
+msgstr ""
+
+msgid "Atitinka oa:hasBody"
+msgstr ""
+
+msgid "Kokybės anotacija"
+msgstr ""
+
+msgid "Kokybės anotacijos"
+msgstr ""
+
 msgid "Organizacijai gali būti suteikta tik tvarkytojo rolė"
 msgstr ""
 
@@ -1694,6 +1729,9 @@ msgid "Pašalinti"
 msgstr ""
 
 msgid "Atsisiuntimo formatas"
+msgstr ""
+
+msgid "Duomenų skelbėjas"
 msgstr ""
 
 msgid "Kontaktinė informacija"
@@ -2153,6 +2191,14 @@ msgid "Duomenų skelbėjas. Atitinka dct:publisher."
 msgstr ""
 
 msgid "Nurodo kontaktą susisiekti dėl duomenų rinkinio. Atitinka vcard:Kind."
+msgstr ""
+
+msgid "Turi kokybės anotaciją"
+msgstr ""
+
+msgid ""
+"Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka "
+"dqv:hasQualityAnnotation."
 msgstr ""
 
 msgid ""

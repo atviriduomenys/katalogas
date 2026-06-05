@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-04 14:55+0300\n"
+"POT-Creation-Date: 2026-06-04 15:20+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
-
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -58,6 +52,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -1584,6 +1581,47 @@ msgstr "Geoportal API format value"
 msgid "Geoportalo API formato reikšmės"
 msgstr "Geoportal API format values"
 
+msgid ""
+"Laisvu tekstu pateikiamas vertinimo komentaras arba nuoroda į vertinimo "
+"failą."
+msgstr "A free-text assessment comment or a reference to an assessment file."
+
+msgid "Kokybės anotacijos reikšmė"
+msgstr "Quality annotation value"
+
+msgid "Kokybės anotacijos reikšmės"
+msgstr "Quality annotation values"
+
+msgid ""
+"Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
+"Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
+"pasikartojančių reikšmių. Formatas: kod_pav"
+msgstr ""
+"A free-text code name entered in lowercase Latin letters. For ease of "
+"initial data collection. This column cannot contain duplicate values. "
+"Format: kod_pav"
+
+msgid "Turi vertinamą duomenų rinkinį"
+msgstr "Has target dataset"
+
+msgid "Atitinka oa:hasTarget"
+msgstr "Conforms to oa:hasTarget"
+
+msgid "Turi vertinamą pateiktį"
+msgstr "Has target distribution"
+
+msgid "Turi turinį"
+msgstr "Has body"
+
+msgid "Atitinka oa:hasBody"
+msgstr "Conforms to oa:hasBody"
+
+msgid "Kokybės anotacija"
+msgstr "Quality annotation"
+
+msgid "Kokybės anotacijos"
+msgstr "Quality annotations"
+
 msgid "Organizacijai gali būti suteikta tik tvarkytojo rolė"
 msgstr "The organization can only be assigned the role of a data editor"
 
@@ -1854,6 +1892,9 @@ msgstr "Delete"
 
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
@@ -2340,6 +2381,16 @@ msgid "Nurodo kontaktą susisiekti dėl duomenų rinkinio. Atitinka vcard:Kind."
 msgstr ""
 "Specifies a contact to reach regarding the dataset. Corresponds to "
 "vcard:Kind."
+
+msgid "Turi kokybės anotaciją"
+msgstr "Has quality annotation"
+
+msgid ""
+"Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka "
+"dqv:hasQualityAnnotation."
+msgstr ""
+"Indicates how consistent the dataset is across the system. Corresponds to "
+"dqv:hasQualityAnnotation"
 
 msgid ""
 "PASIS kodas. Jei nėra - institucijos suteiktas vidinis teikiamos paslaugos "

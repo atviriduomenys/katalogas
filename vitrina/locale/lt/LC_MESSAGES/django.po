@@ -4438,6 +4438,14 @@ msgstr ""
 msgid "Periodo pabaiga"
 msgstr ""
 
+msgid "Politika"
+msgstr ""
+
+msgid ""
+"Pateikiama duomenų naudojimo politika, kuri yra susijusių taisyklių "
+"rinkinys, aprašoma pagal ODRL. Atitinka odrl:hasPolicy"
+msgstr ""
+
 msgid "Prieiga"
 msgstr ""
 

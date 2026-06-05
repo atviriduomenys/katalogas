@@ -438,7 +438,11 @@ class Dataset(Resource):
         blank=True,
         related_name="services",
         help_text=_(
-            "Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba Agentą arba API adresą. Atitinka dcat:endpointURL"
+            "Duomenų publikavimo paslaugą teikiantis agentas. "
+            "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+            "Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę, "
+            "privaloma nurodyti arba Agentą arba API adresą.  "
+            "Atitinka dcat:endpointURL."
         ),
     )
     endpoint_url = models.URLField(

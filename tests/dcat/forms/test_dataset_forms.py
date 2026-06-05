@@ -41,8 +41,6 @@ from vitrina.dcat.forms.dataset_forms import (
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.orgs.factories import OrganizationFactory, WhitelistedCodeNameFactory
-from vitrina.uapi.factories import AgentFactory
-
 pytestmark = pytest.mark.django_db
 
 
@@ -660,94 +658,6 @@ class TestServiceResourceForm:
 
         assert public_dataset not in form.fields["parent"].queryset
 
-    def test_no_agent_no_endpoint_url_raises_error(self):
-        organization = OrganizationFactory()
-        contact = ContactFactory(organization=organization)
-
-        form = ServiceResourceForm(
-            organization=organization,
-            url_parent=None,
-            data={
-                "title": "Test Service",
-                "name": "testservice",
-                "tags": "tag1",
-                "contact": contact.pk,
-            },
-        )
-
-        error_msg = "Pasirinkite agentą, arba nurodykite API adresą."
-        assert not form.is_valid()
-        assert "agent" in form.errors
-        assert "endpoint_url" in form.errors
-        assert error_msg in form.errors["agent"]
-        assert error_msg in form.errors["endpoint_url"]
-
-    def test_no_endpoint_description_without_agent_raises_error(self):
-        organization = OrganizationFactory()
-        contact = ContactFactory(organization=organization)
-
-        form = ServiceResourceForm(
-            organization=organization,
-            url_parent=None,
-            data={
-                "title": "Test Service",
-                "name": "testservice",
-                "tags": "tag1",
-                "contact": contact.pk,
-                "endpoint_url": "http://example.com",
-            },
-        )
-
-        assert not form.is_valid()
-        assert "endpoint_description" in form.errors
-        assert "Pasirinkite agentą, arba nurodykite API specifikaciją." in form.errors["endpoint_description"]
-
-    def test_agent_with_endpoint_url_raises_error(self):
-        organization = OrganizationFactory()
-        contact = ContactFactory(organization=organization)
-        agent = AgentFactory(organization=organization)
-
-        form = ServiceResourceForm(
-            organization=organization,
-            url_parent=None,
-            data={
-                "title": "Test Service",
-                "name": "testservice",
-                "tags": "tag1",
-                "contact": contact.pk,
-                "agent": agent.pk,
-                "endpoint_url": "http://example.com",
-            },
-        )
-
-        error_msg = "Pasirinkus agentą, šis laukas negali būti užpildytas."
-        assert not form.is_valid()
-        assert "endpoint_url" in form.errors
-        assert error_msg in form.errors["endpoint_url"]
-
-    def test_agent_with_endpoint_description_raises_error(self):
-        organization = OrganizationFactory()
-        contact = ContactFactory(organization=organization)
-        agent = AgentFactory(organization=organization)
-
-        form = ServiceResourceForm(
-            organization=organization,
-            url_parent=None,
-            data={
-                "title": "Test Service",
-                "name": "testservice",
-                "tags": "tag1",
-                "contact": contact.pk,
-                "agent": agent.pk,
-                "endpoint_description": "http://example.com/spec",
-            },
-        )
-
-        error_msg = "Pasirinkus agentą, šis laukas negali būti užpildytas."
-        assert not form.is_valid()
-        assert "endpoint_description" in form.errors
-        assert error_msg in form.errors["endpoint_description"]
-
     def test_follows_license_service_quality_not_required(self):
         organization = OrganizationFactory()
         contact = ContactFactory(organization=organization)
@@ -768,29 +678,6 @@ class TestServiceResourceForm:
         assert "follows" not in form.errors
         assert "license" not in form.errors
         assert "service_quality" not in form.errors
-
-    def test_conforms_to_uapi_without_agent_raises_error(self):
-        organization = OrganizationFactory()
-        contact = ContactFactory(organization=organization)
-        uapi_concept = Concept.objects.get(code="UAPI")
-
-        form = ServiceResourceForm(
-            organization=organization,
-            url_parent=None,
-            data={
-                "title": "Test Service",
-                "name": "testservice",
-                "tags": "tag1",
-                "contact": contact.pk,
-                "conforms_to": uapi_concept.pk,
-                "endpoint_url": "http://example.com",
-                "endpoint_description": "http://example.com/spec",
-            },
-        )
-
-        assert not form.is_valid()
-        assert "agent" in form.errors
-        assert "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu." in form.errors["agent"][0]
 
     def test_organization_required(self):
         organization = OrganizationFactory()

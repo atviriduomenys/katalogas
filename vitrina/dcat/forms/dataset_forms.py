@@ -380,7 +380,6 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             "name_prefix",
             "name",
             "title",
-            "agent",  # Either "agent" or "endpoint_url" is required
             "endpoint_url",
             "endpoint_type",  # Not in DCAT
             "contact",
@@ -400,7 +399,6 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         )
 
         widgets = {
-            "agent": Select2Widget,
             "endpoint_type": Select2Widget,
             "endpoint_description_type": Select2Widget,
             "organization": OrganizationSingleWidget,
@@ -438,29 +436,10 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         self.fields["description"].required = False
         self.fields["description"].label = _("Aprašas")
         self.fields["tags"].required = True
-        self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=self.organization)
         self.fields["landing_page"].label = _("Nukreipimo puslapis")
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE)
-
-    def clean(self) -> dict[str, Any]:
-        cleaned_data = super().clean()
-
-        cleaned_data = set_default_agent_endpoint_fields(cleaned_data)
-
-        errors = validate_agent_endpoint_fields(
-            agent=cleaned_data.get("agent"),
-            conforms_to=cleaned_data.get("conforms_to"),
-            endpoint_url=cleaned_data.get("endpoint_url"),
-            endpoint_type=cleaned_data.get("endpoint_type"),
-            endpoint_description=cleaned_data.get("endpoint_description"),
-            endpoint_description_type=cleaned_data.get("endpoint_description_type"),
-        )
-        for field_name, error_message in errors:
-            self.add_error(field_name, error_message)
-
-        return cleaned_data
 
 
 class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, DatasetNameMixin, BaseResourceForm):

@@ -228,7 +228,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
                 "Kodinis pavadinimas (%(manifest_names)s) nesutampa su rinkinio kodiniu pavadinimu %(dataset_name)s."
             ) % {"manifest_names": names_str, "dataset_name": dataset.name}
         else:
-            message = _("Manifeste nenurodytas duomenų rinkinio kodinis pavadinimas.")
+            message = _("Duomenų struktūros apraše nenurodytas duomenų rinkinio kodinis pavadinimas.")
         _create_errors([message], dataset.current_structure)
         return
 

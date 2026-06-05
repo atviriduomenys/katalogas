@@ -4903,7 +4903,7 @@ msgstr ""
 "Code name (%(manifest_names)s) does not match with the dataset code name "
 "%(dataset_name)s."
 
-msgid "Manifeste nenurodytas duomenų rinkinio kodinis pavadinimas."
+msgid "Duomenų struktūros apraše nenurodytas duomenų rinkinio kodinis pavadinimas."
 msgstr "Dataset code name not defined in the manifest"
 
 #, python-brace-format

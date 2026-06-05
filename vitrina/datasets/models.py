@@ -711,6 +711,13 @@ class Dataset(Resource):
         on_delete=models.SET_NULL,
         related_name="primary_datasets",
     )
+    has_quality_measurement = models.ForeignKey(
+        "QualityMeasurement",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="primary_datasets",
+    )
     # --------------------------->8-------------------------------------
 
     metadata = GenericRelation(
@@ -2471,13 +2478,13 @@ class QualityAnnotation(UUIDBaseModel):
         help_text=_(
             "Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
             "Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti pasikartojančių reikšmių. "
-            "Formatas: kod_pav"
+            "Formatas: kod_pav."
         ),
     )
     has_target_dataset = models.ManyToManyField(
         "vitrina_datasets.Dataset",
         verbose_name=_("Turi vertinamą duomenų rinkinį"),
-        help_text=_("Atitinka oa:hasTarget"),
+        help_text=_("Atitinka oa:hasTarget."),
         blank=True,
         related_name="quality_annotations",
         limit_choices_to={"subclass__name": DCATResourceSubclass.DATASET},
@@ -2485,14 +2492,14 @@ class QualityAnnotation(UUIDBaseModel):
     has_target_distribution = models.ManyToManyField(
         "vitrina_resources.DatasetDistribution",
         verbose_name=_("Turi vertinamą pateiktį"),
-        help_text=_("Atitinka oa:hasTarget"),
+        help_text=_("Atitinka oa:hasTarget."),
         blank=True,
         related_name="quality_annotations",
     )
     has_body = models.ManyToManyField(
         QualityAnnotationBody,
         verbose_name=_("Turi turinį"),
-        help_text=_("Atitinka oa:hasBody"),
+        help_text=_("Atitinka oa:hasBody."),
         blank=True,
         related_name="quality_annotations",
     )
@@ -2501,6 +2508,117 @@ class QualityAnnotation(UUIDBaseModel):
         db_table = "vitrina_quality_annotation"
         verbose_name = _("Kokybės anotacija")
         verbose_name_plural = _("Kokybės anotacijos")
+
+    def __str__(self) -> str:
+        return self.codename
+
+
+class MeasurementTitle(UUIDBaseModel):
+    value = models.CharField(
+        max_length=255,
+        verbose_name="Pavadinimas",
+        help_text=_("Laisvu tekstu pateikiamas matavimo pavadinimas."),
+    )
+
+    class Meta:
+        db_table = "vitrina_measurement_title"
+        verbose_name = _("Matavimo pavadinimas")
+        verbose_name_plural = _("Matavimo pavadinimai")
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class MeasurementTitleItem(models.Model):
+    measurement = models.ForeignKey("Measurement", on_delete=models.CASCADE)
+    title = models.ForeignKey(MeasurementTitle, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "vitrina_measurement_title_item"
+
+
+class Measurement(UUIDBaseModel):
+    codename = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Kodinis pavadinimas"),
+        help_text=_(
+            "Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
+            "Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti pasikartojančių reikšmių. "
+            "Formatas: kod_pav."
+        ),
+    )
+    title = models.ManyToManyField(
+        MeasurementTitle,
+        through="MeasurementTitleItem",
+        verbose_name=_("Pavadinimas"),
+        help_text=_("Laisvu tekstu pateikiamas matavimo pavadinimas."),
+    )
+
+    class Meta:
+        db_table = "vitrina_measurement"
+        verbose_name = _("Matavimas")
+        verbose_name_plural = _("Matavimai")
+
+    def __str__(self) -> str:
+        return self.codename
+
+
+class QualityMeasurement(UUIDBaseModel):
+    codename = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Kodinis pavadinimas"),
+        help_text=_(
+            "Laisvu tekstu įvedamas kodinis pavadinimas pagal egzemplioriaus reikšmę. "
+            "Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti pasikartojančių reikšmių. "
+            "Formatas: KodPav."
+        ),
+    )
+    is_measurement_of = models.ManyToManyField(
+        Measurement,
+        verbose_name=_("Matuoja"),
+        help_text=_("Nurodo stebimą rodiklį. Atitinka dqv:isMeasurementOf."),
+        blank=True,
+        related_name="quality_measurements",
+    )
+    computed_on_dataset = models.ManyToManyField(
+        "vitrina_datasets.Dataset",
+        verbose_name=_("Apskaičiuota duomenų rinkiniui"),
+        help_text=_(
+            "Nurodo išteklius, kuriems atliekamas kokybės matavimas. "
+            "DQV kontekste ši savybė paprastai turėtų būti naudojama teiginiuose, "
+            "kuriuose objektai yra dcat:Dataset arba dcat:Distribution egzemplioriai. "
+            "Atitinka dqv:computedOn."
+        ),
+        blank=True,
+        related_name="quality_measurements",
+        limit_choices_to={"subclass__name": DCATResourceSubclass.DATASET},
+    )
+    computed_on_distribution = models.ManyToManyField(
+        "vitrina_resources.DatasetDistribution",
+        verbose_name=_("Apskaičiuota pateikčiai"),
+        help_text=_(
+            "Nurodo išteklius, kuriems atliekamas kokybės matavimas. "
+            "DQV kontekste ši savybė paprastai turėtų būti naudojama teiginiuose, "
+            "kuriuose objektai yra dcat:Dataset arba dcat:Distribution egzemplioriai."
+            "Atitinka dqv:computedOn."
+        ),
+        blank=True,
+        related_name="quality_measurements",
+    )
+    value = models.CharField(
+        max_length=255,
+        verbose_name=_("Vertė"),
+        help_text=_("Nurodo rodiklio vertę. Atitinka dqv:value."),
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "vitrina_quality_measurement"
+        verbose_name = _("Kokybės matavimas")
+        verbose_name_plural = _("Kokybės matavimai")
 
     def __str__(self) -> str:
         return self.codename

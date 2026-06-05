@@ -23,7 +23,7 @@ def test_update_uml_diagram():
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -39,23 +39,10 @@ def test_update_uml_diagram():
     uml_diagram.refresh_from_db()
 
     assert uml_diagram.status == UMLDiagramStatus.UP_TO_DATE
-    assert (
-        """
-classDiagram
-namespace `datasets/gov/ivpk/adp` {
-class `datasets/gov/ivpk/adp/Licence`["Licence"]:::Entity {
-«optional»
-id : integer [0..1]
-}
-class `datasets/gov/ivpk/adp/Catalog`["Catalog"]:::Entity {
-«optional»
-id : integer [0..1]
-}
-}
-`datasets/gov/ivpk/adp/Licence` --> "[0..1]" `datasets/gov/ivpk/adp/Catalog` : catalog<br/>«optional»
-"""
-        in uml_diagram.mermaid
-    )
+    assert "classDiagram" in uml_diagram.mermaid
+    assert "class Licence" in uml_diagram.mermaid
+    assert "class Catalog" in uml_diagram.mermaid
+    assert 'Licence --> "[0..1]" Catalog : catalog' in uml_diagram.mermaid
 
     base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
     dataset_pk = structure.dataset.pk

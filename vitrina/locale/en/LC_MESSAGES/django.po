@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-08 08:39+0300\n"
+"POT-Creation-Date: 2026-06-08 10:19+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
-
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -58,6 +52,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -114,9 +111,11 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -342,21 +341,27 @@ msgstr "Spacial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spacial coverages"
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -771,9 +776,6 @@ msgstr "Select either a dataset, or a distribution - not both."
 
 msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
 msgstr "At least one of dataset, or distribution must be selected."
-
-msgid "Būtina pridėti bent vieną pavadinimą."
-msgstr "At least one title must be selected"
 
 msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
 msgstr "At least one measurement must be selected."
@@ -1262,11 +1264,15 @@ msgid "Agentas"
 msgstr "Agent"
 
 msgid ""
-"Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba "
-"Agentą arba API adresą. Atitinka dcat:endpointURL"
+"Duomenų publikavimo paslaugą teikiantis agentas. UDTS standartą "
+"atitinkančios paslaugos privalo būti susietos su agentu. Pasirinkite agentą "
+"arba pasirinkite kitą 'Atitinka' lauko reikšmę, privaloma nurodyti arba "
+"Agentą arba API adresą.  Atitinka dcat:endpointURL."
 msgstr ""
-"Agent providing the data publishing service. Either the Agent or the API "
-"address must be specified. Corresponds to dcat:endpointURL."
+"The agent providing the data publishing service. Services that comply with "
+"the UDTS standard must be associated with an agent. Select an agent or "
+"choose a different value for the 'Conforms to' field — either an Agent or an "
+"API address must be specified. Corresponds to dcat:endpointURL."
 
 msgid "API formatas"
 msgstr "API format"
@@ -1973,6 +1979,9 @@ msgstr "Delete"
 
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Kontaktinė informacija"
 msgstr "Contact information"

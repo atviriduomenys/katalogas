@@ -51,7 +51,7 @@ class OrganizationWizardView(
             }
             for node_type in WIZARD_NODE_HELPERS
         }
-        context["parent_links"].update({None: _("Duomenų pildymo aplinka")})
+        context["parent_links"].update({None: _("IS metaduomenys")})
         return context
 
 

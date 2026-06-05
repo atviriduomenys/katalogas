@@ -2,7 +2,7 @@
 {# Recursive wizard tree node partial. Expects `node` = dict from _build_wizard_tree. #}
 <li class="wizard-tree-node"
     data-node-key="{{ node.key }}"
-    {% if node.children %}x-data="{ open: false }"{% endif %}>
+    {% if node.children %}x-data="{ open: false }" @treetoggleall.window="open = $event.detail"{% endif %}>
     <div class="wizard-tree-row is-flex is-align-items-center"
          :class="selected && selected.key === '{{ node.key }}' && mode === 'detail' ? 'is-active' : ''"
          {% if node.fragment_url %}
@@ -13,8 +13,11 @@
          {% endif %}
          @click.stop="select('{{ node.key }}'){% if node.children %}; open = !open{% endif %}">
         {% if node.children %}
-            <span class="wizard-tree-caret has-text-grey">
-                <i class="fas fa-xs" :class="open ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+            {# Rotated via CSS — swapping fa-* classes here would fight FA's SVG replacement #}
+            <span class="wizard-tree-caret has-text-grey"
+                  :class="open ? 'is-open' : ''"
+                  @click.stop="open = !open">
+                <i class="fas fa-chevron-right fa-xs"></i>
             </span>
         {% else %}
             <span class="wizard-tree-caret"></span>

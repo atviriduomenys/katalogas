@@ -8,16 +8,16 @@ from django.views.generic import TemplateView, View
 
 from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.dcat.wizard import (
+    WIZARD_ALLOWED_PARENTS,
+    WIZARD_CREATABLE_TYPES,
     WIZARD_NODE_HELPERS,
     WIZARD_NODE_ICONS,
     WIZARD_NODE_LABELS,
     WIZARD_NODE_ORGANIZATION,
     WIZARD_NODE_DISTRIBUTION,
-    WIZARD_TYPE_ORDER,
+    WIZARD_SCHEMA_MATRIX,
     WIZARD_TYPE_TO_SUBCLASS_NAME,
     _build_wizard_tree,
-    build_wizard_schema_matrix,
-    wizard_allowed_parents,
 )
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import Action, has_perm
@@ -46,22 +46,19 @@ class OrganizationWizardView(
         context["wizard_tree"] = tree
         context["wizard_node_labels"] = WIZARD_NODE_LABELS
         context["wizard_nodes_json"] = nodes_by_key
-        allowed_parents = wizard_allowed_parents()
         context["wizard_node_meta_json"] = {
             node_type: {
                 "type_label": str(WIZARD_NODE_LABELS[node_type]),
                 "icon": WIZARD_NODE_ICONS[node_type],
                 "helper": str(WIZARD_NODE_HELPERS.get(node_type, "")),
                 "parents_label": ", ".join(
-                    str(WIZARD_NODE_LABELS[parent_type]) for parent_type in allowed_parents.get(node_type, [])
+                    str(WIZARD_NODE_LABELS[parent_type]) for parent_type in WIZARD_ALLOWED_PARENTS.get(node_type, [])
                 ),
             }
-            for node_type in WIZARD_NODE_HELPERS
+            for node_type in WIZARD_CREATABLE_TYPES
         }
-        context["wizard_creatable_types_json"] = sorted(
-            WIZARD_NODE_HELPERS, key=lambda node_type: WIZARD_TYPE_ORDER.get(node_type, 99)
-        )
-        context["wizard_schema_matrix"] = build_wizard_schema_matrix()
+        context["wizard_creatable_types_json"] = WIZARD_CREATABLE_TYPES
+        context["wizard_schema_matrix"] = WIZARD_SCHEMA_MATRIX
         context["parent_links"].update({None: _("IS metaduomenys")})
         return context
 

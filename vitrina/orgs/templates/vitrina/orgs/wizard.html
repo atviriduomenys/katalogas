@@ -70,7 +70,7 @@
                  treeExpanded: false,
                  schemaOpen: true,
                  canCreate(type) {
-                     return !!(this.selected && this.selected.allowed_children && this.selected.allowed_children.includes(type));
+                     return !!(this.selected && this.selected.create_urls && this.selected.create_urls[type]);
                  },
                  select(key, nextMode) {
                      this.selected = this.nodes[key] || { key: key };

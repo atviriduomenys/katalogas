@@ -79,36 +79,38 @@ WIZARD_SUBCLASS_TO_NODE_TYPE: dict[str, str] = {
     DCATResourceSubclass.DATASET: WIZARD_NODE_DATASET,
 }
 
-_WIZARD_TREE_MAX_DEPTH = 8
+WIZARD_CREATABLE_TYPES: list[str] = sorted(
+    {child_type for child_types in WIZARD_ALLOWED_CHILDREN.values() for child_type in child_types},
+    key=lambda node_type: WIZARD_TYPE_ORDER.get(node_type, 99),
+)
 
 
-def wizard_allowed_parents() -> dict[str, list[str]]:
+def _build_allowed_parents() -> dict[str, list[str]]:
     """Invert WIZARD_ALLOWED_CHILDREN: child type → parent types that allow it."""
     allowed_parents: dict[str, list[str]] = {node_type: [] for node_type in WIZARD_ALLOWED_CHILDREN}
     for parent_type, child_types in WIZARD_ALLOWED_CHILDREN.items():
         for child_type in child_types:
-            allowed_parents[child_type].append(parent_type)
+            allowed_parents.setdefault(child_type, []).append(parent_type)
     return allowed_parents
 
 
-def build_wizard_schema_matrix() -> dict:
-    """"Kūrimo tvarka" legend matrix derived from WIZARD_ALLOWED_CHILDREN.
+WIZARD_ALLOWED_PARENTS: dict[str, list[str]] = _build_allowed_parents()
+
+
+def _build_schema_matrix() -> dict:
+    """„Kūrimo tvarka“ legend matrix derived from WIZARD_ALLOWED_CHILDREN.
 
     Columns are all creatable child types; rows are parent types that can have
     children. Each cell marks whether the column type can be created under the
     row type.
     """
-    child_types = sorted(
-        {child_type for child_types in WIZARD_ALLOWED_CHILDREN.values() for child_type in child_types},
-        key=lambda node_type: WIZARD_TYPE_ORDER.get(node_type, 99),
-    )
     columns = [
         {
             "type": child_type,
             "label": WIZARD_NODE_LABELS[child_type],
             "icon": WIZARD_NODE_ICONS[child_type],
         }
-        for child_type in child_types
+        for child_type in WIZARD_CREATABLE_TYPES
     ]
     rows = [
         {
@@ -117,11 +119,10 @@ def build_wizard_schema_matrix() -> dict:
             "icon": WIZARD_NODE_ICONS[parent_type],
             "cells": [
                 {
-                    "type": child_type,
                     "label": WIZARD_NODE_LABELS[child_type],
                     "allowed": child_type in allowed_children,
                 }
-                for child_type in child_types
+                for child_type in WIZARD_CREATABLE_TYPES
             ],
         }
         for parent_type, allowed_children in sorted(
@@ -130,6 +131,11 @@ def build_wizard_schema_matrix() -> dict:
         if allowed_children
     ]
     return {"columns": columns, "rows": rows}
+
+
+WIZARD_SCHEMA_MATRIX: dict = _build_schema_matrix()
+
+_WIZARD_TREE_MAX_DEPTH = 8
 
 
 def _wizard_node_type(dataset: Dataset) -> str:

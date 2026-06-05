@@ -532,6 +532,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
             "was_generated_by",
             "applicable_legislation",
             "has_quality_annotation",
+            "has_quality_measurement",
         )
         widgets = {
             "organization": OrganizationSingleWidget,
@@ -543,6 +544,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
             "provenance": Select2MultipleWidget,
             "dataset_type": Select2Widget,
             "has_quality_annotation": Select2Widget,
+            "has_quality_measurement": Select2Widget,
         }
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
@@ -585,6 +587,10 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
         self.fields["has_quality_annotation"].help_text = _(
             "Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka dqv:hasQualityAnnotation."
         )
+        self.fields["has_quality_measurement"].label = _("Turi kokybės matavimą")
+        self.fields["has_quality_measurement"].help_text = _(
+            "Nurodo, kaip patikimas yra pateiktas duomenų rinkinys. Atitinka dqv:hasQualityMeasurement."
+        )
 
         self.helper.layout = Layout(
             Field("parent"),
@@ -616,6 +622,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
             Field("was_generated_by"),
             Field("applicable_legislation"),
             Field("has_quality_annotation"),
+            Field("has_quality_measurement"),
         )
 
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET)

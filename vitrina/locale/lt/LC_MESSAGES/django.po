@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-04 16:27+0300\n"
+"POT-Creation-Date: 2026-06-05 18:03+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -720,6 +720,21 @@ msgid "Kontaktinio objekto tipas"
 msgstr ""
 
 msgid "Kontaktinis objektas"
+msgstr ""
+
+msgid "Pasirinkite arba duomenų rinkinį, arba pateiktį — ne abu."
+msgstr ""
+
+msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
+msgstr ""
+
+msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
+msgstr ""
+
+msgid "Turi būti nurodytas bent vienas duomenų rinkinys."
+msgstr ""
+
+msgid "Turi būti nurodyta bent viena pateiktis."
 msgstr ""
 
 msgid "Datasets"
@@ -1462,13 +1477,13 @@ msgstr ""
 msgid ""
 "Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
 "Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
-"pasikartojančių reikšmių. Formatas: kod_pav"
+"pasikartojančių reikšmių. Formatas: kod_pav."
 msgstr ""
 
 msgid "Turi vertinamą duomenų rinkinį"
 msgstr ""
 
-msgid "Atitinka oa:hasTarget"
+msgid "Atitinka oa:hasTarget."
 msgstr ""
 
 msgid "Turi vertinamą pateiktį"
@@ -1477,13 +1492,70 @@ msgstr ""
 msgid "Turi turinį"
 msgstr ""
 
-msgid "Atitinka oa:hasBody"
+msgid "Atitinka oa:hasBody."
 msgstr ""
 
 msgid "Kokybės anotacija"
 msgstr ""
 
 msgid "Kokybės anotacijos"
+msgstr ""
+
+msgid "Laisvu tekstu pateikiamas matavimo pavadinimas."
+msgstr ""
+
+msgid "Matavimo pavadinimas"
+msgstr ""
+
+msgid "Matavimo pavadinimai"
+msgstr ""
+
+msgid "Matavimas"
+msgstr ""
+
+msgid "Matavimai"
+msgstr ""
+
+msgid ""
+"Laisvu tekstu įvedamas kodinis pavadinimas pagal egzemplioriaus reikšmę. "
+"Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
+"pasikartojančių reikšmių. Formatas: KodPav."
+msgstr ""
+
+msgid "Matuoja"
+msgstr ""
+
+msgid "Nurodo stebimą rodiklį. Atitinka dqv:isMeasurementOf."
+msgstr ""
+
+msgid "Apskaičiuota duomenų rinkiniui"
+msgstr ""
+
+msgid ""
+"Nurodo išteklius, kuriems atliekamas kokybės matavimas. DQV kontekste ši "
+"savybė paprastai turėtų būti naudojama teiginiuose, kuriuose objektai yra "
+"dcat:Dataset arba dcat:Distribution egzemplioriai. Atitinka dqv:computedOn."
+msgstr ""
+
+msgid "Apskaičiuota pateikčiai"
+msgstr ""
+
+msgid ""
+"Nurodo išteklius, kuriems atliekamas kokybės matavimas. DQV kontekste ši "
+"savybė paprastai turėtų būti naudojama teiginiuose, kuriuose objektai yra "
+"dcat:Dataset arba dcat:Distribution egzemplioriai.Atitinka dqv:computedOn."
+msgstr ""
+
+msgid "Vertė"
+msgstr ""
+
+msgid "Nurodo rodiklio vertę. Atitinka dqv:value."
+msgstr ""
+
+msgid "Kokybės matavimas"
+msgstr ""
+
+msgid "Kokybės matavimai"
 msgstr ""
 
 msgid "Organizacijai gali būti suteikta tik tvarkytojo rolė"
@@ -2199,6 +2271,14 @@ msgstr ""
 msgid ""
 "Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka "
 "dqv:hasQualityAnnotation."
+msgstr ""
+
+msgid "Turi kokybės matavimą"
+msgstr ""
+
+msgid ""
+"Nurodo, kaip patikimas yra pateiktas duomenų rinkinys. Atitinka "
+"dqv:hasQualityMeasurement."
 msgstr ""
 
 msgid ""

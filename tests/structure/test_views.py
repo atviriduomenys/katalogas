@@ -1,4 +1,6 @@
+import csv
 import datetime
+import io
 import json
 import uuid
 from http import HTTPStatus
@@ -54,6 +56,7 @@ from vitrina.structure.models import (
     PropertyList,
     UMLDiagram,
 )
+from vitrina.datasets.structure import read
 from vitrina.structure.services import create_structure_objects, generate_mermaid_diagram
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -64,10 +67,12 @@ class BaseTestCreateManifest:
     def _create_manifest(
         self, manifest: str, title: str = "", description: str = "", whitelisted_names: list[str] | None = None
     ) -> Dataset:
+        state = read(csv.DictReader(io.StringIO(manifest)))
+        dataset_name = next(iter(state.manifest.datasets), "datasets/gov/ivpk/dataset")
         dataset = DatasetFactory(
             title=title,
             description=description,
-            metadata=False,
+            metadata=dataset_name,
             organization=OrganizationFactory(whitelisted_names=whitelisted_names if whitelisted_names else []),
         )
         structure = DatasetStructureFactory(
@@ -886,7 +891,9 @@ def test_private_model(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -911,7 +918,8 @@ def test_private_model_with_access(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -944,7 +952,8 @@ def test_private_property(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -968,7 +977,8 @@ def test_private_property_with_access(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -1002,7 +1012,8 @@ def test_private_comment(app: DjangoTestApp):
         ",,,,,,comment,type,,,,,,private,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -1028,7 +1039,8 @@ def test_private_comment_with_access(app: DjangoTestApp):
         ",,,,,,comment,type,,,,private,,,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -3945,7 +3957,8 @@ def test_visibility_without_access(app: DjangoTestApp):
         ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -4063,7 +4076,9 @@ def test_model_visibility_with_manager_access(app: DjangoTestApp):
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
 
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -4188,7 +4203,8 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
     organization = OrganizationFactory(kind=Organization.GOV)
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.organization = organization
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -4312,7 +4328,8 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
         ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
     organization = OrganizationFactory(kind=Organization.GOV)
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.organization = organization
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -4980,7 +4997,7 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5099,7 +5116,7 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5134,7 +5151,7 @@ def test_manifest_export_openapi_with_scopes(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5178,7 +5195,7 @@ def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5228,7 +5245,7 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5290,7 +5307,7 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -5356,7 +5373,8 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
         ",,,,,,enum,,,'SMALL',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5441,7 +5459,8 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
         ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5502,7 +5521,8 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         ",,,,,,enum,,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5567,7 +5587,8 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
         ",,,,,,,,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5998,7 +6019,8 @@ def test_publish_form_shows_all_metadata_rows_params(app: DjangoTestApp):
         "8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         "9,,,,,type,string,,,,5,,,open,dct:type,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6023,7 +6045,8 @@ def test_publish_form_shows_all_metadata_rows_base(app: DjangoTestApp):
         ",,,,,id,integer,,,,3,,,,,,,,,\n"
         ",,,,,title,string,,,,2,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6049,7 +6072,8 @@ def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
         "10,,,,,,enum,,,'''CREATED''',,,,,,,,,\n"
         "11,,,,,,,,,'''MODIFIED''',,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6076,7 +6100,7 @@ def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: Djang
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6105,7 +6129,7 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6140,7 +6164,7 @@ def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6693,7 +6717,7 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6747,7 +6771,7 @@ def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -6794,7 +6818,7 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -8527,8 +8551,10 @@ class TestStructureUMLviews(BaseTestCreateManifest):
     def _setup_uml(self, app: DjangoTestApp, **uml_kwargs):
         user = UserFactory(is_staff=True)
         app.set_user(user)
+        dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
         structure = DatasetStructureFactory(
-            file=FilerFileFactory(file=FileField(filename="file.csv", data=self.MANIFEST))
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=self.MANIFEST)),
+            dataset=dataset
         )
         structure.dataset.current_structure = structure
         structure.dataset.save()
@@ -8549,7 +8575,8 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)
@@ -8575,7 +8602,8 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)
@@ -8605,7 +8633,8 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)
@@ -8633,7 +8662,8 @@ class TestStructureUMLviews(BaseTestCreateManifest):
             "7,,,,Catalog,,,,,,,,,,,,,,\n"
             "8,,,,,id,integer,,,,,,,,,,,,\n"
         )
-        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset)
         structure.dataset.current_structure = structure
         structure.dataset.save()
         version = create_structure_objects(structure)

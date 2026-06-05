@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-04 15:20+0300\n"
+"POT-Creation-Date: 2026-06-05 18:03+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -770,6 +770,21 @@ msgstr "Contact object type"
 
 msgid "Kontaktinis objektas"
 msgstr "Contact object"
+
+msgid "Pasirinkite arba duomenų rinkinį, arba pateiktį — ne abu."
+msgstr "Select either a dataset, or a distribution - not both."
+
+msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
+msgstr "At least one of dataset, or distribution must be selected."
+
+msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
+msgstr "At least one measurement must be selected."
+
+msgid "Turi būti nurodytas bent vienas duomenų rinkinys."
+msgstr "At least one dataset must be selected."
+
+msgid "Turi būti nurodyta bent viena pateiktis."
+msgstr "At least one distribution must be selected."
 
 msgid "Datasets"
 msgstr "Datasets"
@@ -1595,17 +1610,17 @@ msgstr "Quality annotation values"
 msgid ""
 "Laisvu tekstu įvedamas kodinis pavadinimas mažosiomis lotyniškomis raidėmis. "
 "Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
-"pasikartojančių reikšmių. Formatas: kod_pav"
+"pasikartojančių reikšmių. Formatas: kod_pav."
 msgstr ""
 "A free-text code name entered in lowercase Latin letters. For ease of "
 "initial data collection. This column cannot contain duplicate values. "
-"Format: kod_pav"
+"Format: kod_pav."
 
 msgid "Turi vertinamą duomenų rinkinį"
 msgstr "Has target dataset"
 
-msgid "Atitinka oa:hasTarget"
-msgstr "Conforms to oa:hasTarget"
+msgid "Atitinka oa:hasTarget."
+msgstr "Conforms to oa:hasTarget."
 
 msgid "Turi vertinamą pateiktį"
 msgstr "Has target distribution"
@@ -1613,14 +1628,82 @@ msgstr "Has target distribution"
 msgid "Turi turinį"
 msgstr "Has body"
 
-msgid "Atitinka oa:hasBody"
-msgstr "Conforms to oa:hasBody"
+msgid "Atitinka oa:hasBody."
+msgstr "Conforms to oa:hasBody."
 
 msgid "Kokybės anotacija"
 msgstr "Quality annotation"
 
 msgid "Kokybės anotacijos"
 msgstr "Quality annotations"
+
+msgid "Laisvu tekstu pateikiamas matavimo pavadinimas."
+msgstr "A free-text measurement title."
+
+msgid "Matavimo pavadinimas"
+msgstr "Measurement title"
+
+msgid "Matavimo pavadinimai"
+msgstr "Measurement titles"
+
+msgid "Matavimas"
+msgstr "Measurement"
+
+msgid "Matavimai"
+msgstr "Measurements"
+
+msgid ""
+"Laisvu tekstu įvedamas kodinis pavadinimas pagal egzemplioriaus reikšmę. "
+"Pradinio duomenų surinkimo palengvinimui. Šiame stulpelyje negali būti "
+"pasikartojančių reikšmių. Formatas: KodPav."
+msgstr ""
+"A free-text code name entered according to the instance value. For ease of "
+"initial data collection. This column cannot contain duplicate values. "
+"Format: KodPav."
+
+msgid "Matuoja"
+msgstr "Measures"
+
+msgid "Nurodo stebimą rodiklį. Atitinka dqv:isMeasurementOf."
+msgstr "Specifies the measured indicator. Corresponds to dqv:isMeasurementOf."
+
+msgid "Apskaičiuota duomenų rinkiniui"
+msgstr "Calculated for dataset"
+
+msgid ""
+"Nurodo išteklius, kuriems atliekamas kokybės matavimas. DQV kontekste ši "
+"savybė paprastai turėtų būti naudojama teiginiuose, kuriuose objektai yra "
+"dcat:Dataset arba dcat:Distribution egzemplioriai. Atitinka dqv:computedOn."
+msgstr ""
+"Indicates the resources on which a quality measurement is performed. In the "
+"DQV context, this property should typically be used in statements where the "
+"subjects are instances of dcat:Dataset or dcat:Distribution. Corresponds to "
+"dqv:computedOn."
+
+msgid "Apskaičiuota pateikčiai"
+msgstr "Calculated for distribution"
+
+msgid ""
+"Nurodo išteklius, kuriems atliekamas kokybės matavimas. DQV kontekste ši "
+"savybė paprastai turėtų būti naudojama teiginiuose, kuriuose objektai yra "
+"dcat:Dataset arba dcat:Distribution egzemplioriai.Atitinka dqv:computedOn."
+msgstr ""
+"Indicates the resources on which a quality measurement is performed. In the "
+"DQV context, this property should typically be used in statements where the "
+"subjects are instances of dcat:Dataset or dcat:Distribution. Corresponds to "
+"dqv:computedOn."
+
+msgid "Vertė"
+msgstr "Value"
+
+msgid "Nurodo rodiklio vertę. Atitinka dqv:value."
+msgstr "Indicates the value of the metric. Corresponds to dqv:value."
+
+msgid "Kokybės matavimas"
+msgstr "Quality measurement"
+
+msgid "Kokybės matavimai"
+msgstr "Quality measurements"
 
 msgid "Organizacijai gali būti suteikta tik tvarkytojo rolė"
 msgstr "The organization can only be assigned the role of a data editor"
@@ -2388,6 +2471,16 @@ msgstr "Has quality annotation"
 msgid ""
 "Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka "
 "dqv:hasQualityAnnotation."
+msgstr ""
+"Indicates how consistent the dataset is across the system. Corresponds to "
+"dqv:hasQualityAnnotation"
+
+msgid "Turi kokybės matavimą"
+msgstr "Has quality annotation"
+
+msgid ""
+"Nurodo, kaip patikimas yra pateiktas duomenų rinkinys. Atitinka "
+"dqv:hasQualityMeasurement."
 msgstr ""
 "Indicates how consistent the dataset is across the system. Corresponds to "
 "dqv:hasQualityAnnotation"

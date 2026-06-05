@@ -24,6 +24,9 @@ from vitrina.datasets.models import (
     Contact,
     DCATResourceSubclass,
     DatasetGroupCategoryUri,
+    MeasurementTitle,
+    Measurement,
+    QualityMeasurement,
 )
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
@@ -339,3 +342,25 @@ class DatasetServiceFactory(DjangoModelFactory):
         MetadataFactory.create(
             dataset=self, content_type=ContentType.objects.get_for_model(self), object_id=self.pk, name=name
         )
+
+
+class MeasurementTitleFactory(DjangoModelFactory):
+    class Meta:
+        model = MeasurementTitle
+
+    value = factory.Faker("word")
+
+
+class MeasurementFactory(DjangoModelFactory):
+    class Meta:
+        model = Measurement
+
+    codename = factory.Faker("slug")
+
+
+class QualityMeasurementFactory(DjangoModelFactory):
+    class Meta:
+        model = QualityMeasurement
+
+    codename = factory.Faker("slug")
+    value = factory.Faker("word")

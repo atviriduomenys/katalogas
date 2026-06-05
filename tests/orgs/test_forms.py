@@ -34,6 +34,24 @@ class TestOrganizationUpdateForm:
         assert "disabled" in form.fields["name"].widget.attrs
 
 
+class TestOrganizationBaseForm:
+    def test_phone_invalid_fails_validation(self, app: DjangoTestApp):
+        user = UserFactory()
+
+        form = OrganizationCreateForm(user=user, data={"phone": "invalid-phone"})
+
+        form.is_valid()
+        assert "phone" in form.errors
+
+    def test_phone_valid_passes_validation(self, app: DjangoTestApp):
+        user = UserFactory()
+
+        form = OrganizationCreateForm(user=user, data={"phone": "+37061234567"})
+
+        form.is_valid()
+        assert "phone" not in form.errors
+
+
 class TestOrganizationCreateForm:
     def test_organization_name_generated_prefix(self, app: DjangoTestApp):
         organization_instance = OrganizationFactory.build(name="test_org", kind=Organization.GOV)

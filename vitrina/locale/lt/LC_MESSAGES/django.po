@@ -728,9 +728,6 @@ msgstr ""
 msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
 msgstr ""
 
-msgid "Būtina pridėti bent vieną pavadinimą."
-msgstr ""
-
 msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
 msgstr ""
 

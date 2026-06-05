@@ -60,6 +60,7 @@ def home(request):
                 "users": user_count,
             },
             "categories": (Category.objects.filter(featured=True).order_by("title")),
+            "thematic_categories": (Category.objects.filter(thematic=True).order_by("title")),
             "datasets": (
                 Dataset.restricted.for_user(request.user)
                 .select_related("organization")

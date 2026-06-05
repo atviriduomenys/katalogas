@@ -772,6 +772,9 @@ msgstr "Select either a dataset, or a distribution - not both."
 msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
 msgstr "At least one of dataset, or distribution must be selected."
 
+msgid "Būtina pridėti bent vieną pavadinimą."
+msgstr "At least one title must be selected"
+
 msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
 msgstr "At least one measurement must be selected."
 

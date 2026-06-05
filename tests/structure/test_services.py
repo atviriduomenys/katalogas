@@ -3406,7 +3406,7 @@ def test_generate_mermaid(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -3489,6 +3489,7 @@ def test_generate_mermaid_with_base_chain_across_datasets(app: DjangoTestApp):
         file=FilerFileFactory(file=FileField(filename="file.csv", data=grandparent_manifest)),
         dataset=DatasetFactory(
             organization=OrganizationFactory(whitelisted_names=["datasets/gov/grand/"]),
+            metadata="datasets/gov/grand/dataset",
         ),
     )
     grandparent_structure.dataset.current_structure = grandparent_structure

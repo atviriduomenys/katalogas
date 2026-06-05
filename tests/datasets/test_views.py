@@ -3573,7 +3573,7 @@ class TestDatasetStructureImport:
         )
 
         user = UserFactory(is_staff=True)
-        dataset = DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]))
+        dataset = DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]), metadata="datasets/gov/main/dataset")
         version = VersionFactory(dataset=dataset)
 
         app.set_user(user)

@@ -892,7 +892,6 @@ def test_private_model(app: DjangoTestApp):
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
     dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
-    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
     )

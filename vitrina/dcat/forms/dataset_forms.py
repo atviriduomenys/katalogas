@@ -215,11 +215,11 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
             "title",
             "landing_page",
             "languages",
-            "tags",
             "category",
             "conditions",
             "rights_relation",
             "applicable_legislation",
+            "tags",
         )
         widgets = {
             "information_system_importance": Select2Widget,
@@ -282,12 +282,12 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
 
 class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     endpoint_url = forms.CharField(
-        label=_("API adresas"),
+        label=_("Tinklapis"),
         required=False,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
     endpoint_description = forms.CharField(
-        label=_("API specifikacija"),
+        label=_("Prieigos taško aprašas"),
         required=False,
         help_text=_(
             "Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, aprašymas. "
@@ -368,6 +368,8 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         self.fields["description"].required = False
         self.fields["description"].label = _("Aprašas")
         self.fields["tags"].required = True
+        self.fields["tags"].label = _("Raktažodis / žyma")
+        self.fields["category"].label = _("Tema / kategorija")
         self.fields["landing_page"].label = _("Nukreipimo puslapis")
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
@@ -460,6 +462,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
+        self.fields["tags"].label = _("Raktažodis")
+        self.fields["frequency"].label = _("Kaupimo periodiškumas")
+
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų skelbėjas")
         self.fields["organization"].help_text = _("Duomenų skelbėjas. Atitinka dct:publisher.")
@@ -499,7 +504,6 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
         self.helper.layout = Layout(
             Field("codename_preview"),
             Field("name"),
-            Field("codename_preview"),
             Field("description"),
             Field("title"),
             Field("tags"),
@@ -517,8 +521,8 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
             Field("landing_page"),
             Field("contact"),
             Field("languages"),
-            Field("qualified_relation"),
             Field("provenance"),
+            Field("qualified_relation"),
             Field("spatial_resolution"),
             Field("temporal_resolution"),
             Field("dataset_type"),
@@ -637,7 +641,7 @@ class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["information_system_publishers"].queryset = self.fields[
             "information_system_publishers"
         ].queryset.order_by("title")
-        self.fields["information_system_publishers"].label = _("Kompetentingos valdžios institucijos")
+        self.fields["information_system_publishers"].label = _("Turi kompetentingą valdžios instituciją")
         self.fields["information_system_publishers"].help_text = _(
             "Viešojo administravimo institucijos, atsakingos už šią paslaugą. Atitinka cv:hasCompetentAuthority."
         )
@@ -699,7 +703,7 @@ class InformationSystemRelationshipForm(forms.Form):
         ),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Priklauso duomenų katalogams"),
+        label=_("Turi sudedamąją dalį"),
         help_text=_(
             "Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
             "Pildoma, kai institucijos turi nuosavus metaduomenų katalogus. Atitinka dct:hasPart."
@@ -709,7 +713,7 @@ class InformationSystemRelationshipForm(forms.Form):
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Susijusios informacinės sistemos (teikia duomenis į)"),
+        label=_("Susijusi IS"),
         help_text=_(
             "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė sistema. Susijusios "
             "sistemos yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. "
@@ -720,7 +724,7 @@ class InformationSystemRelationshipForm(forms.Form):
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Susijusios informacinės sistemos (gauna duomenis iš)"),
+        label=_("Susijusi IS"),
         help_text=_(
             "Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos yra tos, kurios turi "
             "integracijas ir yra įvardintos nuostatuose. Atitinka dcataplt:relatesToInformationSystem."
@@ -752,7 +756,7 @@ class ServiceRelationshipForm(forms.Form):
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Pateikia duomenų rinkinius"),
+        label=_("Pateikia duomenų rinkinį"),
         help_text=_("Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."),
     )
 
@@ -793,21 +797,21 @@ class ISPublicServiceRelationshipForm(forms.Form):
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Sukuria duomenų rinkinius"),
+        label=_("Sukuria duomenų rinkinį"),
         help_text=_("Duomenų rinkiniai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."),
     )
     produces_services = forms.ModelMultipleChoiceField(
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.SERVICE),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Sukuria paslaugas"),
+        label=_("Sukuria duomenų paslaugą"),
         help_text=_("Paslaugos, kurias sukuria ši e. paslauga. Atitinka cpsv:produces."),
     )
     produces_catalogs = forms.ModelMultipleChoiceField(
         queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
         widget=DatasetMultipleWidget(),
         required=False,
-        label=_("Sukuria katalogus"),
+        label=_("Sukuria katalogą"),
         help_text=_("Katalogai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."),
     )
 

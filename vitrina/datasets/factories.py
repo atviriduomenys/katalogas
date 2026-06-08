@@ -289,6 +289,7 @@ class DatasetServiceFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     uuid = factory.Faker("uuid4")
     is_public = True
+    access_rights = Dataset.PUBLIC
     version = 1
     service = True
     title = factory.Dict(

@@ -462,6 +462,15 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
+        self.fields["codename_preview"].help_text = _(
+            "Pilnas URI, pagal https://ivpk.github.io/uapi/#section/Concepts/URI, identifikuojantis duomenų rinkinį."
+        )
+        self.fields["name"].label = _("Identifikatorius")
+        self.fields["name"].help_text = _(
+            "Duomenų rinkinio viešinimui naudojamas identifikatorius. Naudoti mažąsias lotyniškas raides, "
+            'žodžius atskirti žemu brūkšniu "_". Pvz.: kod_pav. Atitinka dct:identifier'
+        )
+
         self.fields["tags"].label = _("Raktažodis")
         self.fields["frequency"].label = _("Kaupimo periodiškumas")
 

@@ -48,6 +48,7 @@ class Action(Enum):
     ASSIGN = "assign"
     CREATE_WIZARD = "create_wizard"
     UPDATE_WIZARD = "update_wizard"
+    DELETE_WIZARD = "delete_wizard"
 
 
 class Role(Enum):
@@ -200,6 +201,28 @@ _dataset_update_acl: ACL = inherit_acl(_dataset_base_update_acl) | {
         Role.GLOBAL_MANAGER,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+}
+_dataset_delete_wizard_acl: ACL = {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.DELETE_WIZARD): {
         Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
@@ -369,6 +392,7 @@ acl: ACL = (
     | _dataset_create_acl
     | _information_system_update_acl
     | _dataset_update_acl
+    | _dataset_delete_wizard_acl
     | _dataset_comment_acl
     | _dataset_delete_acl
     | _dataset_history_view_acl

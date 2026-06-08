@@ -5,7 +5,6 @@ from crispy_forms.layout import Layout, Field
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.shortcuts import get_object_or_404
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm, TranslatedField
 from django.utils.translation import gettext_lazy as _
@@ -20,7 +19,6 @@ from vitrina.datasets.form_helpers import (
     DATA_SERVICE_STANDARD_URI,
     DATASET_STANDARD_URI,
 )
-from vitrina.datasets.helpers import match_name_prefix
 from vitrina.datasets.models import (
     Attribution,
     Dataset,
@@ -30,7 +28,7 @@ from vitrina.datasets.models import (
 )
 from vitrina.identifiers.models import Agency
 from vitrina.classifiers.models import FormFieldHelpText
-from vitrina.dcat.form_helpers import apply_dynamic_help_texts, get_available_dcat_name_prefixes
+from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.dcat.widgets import (
     CategoryMultipleWidget,
     DatasetMultipleWidget,
@@ -107,15 +105,11 @@ class ContactFormMixin(forms.Form):
 
 
 class DatasetNameMixin(forms.Form):
-    name_prefix = forms.ChoiceField(
+    codename_preview = forms.CharField(
+        disabled=True,
         required=False,
-        widget=Select2Widget,
-        label=_("Kodinio pavadinimo prefiksas"),
-        help_text=_(
-            "Kodinio pavadinimo prefiksas, kuris kartu su kodiniu pavadinimu sudaro pilną "
-            "ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas automatiškai pagal pasirinktą "
-            "tėvinį išteklių arba organizaciją."
-        ),
+        label=_("Pilnas kodinis pavadinimas"),
+        help_text=_("Pilnas kodinis pavadinimas, sudarytas iš prefikso ir kodinio pavadinimo."),
     )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
@@ -133,82 +127,38 @@ class DatasetNameMixin(forms.Form):
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
-        instance_name = self.instance.name if self.instance.pk else None
-        prefix_source_dataset = self._resolve_prefix_source_dataset(url_parent)
-        available_prefixes = get_available_dcat_name_prefixes(prefix_source_dataset, self.organization)
-        self._setup_name_prefix_field(available_prefixes, url_parent, instance_name)
-        self._setup_name_field(available_prefixes, instance_name)
 
-    def _resolve_prefix_source_dataset(self, url_parent: Dataset | None) -> Dataset | None:
-        """Resolves what parent dataset to use when checking available prefixes"""
-        if self.data:
-            # If form data is being submitted - use value from "parent" field. Even if it's empty
-            if submitted_parent_id := self.data.get(self.add_prefix("parent")):
-                return get_object_or_404(Dataset, id=submitted_parent_id)
-            return None
-        if self.instance and self.instance.pk:
-            # If form has existing dataset instance - use instance parent
-            return self.instance.get_parent()
+        organization_codename = self.organization.name or ""
+        if self.instance.pk:
+            parent = self.instance.get_parent()
+            self.codename_prefix = parent.name if parent else organization_codename
+        else:
+            self.codename_prefix = url_parent.name if url_parent else organization_codename
 
-        # Otherwise use dataset parent given via URL. It may also be None
-        return url_parent
-
-    def _setup_name_prefix_field(
-        self, available_prefixes: list[str], url_parent: Dataset | None, instance_name: str | None
-    ) -> None:
-        self.fields["name_prefix"].choices = [(p, p) for p in available_prefixes]
-        if not available_prefixes:
-            return
-
-        initial_prefix = None
-        if instance_name:
-            initial_prefix = match_name_prefix(instance_name, available_prefixes)
-        elif url_parent and url_parent.name:
-            initial_prefix = match_name_prefix(url_parent.name, available_prefixes)
-
-        self.fields["name_prefix"].initial = initial_prefix or available_prefixes[0]
-
-    def _setup_name_field(self, available_prefixes: list[str], instance_name: str | None) -> None:
-        if instance_name and available_prefixes:
-            prefix = match_name_prefix(instance_name, available_prefixes)
-            suffix = instance_name[len(prefix) :] if prefix else instance_name
-            self.initial["name"] = suffix.strip("/")
+        if self.instance.pk:
+            # For update, we set initial name from instance, not from parent
+            codename_preview = self.instance.name or ""
+            self.initial["name"] = codename_preview.removeprefix(self.codename_prefix).strip("/")
+            self.initial["codename_preview"] = codename_preview
+        else:
+            self.initial["codename_preview"] = f"{self.codename_prefix}" if self.codename_prefix else ""
 
     def get_dataset_name(self) -> str:
-        return f"{self.cleaned_data['name_prefix'].removesuffix('/')}/{self.cleaned_data['name']}"
+        return f"{self.codename_prefix.removesuffix('/')}/{self.cleaned_data['name']}"
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
-
-        available_name_prefixes = get_available_dcat_name_prefixes(cleaned_data.get("parent"), self.organization)
-        if not available_name_prefixes:
+        if not self.codename_prefix:
             raise ValidationError(
                 _(
                     "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
                     "pavadinimą organizacijai ir bandykite iš naujo"
                 )
             )
-
-        if (name_prefix := cleaned_data.get("name_prefix")) and name_prefix not in available_name_prefixes:
-            self.add_error(
-                "name_prefix",
-                _("Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}").format(
-                    prefixes=", ".join(available_name_prefixes)
-                ),
-            )
-            return cleaned_data
-
         return cleaned_data
 
 
 class BaseResourceForm(TranslatableModelForm):
-    parent = forms.ModelChoiceField(
-        Dataset.objects.all().prefetch_related("translations"),
-        label=_("Tėvinis išteklius"),
-        widget=Select2Widget(),
-        required=False,
-        help_text=_("Ši savybė nurodo susijusį resursą. Atitinka dct:relation."),
-    )
     category = forms.ModelMultipleChoiceField(
         queryset=Category.objects.order_by("title"),
         label=_("Kategorija"),
@@ -230,15 +180,10 @@ class BaseResourceForm(TranslatableModelForm):
         self.helper.form_id = "dataset-form"
         self.helper.form_tag = False
         self.organization = organization
+        self.codename_prefix = ""
 
         if self.language_code == "en":
             self.fields["description"].required = False
-
-        if url_parent:
-            self.fields["parent"].initial = url_parent.pk
-        elif self.instance.pk:
-            self.fields["parent"].initial = self.instance.get_parent()
-            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
 
         if self.instance.pk:
             self.initial["category"] = self.instance.category.all()
@@ -261,8 +206,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
     class Meta:
         model = Dataset
         fields = (
-            "parent",
-            "name_prefix",
+            "codename_preview",
             "name",
             "information_system_importance",
             "information_system_type",
@@ -289,10 +233,6 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
-
-        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
-        )
 
         self.fields["landing_page"].label = _("Tinklalapis")
         self.fields["landing_page"].help_text = _(
@@ -376,8 +316,7 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     class Meta:
         model = Dataset
         fields = (
-            "parent",
-            "name_prefix",
+            "codename_preview",
             "name",
             "title",
             "agent",  # Either "agent" or "endpoint_url" is required
@@ -412,10 +351,6 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
-
-        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
-        )
 
         self.fields["contact"].label = _("Kontaktinė informacija")
         self.fields["contact"].help_text = _(
@@ -505,8 +440,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
     class Meta:
         model = Dataset
         fields = (
-            "parent",
-            "name_prefix",
+            "codename_preview",
             "name",
             "description",
             "title",
@@ -550,12 +484,6 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
-        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization,
-            subclass__name__in=[DCATResourceSubclass.INFORMATION_SYSTEM, DCATResourceSubclass.SERVICE],
-            is_public=False,
-        )
-
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų skelbėjas")
         self.fields["organization"].help_text = _("Duomenų skelbėjas. Atitinka dct:publisher.")
@@ -593,9 +521,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
         )
 
         self.helper.layout = Layout(
-            Field("parent"),
-            Field("name_prefix"),
+            Field("codename_preview"),
             Field("name"),
+            Field("codename_preview"),
             Field("description"),
             Field("title"),
             Field("tags"),
@@ -704,7 +632,6 @@ class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
     class Meta:
         model = Dataset
         fields = (
-            "parent",
             "title",
             "identifier",
             "description",
@@ -728,10 +655,7 @@ class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
-        self.fields["parent"].required = True
-        self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
-            organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
-        )
+        self._parent = self.instance.get_parent() if self.instance.pk else url_parent
 
         self.fields["information_system_publishers"].required = True
         self.fields["information_system_publishers"].queryset = self.fields[
@@ -775,10 +699,8 @@ class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_IS_PUBLIC_SERVICE)
 
     def get_dataset_name(self) -> str:
-        identifier = self.cleaned_data["identifier"]
-        parent = self.cleaned_data["parent"]
-
-        return f"{parent.name.removesuffix('/')}/{identifier}"
+        parent_name = self._parent.name if self._parent else self.organization.name or ""
+        return f"{parent_name.removesuffix('/')}/{self.cleaned_data['identifier']}"
 
 
 class ISPublicServiceUpdateForm(ISPublicServiceResourceForm):

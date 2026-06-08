@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-05 18:03+0300\n"
+"POT-Creation-Date: 2026-06-08 08:39+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,12 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < "
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
+
+msgid "Organizacija"
+msgstr ""
+
+msgid "Duomenų skelbėjas"
+msgstr ""
 
 msgid "Versijos duomenys"
 msgstr ""
@@ -51,9 +57,6 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
-msgstr ""
-
-msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -110,11 +113,9 @@ msgstr ""
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr ""
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
@@ -327,27 +328,21 @@ msgstr ""
 msgid "Teritorinės aprėptys"
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr ""
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr ""
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
@@ -720,39 +715,6 @@ msgid "Kontaktinio objekto tipas"
 msgstr ""
 
 msgid "Kontaktinis objektas"
-msgstr ""
-
-msgid "Pasirinkite arba duomenų rinkinį, arba pateiktį — ne abu."
-msgstr ""
-
-msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
-msgstr ""
-
-msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
-msgstr ""
-
-msgid "Turi būti nurodytas bent vienas duomenų rinkinys."
-msgstr ""
-
-msgid "Turi būti nurodyta bent viena pateiktis."
-msgstr ""
-
-msgid "Pasirinkite arba duomenų rinkinį, arba pateiktį — ne abu."
-msgstr ""
-
-msgid "Būtina pasirinkti arba duomenų rinkinį, arba pateiktį."
-msgstr ""
-
-msgid "Būtina pridėti bent vieną pavadinimą."
-msgstr ""
-
-msgid "Turi būti nurodytas bent vienas matavimo rodiklis."
-msgstr ""
-
-msgid "Turi būti nurodytas bent vienas duomenų rinkinys."
-msgstr ""
-
-msgid "Turi būti nurodyta bent viena pateiktis."
 msgstr ""
 
 msgid "Pasirinkite arba duomenų rinkinį, arba pateiktį — ne abu."
@@ -1836,9 +1798,6 @@ msgstr ""
 msgid "Atsisiuntimo formatas"
 msgstr ""
 
-msgid "Duomenų skelbėjas"
-msgstr ""
-
 msgid "Kontaktinė informacija"
 msgstr ""
 
@@ -2229,13 +2188,11 @@ msgstr ""
 msgid "Formatas 0... arba +370..."
 msgstr ""
 
-msgid "Kodinio pavadinimo prefiksas"
+msgid "Pilnas kodinis pavadinimas"
 msgstr ""
 
 msgid ""
-"Kodinio pavadinimo prefiksas, kuris kartu su kodiniu pavadinimu sudaro pilną "
-"ištekliaus kodinį pavadinimą. Jei nenurodytas - bus užpildytas automatiškai "
-"pagal pasirinktą tėvinį išteklių arba organizaciją."
+"Pilnas kodinis pavadinimas, sudarytas iš prefikso ir kodinio pavadinimo."
 msgstr ""
 
 msgid "Duomenų ištekliaus kodinis pavadinimas"
@@ -2249,10 +2206,6 @@ msgstr ""
 msgid ""
 "Organizacija neturi nurodyto kodinio pavadinimo. Priskirkite kodinį "
 "pavadinimą organizacijai ir bandykite iš naujo"
-msgstr ""
-
-#, python-brace-format
-msgid "Nurodytas kodinio pavadinimo prefiksas turi būti vienas iš: {prefixes}"
 msgstr ""
 
 msgid "Nurodo vieną ar kelias kategorijas. Atitinka dcat:theme."
@@ -2304,14 +2257,6 @@ msgstr ""
 msgid ""
 "Nurodo, kiek nuoseklus yra duomenų rinkinys visoje sistemoje. Atitinka "
 "dqv:hasQualityAnnotation."
-msgstr ""
-
-msgid "Turi kokybės matavimą"
-msgstr ""
-
-msgid ""
-"Nurodo, kaip patikimas yra pateiktas duomenų rinkinys. Atitinka "
-"dqv:hasQualityMeasurement."
 msgstr ""
 
 msgid "Turi kokybės matavimą"

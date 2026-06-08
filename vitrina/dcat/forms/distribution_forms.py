@@ -92,7 +92,6 @@ class DatasetDistributionForm(TranslatableModelForm):
 
         self.fields["access_url"].required = True
         self.fields["access_url"].label = _("Prieigos URL")
-        self.fields["availability"].required = True
         self.fields["availability"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI
         ).prefetch_related("translations")

@@ -56,6 +56,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             "spatial_resolution",
             "status",
             "temporal_resolution",
+            "policy",
         )
         field_classes = {
             "access_url": forms.URLField,

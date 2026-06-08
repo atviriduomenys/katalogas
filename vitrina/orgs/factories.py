@@ -28,7 +28,7 @@ class OrganizationFactory(DjangoModelFactory):
     name = factory.Sequence(lambda n: f"datasets/gov/test/{n:04d}/")
     company_code = factory.Faker("bothify", text="?????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     email = factory.Faker("email")
-    phone = Faker().phone_number()
+    phone = factory.Sequence(lambda n: "+3706%07d" % n)
     address = Faker().address()
     is_public = True
     version = 1

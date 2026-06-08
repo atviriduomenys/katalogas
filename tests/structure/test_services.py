@@ -3415,7 +3415,6 @@ def test_generate_mermaid(app: DjangoTestApp):
     assert (
         """
 classDiagram
-namespace `datasets/gov/ivpk/adp` {
 class `datasets/gov/ivpk/adp/Licence`["Licence"]:::Entity {
 «optional»
 id : integer [0..1]
@@ -3424,7 +3423,7 @@ class `datasets/gov/ivpk/adp/Catalog`["Catalog"]:::Entity {
 «optional»
 id : integer [0..1]
 }
-}
+
 `datasets/gov/ivpk/adp/Licence` --> "[0..1]" `datasets/gov/ivpk/adp/Catalog` : catalog<br/>«optional»
 """
         in mermaid
@@ -3510,6 +3509,7 @@ def test_generate_mermaid_with_base_chain_across_datasets(app: DjangoTestApp):
         file=FilerFileFactory(file=FileField(filename="file.csv", data=parent_manifest)),
         dataset=DatasetFactory(
             organization=OrganizationFactory(whitelisted_names=["datasets/gov/parent/"]),
+            metadata="datasets/gov/parent/dataset",
         ),
     )
     parent_structure.dataset.current_structure = parent_structure
@@ -3532,6 +3532,7 @@ def test_generate_mermaid_with_base_chain_across_datasets(app: DjangoTestApp):
             title="Main",
             description="Root",
             organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]),
+            metadata="datasets/gov/main/dataset",
         ),
     )
     main_structure.dataset.current_structure = main_structure
@@ -3555,12 +3556,11 @@ class `datasets/gov/parent/dataset/ParentModel`["ParentModel"]:::Entity {
 id : integer [0..1]
 }
 }
-namespace `datasets/gov/main/dataset` {
 class `datasets/gov/main/dataset/ChildModel`["ChildModel"]:::Entity {
 «optional»
 id : integer [0..1]
 }
-}
+
 `datasets/gov/main/dataset/ChildModel` --|> `datasets/gov/parent/dataset/ParentModel`
 `datasets/gov/parent/dataset/ParentModel` --|> `datasets/gov/grand/dataset/GrandparentModel`
 """

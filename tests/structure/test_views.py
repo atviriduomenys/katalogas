@@ -5080,7 +5080,10 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
     )
     city_structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"]),
+            metadata="datasets/gov/test/city",
+        ),
     )
     city_structure.dataset.current_structure = city_structure
     city_structure.dataset.save()
@@ -5095,7 +5098,10 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,city,ref,/datasets/gov/test/city/City,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=main_manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=main_manifest)), dataset=dataset
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)

@@ -346,7 +346,7 @@ class Dataset(Resource):
     frequency = models.ForeignKey(
         Frequency,
         models.SET_NULL,
-        blank=False,
+        blank=True,
         null=True,
         verbose_name=_("Atnaujinimo dažnumas"),
         help_text=_("Duomenų atnaujinimo dažnumas. Atitinka dct:accrualPeriodicity."),

@@ -335,6 +335,7 @@ def test_dataset_update_subscription_email(app: DjangoTestApp, subscription_data
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms["dataset-form"]
     form["title"] = "Updated title"
     form["description"] = "Updated description"
+    form["name"] = f"{dataset.organization.name}test"
     resp = form.submit()
     dataset.refresh_from_db()
     assert resp.status_code == 302
@@ -362,6 +363,7 @@ def test_dataset_update_global_org_subscription_email(app: DjangoTestApp, subscr
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms["dataset-form"]
     form["title"] = "Updated title"
     form["description"] = "Updated description"
+    form["name"] = f"{dataset.organization.name}test"
     resp = form.submit()
     dataset.refresh_from_db()
     assert resp.status_code == 302
@@ -572,6 +574,7 @@ def test_dataset_and_org_sub_mail(app: DjangoTestApp, subscription_data):
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms["dataset-form"]
     form["title"] = "Updated title"
     form["description"] = "Updated description"
+    form["name"] = f"{dataset.organization.name}test"
     resp = form.submit()
 
     dataset.refresh_from_db()

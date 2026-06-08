@@ -23,7 +23,7 @@ def test_update_uml_diagram():
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -42,7 +42,6 @@ def test_update_uml_diagram():
     assert (
         """
 classDiagram
-namespace `datasets/gov/ivpk/adp` {
 class `datasets/gov/ivpk/adp/Licence`["Licence"]:::Entity {
 «optional»
 id : integer [0..1]
@@ -51,7 +50,7 @@ class `datasets/gov/ivpk/adp/Catalog`["Catalog"]:::Entity {
 «optional»
 id : integer [0..1]
 }
-}
+
 `datasets/gov/ivpk/adp/Licence` --> "[0..1]" `datasets/gov/ivpk/adp/Catalog` : catalog<br/>«optional»
 """
         in uml_diagram.mermaid

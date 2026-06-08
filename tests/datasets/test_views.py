@@ -1206,6 +1206,7 @@ class TestDatasetUpdateView:
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Edited title"
         form["description"] = "edited dataset description"
+        form["name"] = f"{org.name}test"
         form["parent"] = parent_dataset.pk
         resp = form.submit()
         dataset.refresh_from_db()
@@ -1234,6 +1235,7 @@ class TestDatasetUpdateView:
         dataset.manager = user
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
 
+        form["name"] = f"{dataset.organization.name}test"
         form["parent"] = new_parent_dataset.pk
         resp = form.submit()
         dataset.refresh_from_db()
@@ -1254,6 +1256,7 @@ class TestDatasetUpdateView:
         dataset.manager = user
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
 
+        form["name"] = f"{dataset.organization.name}test"
         form["parent"] = ""
         resp = form.submit()
         dataset.refresh_from_db()
@@ -1288,6 +1291,7 @@ class TestDatasetUpdateView:
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
         assert form["identifier"].value == "1234"
+        form["name"] = f"{dataset.organization.name}test"
         form["identifier"] = "4321"
         form.submit()
         dataset.refresh_from_db()
@@ -1333,6 +1337,7 @@ class TestDatasetUpdateView:
         app.set_user(user)
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+        form["name"] = f"{dataset.organization.name}test"
         form["identifier"] = "1234"
         form.submit()
         dataset.refresh_from_db()
@@ -3568,7 +3573,10 @@ class TestDatasetStructureImport:
         )
 
         user = UserFactory(is_staff=True)
-        dataset = DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]))
+        dataset = DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]),
+            metadata="datasets/gov/main/dataset",
+        )
         version = VersionFactory(dataset=dataset)
 
         app.set_user(user)

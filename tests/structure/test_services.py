@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -143,7 +145,10 @@ def test_structure_datasets(app: DjangoTestApp):
         ",datasets/gov/ivpk/adp2,,,,,,,,,,,,,,,,,\n"
         ",datasets/gov/ivpk/adp3,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp3")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+    )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -292,7 +297,7 @@ def test_structure_with_base_model_two_manifests(app: DjangoTestApp):
 
     base_structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_base)),
-        dataset=DatasetFactory(organization=organization),
+        dataset=DatasetFactory(organization=organization, metadata="datasets/gov/rc/ar/apskritis"),
     )
 
     manifest_with_base = (
@@ -309,7 +314,7 @@ def test_structure_with_base_model_two_manifests(app: DjangoTestApp):
 
     structure_with_base = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_base)),
-        dataset=DatasetFactory(organization=organization),
+        dataset=DatasetFactory(organization=organization, metadata="datasets/gov/rc/ar/savivaldybe"),
     )
 
     base_structure.dataset.current_structure = base_structure
@@ -373,7 +378,7 @@ def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
 
     ref_object_structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=ref_manifest)),
-        dataset=DatasetFactory(organization=organization),
+        dataset=DatasetFactory(organization=organization, metadata="datasets/gov/rc/ar/apskritis"),
     )
 
     ref_object_structure.dataset.current_structure = ref_object_structure
@@ -394,7 +399,7 @@ def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
 
     structure_with_ref = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_ref)),
-        dataset=DatasetFactory(organization=organization),
+        dataset=DatasetFactory(organization=organization, metadata="datasets/gov/rc/ar/savivaldybe"),
     )
 
     structure_with_ref.dataset.current_structure = structure_with_ref
@@ -488,7 +493,10 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
         "7,,,,City,,,,,,,,,,,,,,\n"
         "8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp2")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     metadata_version = create_structure_objects(structure)
@@ -496,7 +504,7 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
 
     new_manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        "2,datasets/gov/ivpk/adp2/updated,,,,,,,,,,,,,,,,,\n"
+        "2,datasets/gov/ivpk/adp2,,,,,,,,,,,,,,,,,\n"
         ",,,,,,prefix,dct,,,,,,,http://www.purl.org/dc/terms/,,,,\n"
         ",,resource2,,,,,,,,,,,,,,,,\n"
         "3,,,,CountryUpdated,,,,,,,,,,,,,,\n"
@@ -509,8 +517,8 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     structure.dataset.save()
     metadata_version = create_structure_objects(structure, metadata_version)
     assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 7
-    assert Metadata.objects.get(uuid="2").name == "datasets/gov/ivpk/adp2/updated"
-    assert Metadata.objects.get(uuid="3").name == "datasets/gov/ivpk/adp2/updated/CountryUpdated"
+    assert Metadata.objects.get(uuid="2").name == "datasets/gov/ivpk/adp2"
+    assert Metadata.objects.get(uuid="3").name == "datasets/gov/ivpk/adp2/CountryUpdated"
     assert Metadata.objects.get(uuid="4").type == "string"
     assert Metadata.objects.filter(uuid="1").count() == 0
     assert Metadata.objects.filter(uuid="6").count() == 0
@@ -1394,14 +1402,96 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
+    version2 = create_structure_objects(structure)
     assert list(
         Comment.objects.filter(
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
     ) == ['Duomenų išteklius "datasets/gov/ivpk/adp" jau egzistuoja.']
-    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=version).count() == 0
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=version2).count() == 0
+
+
+@pytest.mark.django_db
+def test_same_manifest_name_blocked_across_two_datasets(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,resource1,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
+    )
+    org = OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])
+
+    structure1 = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=org),
+    )
+    structure1.dataset.current_structure = structure1
+    structure1.dataset.save()
+    create_structure_objects(structure1)
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
+
+    structure2 = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=org),
+    )
+    structure2.dataset.current_structure = structure2
+    structure2.dataset.save()
+    version2 = create_structure_objects(structure2)
+    assert list(
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(structure2),
+        ).values_list("body", flat=True)
+    ) == ['Duomenų išteklius "datasets/gov/ivpk/adp" jau egzistuoja.']
+    assert Metadata.objects.filter(dataset=structure2.dataset, metadata_version=version2).count() == 0
+
+
+@pytest.mark.django_db
+def test_reimport_after_publish_does_not_fail(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,resource1,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
+    )
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    draft_version = create_structure_objects(structure)
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
+
+    metadata_ids = list(
+        Metadata.objects.filter(dataset=structure.dataset, metadata_version=draft_version).values_list("pk", flat=True)
+    )
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, draft_version.pk])).forms["version-form"]
+    form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    form["version_type"] = "MAJOR"
+    form["metadata"] = metadata_ids
+    form.submit()
+
+    structure2 = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=structure.dataset,
+    )
+    structure.dataset.current_structure = structure2
+    structure.dataset.save()
+    create_structure_objects(structure2)
+    assert (
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(structure2),
+        ).count()
+        == 0
+    )
 
 
 @pytest.mark.django_db
@@ -1420,13 +1510,14 @@ def test_structure_with_invalid_prefix_no_whitelist(app: DjangoTestApp):
     WhitelistedCodeName.objects.filter(organization=structure.dataset.organization).delete()
     structure.dataset.current_structure = structure
     structure.dataset.save()
+    dataset_name = structure.dataset.name
     create_structure_objects(structure)
     assert list(
         Comment.objects.filter(
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
-    ) == ["Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“."]
+    ) == [f"Kodinis pavadinimas (datasets/gov/test/adp) nesutampa su rinkinio kodiniu pavadinimu {dataset_name}."]
 
 
 @pytest.mark.django_db
@@ -1446,15 +1537,14 @@ def test_structure_with_invalid_prefix_with_whitelist(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
+    dataset_name = structure.dataset.name
     create_structure_objects(structure)
     assert list(
         Comment.objects.filter(
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
-    ) == [
-        "Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „datasets/gov/allowed/“."
-    ]
+    ) == [f"Kodinis pavadinimas (datasets/gov/test/adp) nesutampa su rinkinio kodiniu pavadinimu {dataset_name}."]
 
 
 @pytest.mark.django_db
@@ -1801,6 +1891,7 @@ def test_structure_export__multiple_versions(app: DjangoTestApp):
         title="Multi-Version Dataset",
         description="Dataset with multiple versions",
         organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"]),
+        metadata="datasets/gov/test/multi",
     )
 
     # Version 1: one model, one property, one prefix, one enum, and one param
@@ -1969,7 +2060,7 @@ def test_structure_export__models_and_props(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
 
     structure.dataset.current_structure = structure
@@ -2020,7 +2111,7 @@ def test_structure_export__base_model(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
 
     structure.dataset.current_structure = structure
@@ -2071,7 +2162,7 @@ def test_structure_export__property_ref(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
 
     structure.dataset.current_structure = structure
@@ -2121,7 +2212,7 @@ def test_structure_export__model_ref(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
 
     structure.dataset.current_structure = structure
@@ -2167,7 +2258,7 @@ def test_structure_export__comments(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2210,7 +2301,7 @@ def test_structure_export__enums(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2266,7 +2357,7 @@ def test_structure_export__params(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2306,7 +2397,10 @@ def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",datasets/gov/ivpk/adp/ššš,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp/ššš")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+    )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2325,7 +2419,7 @@ def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):
 def test_import_structure_with_errors_preserves_draft_metadata(app: DjangoTestApp):
     valid_manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        ",datasets/gov/ivpk/adp/test,,,,,,,,,,,,,,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=valid_manifest)))
     structure.dataset.current_structure = structure
@@ -2341,7 +2435,8 @@ def test_import_structure_with_errors_preserves_draft_metadata(app: DjangoTestAp
 
     broken_manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        ",datasets/gov/ivpk/adp/ššš,,,,,,,,,,,,,,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",very,broken,manifest,broken,,,,,,,,,,,,,,\n"
     )
     broken_structure = DatasetStructureFactory(
         dataset=structure.dataset,
@@ -2362,7 +2457,7 @@ def test_import_structure_with_errors_preserves_draft_metadata(app: DjangoTestAp
         object_id=broken_structure.pk,
     )
     assert comments.count() == 1
-    assert "kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės." in comments[0].body
+    assert "Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė" in comments[0].body
 
 
 @pytest.mark.django_db
@@ -2479,7 +2574,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
         dataset=DatasetFactory(
             title="Title",
             description="Description",
-            metadata=False,
+            metadata="dataset/org/test/test_dataset",
             organization=OrganizationFactory(whitelisted_names=["dataset/org/test/"]),
         ),
     )
@@ -2536,7 +2631,10 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
         "id,dataset,resource,base,model,property,type,ref,source,prepare,prepare,level,status,visibility,access,uri,eli,title,description\n"
         "1,dataset/org/test/test_dataset,,,,,,,,,,,,,,,,Title,Description\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="dataset/org/test/test_dataset")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+    )
 
     structure.dataset.current_structure = structure
     structure.dataset.organization = representative.content_object
@@ -2576,7 +2674,7 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
         dataset=DatasetFactory(
             title="Dataset",
             description="Dataset description",
-            metadata=False,
+            metadata="dataset/gov/test/test_dataset",
             organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
         ),
     )
@@ -2626,7 +2724,7 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
         dataset=DatasetFactory(
             title="Dataset",
             description="Dataset description",
-            metadata=False,
+            metadata="dataset/gov/test/test_dataset",
             organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
         ),
     )
@@ -2679,6 +2777,7 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
         dataset=DatasetFactory(
             title="Pavadinimas",
             description="Aprašymas",
+            metadata="dataset/gov/test/example",
             organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
         ),
     )
@@ -2720,6 +2819,7 @@ def test_structure_export__eli_row(app: DjangoTestApp):
         dataset=DatasetFactory(
             title="Pavadinimas",
             description="Aprašymas",
+            metadata="dataset/gov/test/example",
             organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
         ),
     )
@@ -2761,6 +2861,7 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
         dataset=DatasetFactory(
             title="Pavadinimas",
             description="Aprašymas",
+            metadata="dataset/gov/test/example",
             organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
         ),
     )
@@ -2796,7 +2897,10 @@ def test_structure_models_props_and_enums_with_visibility_status_eli(app: Django
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+            metadata="dataset/gov/test/example",
+        ),
     )
 
     structure.dataset.current_structure = structure
@@ -2853,7 +2957,10 @@ def test_structure_with_property_level_higher_then_model(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+            metadata="dataset/gov/test/example",
+        ),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2877,7 +2984,10 @@ def test_structure_with_enum_level_higher_then_property(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+            metadata="dataset/gov/test/example",
+        ),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2906,7 +3016,10 @@ def test_structure_with_enum_level_higher_then_model(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+            metadata="dataset/gov/test/example",
+        ),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2955,10 +3068,12 @@ class TestStructureBaseModels:
             ",,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
             ",,,/,,,,,,,,,,,,,,\n"
         )
-
         structure = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-            dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+            dataset=DatasetFactory(
+                organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+                metadata="dataset/gov/test/example",
+            ),
         )
         structure.dataset.current_structure = structure
         structure.dataset.save()
@@ -2985,7 +3100,10 @@ class TestStructureBaseModels:
         )
         structure_model = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_model_definition)),
-            dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+            dataset=DatasetFactory(
+                organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+                metadata="dataset/gov/test/example",
+            ),
         )
         structure_model.dataset.current_structure = structure_model
         structure_model.dataset.save()
@@ -3003,7 +3121,10 @@ class TestStructureBaseModels:
         )
         structure_base = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file2.csv", data=manifest_with_base_reference)),
-            dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/org/test/"])),
+            dataset=DatasetFactory(
+                organization=OrganizationFactory(whitelisted_names=["dataset/org/test/"]),
+                metadata="dataset/org/test/example2",
+            ),
         )
         structure_base.dataset.current_structure = structure_base
         structure_base.dataset.save()
@@ -3031,7 +3152,10 @@ class TestStructureBaseModels:
         )
         structure_model = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_model_definition)),
-            dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+            dataset=DatasetFactory(
+                organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+                metadata="dataset/gov/test/example",
+            ),
         )
         structure_model.dataset.current_structure = structure_model
         structure_model.dataset.save()
@@ -3049,7 +3173,10 @@ class TestStructureBaseModels:
         )
         structure_base = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file2.csv", data=manifest_with_base_reference)),
-            dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/org/test/"])),
+            dataset=DatasetFactory(
+                organization=OrganizationFactory(whitelisted_names=["dataset/org/test/"]),
+                metadata="dataset/org/test/example2",
+            ),
         )
         structure_base.dataset.current_structure = structure_base
         structure_base.dataset.save()
@@ -3080,7 +3207,10 @@ class TestStructureBaseModels:
 
         structure = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-            dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+            dataset=DatasetFactory(
+                organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+                metadata="dataset/gov/test/example",
+            ),
         )
         structure.dataset.current_structure = structure
         structure.dataset.save()
@@ -3115,7 +3245,10 @@ class TestStructureComments:
 
         structure = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-            dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"])),
+            dataset=DatasetFactory(
+                organization=OrganizationFactory(whitelisted_names=["dataset/gov/test/"]),
+                metadata="dataset/gov/test/dataset",
+            ),
         )
         structure.dataset.current_structure = structure
         structure.dataset.save()
@@ -3142,8 +3275,10 @@ def test_structure_boolean_enums(app: DjangoTestApp):
         "4,,,,,,enum,,True,true,,,,,,,,,,,\n"
         "5,,,,,,,,False,false,,,,,,,,,,,\n"
     )
-
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/dataset")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
 
@@ -3167,8 +3302,10 @@ def test_structure_boolean_enums_invalid_source(app: DjangoTestApp):
         "4,,,,,,enum,,True,True,,,,,,,,,,,\n"
         "5,,,,,,,,False,False,,,,,,,,,,,\n"
     )
-
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/dataset")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
 
@@ -3192,8 +3329,10 @@ def test_structure_number_enums(app: DjangoTestApp):
         ",,,,,,enum,,1.1,1.2,,,,,,,,,,,\n"
         ",,,,,,,,1.3,1.4,,,,,,,,,,,\n"
     )
-
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    dataset = DatasetFactory(metadata="datasets/gov/ivpk/example")
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
 
@@ -3267,7 +3406,7 @@ def test_generate_mermaid(app: DjangoTestApp):
 
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata="datasets/gov/ivpk/adp"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -3276,7 +3415,6 @@ def test_generate_mermaid(app: DjangoTestApp):
     assert (
         """
 classDiagram
-namespace `datasets/gov/ivpk/adp` {
 class `datasets/gov/ivpk/adp/Licence`["Licence"]:::Entity {
 «optional»
 id : integer [0..1]
@@ -3285,7 +3423,7 @@ class `datasets/gov/ivpk/adp/Catalog`["Catalog"]:::Entity {
 «optional»
 id : integer [0..1]
 }
-}
+
 `datasets/gov/ivpk/adp/Licence` --> "[0..1]" `datasets/gov/ivpk/adp/Catalog` : catalog<br/>«optional»
 """
         in mermaid
@@ -3350,6 +3488,7 @@ def test_generate_mermaid_with_base_chain_across_datasets(app: DjangoTestApp):
         file=FilerFileFactory(file=FileField(filename="file.csv", data=grandparent_manifest)),
         dataset=DatasetFactory(
             organization=OrganizationFactory(whitelisted_names=["datasets/gov/grand/"]),
+            metadata="datasets/gov/grand/dataset",
         ),
     )
     grandparent_structure.dataset.current_structure = grandparent_structure
@@ -3370,6 +3509,7 @@ def test_generate_mermaid_with_base_chain_across_datasets(app: DjangoTestApp):
         file=FilerFileFactory(file=FileField(filename="file.csv", data=parent_manifest)),
         dataset=DatasetFactory(
             organization=OrganizationFactory(whitelisted_names=["datasets/gov/parent/"]),
+            metadata="datasets/gov/parent/dataset",
         ),
     )
     parent_structure.dataset.current_structure = parent_structure
@@ -3392,6 +3532,7 @@ def test_generate_mermaid_with_base_chain_across_datasets(app: DjangoTestApp):
             title="Main",
             description="Root",
             organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]),
+            metadata="datasets/gov/main/dataset",
         ),
     )
     main_structure.dataset.current_structure = main_structure
@@ -3415,12 +3556,11 @@ class `datasets/gov/parent/dataset/ParentModel`["ParentModel"]:::Entity {
 id : integer [0..1]
 }
 }
-namespace `datasets/gov/main/dataset` {
 class `datasets/gov/main/dataset/ChildModel`["ChildModel"]:::Entity {
 «optional»
 id : integer [0..1]
 }
-}
+
 `datasets/gov/main/dataset/ChildModel` --|> `datasets/gov/parent/dataset/ParentModel`
 `datasets/gov/parent/dataset/ParentModel` --|> `datasets/gov/grand/dataset/GrandparentModel`
 """
@@ -3463,7 +3603,7 @@ def test_structure_export__scopes(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()

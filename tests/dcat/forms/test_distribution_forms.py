@@ -130,7 +130,7 @@ class TestDatasetDistributionForm:
 
     def test_status_queryset_filtered_to_distribution_status_concepts(self):
         dataset = DatasetFactory()
-        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
+        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
         matching_concept = ConceptFactory(concept_schemas=[status_schema])
         other_concept = ConceptFactory()
 
@@ -138,6 +138,18 @@ class TestDatasetDistributionForm:
 
         assert matching_concept in form.fields["status"].queryset
         assert other_concept not in form.fields["status"].queryset
+
+    def test_status_queryset_includes_non_distribution_status_concept_that_is_currently_saved(self):
+        dataset = DatasetFactory()
+        status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
+        matching_concept = ConceptFactory(concept_schemas=[status_schema])
+        other_concept = ConceptFactory()
+        distribution = DatasetDistributionFactory(dataset=dataset, status=other_concept)
+
+        form = DatasetDistributionForm(dataset, instance=distribution)
+
+        assert matching_concept in form.fields["status"].queryset
+        assert other_concept in form.fields["status"].queryset
 
     def test_duplicate_download_url_in_same_dataset_raises_error(self):
         dataset = DatasetFactory()

@@ -2,6 +2,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import QuerySet, Q
 from django.forms.widgets import URLInput
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm
@@ -124,9 +125,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.fields["conforms_to"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=DISTRIBUTION_STANDARD_URI
         ).prefetch_related("translations")
-        self.fields["status"].queryset = Concept.ordered_by_label_objects.filter(
-            concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI
-        ).prefetch_related("translations")
+        self.fields["status"].queryset = self._distribution_status_queryset()
         self.fields["status"].label_from_instance = lambda obj: obj.safe_translation_getter("label", any_language=True)
 
         if not self.resource and (default_licence := Licence.objects.filter(is_default=True).first()):
@@ -140,6 +139,13 @@ class DatasetDistributionForm(TranslatableModelForm):
                 self.initial["name"] = resource_metadata.name
 
         apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DISTRIBUTION)
+
+    def _distribution_status_queryset(self) -> QuerySet[Concept]:
+        query_filters = Q(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
+        if self.resource and self.resource.status:
+            query_filters = query_filters | Q(pk=self.resource.status_id)
+
+        return Concept.ordered_by_label_objects.filter(query_filters).prefetch_related("translations")
 
     def clean(self) -> dict:
         if download_url := self.cleaned_data.get("download_url"):

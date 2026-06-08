@@ -145,6 +145,7 @@ class MediaType(UUIDBaseModel):
 
 class DatasetDistribution(TranslatableModel):
     DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
+    DISTRIBUTION_DCAT_STATUS_URI = "http://purl.org/adms/status/"
     CHECKSUM_ALGORITHM_CHOICES = [
         ("SHA1", "SHA1"),
         ("SHA224", "SHA224"),

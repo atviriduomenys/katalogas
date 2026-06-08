@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-08 10:19+0300\n"
+"POT-Creation-Date: 2026-06-08 11:08+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +58,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -111,11 +114,9 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -341,27 +342,21 @@ msgstr "Spacial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spacial coverages"
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -1980,9 +1975,6 @@ msgstr "Delete"
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
 
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
-
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
 
@@ -2424,6 +2416,12 @@ msgstr ""
 msgid "Aprašas"
 msgstr "Description"
 
+msgid "Tinklapis"
+msgstr "Endpoint"
+
+msgid "Prieigos taško aprašas"
+msgstr "Endpoint description"
+
 msgid ""
 "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų "
 "paslaugą. Atitinka dcat:contactPoint."
@@ -2436,6 +2434,12 @@ msgstr "Data provider"
 
 msgid "Duomenų teikėjas. Atitinka dct:publisher."
 msgstr "Data provider. Corresponds to dct:publisher."
+
+msgid "Raktažodis / žyma"
+msgstr "Keyword / tag"
+
+msgid "Tema / kategorija"
+msgstr "Theme / category"
 
 msgid "Nukreipimo puslapis"
 msgstr "Landing page"
@@ -2451,6 +2455,12 @@ msgid ""
 msgstr ""
 "Organization responsible for creation of this dataset. Corresponds to "
 "dct:creator."
+
+msgid "Raktažodis"
+msgstr "Keyword"
+
+msgid "Kaupimo periodiškumas"
+msgstr "Accrual periodicity"
 
 msgid "Duomenų skelbėjas. Atitinka dct:publisher."
 msgstr "Data publisher. Corresponds to dct:publisher."
@@ -2487,8 +2497,8 @@ msgstr ""
 "PASIS code. If not available – an internal service identifier assigned by "
 "the institution, or an integer. Corresponds to dct:identifier."
 
-msgid "Kompetentingos valdžios institucijos"
-msgstr "Competent authorities"
+msgid "Turi kompetentingą valdžios instituciją"
+msgstr "Has competent authority"
 
 msgid ""
 "Viešojo administravimo institucijos, atsakingos už šią paslaugą. Atitinka "
@@ -2519,8 +2529,8 @@ msgstr ""
 "Contact information related to the provision of the e-service. Corresponds "
 "to cv:hasContactPoint."
 
-msgid "Priklauso duomenų katalogams"
-msgstr "Belongs to data catalog"
+msgid "Turi sudedamąją dalį"
+msgstr "Has part"
 
 msgid ""
 "Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
@@ -2531,8 +2541,8 @@ msgstr ""
 "catalog. Filled in when institutions have their own metadata catalogs. "
 "Corresponds to dct:hasPart."
 
-msgid "Susijusios informacinės sistemos (teikia duomenis į)"
-msgstr "Related information systems (provides data to)"
+msgid "Susijusi IS"
+msgstr "Related IS"
 
 msgid ""
 "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė "
@@ -2543,9 +2553,6 @@ msgstr ""
 "system. Related systems are those that have integrations and are named in "
 "the regulations. Corresponds to dcataplt:informationSystem."
 
-msgid "Susijusios informacinės sistemos (gauna duomenis iš)"
-msgstr "Related information systems (receives data from)"
-
 msgid ""
 "Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos "
 "yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. Atitinka "
@@ -2555,8 +2562,8 @@ msgstr ""
 "that have integrations and are named in the regulations. Corresponds to "
 "dcataplt:relatesToInformationSystem."
 
-msgid "Pateikia duomenų rinkinius"
-msgstr "Provides datasets"
+msgid "Pateikia duomenų rinkinį"
+msgstr "Provides dataset"
 
 msgid ""
 "Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."
@@ -2572,21 +2579,21 @@ msgstr ""
 "Organization responsible for this dataset. Corresponds to "
 "prov:qualifiedAttribution."
 
-msgid "Sukuria duomenų rinkinius"
-msgstr "Produces datasets"
+msgid "Sukuria duomenų rinkinį"
+msgstr "Produces dataset"
 
 msgid ""
 "Duomenų rinkiniai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
 msgstr "Datasets produced by this e-service. Corresponds to cpsv:produces."
 
-msgid "Sukuria paslaugas"
-msgstr "Produces services"
+msgid "Sukuria duomenų paslaugą"
+msgstr "Produces data service"
 
 msgid "Paslaugos, kurias sukuria ši e. paslauga. Atitinka cpsv:produces."
 msgstr "Servoces produced by this e-service. Corresponds to cpsv:produces."
 
-msgid "Sukuria katalogus"
-msgstr "Produces catalogs"
+msgid "Sukuria katalogą"
+msgstr "Produces catalog"
 
 msgid "Katalogai, kuriuos sukuria ši e. paslauga. Atitinka cpsv:produces."
 msgstr "Catalogs produced by this e-service. Corresponds to cpsv:produces."
@@ -2596,6 +2603,18 @@ msgstr "Page (documentation)"
 
 msgid "Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."
 msgstr "URL to documents about distribution. Corresponds to foaf:page."
+
+msgid "Prieigos URL"
+msgstr "Access URL"
+
+msgid "Prieigos paslauga"
+msgstr "Access service"
+
+msgid "Suspaudimo formatas"
+msgstr "Compress format"
+
+msgid "Parsisiuntimo URL"
+msgstr "Download URL"
 
 msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
 msgstr "Distribution with this download link already exists."

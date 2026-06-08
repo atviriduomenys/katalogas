@@ -43,9 +43,10 @@ class DatasetDistributionForm(TranslatableModelForm):
             "compression_format",
             "packaging_format",
             "size",
+            "policy",
             "download_url",
-            "checksum_value",
             "checksum_algorithm",
+            "checksum_value",
             "issued",
             "date_modified",
             "languages",
@@ -56,7 +57,6 @@ class DatasetDistributionForm(TranslatableModelForm):
             "spatial_resolution",
             "status",
             "temporal_resolution",
-            "policy",
         )
         field_classes = {
             "access_url": forms.URLField,
@@ -91,6 +91,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.helper.add_input(Submit("submit", button, css_class="button is-primary"))
 
         self.fields["access_url"].required = True
+        self.fields["access_url"].label = _("Prieigos URL")
         self.fields["availability"].required = True
         self.fields["availability"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI
@@ -109,12 +110,17 @@ class DatasetDistributionForm(TranslatableModelForm):
             is_public=False,
         ).prefetch_related("translations")
         self.fields["data_service"].required = False
+        self.fields["data_service"].label = _("Prieigos paslauga")
         self.fields["licence"].queryset = self.fields["licence"].queryset.order_by("title")
         self.fields["media_type"].queryset = self.fields["media_type"].queryset.order_by("title")
         self.fields["format"].queryset = self.fields["format"].queryset.order_by("title")
         self.fields["format"].required = False
+        self.fields["format"].label = _("Formatas")
         self.fields["compression_format"].queryset = self.fields["compression_format"].queryset.order_by("title")
+        self.fields["compression_format"].label = _("Suspaudimo formatas")
         self.fields["packaging_format"].queryset = self.fields["packaging_format"].queryset.order_by("title")
+        self.fields["download_url"].label = _("Parsisiuntimo URL")
+        self.fields["languages"].label = _("Kalba")
         self.fields["conforms_to"].queryset = Concept.ordered_by_label_objects.filter(
             concept_schemas__uri=DISTRIBUTION_STANDARD_URI
         ).prefetch_related("translations")

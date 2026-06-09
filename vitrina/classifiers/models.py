@@ -359,7 +359,7 @@ class Activity(UUIDBaseModel):
         return self.title
 
 
-class FormFieldHelpText(TranslatableModel):
+class FormFieldText(TranslatableModel):
     DCAT_INFORMATION_SYSTEM = "dcat_information_system"
     DCAT_SERVICE = "dcat_service"
     DCAT_DATASET = "dcat_dataset"
@@ -392,6 +392,11 @@ class FormFieldHelpText(TranslatableModel):
         verbose_name=_("Lauko pavadinimas"),
     )
     translations = TranslatedFields(
+        label=models.CharField(
+            max_length=255,
+            verbose_name=_("Lauko antraštė"),
+            blank=True,
+        ),
         help_text=models.TextField(
             verbose_name=_("Pagalbinis tekstas"),
             blank=True,
@@ -407,8 +412,8 @@ class FormFieldHelpText(TranslatableModel):
 
     class Meta:
         unique_together = [("form_name", "field_name")]
-        verbose_name = _("Formos lauko pagalbinis tekstas")
-        verbose_name_plural = _("Formų laukų pagalbiniai tekstai")
+        verbose_name = _("Formos lauko tekstai")
+        verbose_name_plural = _("Formų laukų tekstai")
 
     def __str__(self) -> str:
         return f"{self.form_name} / {self.field_name}"

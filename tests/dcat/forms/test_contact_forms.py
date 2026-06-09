@@ -1,8 +1,8 @@
 import pytest
 from django.utils.translation import override as translation_override
 
-from vitrina.classifiers.factories import FormFieldHelpTextFactory
-from vitrina.classifiers.models import FormFieldHelpText
+from vitrina.classifiers.factories import FormFieldTextFactory
+from vitrina.classifiers.models import FormFieldText
 from vitrina.dcat.forms.contact_forms import DcatContactForm, DcatContactUpdateForm
 from vitrina.datasets.factories import ContactFactory
 from vitrina.orgs.factories import OrganizationFactory
@@ -44,8 +44,8 @@ class TestDcatContactForm:
         assert form.fields["phone"].widget.attrs["placeholder"] == "Formatas 0... arba +370..."
 
     def test_dynamic_help_text_applied(self):
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_CONTACT,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_CONTACT,
             field_name="served_area",
             help_text_lt="Dinaminis tekstas",
         )
@@ -81,8 +81,8 @@ class TestDcatContactUpdateForm:
         assert "phone" in form.errors
 
     def test_dynamic_help_text_applied(self):
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_CONTACT,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_CONTACT,
             field_name="work_hours",
             help_text_lt="Dinaminis darbo valandų tekstas",
         )

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-08 15:00+0300\n"
+"POT-Creation-Date: 2026-06-09 13:33+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
-
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -58,6 +52,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -114,9 +111,11 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -314,6 +313,9 @@ msgstr "Form name"
 msgid "Lauko pavadinimas"
 msgstr "Field name"
 
+msgid "Lauko antraštė"
+msgstr "Field label"
+
 msgid "Pagalbinis tekstas"
 msgstr "Help text"
 
@@ -327,11 +329,11 @@ msgstr ""
 "Extended help text will be shown as a popup when the 'i' icon is clicked, if "
 "the form supports it"
 
-msgid "Formos lauko pagalbinis tekstas"
-msgstr "Form field help text"
+msgid "Formos lauko tekstai"
+msgstr "Form field texts"
 
-msgid "Formų laukų pagalbiniai tekstai"
-msgstr "Form field help texts"
+msgid "Formų laukų tekstai"
+msgstr "Form fields texts"
 
 msgid "Eilės numeris"
 msgstr "Order number"
@@ -342,21 +344,27 @@ msgstr "Spacial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spacial coverages"
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -1975,6 +1983,9 @@ msgstr "Delete"
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
 
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
+
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
 
@@ -2469,8 +2480,8 @@ msgid ""
 "Atitinka dct:identifier"
 msgstr ""
 "Identifier used for publishing the dataset. Use lowercase Latin letters, "
-"separate words with an underscore \"_\". E.g.: cod_pav. "
-"Corresponds to dct:identifier."
+"separate words with an underscore \"_\". E.g.: cod_pav. Corresponds to "
+"dct:identifier."
 
 msgid "Raktažodis"
 msgstr "Keyword"
@@ -3827,7 +3838,8 @@ msgid "Galima sukurti tik po šiais elementais:"
 msgstr "Can only be created under these elements:"
 
 msgid "Naują elementą galima sukurti tik turint aukštesnio lygio elementą."
-msgstr "A new element can only be created under an existing higher-level element."
+msgstr ""
+"A new element can only be created under an existing higher-level element."
 
 msgid "Atšaukti pakeitimus"
 msgstr "Cancel changes"
@@ -7537,9 +7549,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-#~ msgid "Pasirinkite objektą"
-#~ msgstr "Select an object"
-
-#~ msgid "Šiam mazgui nėra leidžiamų vaikinių elementų."
-#~ msgstr "This node has no allowed child types."

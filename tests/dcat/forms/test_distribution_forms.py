@@ -2,8 +2,8 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import override as translation_override
 
-from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, FormFieldHelpTextFactory, LicenceFactory
-from vitrina.classifiers.models import ConceptSchema, FormFieldHelpText
+from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, FormFieldTextFactory, LicenceFactory
+from vitrina.classifiers.models import ConceptSchema, FormFieldText
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.factories import OrganizationFactory
@@ -269,8 +269,8 @@ class TestDatasetDistributionForm:
 
     def test_dynamic_help_text_applied(self):
         dataset = DatasetFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_DISTRIBUTION,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DISTRIBUTION,
             field_name="documentation",
             help_text_lt="Dinaminis tekstas",
         )

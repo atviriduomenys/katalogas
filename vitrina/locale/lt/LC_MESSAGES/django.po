@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-08 15:00+0300\n"
+"POT-Creation-Date: 2026-06-09 13:33+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,12 +19,6 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < "
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
-
-msgid "Organizacija"
-msgstr ""
-
-msgid "Duomenų skelbėjas"
-msgstr ""
 
 msgid "Versijos duomenys"
 msgstr ""
@@ -57,6 +51,9 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
+msgstr ""
+
+msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -113,9 +110,11 @@ msgstr ""
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr ""
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
@@ -302,6 +301,9 @@ msgstr ""
 msgid "Lauko pavadinimas"
 msgstr ""
 
+msgid "Lauko antraštė"
+msgstr ""
+
 msgid "Pagalbinis tekstas"
 msgstr ""
 
@@ -313,10 +315,10 @@ msgid ""
 "ikonėlę, jei forma tai palaiko"
 msgstr ""
 
-msgid "Formos lauko pagalbinis tekstas"
+msgid "Formos lauko tekstai"
 msgstr ""
 
-msgid "Formų laukų pagalbiniai tekstai"
+msgid "Formų laukų tekstai"
 msgstr ""
 
 msgid "Eilės numeris"
@@ -328,21 +330,27 @@ msgstr ""
 msgid "Teritorinės aprėptys"
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
@@ -1798,6 +1806,9 @@ msgid "Pašalinti"
 msgstr ""
 
 msgid "Atsisiuntimo formatas"
+msgstr ""
+
+msgid "Duomenų skelbėjas"
 msgstr ""
 
 msgid "Kontaktinė informacija"

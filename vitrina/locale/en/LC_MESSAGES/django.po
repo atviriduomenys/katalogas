@@ -2781,17 +2781,17 @@ msgstr "Distributions"
 msgid "E. paslaugos"
 msgstr "E-services"
 
-msgid "Sukurti naują informacinę sistemą po šiuo mazgu."
-msgstr "Create new information system under this node."
+msgid "Sukurti naują informacinę sistemą po šiuo elementu."
+msgstr "Create a new information system under this element."
 
-msgid "Sukurti naują e. paslaugą po šiuo mazgu."
-msgstr "Create a new e-service under this node."
+msgid "Sukurti naują e. paslaugą po šiuo elementu."
+msgstr "Create a new e-service under this element."
 
-msgid "Sukurti naują duomenų paslaugą po šiuo mazgu."
-msgstr "Create a new service under this node."
+msgid "Sukurti naują duomenų paslaugą po šiuo elementu."
+msgstr "Create a new data service under this element."
 
-msgid "Sukurti naują duomenų rinkinį po šiuo mazgu."
-msgstr "Create new dataset under this node."
+msgid "Sukurti naują duomenų rinkinį po šiuo elementu."
+msgstr "Create a new dataset under this element."
 
 msgid "Pridėti naują duomenų rinkinio pateiktį."
 msgstr "Add new dataset distribution."
@@ -3490,6 +3490,9 @@ msgstr "The unique codename, which can be used while creating data resources."
 msgid "Redaguokite organizacijos informaciją"
 msgstr "Edit organization information"
 
+msgid "Gali turėti"
+msgstr "Can contain"
+
 msgid "Šioje organizacijoje dar nėra turinio."
 msgstr "This organisation has no content yet."
 
@@ -3796,6 +3799,9 @@ msgstr ""
 "Entry of the organization's information system metadata according to DCAT-AP-"
 "LT"
 
+msgid "Kūrimo tvarka"
+msgstr "Creation order"
+
 msgid "Suskleisti viską"
 msgstr "Collapse all"
 
@@ -3808,17 +3814,20 @@ msgstr "Loading form..."
 msgid "Pasirinkite formą"
 msgstr "Select a form"
 
-msgid "Pasirinkite objektą"
-msgstr "Select an object"
+msgid "Pasirinkite elementą"
+msgstr "Select an element"
 
 msgid "Pasirinkite ką norite sukurti"
 msgstr "Select what to create"
 
-msgid "Žemiau rodomi objektų tipai, kuriuos galima sukurti po šiuo mazgu."
-msgstr "The object types that can be created under this node are shown below."
+msgid "Žemiau rodomi elementai, kuriuos galima sukurti po"
+msgstr "Below are the elements that can be created under"
 
-msgid "Šiam mazgui nėra leidžiamų vaikinių elementų."
-msgstr "This node has no allowed child types."
+msgid "Galima sukurti tik po šiais elementais:"
+msgstr "Can only be created under these elements:"
+
+msgid "Naują elementą galima sukurti tik turint aukštesnio lygio elementą."
+msgstr "A new element can only be created under an existing higher-level element."
 
 msgid "Atšaukti pakeitimus"
 msgstr "Cancel changes"
@@ -7528,3 +7537,9 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#~ msgid "Pasirinkite objektą"
+#~ msgstr "Select an object"
+
+#~ msgid "Šiam mazgui nėra leidžiamų vaikinių elementų."
+#~ msgstr "This node has no allowed child types."

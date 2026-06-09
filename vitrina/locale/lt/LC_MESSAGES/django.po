@@ -2552,16 +2552,16 @@ msgstr ""
 msgid "E. paslaugos"
 msgstr ""
 
-msgid "Sukurti naują informacinę sistemą po šiuo mazgu."
+msgid "Sukurti naują informacinę sistemą po šiuo elementu."
 msgstr ""
 
-msgid "Sukurti naują e. paslaugą po šiuo mazgu."
+msgid "Sukurti naują e. paslaugą po šiuo elementu."
 msgstr ""
 
-msgid "Sukurti naują duomenų paslaugą po šiuo mazgu."
+msgid "Sukurti naują duomenų paslaugą po šiuo elementu."
 msgstr ""
 
-msgid "Sukurti naują duomenų rinkinį po šiuo mazgu."
+msgid "Sukurti naują duomenų rinkinį po šiuo elementu."
 msgstr ""
 
 msgid "Pridėti naują duomenų rinkinio pateiktį."
@@ -3215,6 +3215,9 @@ msgstr ""
 msgid "Redaguokite organizacijos informaciją"
 msgstr ""
 
+msgid "Gali turėti"
+msgstr ""
+
 msgid "Šioje organizacijoje dar nėra turinio."
 msgstr ""
 
@@ -3503,6 +3506,9 @@ msgid ""
 "Organizacijos informacinių sistemų metaduomenų pildymas pagal DCAT-AP-LT"
 msgstr ""
 
+msgid "Kūrimo tvarka"
+msgstr ""
+
 msgid "Suskleisti viską"
 msgstr ""
 
@@ -3515,16 +3521,19 @@ msgstr ""
 msgid "Pasirinkite formą"
 msgstr ""
 
-msgid "Pasirinkite objektą"
+msgid "Pasirinkite elementą"
 msgstr ""
 
 msgid "Pasirinkite ką norite sukurti"
 msgstr ""
 
-msgid "Žemiau rodomi objektų tipai, kuriuos galima sukurti po šiuo mazgu."
+msgid "Žemiau rodomi elementai, kuriuos galima sukurti po"
 msgstr ""
 
-msgid "Šiam mazgui nėra leidžiamų vaikinių elementų."
+msgid "Galima sukurti tik po šiais elementais:"
+msgstr ""
+
+msgid "Naują elementą galima sukurti tik turint aukštesnio lygio elementą."
 msgstr ""
 
 msgid "Atšaukti pakeitimus"

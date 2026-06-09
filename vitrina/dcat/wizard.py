@@ -26,7 +26,7 @@ WIZARD_NODE_ICONS: dict[str, str] = {
     WIZARD_NODE_IS: "fa-server",
     WIZARD_NODE_SERVICE: "fa-cogs",
     WIZARD_NODE_DATASET: "fa-database",
-    WIZARD_NODE_DISTRIBUTION: "fa-file-lines",
+    WIZARD_NODE_DISTRIBUTION: "fa-file-alt",
     WIZARD_NODE_IS_PUBLIC_SERVICE: "fa-globe",
 }
 
@@ -58,10 +58,10 @@ WIZARD_TYPE_ORDER: dict[str, int] = {
 }
 
 WIZARD_NODE_HELPERS: dict[str, str] = {
-    WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo mazgu."),
-    WIZARD_NODE_IS_PUBLIC_SERVICE: _("Sukurti naują e. paslaugą po šiuo mazgu."),
-    WIZARD_NODE_SERVICE: _("Sukurti naują duomenų paslaugą po šiuo mazgu."),
-    WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo mazgu."),
+    WIZARD_NODE_IS: _("Sukurti naują informacinę sistemą po šiuo elementu."),
+    WIZARD_NODE_IS_PUBLIC_SERVICE: _("Sukurti naują e. paslaugą po šiuo elementu."),
+    WIZARD_NODE_SERVICE: _("Sukurti naują duomenų paslaugą po šiuo elementu."),
+    WIZARD_NODE_DATASET: _("Sukurti naują duomenų rinkinį po šiuo elementu."),
     WIZARD_NODE_DISTRIBUTION: _("Pridėti naują duomenų rinkinio pateiktį."),
 }
 
@@ -78,6 +78,62 @@ WIZARD_SUBCLASS_TO_NODE_TYPE: dict[str, str] = {
     DCATResourceSubclass.SERVICE: WIZARD_NODE_SERVICE,
     DCATResourceSubclass.DATASET: WIZARD_NODE_DATASET,
 }
+
+WIZARD_CREATABLE_TYPES: list[str] = sorted(
+    {child_type for child_types in WIZARD_ALLOWED_CHILDREN.values() for child_type in child_types},
+    key=lambda node_type: WIZARD_TYPE_ORDER.get(node_type, 99),
+)
+
+
+def _build_allowed_parents() -> dict[str, list[str]]:
+    """Invert WIZARD_ALLOWED_CHILDREN: child type → parent types that allow it."""
+    allowed_parents: dict[str, list[str]] = {node_type: [] for node_type in WIZARD_ALLOWED_CHILDREN}
+    for parent_type, child_types in WIZARD_ALLOWED_CHILDREN.items():
+        for child_type in child_types:
+            allowed_parents.setdefault(child_type, []).append(parent_type)
+    return allowed_parents
+
+
+WIZARD_ALLOWED_PARENTS: dict[str, list[str]] = _build_allowed_parents()
+
+
+def _build_schema_matrix() -> dict:
+    """„Kūrimo tvarka“ legend matrix derived from WIZARD_ALLOWED_CHILDREN.
+
+    Columns are all creatable child types; rows are parent types that can have
+    children. Each cell marks whether the column type can be created under the
+    row type.
+    """
+    columns = [
+        {
+            "type": child_type,
+            "label": WIZARD_NODE_LABELS[child_type],
+            "icon": WIZARD_NODE_ICONS[child_type],
+        }
+        for child_type in WIZARD_CREATABLE_TYPES
+    ]
+    rows = [
+        {
+            "type": parent_type,
+            "label": WIZARD_NODE_LABELS[parent_type],
+            "icon": WIZARD_NODE_ICONS[parent_type],
+            "cells": [
+                {
+                    "label": WIZARD_NODE_LABELS[child_type],
+                    "allowed": child_type in allowed_children,
+                }
+                for child_type in WIZARD_CREATABLE_TYPES
+            ],
+        }
+        for parent_type, allowed_children in sorted(
+            WIZARD_ALLOWED_CHILDREN.items(), key=lambda item: WIZARD_TYPE_ORDER.get(item[0], 99)
+        )
+        if allowed_children
+    ]
+    return {"columns": columns, "rows": rows}
+
+
+WIZARD_SCHEMA_MATRIX: dict = _build_schema_matrix()
 
 _WIZARD_TREE_MAX_DEPTH = 8
 

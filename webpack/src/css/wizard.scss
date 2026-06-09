@@ -646,6 +646,106 @@
 }
 .wizard-tree-add:hover { background-color: #d6e5f4 !important; }
 
+/* ── "Kūrimo tvarka" legend matrix ── */
+.wizard-schema-block {
+    margin-bottom: 0.85rem;
+    background: #fff;
+    overflow: hidden;
+}
+.wizard-schema-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0f181f;
+}
+.wizard-schema-header:hover { background: #f9fafb; }
+.wizard-schema-body {
+    padding: 0 0.5rem 0.5rem;
+}
+.wizard-schema-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+}
+.wizard-schema-table th,
+.wizard-schema-table td {
+    padding: 0.4rem 0.15rem;
+    text-align: center;
+    vertical-align: middle;
+    border: none;
+    font-weight: 400;
+}
+.wizard-schema-table tbody tr {
+    border-top: 1px solid #eef1f4;
+}
+.wizard-schema-corner {
+    text-align: right !important;
+    padding-right: 0.5rem !important;
+    font-size: 0.625rem;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8a949b;
+    white-space: nowrap;
+}
+.wizard-schema-table tbody th {
+    text-align: left;
+}
+.wizard-schema-row-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+.wizard-schema-row-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #1c1c1c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wizard-schema-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 7px;
+    border: 1px solid rgba(55, 86, 119, 0.45);
+    background: rgba(55, 86, 119, 0.06);
+    color: #375677;
+}
+.wizard-schema-tile.is-filled {
+    color: #fff;
+    border-color: #375677;
+    background: #375677;
+}
+.wizard-schema-check { color: #375677; }
+.wizard-schema-dot {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #ccd4da;
+    vertical-align: middle;
+}
+.wizard-schema-table tbody tr.is-current {
+    background: #ebf1f9;
+}
+.wizard-schema-table tbody tr.is-current .wizard-schema-row-label {
+    color: #375677;
+}
+
 /* ── Type picker ── */
 .wizard-picker-title { font-size: 1.35rem; font-weight: 600; color: #0f181f; margin-bottom: 0.25rem; }
 .wizard-picker-sub { color: #59656e; margin-bottom: 1.25rem; }
@@ -677,6 +777,30 @@
 .wizard-picker-card-title { font-weight: 600; color: #0f181f; }
 .wizard-picker-card-helper { font-size: 0.8rem; color: #59656e; }
 .wizard-picker-card-chevron { color: #59656e; flex: 0 0 auto; }
+.wizard-picker-card.is-disabled {
+    cursor: not-allowed;
+    background: #f9fafb;
+    border-color: #e3e9ed;
+}
+.wizard-picker-card.is-disabled:hover {
+    border-color: #e3e9ed;
+    box-shadow: none;
+}
+.wizard-picker-card.is-disabled .wizard-picker-card-title { color: #8a949b; }
+.wizard-picker-card.is-disabled .wizard-picker-card-helper { color: #8a949b; }
+.wizard-picker-card.is-disabled .wizard-picker-card-helper strong { color: #59656e; }
+.wizard-picker-card.is-disabled .wizard-picker-card-icon {
+    background: #eef1f3;
+    color: #8a949b;
+}
+.wizard-picker-card-locks {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #8a949b;
+    flex: 0 0 auto;
+    cursor: help;
+}
 
 /* ── Fragment area ── */
 #wizard-main-pane { min-height: 0; }

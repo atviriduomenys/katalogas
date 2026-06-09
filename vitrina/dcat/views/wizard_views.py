@@ -8,11 +8,14 @@ from django.views.generic import TemplateView, View
 
 from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.dcat.wizard import (
+    WIZARD_ALLOWED_PARENTS,
+    WIZARD_CREATABLE_TYPES,
     WIZARD_NODE_HELPERS,
     WIZARD_NODE_ICONS,
     WIZARD_NODE_LABELS,
     WIZARD_NODE_ORGANIZATION,
     WIZARD_NODE_DISTRIBUTION,
+    WIZARD_SCHEMA_MATRIX,
     WIZARD_TYPE_TO_SUBCLASS_NAME,
     _build_wizard_tree,
 )
@@ -48,9 +51,14 @@ class OrganizationWizardView(
                 "type_label": str(WIZARD_NODE_LABELS[node_type]),
                 "icon": WIZARD_NODE_ICONS[node_type],
                 "helper": str(WIZARD_NODE_HELPERS.get(node_type, "")),
+                "parents_label": ", ".join(
+                    str(WIZARD_NODE_LABELS[parent_type]) for parent_type in WIZARD_ALLOWED_PARENTS.get(node_type, [])
+                ),
             }
-            for node_type in WIZARD_NODE_HELPERS
+            for node_type in WIZARD_CREATABLE_TYPES
         }
+        context["wizard_creatable_types_json"] = WIZARD_CREATABLE_TYPES
+        context["wizard_schema_matrix"] = WIZARD_SCHEMA_MATRIX
         context["parent_links"].update({None: _("IS metaduomenys")})
         return context
 

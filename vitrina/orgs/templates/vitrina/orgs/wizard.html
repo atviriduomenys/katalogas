@@ -17,6 +17,7 @@
 {% block root %}
     {{ wizard_nodes_json|json_script:"wizard-nodes" }}
     {{ wizard_node_meta_json|json_script:"wizard-node-meta" }}
+    {{ wizard_creatable_types_json|json_script:"wizard-creatable-types" }}
 
     <div class="wizard-overlay">
         <div class="wizard-overlay-inner">
@@ -62,10 +63,15 @@
              x-data="{
                  nodes: JSON.parse(document.getElementById('wizard-nodes').textContent),
                  meta: JSON.parse(document.getElementById('wizard-node-meta').textContent),
+                 creatable: JSON.parse(document.getElementById('wizard-creatable-types').textContent),
                  selected: null,
                  mode: 'detail',
                  createAttempt: null,
                  treeExpanded: false,
+                 schemaOpen: true,
+                 canCreate(type) {
+                     return !!(this.selected && this.selected.create_urls && this.selected.create_urls[type]);
+                 },
                  select(key, nextMode) {
                      this.selected = this.nodes[key] || { key: key };
                      this.mode = nextMode || 'detail';
@@ -91,6 +97,19 @@
 
                 {# Left sidebar — tree navigation #}
                 <aside class="column is-one-quarter wizard-sidebar p-4">
+                    <section class="wizard-schema-block">
+                        <button type="button" class="wizard-schema-header"
+                                :aria-expanded="schemaOpen ? 'true' : 'false'"
+                                @click="schemaOpen = !schemaOpen">
+                            <span>{% translate "Kūrimo tvarka" %}</span>
+                            <span class="wizard-tree-expand-icon" :class="schemaOpen ? 'is-open' : ''">
+                                <i class="fas fa-chevron-down fa-xs"></i>
+                            </span>
+                        </button>
+                        <div class="wizard-schema-body" x-show="schemaOpen" x-cloak>
+                            {% include "vitrina/orgs/_wizard_schema_matrix.html" %}
+                        </div>
+                    </section>
                     <ul class="wizard-tree">
                         <li class="wizard-tree-group wizard-tree-group-root">
                             <span aria-hidden="true">{% translate "Organizacija" %}</span>
@@ -201,31 +220,40 @@
                             </div>
                             <div class="wizard-crumb is-current">
                                 <span class="wizard-crumb-label">{% translate "Pasirinkite formą" %}</span>
-                                <span class="wizard-crumb-title">{% translate "Pasirinkite objektą" %}</span>
+                                <span class="wizard-crumb-title">{% translate "Pasirinkite elementą" %}</span>
                             </div>
                         </nav>
 
                         <h2 class="wizard-picker-title">{% translate "Pasirinkite ką norite sukurti" %}</h2>
-                        <p class="wizard-picker-sub">{% translate "Žemiau rodomi objektų tipai, kuriuos galima sukurti po šiuo mazgu." %}</p>
+                        <p class="wizard-picker-sub">
+                            {% translate "Žemiau rodomi elementai, kuriuos galima sukurti po" %}
+                            „<span x-text="selected && selected.title"></span>“.
+                        </p>
 
-                        <template x-for="type in (selected ? selected.allowed_children : [])" :key="type">
-                            <div class="wizard-picker-card" @click="attemptCreate(type)">
+                        <template x-for="type in creatable" :key="type">
+                            <div class="wizard-picker-card"
+                                 :class="canCreate(type) ? '' : 'is-disabled'"
+                                 :aria-disabled="canCreate(type) ? 'false' : 'true'"
+                                 @click="canCreate(type) && attemptCreate(type)">
                                 <span class="wizard-picker-card-icon">
                                     <i class="fas" :class="meta[type] && meta[type].icon"></i>
                                 </span>
                                 <div class="wizard-picker-card-body">
                                     <div class="wizard-picker-card-title" x-text="meta[type] && meta[type].type_label"></div>
-                                    <div class="wizard-picker-card-helper" x-text="meta[type] && meta[type].helper"></div>
+                                    <div class="wizard-picker-card-helper" x-show="canCreate(type)"
+                                         x-text="meta[type] && meta[type].helper"></div>
+                                    <div class="wizard-picker-card-helper" x-show="!canCreate(type)">
+                                        {% translate "Galima sukurti tik po šiais elementais:" %}
+                                        <strong x-text="meta[type] && meta[type].parents_label"></strong>
+                                    </div>
                                 </div>
-                                <span class="wizard-picker-card-chevron">
+                                <span class="wizard-picker-card-chevron" x-show="canCreate(type)">
                                     <i class="fas fa-chevron-right"></i>
                                 </span>
-                            </div>
-                        </template>
-
-                        <template x-if="selected && selected.allowed_children.length === 0">
-                            <div class="notification is-info is-light">
-                                {% translate "Šiam mazgui nėra leidžiamų vaikinių elementų." %}
+                                <span class="wizard-picker-card-locks" x-show="!canCreate(type)"
+                                      title="{% translate 'Naują elementą galima sukurti tik turint aukštesnio lygio elementą.' %}">
+                                    <i class="fas fa-lock"></i>
+                                </span>
                             </div>
                         </template>
 

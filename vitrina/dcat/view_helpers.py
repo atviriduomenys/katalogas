@@ -184,3 +184,7 @@ def can_delete_dataset_in_wizard(dataset: Dataset) -> bool:
     return (
         not dataset.is_public and not dataset.get_children().exists() and not dataset.datasetdistribution_set.exists()
     )
+
+
+def can_delete_distribution_in_wizard(distribution) -> bool:
+    return not distribution.dataset.is_public

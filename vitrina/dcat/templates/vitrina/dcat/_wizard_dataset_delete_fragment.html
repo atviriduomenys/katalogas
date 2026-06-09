@@ -24,14 +24,12 @@
 
 <div class="wizard-form-body">
     <p class="mb-4">
-        {% blocktranslate with title=object.title %}
-            Ar tikrai norite ištrinti „{{ title }}"? Šio veiksmo atšaukti negalima.
-        {% endblocktranslate %}
+        {% blocktranslate with title=object.title %}Ar tikrai norite ištrinti „{{ title }}"? Šio veiksmo atšaukti negalima.{% endblocktranslate %}
     </p>
 
     <div class="buttons">
-        <a href="{% url 'dcat-dataset-update' organization_id=organization.pk dataset_id=object.pk %}"
-           hx-get="{% url 'dcat-dataset-update' organization_id=organization.pk dataset_id=object.pk %}"
+        <a href="{{ cancel_url }}"
+           hx-get="{{ cancel_url }}"
            hx-target="#wizard-main-pane"
            hx-swap="innerHTML"
            class="button is-light">
@@ -40,7 +38,7 @@
 
         <form id="delete-form"
               method="post"
-              hx-post="{% url 'dcat-dataset-delete' organization_id=organization.pk dataset_id=object.pk %}"
+              hx-post="{{ delete_url }}"
               hx-target="#wizard-main-pane"
               hx-swap="innerHTML"
               style="display: inline-block;">

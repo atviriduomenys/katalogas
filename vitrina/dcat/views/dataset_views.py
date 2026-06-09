@@ -649,6 +649,14 @@ class DcatDatasetDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteV
                 "organization": self.organization,
                 "form_title": self.object.subclass.translated_title,
                 "breadcrumb_ancestors": wizard_breadcrumb_ancestors(self.object, self.organization, include_self=False),
+                "cancel_url": reverse(
+                    "dcat-dataset-update",
+                    kwargs={"organization_id": self.organization.pk, "dataset_id": self.object.pk},
+                ),
+                "delete_url": reverse(
+                    "dcat-dataset-delete",
+                    kwargs={"organization_id": self.organization.pk, "dataset_id": self.object.pk},
+                ),
             }
         )
         return context

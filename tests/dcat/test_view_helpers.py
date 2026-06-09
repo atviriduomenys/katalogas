@@ -12,12 +12,14 @@ from vitrina.datasets.factories import (
 )
 from vitrina.datasets.models import Attribution, DatasetAttribution, DatasetQualifiedRelation, DatasetRelation, Relation
 from vitrina.dcat.view_helpers import (
+    can_delete_distribution_in_wizard,
     save_dataset_attribution,
     save_dataset_qualified_relations,
     save_dataset_relations,
     save_produces_relations,
 )
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.resources.factories import DatasetDistributionFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -376,3 +378,13 @@ class TestSaveDatasetQualifiedRelations:
         save_dataset_qualified_relations(dataset, form)
 
         assert DatasetQualifiedRelation.objects.filter(dataset=dataset).count() == 0
+
+
+class TestCanDeleteDistributionInWizard:
+    def test_returns_true_when_dataset_is_not_public(self):
+        distribution = DatasetDistributionFactory(dataset=DatasetFactory(is_public=False))
+        assert can_delete_distribution_in_wizard(distribution) is True
+
+    def test_returns_false_when_dataset_is_public(self):
+        distribution = DatasetDistributionFactory(dataset=DatasetFactory(is_public=True))
+        assert can_delete_distribution_in_wizard(distribution) is False

@@ -289,6 +289,9 @@ _dataset_structure_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action
 _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetDistribution)
+_dataset_distribution_delete_wizard_acl: ACL = inherit_acl(
+    _dataset_delete_wizard_acl, new_model_class=DatasetDistribution
+)
 
 _dataset_attribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetAttribution)
 _dataset_attribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
@@ -399,6 +402,7 @@ acl: ACL = (
     | _dataset_distribution_create_acl
     | _dataset_distribution_update_acl
     | _dataset_distribution_delete_acl
+    | _dataset_distribution_delete_wizard_acl
     | _dataset_attribution_create_acl
     | _dataset_attribution_update_acl
     | _dataset_attribution_delete_acl

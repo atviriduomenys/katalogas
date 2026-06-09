@@ -1,0 +1,52 @@
+{% load i18n %}
+<nav class="wizard-crumbs">
+    {% for crumb in breadcrumb_ancestors %}
+    <div class="is-flex is-align-items-flex-end">
+        <div class="wizard-crumb">
+            <span class="wizard-crumb-label">{{ crumb.type_label }}</span>
+            <span class="wizard-crumb-title">{{ crumb.title }}</span>
+        </div>
+        <span class="wizard-crumb-sep">&rsaquo;</span>
+    </div>
+    {% endfor %}
+    <div class="wizard-crumb is-current">
+        <span class="wizard-crumb-label">{{ form_title }}</span>
+        <span class="wizard-crumb-title">{{ object.title }}</span>
+    </div>
+</nav>
+
+<div class="wizard-form-section-header">
+    <p class="wizard-form-section-title">{{ object.title }}</p>
+    <p class="wizard-form-section-sub">{% translate "Ištrinti" %} {{ form_title|lower }}</p>
+</div>
+
+{% include "vitrina/_wizard_messages.html" %}
+
+<div class="wizard-form-body">
+    <p class="mb-4">
+        {% blocktranslate with title=object.title %}
+            Ar tikrai norite ištrinti „{{ title }}"? Šio veiksmo atšaukti negalima.
+        {% endblocktranslate %}
+    </p>
+
+    <div class="buttons">
+        <a href="{% url 'dcat-dataset-update' organization_id=organization.pk dataset_id=object.pk %}"
+           hx-get="{% url 'dcat-dataset-update' organization_id=organization.pk dataset_id=object.pk %}"
+           hx-target="#wizard-main-pane"
+           hx-swap="innerHTML"
+           class="button is-light">
+            {% translate "Atšaukti" %}
+        </a>
+
+        <form id="delete-form"
+              method="post"
+              hx-post="{% url 'dcat-dataset-delete' organization_id=organization.pk dataset_id=object.pk %}"
+              hx-target="#wizard-main-pane"
+              hx-swap="innerHTML"
+              style="display: inline-block;">
+            {% csrf_token %}
+            <button type="submit" class="button is-danger">{% translate "Ištrinti" %}</button>
+        </form>
+    </div>
+</div>
+<div id="wizard-footer-extra" hx-swap-oob="innerHTML"></div>

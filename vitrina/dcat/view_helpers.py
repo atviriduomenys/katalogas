@@ -178,3 +178,9 @@ def save_dataset_qualified_relations(dataset: Dataset, form: "BaseResourceForm")
     for url in form.cleaned_data["qualified_relation"]:
         DatasetQualifiedRelation.objects.get_or_create(dataset=dataset, url=url)
     dataset.save()
+
+
+def can_delete_dataset_in_wizard(dataset: Dataset) -> bool:
+    return (
+        not dataset.is_public and not dataset.get_children().exists() and not dataset.datasetdistribution_set.exists()
+    )

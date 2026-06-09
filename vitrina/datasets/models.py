@@ -358,8 +358,8 @@ class Dataset(Resource):
 
     access_rights = models.CharField(
         _("Prieigos teisės"),
+        null=True,
         blank=True,
-        default=PUBLIC,
         choices=ACCESS_RIGHTS,
         max_length=255,
         help_text=_(

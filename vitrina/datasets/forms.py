@@ -348,6 +348,10 @@ class ServiceResourceForm(BaseResourceForm):
         self.fields["contact"].required = True
         organization = self.organization if self.organization else self.instance.organization
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=organization)
+
+        if not self.instance.pk:
+            self.fields["access_rights"].initial = Dataset.PUBLIC
+
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),

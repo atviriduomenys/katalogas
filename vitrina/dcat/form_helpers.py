@@ -2,7 +2,7 @@ from django import forms
 from django.utils.html import conditional_escape, escape
 from django.utils.safestring import mark_safe
 
-from vitrina.classifiers.models import FormFieldHelpText
+from vitrina.classifiers.models import FormFieldText
 from vitrina.datasets.helpers import get_name_prefixes
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
@@ -10,13 +10,14 @@ from vitrina.orgs.models import Organization
 
 def apply_dynamic_help_texts(form: forms.BaseForm, form_name: str) -> None:
     # Extended help text popup uses Alpine.js — this function is only called from wizard views.
-    for entry in FormFieldHelpText.objects.filter(form_name=form_name).prefetch_related("translations"):
+    for entry in FormFieldText.objects.filter(form_name=form_name).prefetch_related("translations"):
         if entry.field_name not in form.fields:
             continue
 
         field = form.fields[entry.field_name]
         help_text = entry.safe_translation_getter("help_text") or ""
         extended = entry.safe_translation_getter("extended_help_text") or ""
+        label = entry.safe_translation_getter("label") or ""
 
         if help_text:
             field.help_text = help_text
@@ -30,6 +31,9 @@ def apply_dynamic_help_texts(form: forms.BaseForm, form_name: str) -> None:
                 f"{escape(extended)}</span></span>"
             )
             field.help_text = mark_safe(f"{conditional_escape(field.help_text)}{popup_html}")
+
+        if label:
+            field.label = label
 
 
 def get_available_dcat_name_prefixes(parent_dataset: Dataset | None, organization: Organization) -> list[str]:

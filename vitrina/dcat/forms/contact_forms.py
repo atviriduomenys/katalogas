@@ -4,7 +4,7 @@ from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
 from django_select2.forms import Select2MultipleWidget
 
-from vitrina.classifiers.models import FormFieldHelpText
+from vitrina.classifiers.models import FormFieldText
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.datasets.models import Contact
 from vitrina.validators import phone_validator
@@ -39,7 +39,7 @@ class BaseDcatContactForm(ModelForm):
         self.fields["phone"].validators.append(phone_validator)
         self.fields["phone"].widget.attrs["placeholder"] = _("Formatas 0... arba +370...")
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_CONTACT)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_CONTACT)
 
     @staticmethod
     def _build_helper(submit_label: str) -> FormHelper:

@@ -6,7 +6,7 @@ from django.forms.widgets import URLInput
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm
 
-from vitrina.classifiers.models import Concept, FormFieldHelpText, Licence
+from vitrina.classifiers.models import Concept, FormFieldText, Licence
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
@@ -134,7 +134,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             if resource_metadata := self.resource.metadata.first():
                 self.initial["name"] = resource_metadata.name
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DISTRIBUTION)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_DISTRIBUTION)
 
     def _distribution_status_queryset(self) -> QuerySet[Concept]:
         query_filters = Q(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)

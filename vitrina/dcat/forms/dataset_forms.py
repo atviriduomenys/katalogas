@@ -25,7 +25,7 @@ from vitrina.datasets.models import (
     Relation,
 )
 from vitrina.identifiers.models import Agency
-from vitrina.classifiers.models import FormFieldHelpText
+from vitrina.classifiers.models import FormFieldText
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.dcat.widgets import (
     CategoryMultipleWidget,
@@ -262,7 +262,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
         ).prefetch_related("translations")
         self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_INFORMATION_SYSTEM)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_INFORMATION_SYSTEM)
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
@@ -373,7 +373,7 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         self.fields["landing_page"].label = _("Nukreipimo puslapis")
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_SERVICE)
 
 
 class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, DatasetNameMixin, BaseResourceForm):
@@ -542,7 +542,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
             Field("has_quality_measurement"),
         )
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_DATASET)
 
     def clean_qualified_relation(self) -> list[str]:
         urls = self.cleaned_data.get("qualified_relation", []) or []
@@ -685,7 +685,7 @@ class ISPublicServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "Su e. paslaugos teikimu susijusi kontaktinė informacija. Atitinka cv:hasContactPoint."
         )
 
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_IS_PUBLIC_SERVICE)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_IS_PUBLIC_SERVICE)
 
     def get_dataset_name(self) -> str:
         parent_name = self._parent.name if self._parent else self.organization.name or ""
@@ -757,7 +757,7 @@ class InformationSystemRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_IS_RELATIONSHIPS)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_IS_RELATIONSHIPS)
 
 
 class ServiceRelationshipForm(forms.Form):
@@ -778,7 +778,7 @@ class ServiceRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_SERVICE_RELATIONSHIPS)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_SERVICE_RELATIONSHIPS)
 
 
 class DatasetRelationshipForm(forms.Form):
@@ -798,7 +798,7 @@ class DatasetRelationshipForm(forms.Form):
             ).values_list("organization_id", flat=True)
         self.helper = FormHelper()
         self.helper.form_tag = False
-        apply_dynamic_help_texts(self, FormFieldHelpText.DCAT_DATASET_RELATIONSHIPS)
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_DATASET_RELATIONSHIPS)
 
 
 class ISPublicServiceRelationshipForm(forms.Form):

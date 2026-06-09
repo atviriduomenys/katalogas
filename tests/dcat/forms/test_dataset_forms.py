@@ -5,11 +5,11 @@ from vitrina.classifiers.factories import (
     CategoryFactory,
     ConceptFactory,
     DocumentationFactory,
-    FormFieldHelpTextFactory,
+    FormFieldTextFactory,
 )
 from vitrina.classifiers.models import (
     ConceptSchema,
-    FormFieldHelpText,
+    FormFieldText,
     LANGUAGE_CONCEPT_SCHEMA_URI,
 )
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
@@ -374,8 +374,8 @@ class TestInformationSystemResourceForm:
 
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_INFORMATION_SYSTEM,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
             field_name="identifier",
             help_text_lt="Dinaminis tekstas",
         )
@@ -428,8 +428,8 @@ class TestServiceResourceForm:
 
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_SERVICE,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_SERVICE,
             field_name="endpoint_url",
             help_text_lt="Dinaminis tekstas",
         )
@@ -572,8 +572,8 @@ class TestDatasetResourceForm:
 
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_DATASET,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DATASET,
             field_name="documentation",
             help_text_lt="Dinaminis tekstas",
         )
@@ -660,8 +660,8 @@ class TestInformationSystemUpdateForm:
 
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_INFORMATION_SYSTEM,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
             field_name="identifier",
             help_text_lt="Dinaminis tekstas",
         )
@@ -854,8 +854,8 @@ class TestDatasetUpdateForm:
 
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_DATASET,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DATASET,
             field_name="documentation",
             help_text_lt="Dinaminis tekstas",
         )
@@ -902,8 +902,8 @@ class TestServiceUpdateForm:
 
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
-        FormFieldHelpTextFactory(
-            form_name=FormFieldHelpText.DCAT_SERVICE,
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_SERVICE,
             field_name="endpoint_url",
             help_text_lt="Dinaminis tekstas",
         )

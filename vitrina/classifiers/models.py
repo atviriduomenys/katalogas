@@ -27,6 +27,7 @@ class Category(MP_Node):
         editable=False,
     )
     featured = models.BooleanField()
+    thematic = models.BooleanField(default=False)
     icon = models.CharField(
         max_length=255,
         blank=True,

@@ -1,0 +1,57 @@
+{% load i18n %}
+
+
+<section class="hero">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title has-text-info-dark">
+                {% translate "Teminiai duomenų ištekliai" %}
+            </h1>
+            <div class="columns is-multiline p-t-lg">
+                {% for cat in thematic_categories %}
+                    <div class="column is-3-fullhd is-3-desktop is-4-tablet">
+                        <div class="container category-box">
+                            <a href="{% url 'dataset-list' %}?selected_facets=category_exact:{{ cat.id }}"
+                               title="{{ cat.description }}"
+                               class="category-icon"
+                            >
+                                <div class="columns is-vcentered">
+                                    <div class="column is-4">
+                                        {% if cat.icon %}
+                                            <i class="fa-solid fa-{{ cat.icon }} fa-2x"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="column is-8">
+                                        <span class="category-icon-text">{{ cat }}</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+                <div class="column is-3-fullhd is-3-desktop is-4-tablet">
+                    <div class="container category-box" style="position: relative;">
+                        <a href="https://duomenys.stat.gov.lt/sveikatos-duomenys/"
+                           class="category-icon"
+                           target="_blank"
+                           rel="noopener"
+                           title="{% translate 'Atsidaro naujame lange' %}"
+                        >
+                            <i class="fa-solid fa-arrow-up-right-from-square fa-xs"
+                               style="position: absolute; top: 10px; right: 12px;"
+                               aria-hidden="true"></i>
+                            <div class="columns is-vcentered">
+                                <div class="column is-4">
+                                    <i class="fa-solid fa-shield-heart fa-2x"></i>
+                                </div>
+                                <div class="column is-8">
+                                    <span class="category-icon-text">{% translate "Sveikatos duomenys" %}</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

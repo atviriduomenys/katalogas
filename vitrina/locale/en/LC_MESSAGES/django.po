@@ -1381,6 +1381,15 @@ msgstr "Go back to resources"
 msgid "Duomenų išteklių kategorijos"
 msgstr "Resource categories"
 
+msgid "Teminiai duomenų ištekliai"
+msgstr "Thematic data resources"
+
+msgid "Sveikatos duomenys"
+msgstr "Health data"
+
+msgid "Atsidaro naujame lange"
+msgstr "Opens in a new window"
+
 msgid "Patinka"
 msgstr "Like"
 

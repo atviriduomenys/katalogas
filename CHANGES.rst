@@ -8,6 +8,12 @@ https://github.com/atviriduomenys/katalogas/issues/2643
 
 - Fix a bug where two different datasets in the same organization could have the same name.
 
+https://github.com/atviriduomenys/katalogas/issues/2671
+
+- Add a "Teminiai duomenų ištekliai" (thematic data resources) section to the landing page, below the main categories.
+- Add a ``thematic`` flag to ``Category`` so flagged categories render in the new section instead of the main categories block.
+- Add a "Sveikatos duomenys" tile linking to the external health data portal; it opens in a new tab and is marked with an external-link icon.
+
 https://github.com/atviriduomenys/katalogas/issues/2629
 
 - Fix property-level enum `ref` export: structure export now always outputs an empty `ref` for enums declared at the property dimension.

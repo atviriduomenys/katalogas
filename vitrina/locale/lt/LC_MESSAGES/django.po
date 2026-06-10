@@ -1265,6 +1265,15 @@ msgstr ""
 msgid "Duomenų išteklių kategorijos"
 msgstr ""
 
+msgid "Teminiai duomenų ištekliai"
+msgstr ""
+
+msgid "Sveikatos duomenys"
+msgstr ""
+
+msgid "Atsidaro naujame lange"
+msgstr ""
+
 msgid "Patinka"
 msgstr ""
 

@@ -5,8 +5,13 @@ from vitrina.dcat.views.dataset_views import (
     DcatDatasetCreateView,
     DcatDatasetUpdateView,
     DcatDatasetRelationshipUpdateView,
+    DcatDatasetDeleteView,
 )
-from vitrina.dcat.views.distribution_views import DcatDistributionCreateView, DcatDistributionUpdateView
+from vitrina.dcat.views.distribution_views import (
+    DcatDistributionCreateView,
+    DcatDistributionDeleteView,
+    DcatDistributionUpdateView,
+)
 
 urlpatterns = [
     path(
@@ -40,6 +45,11 @@ urlpatterns = [
         name="dcat-dataset-relationships-update",
     ),
     path(
+        "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/delete/",
+        DcatDatasetDeleteView.as_view(),
+        name="dcat-dataset-delete",
+    ),
+    path(
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/",
         DcatDistributionCreateView.as_view(),
         name="dcat-distribution-create",
@@ -48,6 +58,11 @@ urlpatterns = [
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/<int:distribution_id>/update/",
         DcatDistributionUpdateView.as_view(),
         name="dcat-distribution-update",
+    ),
+    path(
+        "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/<int:distribution_id>/delete/",
+        DcatDistributionDeleteView.as_view(),
+        name="dcat-distribution-delete",
     ),
     path(
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/distribution/<int:distribution_id>/update/version/<int:version_id>/",

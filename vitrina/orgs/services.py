@@ -48,6 +48,7 @@ class Action(Enum):
     ASSIGN = "assign"
     CREATE_WIZARD = "create_wizard"
     UPDATE_WIZARD = "update_wizard"
+    DELETE_WIZARD = "delete_wizard"
 
 
 class Role(Enum):
@@ -205,6 +206,28 @@ _dataset_update_acl: ACL = inherit_acl(_dataset_base_update_acl) | {
         Role.GLOBAL_MANAGER,
     },
 }
+_dataset_delete_wizard_acl: ACL = {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+}
 _dataset_view_acl: ACL = inherit_acl(_dataset_base_update_acl, new_action=Action.VIEW) | {
     (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.VIEW): {
         Role.AUTHENTICATED,
@@ -266,6 +289,9 @@ _dataset_structure_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action
 _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetDistribution)
+_dataset_distribution_delete_wizard_acl: ACL = inherit_acl(
+    _dataset_delete_wizard_acl, new_model_class=DatasetDistribution
+)
 
 _dataset_attribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetAttribution)
 _dataset_attribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
@@ -369,12 +395,14 @@ acl: ACL = (
     | _dataset_create_acl
     | _information_system_update_acl
     | _dataset_update_acl
+    | _dataset_delete_wizard_acl
     | _dataset_comment_acl
     | _dataset_delete_acl
     | _dataset_history_view_acl
     | _dataset_distribution_create_acl
     | _dataset_distribution_update_acl
     | _dataset_distribution_delete_acl
+    | _dataset_distribution_delete_wizard_acl
     | _dataset_attribution_create_acl
     | _dataset_attribution_update_acl
     | _dataset_attribution_delete_acl

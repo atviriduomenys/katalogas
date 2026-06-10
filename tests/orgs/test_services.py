@@ -2179,6 +2179,108 @@ def test_dataset_update_wizard_not_allowed_for_public_is(role: str):
     assert res is False
 
 
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_rights,role,expected",
+    [
+        (Dataset.PUBLIC, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
+        (Dataset.PUBLIC, Representative.OPEN_DATA_COORDINATOR, False),
+        (Dataset.PUBLIC, Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_dataset_delete_wizard_permission_non_public_dataset(access_rights: str, role: str, expected: bool):
+    dataset = DatasetFactory(is_public=False, access_rights=access_rights)
+    ct = ContentType.objects.get_for_model(dataset)
+    rep = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=role)
+    res = has_perm(rep.user, Action.DELETE_WIZARD, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+def test_dataset_delete_wizard_permission_global_manager():
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory(is_staff=True)
+    res = has_perm(user, Action.DELETE_WIZARD, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role",
+    [
+        Representative.RESOURCE_COORDINATOR,
+        Representative.RESOURCE_MANAGER,
+        Representative.OPEN_DATA_COORDINATOR,
+        Representative.OPEN_DATA_MANAGER,
+    ],
+)
+def test_dataset_delete_wizard_not_allowed_for_public_dataset(role: str):
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
+    ct = ContentType.objects.get_for_model(dataset)
+    rep = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=role)
+    res = has_perm(rep.user, Action.DELETE_WIZARD, dataset)
+    assert res is False
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_rights,role,expected",
+    [
+        (Dataset.PUBLIC, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_COORDINATOR, True),
+        (Dataset.PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
+        (Dataset.PUBLIC, Representative.OPEN_DATA_COORDINATOR, False),
+        (Dataset.PUBLIC, Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_dataset_distribution_delete_wizard_permission_non_public_dataset(
+    access_rights: str, role: str, expected: bool
+):
+    distribution = DatasetDistributionFactory(dataset=DatasetFactory(is_public=False, access_rights=access_rights))
+    ct = ContentType.objects.get_for_model(distribution.dataset)
+    rep = RepresentativeFactory(content_type=ct, object_id=distribution.dataset.pk, role=role)
+    res = has_perm(rep.user, Action.DELETE_WIZARD, distribution)
+    assert res is expected
+
+
+@pytest.mark.django_db
+def test_dataset_distribution_delete_wizard_permission_global_manager():
+    distribution = DatasetDistributionFactory(dataset=DatasetFactory(is_public=False))
+    user = UserFactory(is_staff=True)
+    res = has_perm(user, Action.DELETE_WIZARD, distribution)
+    assert res is True
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role",
+    [
+        Representative.RESOURCE_COORDINATOR,
+        Representative.RESOURCE_MANAGER,
+        Representative.OPEN_DATA_COORDINATOR,
+        Representative.OPEN_DATA_MANAGER,
+    ],
+)
+def test_dataset_distribution_delete_wizard_not_allowed_for_public_dataset(role: str):
+    distribution = DatasetDistributionFactory(dataset=DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC))
+    ct = ContentType.objects.get_for_model(distribution.dataset)
+    rep = RepresentativeFactory(content_type=ct, object_id=distribution.dataset.pk, role=role)
+    res = has_perm(rep.user, Action.DELETE_WIZARD, distribution)
+    assert res is False
+
+
 class TestHasDatasetPerm:
     @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED])
     def test_permissions_with_dataset_open_data_representative(self, access_rights: str):

@@ -36,4 +36,15 @@
     <div class="wizard-form-body">
         {% crispy form %}
     </div>
+
 </form>
+<div id="wizard-footer-extra" hx-swap-oob="innerHTML">
+    {% if can_delete %}
+        <a hx-get="{% url 'dcat-distribution-delete' organization_id=object.dataset.organization.pk dataset_id=object.dataset.pk distribution_id=object.pk %}"
+           hx-target="#wizard-main-pane"
+           hx-swap="innerHTML"
+           class="button is-danger is-light">
+            {% translate "Ištrinti" %}
+        </a>
+    {% endif %}
+</div>

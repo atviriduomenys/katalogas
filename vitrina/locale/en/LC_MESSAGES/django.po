@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-09 13:33+0300\n"
+"POT-Creation-Date: 2026-06-09 15:57+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +58,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -111,11 +114,9 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -344,27 +345,21 @@ msgstr "Spacial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spacial coverages"
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -1983,9 +1978,6 @@ msgstr "Delete"
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
 
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
-
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
 
@@ -2649,6 +2641,10 @@ msgstr "Distribution with this download link already exists."
 msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
 msgstr "Checksum value can only include lowercase letters."
 
+#, python-format
+msgid "Ar tikrai norite ištrinti „%(title)s\"? Šio veiksmo atšaukti negalima."
+msgstr "Are you sure you want to delete \"%(title)s\"? This action cannot be undone."
+
 msgid "Redaguokite"
 msgstr "Edit"
 
@@ -2735,6 +2731,18 @@ msgstr "Dataset updated successfully! Codename: {0}"
 msgid "E. paslauga atnaujinta sėkmingai!"
 msgstr "E-service updated successfully!"
 
+msgid "Informacinė sistema ištrinta sėkmingai!"
+msgstr "Information system deleted successfully!"
+
+msgid "Duomenų paslauga ištrinta sėkmingai!"
+msgstr "Service deleted successfully!"
+
+msgid "Duomenų rinkinys ištrintas sėkmingai!"
+msgstr "Dataset deleted successfully!"
+
+msgid "E. paslauga ištrinta sėkmingai!"
+msgstr "E-service deleted successfully!"
+
 msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
 msgstr "Form creation tool cannot be used for this resource subclass"
 
@@ -2749,6 +2757,9 @@ msgstr "Form creation tool cannot be used for this resource subclass."
 
 msgid "Ryšiai atnaujinti sėkmingai"
 msgstr "Relations updated successfully"
+
+msgid "Šio duomenų ištekliaus ištrinti negalima."
+msgstr "Cannot delete this resource."
 
 msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
 msgstr "Form creation tool cannot be used with open data resources"
@@ -2767,6 +2778,12 @@ msgstr "Dataset distribution edit"
 
 msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr "Distribution updated successfully!"
+
+msgid "Šios pateikties ištrinti negalima."
+msgstr "Cannot delete this distribution."
+
+msgid "Pateiktis ištrinta sėkmingai!"
+msgstr "Distribution deleted successfully!"
 
 msgid "IS metaduomenys"
 msgstr "IS metadata"

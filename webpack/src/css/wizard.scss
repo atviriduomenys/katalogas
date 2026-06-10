@@ -219,6 +219,17 @@
 .wizard-footer .button.is-dark:hover {
     background: #2d4761 !important;
 }
+#wizard-footer-extra:not(:empty) {
+    margin-right: 0.5rem;
+}
+.wizard-footer .button.is-danger {
+    border-color: #ff3860 !important;
+    color: #ff3860 !important;
+    background: transparent !important;
+}
+.wizard-footer .button.is-danger:hover {
+    background: #fff0f3 !important;
+}
 
 /* ── Form body container — transparent, no outer card ── */
 .wizard-form-body {

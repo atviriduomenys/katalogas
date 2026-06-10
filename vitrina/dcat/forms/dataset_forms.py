@@ -347,6 +347,16 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
+        self.fields["name"].label = _("Identifikatorius")
+        self.fields["name"].help_text = _(
+            "Institucijos vidinis duomenų paslaugos identifikatorius. Formatas: kod_pav. Atitinka dct:identifier."
+        )
+        self.fields["codename_preview"].label = _("Pilnas identifikatorius")
+        self.fields["codename_preview"].help_text = _(
+            "Pilnas identifikatorius, sudarytas iš tėvinio ištekliaus identifikatoriaus ir šios "
+            "duomenų paslaugos identifikatoriaus."
+        )
+
         self.fields["contact"].label = _("Kontaktinė informacija")
         self.fields["contact"].help_text = _(
             "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų paslaugą. "

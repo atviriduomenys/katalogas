@@ -72,6 +72,15 @@ $primary: #007db2;
   margin-bottom: 0px !important;
 }
 
+.dataset-description a {
+  display: inline-block;
+  max-width: min(42ch, 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .stays-right {
   margin-left: auto;
 }

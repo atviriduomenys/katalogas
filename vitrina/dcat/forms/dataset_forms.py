@@ -749,6 +749,15 @@ class InformationSystemRelationshipForm(forms.Form):
             "integracijas ir yra įvardintos nuostatuose. Atitinka dcataplt:relatesToInformationSystem."
         ),
     )
+    relates_to_data_service = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.SERVICE),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusi duomenų paslauga"),
+        help_text=_(
+            "Kitų IS duomenų paslaugos, kurios teikia duomenis šiai IS. Atitinka dcataplt:relatesToDataService."
+        ),
+    )
 
     def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -764,6 +773,10 @@ class InformationSystemRelationshipForm(forms.Form):
             self.initial["relates_to_information_system"] = Dataset.objects.filter(
                 dataset_relations__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
                 dataset_relations__part_of=dataset,
+            )
+            self.initial["relates_to_data_service"] = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.RELATES_TO_DATA_SERVICE,
+                related_datasets__dataset=dataset,
             )
         self.helper = FormHelper()
         self.helper.form_tag = False

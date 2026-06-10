@@ -939,11 +939,14 @@ class TestDcatDatasetUpdateView:
         agency = Agency.objects.get(code=Agency.RISR_CODE)
         IdentifierFactory(resource=dataset, scheme_agency=agency, notation="1111")
         catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
         catalog_dataset = DatasetFactory(organization=org, subclass=catalog_subclass, is_public=False)
         other_is = DatasetFactory(organization=org, subclass=subclass, is_public=False)
         other_is2 = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        related_service_dataset = DatasetFactory(organization=org, subclass=service_subclass, is_public=False)
         catalog_relation = RelationFactory(name=Relation.CATALOG)
-        rti_relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
+        relates_to_information_system_relation = RelationFactory(name=Relation.RELATES_TO_INFORMATION_SYSTEM)
+        relates_to_data_service_relation = Relation.objects.get(name=Relation.RELATES_TO_DATA_SERVICE)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -969,6 +972,7 @@ class TestDcatDatasetUpdateView:
         form["has_part"].force_value([str(catalog_dataset.pk)])
         form["relates_to_information_system"].force_value([str(other_is.pk)])
         form["related_information_system"].force_value([str(other_is2.pk)])
+        form["relates_to_data_service"].force_value([str(related_service_dataset.pk)])
         form["category"].force_value([str(category.pk)])
 
         with patch("vitrina.datasets.models.update_applicable_legislation_description"):
@@ -995,8 +999,15 @@ class TestDcatDatasetUpdateView:
         assert DatasetRelation.objects.filter(
             relation=catalog_relation, dataset=dataset, part_of=catalog_dataset
         ).exists()
-        assert DatasetRelation.objects.filter(relation=rti_relation, dataset=other_is, part_of=dataset).exists()
-        assert DatasetRelation.objects.filter(relation=rti_relation, dataset=dataset, part_of=other_is2).exists()
+        assert DatasetRelation.objects.filter(
+            relation=relates_to_information_system_relation, dataset=other_is, part_of=dataset
+        ).exists()
+        assert DatasetRelation.objects.filter(
+            relation=relates_to_information_system_relation, dataset=dataset, part_of=other_is2
+        ).exists()
+        assert DatasetRelation.objects.filter(
+            relation=relates_to_data_service_relation, dataset=dataset, part_of=related_service_dataset
+        ).exists()
 
     def test_post_service_updates_all_fields(self, app: DjangoTestApp):
         org = OrganizationFactory()

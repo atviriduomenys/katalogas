@@ -979,6 +979,28 @@ class TestInformationSystemUpdate:
 
         assert not form.initial["related_information_system"].exists()
 
+    def test_relates_to_data_service_initial_set_from_existing_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+        service = DatasetFactory(organization=organization, subclass=service_subclass)
+        relation = Relation.objects.get(name=Relation.RELATES_TO_DATA_SERVICE)
+        DatasetRelationFactory(relation=relation, dataset=dataset, part_of=service)
+
+        form = InformationSystemRelationshipForm(dataset=dataset)
+
+        assert service in form.initial["relates_to_data_service"]
+
+    def test_relates_to_data_service_initial_empty_when_no_relations(self):
+        organization = OrganizationFactory()
+        is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+
+        form = InformationSystemRelationshipForm(dataset=dataset)
+
+        assert not form.initial["relates_to_data_service"].exists()
+
 
 class TestISPublicServiceResourceForm:
     def test_identifier_is_required(self):

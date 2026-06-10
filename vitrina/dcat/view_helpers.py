@@ -74,6 +74,7 @@ RELATION_FIELD_MAP = [
     ("has_part", Relation.CATALOG, False),
     ("relates_to_information_system", Relation.RELATES_TO_INFORMATION_SYSTEM, True),
     ("related_information_system", Relation.RELATES_TO_INFORMATION_SYSTEM, False),
+    ("relates_to_data_service", Relation.RELATES_TO_DATA_SERVICE, False),
     ("serves_datasets", Relation.SERVICE, False),
 ]
 

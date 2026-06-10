@@ -2190,6 +2190,7 @@ class Relation(TranslatableModel):
     SERVICE = "service"
     CATALOG = "hasPart"
     RELATES_TO_INFORMATION_SYSTEM = "relatesToInformationSystem"
+    RELATES_TO_DATA_SERVICE = "relatesToDataService"
     PRODUCES = "produces"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255)

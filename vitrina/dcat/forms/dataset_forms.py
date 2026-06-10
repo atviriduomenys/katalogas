@@ -282,7 +282,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
 
 class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     endpoint_url = forms.CharField(
-        label=_("Tinklapis"),
+        label=_("Tinklalapis"),
         required=False,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
@@ -346,6 +346,16 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
 
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
+
+        self.fields["name"].label = _("Identifikatorius")
+        self.fields["name"].help_text = _(
+            "Institucijos vidinis duomenų paslaugos identifikatorius. Formatas: kod_pav. Atitinka dct:identifier."
+        )
+        self.fields["codename_preview"].label = _("Pilnas identifikatorius")
+        self.fields["codename_preview"].help_text = _(
+            "Pilnas identifikatorius, sudarytas iš tėvinio ištekliaus identifikatoriaus ir šios "
+            "duomenų paslaugos identifikatoriaus."
+        )
 
         self.fields["contact"].label = _("Kontaktinė informacija")
         self.fields["contact"].help_text = _(
@@ -739,6 +749,15 @@ class InformationSystemRelationshipForm(forms.Form):
             "integracijas ir yra įvardintos nuostatuose. Atitinka dcataplt:relatesToInformationSystem."
         ),
     )
+    relates_to_data_service = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.SERVICE),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusi duomenų paslauga"),
+        help_text=_(
+            "Kitų IS duomenų paslaugos, kurios teikia duomenis šiai IS. Atitinka dcataplt:relatesToDataService."
+        ),
+    )
 
     def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -754,6 +773,10 @@ class InformationSystemRelationshipForm(forms.Form):
             self.initial["relates_to_information_system"] = Dataset.objects.filter(
                 dataset_relations__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
                 dataset_relations__part_of=dataset,
+            )
+            self.initial["relates_to_data_service"] = Dataset.objects.filter(
+                related_datasets__relation__name=Relation.RELATES_TO_DATA_SERVICE,
+                related_datasets__dataset=dataset,
             )
         self.helper = FormHelper()
         self.helper.form_tag = False

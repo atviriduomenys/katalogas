@@ -206,7 +206,7 @@ class DatasetGroupFactory(DjangoModelFactory):
         fake = faker.Faker()
         for lang in reversed(settings.LANGUAGES):
             group.set_current_language(lang[0])
-            group.title = fake.word()
+            group.title = f"{fake.word()}-{fake.unique.uuid4()}"
         group.save()
         return group
 

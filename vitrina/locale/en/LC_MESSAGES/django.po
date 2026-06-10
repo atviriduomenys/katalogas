@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-09 15:57+0300\n"
+"POT-Creation-Date: 2026-06-10 09:40+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2419,11 +2419,25 @@ msgstr ""
 msgid "Aprašas"
 msgstr "Description"
 
-msgid "Tinklapis"
-msgstr "Endpoint"
-
 msgid "Prieigos taško aprašas"
 msgstr "Endpoint description"
+
+msgid ""
+"Institucijos vidinis duomenų paslaugos identifikatorius. Formatas: kod_pav. "
+"Atitinka dct:identifier."
+msgstr ""
+"Internal identifier of the institution's data service. Format: kod_pav. "
+"Corresponds to dct:identifier."
+
+msgid "Pilnas identifikatorius"
+msgstr "Full identifier"
+
+msgid ""
+"Pilnas identifikatorius, sudarytas iš tėvinio ištekliaus identifikatoriaus "
+"ir šios duomenų paslaugos identifikatoriaus."
+msgstr ""
+"Full identifier, composed of the parent resource's identifier and this data "
+"service's identifier."
 
 msgid ""
 "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų "
@@ -2581,6 +2595,16 @@ msgstr ""
 "that have integrations and are named in the regulations. Corresponds to "
 "dcataplt:relatesToInformationSystem."
 
+msgid "Susijusi duomenų paslauga"
+msgstr "Related service"
+
+msgid ""
+"Kitų IS duomenų paslaugos, kurios teikia duomenis šiai IS. Atitinka "
+"dcataplt:relatesToDataService."
+msgstr ""
+"Other IS data services that provide data to this IS. Corresponds to "
+"dcataplt:relatesToDataService."
+
 msgid "Pateikia duomenų rinkinį"
 msgstr "Provides dataset"
 
@@ -2643,7 +2667,8 @@ msgstr "Checksum value can only include lowercase letters."
 
 #, python-format
 msgid "Ar tikrai norite ištrinti „%(title)s\"? Šio veiksmo atšaukti negalima."
-msgstr "Are you sure you want to delete \"%(title)s\"? This action cannot be undone."
+msgstr ""
+"Are you sure you want to delete \"%(title)s\"? This action cannot be undone."
 
 msgid "Redaguokite"
 msgstr "Edit"

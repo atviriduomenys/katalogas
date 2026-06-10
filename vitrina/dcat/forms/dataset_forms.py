@@ -282,7 +282,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
 
 class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     endpoint_url = forms.CharField(
-        label=_("Tinklapis"),
+        label=_("Tinklalapis"),
         required=False,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )

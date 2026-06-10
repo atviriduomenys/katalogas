@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-10 09:19+0300\n"
+"POT-Creation-Date: 2026-06-10 09:40+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2226,9 +2226,6 @@ msgid "Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."
 msgstr ""
 
 msgid "Aprašas"
-msgstr ""
-
-msgid "Tinklapis"
 msgstr ""
 
 msgid "Prieigos taško aprašas"

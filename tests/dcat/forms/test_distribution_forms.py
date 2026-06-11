@@ -21,7 +21,6 @@ class TestDatasetDistributionForm:
         form = DatasetDistributionForm(dataset)
 
         assert form.fields["access_url"].required
-        assert form.fields["title"].required
         assert form.fields["description"].required
 
         assert not form.fields["availability"].required

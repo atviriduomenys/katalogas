@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-10 09:40+0300\n"
+"POT-Creation-Date: 2026-06-11 11:14+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2249,6 +2249,9 @@ msgid ""
 "paslaugą. Atitinka dcat:contactPoint."
 msgstr ""
 
+msgid "Prieigos taško aprašo formatas."
+msgstr ""
+
 msgid "Duomenų teikėjas"
 msgstr ""
 
@@ -4368,6 +4371,12 @@ msgid "Medijos tipas"
 msgstr ""
 
 msgid "Medijos tipai"
+msgstr ""
+
+msgid "Pateikties pavadinimas. Atitinka dct:title."
+msgstr ""
+
+msgid "Pateikties aprašymas. Atitinka dct:description."
 msgstr ""
 
 msgid ""

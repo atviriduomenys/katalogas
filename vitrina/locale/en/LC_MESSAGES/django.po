@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-10 09:40+0300\n"
+"POT-Creation-Date: 2026-06-11 11:14+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2446,6 +2446,9 @@ msgstr ""
 "Contact information that can be used for sending comments about the service. "
 "Corresponds to dcat:contactPoint"
 
+msgid "Prieigos taško aprašo formatas."
+msgstr "Endpoint description format."
+
 msgid "Duomenų teikėjas"
 msgstr "Data provider"
 
@@ -4728,6 +4731,12 @@ msgstr "Media type"
 
 msgid "Medijos tipai"
 msgstr "Media types"
+
+msgid "Pateikties pavadinimas. Atitinka dct:title."
+msgstr "Distribution title. Corresponds to dct:title."
+
+msgid "Pateikties aprašymas. Atitinka dct:description."
+msgstr "Distribution description. Corresponds to dct:description."
 
 msgid ""
 "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "

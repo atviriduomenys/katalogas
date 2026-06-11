@@ -1,4 +1,5 @@
 from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Field, Layout, Div
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet, Q
@@ -87,6 +88,37 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
+        self.helper.layout = Layout(
+            Field("name"),
+            Field("access_url"),
+            Field("availability"),
+            Field("title"),
+            Field("description"),
+            Field("data_service"),
+            Field("licence"),
+            Field("media_type"),
+            Field("format"),
+            Field("compression_format"),
+            Field("packaging_format"),
+            Field("size"),
+            Field("policy"),
+            Field("download_url"),
+            Div(
+                Div(Field("checksum_algorithm"), css_class="column"),
+                Div(Field("checksum_value"), css_class="column is-right"),
+                css_class="columns is-align-items-flex-start",
+            ),
+            Field("issued"),
+            Field("date_modified"),
+            Field("languages"),
+            Field("conforms_to"),
+            Field("documentation"),
+            Field("conditions"),
+            Field("rights_relation"),
+            Field("spatial_resolution"),
+            Field("status"),
+            Field("temporal_resolution"),
+        )
 
         self.fields["access_url"].required = True
         self.fields["access_url"].label = _("Prieigos URL")

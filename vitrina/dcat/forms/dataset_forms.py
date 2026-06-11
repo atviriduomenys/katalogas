@@ -1,7 +1,7 @@
 from typing import Any
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field
+from crispy_forms.layout import Div, Layout, Field
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -317,9 +317,9 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             "name",
             "title",
             "endpoint_url",
-            "endpoint_type",  # Not in DCAT
             "contact",
             "endpoint_description",
+            "endpoint_type",  # Not in DCAT
             "endpoint_description_type",  # Not in DCAT
             "tags",
             "organization",
@@ -382,6 +382,31 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         self.fields["category"].label = _("Tema / kategorija")
         self.fields["landing_page"].label = _("Nukreipimo puslapis")
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
+
+        self.helper.layout = Layout(
+            Field("codename_preview"),
+            Field("name"),
+            Field("title"),
+            Field("endpoint_url"),
+            Field("contact"),
+            Field("endpoint_description"),
+            Div(
+                Div(Field("endpoint_type"), css_class="column"),
+                Div(Field("endpoint_description_type"), css_class="column is-right"),
+                css_class="columns is-align-items-flex-start",
+            ),
+            Field("tags"),
+            Field("organization"),
+            Field("category"),
+            Field("access_rights"),
+            Field("conforms_to"),
+            Field("description"),
+            Field("follows"),
+            Field("landing_page"),
+            Field("license"),
+            Field("service_quality"),
+            Field("service_type"),
+        )
 
         apply_dynamic_help_texts(self, FormFieldText.DCAT_SERVICE)
 

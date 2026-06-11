@@ -21,12 +21,12 @@
         {% endfor %}
         <div class="wizard-crumb is-current">
             <span class="wizard-crumb-label">{% translate "Pateiktis" %}</span>
-            <span class="wizard-crumb-title">{{ object.title }}</span>
+            <span class="wizard-crumb-title">{{ object.display_title }}</span>
         </div>
     </nav>
 
     <div class="wizard-form-section-header">
-        <p class="wizard-form-section-title">{{ object.title }}</p>
+        <p class="wizard-form-section-title">{{ object.display_title }}</p>
         <p class="wizard-form-section-sub">{% translate "Redaguokite pateiktį" %}</p>
     </div>
 

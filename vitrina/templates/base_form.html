@@ -91,7 +91,37 @@
 
 {% block scripts %}
     <script type="text/javascript">
-        $(document).on('select2:clear select2:unselect', '.django-select2', function () {
+        // Take over Select2's "clear all" (x) button on multi-selects in capture
+        // phase. Select2's AllowClear reads `this.placeholder.id`; without a
+        // placeholder (e.g. Tagulous tag fields) it throws, leaving selections
+        // intact, and the click bubbles up to MultipleSelection's handler which
+        // opens the dropdown.
+        function _select2InterceptClearAll(e) {
+            var clearBtn = e.target.closest && e.target.closest('.select2-selection__clear');
+            if (!clearBtn) return;
+            var selection = clearBtn.closest('.select2-selection--multiple');
+            if (!selection) return;
+            var container = selection.closest('.select2-container');
+            if (!container) return;
+            var select = container.previousElementSibling;
+            if (!select || !select.classList.contains('select2-hidden-accessible')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (e.type === 'mousedown') {
+                var $select = $(select);
+                $select.find('option').prop('selected', false);
+                $select.val(null).trigger('change');
+            }
+        }
+        document.addEventListener('mousedown', _select2InterceptClearAll, true);
+        document.addEventListener('click', _select2InterceptClearAll, true);
+
+        // Individual tag removal: the click bubbles to the selection container and
+        // re-opens the dropdown. Catch the next open and close it. Selector matches
+        // both django-select2 and Tagulous selects via the shared class added by
+        // Select2 init.
+        $(document).on('select2:clear select2:unselect', 'select.select2-hidden-accessible', function () {
             var $el = $(this);
             $el.one('select2:open', function () {
                 $el.select2('close');

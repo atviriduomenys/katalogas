@@ -343,6 +343,14 @@
             _setDirty();
         });
 
+        // Prevent dropdown from auto-opening after clear/unselect
+        $(document).on('select2:clear select2:unselect', '#wizard-main-pane .django-select2', function () {
+            var $el = $(this);
+            $el.one('select2:open', function () {
+                $el.select2('close');
+            });
+        });
+
         // Prevent Enter in single-line inputs from submitting the wizard form
         // prematurely (which otherwise saves, re-renders the pane and scrolls to
         // the top). Delegated off document so it survives HTMX pane swaps.

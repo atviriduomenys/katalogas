@@ -192,8 +192,14 @@ class TestDatasetDistributionForm:
         assert not form.is_valid()
         assert "rights_relation" in form.errors
         assert "conditions" in form.errors
-        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form.errors["rights_relation"]
-        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form.errors["conditions"]
+        assert (
+            "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            in form.errors["rights_relation"]
+        )
+        assert (
+            "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            in form.errors["conditions"]
+        )
 
     def test_non_ascii_name_raises_error(self):
         dataset = DatasetFactory()

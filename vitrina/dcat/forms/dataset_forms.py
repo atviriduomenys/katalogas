@@ -269,8 +269,11 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
         rights_relation = cleaned_data.get("rights_relation")
         conditions = cleaned_data.get("conditions")
         if rights_relation and conditions:
-            self.add_error("conditions", _("Užpildykite tik vieną teisių deklaracijų lauką."))
-            self.add_error("rights_relation", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+            error_message = _(
+                "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            )
+            self.add_error("conditions", error_message)
+            self.add_error("rights_relation", error_message)
         return cleaned_data
 
     def clean_identifier(self) -> str:

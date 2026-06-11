@@ -296,7 +296,10 @@ class TestCatalogResourceForm:
         assert response.status_code == 200
         form_in_context = response.context["form"]
         assert isinstance(form_in_context, CatalogResourceForm)
-        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form_in_context.errors["conditions"]
+        assert (
+            "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            in form_in_context.errors["conditions"]
+        )
 
 
 class TestResourceSubclassForm:

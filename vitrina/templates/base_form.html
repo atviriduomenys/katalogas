@@ -56,14 +56,18 @@
         .select2.select2-container .select2-selection--multiple {
             min-height: 2.5rem;
             border-color: #767676;
+            position: relative;
         }
-        {# Vertically center the clear (x) button within the field #}
-        .select2.select2-container .select2-selection--single .select2-selection__clear {
+        {# Clear (x) button: right side, with gap from the dropdown trigger area #}
+        .select2.select2-container .select2-selection--single .select2-selection__clear,
+        .select2.select2-container .select2-selection--multiple .select2-selection__clear {
             position: absolute;
-            right: 32px;
+            right: 52px;
+            left: auto;
             top: 50%;
             transform: translateY(-50%);
             margin: 0;
+            float: none;
         }
         {# Match select border color on hover #}
         .select2.select2-container:hover .select2-selection--single:hover,
@@ -87,6 +91,13 @@
 
 {% block scripts %}
     <script type="text/javascript">
+        $(document).on('select2:clear select2:unselect', '.django-select2', function () {
+            var $el = $(this);
+            $el.one('select2:open', function () {
+                $el.select2('close');
+            });
+        });
+
         $(document).ready(function () {
             $('select').on('select2:open', function (e) {
                 setTimeout(function() {

@@ -253,7 +253,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
         ).prefetch_related("translations")
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
 
-        self.fields["information_system_assessment_url"].required = True
+        self.fields["information_system_assessment_url"].required = False
 
         self.fields["description"].label = _("Aprašas")
 
@@ -283,7 +283,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, DatasetNameM
 class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
     endpoint_url = forms.CharField(
         label=_("Tinklalapis"),
-        required=False,
+        required=True,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
     endpoint_description = forms.CharField(

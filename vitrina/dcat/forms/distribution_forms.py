@@ -143,7 +143,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.fields["licence"].queryset = self.fields["licence"].queryset.order_by("title")
         self.fields["media_type"].queryset = self.fields["media_type"].queryset.order_by("title")
         self.fields["format"].queryset = self.fields["format"].queryset.order_by("title")
-        self.fields["format"].required = False
+        self.fields["format"].required = True
         self.fields["format"].label = _("Formatas")
         self.fields["compression_format"].queryset = self.fields["compression_format"].queryset.order_by("title")
         self.fields["compression_format"].label = _("Suspaudimo formatas")

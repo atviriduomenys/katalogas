@@ -462,6 +462,14 @@ class DatasetDistribution(TranslatableModel):
     def __str__(self):
         return self.safe_translation_getter("title", language_code=self.get_current_language()) or ""
 
+    @property
+    def display_title(self) -> str:
+        return (
+            self.safe_translation_getter("title", language_code=self.get_current_language())
+            or self.access_url
+            or f"#{self.pk}"
+        )
+
     def extension(self) -> str:
         if self.file and self.file.file:
             return get_file_extension(self.file.file.name).upper()

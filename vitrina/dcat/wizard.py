@@ -276,7 +276,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
                 children.append(child_node)
 
         for dist in dataset.datasetdistribution_set.all():
-            dist_title = dist.safe_translation_getter("title", any_language=True) or f"#{dist.pk}"
+            dist_title = dist.display_title
             dist_key = f"{WIZARD_NODE_DISTRIBUTION}:{dist.pk}"
             dist_fragment_url = reverse(
                 "dcat-distribution-update",

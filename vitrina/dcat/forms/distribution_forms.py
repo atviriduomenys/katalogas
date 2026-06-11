@@ -129,7 +129,6 @@ class DatasetDistributionForm(TranslatableModelForm):
             "label", any_language=True
         )
 
-        self.fields["title"].required = True
         self.fields["description"].label = _("Aprašas")
         self.fields["description"].required = True
 

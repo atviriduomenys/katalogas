@@ -363,6 +363,8 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             "Atitinka dcat:contactPoint."
         )
 
+        self.fields["endpoint_description_type"].help_text = _("Prieigos taško aprašo formatas.")
+
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų teikėjas")
         self.fields["organization"].help_text = _("Duomenų teikėjas. Atitinka dct:publisher.")
@@ -453,10 +455,10 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
     class Meta:
         model = Dataset
         fields = (
-            "codename_preview",
-            "name",
             "description",
             "title",
+            "codename_preview",
+            "name",
             "tags",
             "organization",
             "temporal_start",
@@ -546,10 +548,10 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
         )
 
         self.helper.layout = Layout(
-            Field("codename_preview"),
-            Field("name"),
             Field("description"),
             Field("title"),
+            Field("codename_preview"),
+            Field("name"),
             Field("tags"),
             Field("organization"),
             inline_fields(

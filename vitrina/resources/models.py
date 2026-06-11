@@ -174,8 +174,17 @@ class DatasetDistribution(TranslatableModel):
     deleted_on = models.DateTimeField(blank=True, null=True)
     dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE)
     translations = TranslatedFields(
-        title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
-        description=models.TextField(_("Aprašymas"), blank=True),
+        title=models.CharField(
+            _("Pavadinimas"),
+            help_text=_("Pateikties pavadinimas. Atitinka dct:title."),
+            blank=True,
+            max_length=255,
+        ),
+        description=models.TextField(
+            _("Aprašymas"),
+            help_text=_("Pateikties aprašymas. Atitinka dct:description."),
+            blank=True,
+        ),
         conditions=models.TextField(
             _("Teisės - Aprašymas"),
             help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights."),

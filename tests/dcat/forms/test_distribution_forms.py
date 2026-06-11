@@ -26,7 +26,7 @@ class TestDatasetDistributionForm:
 
         assert not form.fields["availability"].required
         assert not form.fields["data_service"].required
-        assert not form.fields["format"].required
+        assert form.fields["format"].required
 
     def test_default_licence_set_as_initial_when_creating(self):
         dataset = DatasetFactory()

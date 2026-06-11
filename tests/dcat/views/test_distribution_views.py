@@ -157,6 +157,7 @@ class TestDcatDistributionCreateView:
         dataset = DatasetFactory(organization=org, is_public=False)
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
+        file_format = FileFormat()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -169,6 +170,7 @@ class TestDcatDistributionCreateView:
         form["availability"] = availability.pk
         form["title"] = "My Distribution"
         form["description"] = "My description"
+        form["format"] = file_format.pk
         response = form.submit()
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
@@ -180,6 +182,7 @@ class TestDcatDistributionCreateView:
         dataset = DatasetFactory(organization=org, is_public=False)
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
+        file_format = FileFormat()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -192,6 +195,7 @@ class TestDcatDistributionCreateView:
         form["availability"] = availability.pk
         form["title"] = "My Distribution"
         form["description"] = "My description"
+        form["format"] = file_format.pk
         form.submit()
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
@@ -203,6 +207,7 @@ class TestDcatDistributionCreateView:
         dataset = DatasetFactory(organization=org, is_public=False)
         availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
         availability = ConceptFactory(concept_schemas=[availability_schema])
+        file_format = FileFormat()
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -215,6 +220,7 @@ class TestDcatDistributionCreateView:
         form["availability"] = availability.pk
         form["title"] = "My Distribution"
         form["description"] = "My description"
+        form["format"] = file_format.pk
         form["name"] = "myresource"
         form.submit()
 

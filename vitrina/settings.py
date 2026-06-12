@@ -362,6 +362,7 @@ THUMBNAIL_ALIASES = {
 
 FILER_ADD_FILE_VALIDATORS = {
     "text/html": ["filer.validation.deny_html"],
+    "application/xhtml+xml": ["filer.validation.deny_html"],
     "image/svg+xml": ["filer.validation.deny"],
     "text/javascript": ["filer.validation.deny"],
     "application/javascript": ["filer.validation.deny"],

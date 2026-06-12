@@ -62,7 +62,7 @@
         .select2.select2-container .select2-selection--single .select2-selection__clear,
         .select2.select2-container .select2-selection--multiple .select2-selection__clear {
             position: absolute;
-            right: 52px;
+            right: 80px;
             left: auto;
             top: 50%;
             transform: translateY(-50%);
@@ -91,7 +91,7 @@
 
 {% block scripts %}
     <script type="text/javascript">
-        $(document).on('select2:clear select2:unselect', '.django-select2', function () {
+        $(document).on('select2:clear select2:unselect', 'select.select2-hidden-accessible', function () {
             var $el = $(this);
             $el.one('select2:open', function () {
                 $el.select2('close');

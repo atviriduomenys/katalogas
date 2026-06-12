@@ -343,13 +343,36 @@
             _setDirty();
         });
 
-        // Prevent dropdown from auto-opening after clear/unselect
-        $(document).on('select2:clear select2:unselect', '#wizard-main-pane .django-select2', function () {
+        $(document).on('select2:clear select2:unselect', '#wizard-main-pane select.select2-hidden-accessible', function () {
             var $el = $(this);
             $el.one('select2:open', function () {
                 $el.select2('close');
             });
         });
+
+        function _wizardSelect2InterceptClearAll(e) {
+            var clearBtn = e.target.closest && e.target.closest('.select2-selection__clear');
+            if (!clearBtn) return;
+            var selection = clearBtn.closest('.select2-selection--multiple');
+            if (!selection) return;
+            var container = selection.closest('.select2-container');
+            if (!container) return;
+            var select = container.previousElementSibling;
+            if (!select || !select.classList.contains('select2-hidden-accessible')) return;
+            var pane = document.getElementById('wizard-main-pane');
+            if (!pane || !pane.contains(select)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (e.type === 'mousedown') {
+                var $select = $(select);
+                $select.find('option').prop('selected', false);
+                $select.val(null).trigger('change');
+                _setDirty();
+            }
+        }
+        document.addEventListener('mousedown', _wizardSelect2InterceptClearAll, true);
+        document.addEventListener('click', _wizardSelect2InterceptClearAll, true);
 
         // Prevent Enter in single-line inputs from submitting the wizard form
         // prematurely (which otherwise saves, re-renders the pane and scrolls to

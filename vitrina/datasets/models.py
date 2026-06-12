@@ -1750,9 +1750,8 @@ class Dataset(Resource):
         return [(None, self.endpoint_url)]
 
     def get_endpoint_description(self) -> str | None:
-        if self.agent:
+        if self.agent and (metadata_version := self.latest_version()):
             # TODO: Update to possibly different url once DataService OpenAPI export is implemented
-            metadata_version = self.latest_version()
             return reverse("dataset-structure-export-openapi", args=[self.pk, metadata_version.pk])
 
         return self.endpoint_description

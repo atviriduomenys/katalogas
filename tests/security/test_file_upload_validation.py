@@ -21,6 +21,7 @@ XHTML_XSS = (
 
 # --- validate_file() helper (used by forms, fields and API serializers) ---
 
+
 @pytest.mark.parametrize("file_name", ["testfile.xhtml", "evil.html", "evil.htm", "evil.shtml"])
 def test_html_family_uploads_are_denied(file_name):
     upload = ContentFile(XHTML_XSS, name=file_name)
@@ -36,6 +37,7 @@ def test_data_uploads_are_allowed(file_name):
 
 
 # --- real form-field entry point (FilerFileField.clean) ---
+
 
 def test_filer_file_field_rejects_xhtml():
     field = FilerFileField()

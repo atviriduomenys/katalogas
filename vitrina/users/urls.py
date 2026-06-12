@@ -1,6 +1,7 @@
 from allauth.account.views import email_verification_sent
 from django.contrib.auth.views import LogoutView
 from django.urls import path, re_path
+from django.views.generic import RedirectView
 
 from vitrina.users.views import (
     LoginView,
@@ -18,6 +19,14 @@ from vitrina.users.views import (
 
 urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
+    # django-allauth (>=65.18) reverses "account_login" while rendering the
+    # email-confirmation page. This project uses VIISP + a custom login view,
+    # so alias the allauth name to our login URL, preserving the ?next= param.
+    path(
+        "accounts/login/",
+        RedirectView.as_view(pattern_name="login", query_string=True),
+        name="account_login",
+    ),
     path("admin/login/", AdminLoginView.as_view(), name="admin-login"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("register/", RegisterView.as_view(), name="register"),

@@ -4,6 +4,13 @@ Changes
 v 1.22.0 (current)
 ==================
 
+<No Ticket>
+
+- Update ``django-allauth`` to 65.18.x. The new version reverses ``account_login`` (unguarded) while rendering the
+  email-confirmation page; since this project uses VIISP with a custom login view and never registered that URL name,
+  this broke ``test_email_confirmation_after_sign_up`` with ``NoReverseMatch``. Register an ``account_login`` URL alias
+  that redirects to the existing ``login`` view (preserving the ``?next=`` parameter) to restore compatibility.
+
 https://github.com/atviriduomenys/katalogas/issues/2643
 
 - Fix a bug where two different datasets in the same organization could have the same name.

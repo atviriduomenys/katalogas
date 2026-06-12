@@ -149,7 +149,7 @@ from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.requests.models import RequestObject, RequestAssignment, Request
 from vitrina.resources.models import DatasetDistribution, Format
-from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
+from vitrina.settings import ELASTIC_FACET_SIZE, ELASTIC_TAGS_FACET_SIZE, SPINTA_SERVER_URL
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
@@ -220,9 +220,9 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         if self.request.GET.get("q") and not sorting:
             sorting = "sort-by-relevance"
 
-        options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
-            queryset = queryset.facet(field, **options)
+            size = ELASTIC_TAGS_FACET_SIZE if field == "tags" else ELASTIC_FACET_SIZE
+            queryset = queryset.facet(field, size=size)
 
         if is_manager_dataset_list(self.request):
             dataset_ct = ContentType.objects.get_for_model(Dataset)

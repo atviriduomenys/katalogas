@@ -433,7 +433,9 @@ HAYSTACK_CONNECTIONS = {
     "test": _search_url_test,
 }
 
-ELASTIC_FACET_SIZE = 50
+ELASTIC_FACET_SIZE_MAX = 10_000
+ELASTIC_FACET_SIZE = min(env.int("ELASTIC_FACET_SIZE", default=1000), ELASTIC_FACET_SIZE_MAX)
+ELASTIC_TAGS_FACET_SIZE = 50
 
 HAYSTACK_SIGNAL_PROCESSOR = "vitrina.datasets.search_indexes.CustomSignalProcessor"
 

@@ -51,6 +51,7 @@ https://github.com/atviriduomenys/katalogas/issues/1585
 - Fix the status chart double-counting datasets with coinciding comment times.
 - Count datasets without a status comment in the status chart, at their published date.
 - Include datasets outside the visible time window in dataset-count bar totals.
+- Show all values in sidebar filters and statistics charts instead of only the top 50; make the facet size configurable via ``ELASTIC_FACET_SIZE``.
 
 https://github.com/atviriduomenys/katalogas/issues/2643
 

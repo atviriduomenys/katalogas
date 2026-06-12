@@ -22,7 +22,6 @@ from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
-from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import get_template
 from django.template import Template, Context
 from filer.validation import validate_upload
@@ -131,6 +130,12 @@ class Filter:
         if self.order:
             facet = self.order(facet)
 
+        objects_by_pk = {}
+        if self.model and not self.display_method:
+            objects_by_pk = {
+                str(obj.pk): obj for obj in self.model.objects.filter(pk__in=[value for value, _ in facet])
+            }
+
         show_count = 1
         for value, count in facet:
             title = value
@@ -138,17 +143,13 @@ class Filter:
                 method = getattr(self.model, self.display_method)
                 title = method(self.model, value)
             elif self.model:
-                try:
-                    obj = self.model.objects.get(pk=value)
-                    if self.use_str:
-                        title = str(obj)
-                    else:
-                        title = obj.title
-                except ObjectDoesNotExist:
-                    if value == "-1":
-                        title = "Nepriskirta"
-                    else:
-                        continue
+                obj = objects_by_pk.get(str(value))
+                if obj is not None:
+                    title = str(obj) if self.use_str else obj.title
+                elif value == "-1":
+                    title = "Nepriskirta"
+                else:
+                    continue
             elif self.choices:
                 title = self.choices.get(value)
                 if not title:

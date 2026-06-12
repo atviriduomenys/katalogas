@@ -20,7 +20,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
-from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
+from django.db.models import QuerySet, Count, Q, Avg, Sum, Func, F, Value, TextField
 from django.forms import BaseForm
 from django.http import (
     JsonResponse,
@@ -2185,32 +2185,25 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         time_chart_data = []
         bar_chart_data = []
 
-        most_recent_comments = (
+        status_comments = (
             Comment.objects.filter(
                 content_type=ContentType.objects.get_for_model(Dataset),
                 object_id__in=datasets.exclude(status=Dataset.UNASSIGNED).values_list("pk", flat=True),
                 status__isnull=False,
             )
-            .values("object_id")
-            .annotate(latest_status_change=Max("created"))
-            .values("object_id", "latest_status_change")
-            .order_by("latest_status_change")
+            .order_by("object_id", "created")
+            .values(
+                "object_id",
+                "status",
+                "created",
+                "created__year",
+                "created__quarter",
+                "created__month",
+                "created__week",
+                "created__day",
+            )
         )
-
-        dataset_status = Comment.objects.filter(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id__in=most_recent_comments.values("object_id"),
-            created__in=most_recent_comments.values("latest_status_change"),
-        ).values(
-            "object_id",
-            "status",
-            "created",
-            "created__year",
-            "created__quarter",
-            "created__month",
-            "created__week",
-            "created__day",
-        )
+        latest_status_by_dataset = {row["object_id"]: row for row in status_comments}
 
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()
@@ -2221,7 +2214,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         values = get_values_for_frequency(frequency, date_field)
 
         status_period_counts: Counter = Counter()
-        for row in dataset_status:
+        for row in latest_status_by_dataset.values():
             status_period_counts[(row["status"], row_period_key(row, frequency, date_field))] += 1
 
         for status in statuses:

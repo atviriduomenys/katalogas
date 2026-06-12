@@ -7,10 +7,8 @@ from zxcvbn import zxcvbn
 import re
 
 phone_validator = RegexValidator(
-    regex=r"^\+370[56]\d{7}$|^0[56]\d{7}$",
-    message=_(
-        "Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, +3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
-    ),
+    regex=r"^\+370\d{8}$|^0\d{8}$",
+    message=_("Neteisingas telefono numerio formatas. Priimtini formatai: +370XXXXXXXX, 0XXXXXXXX"),
 )
 
 

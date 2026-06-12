@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-11 11:59+0300\n"
+"POT-Creation-Date: 2026-06-12 15:56+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +58,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -111,11 +114,9 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -329,8 +330,8 @@ msgstr ""
 "Extended help text will be shown as a popup when the 'i' icon is clicked, if "
 "the form supports it"
 
-msgid "Formos lauko tekstai"
-msgstr "Form field texts"
+msgid "Formos lauko tekstas"
+msgstr "Form field text"
 
 msgid "Formų laukų tekstai"
 msgstr "Form fields texts"
@@ -344,27 +345,21 @@ msgstr "Spacial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spacial coverages"
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -981,8 +976,12 @@ msgstr "Metadata catalog codename"
 msgid "Detalus metaduomenų katalogo aprašas"
 msgstr "Detailed description of the metadata catalog"
 
-msgid "Užpildykite tik vieną teisių deklaracijų lauką."
-msgstr "Please fill in only one field for rights."
+msgid ""
+"Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - "
+"Susijęs dokumentas]."
+msgstr ""
+"Only one of the following fields is allowed to be filled in: [Rights - "
+"Description] or [Rights - Related document]"
 
 msgid "Atsakingas subjektas"
 msgstr "Responsible entity"
@@ -1983,9 +1982,6 @@ msgstr "Delete"
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
 
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
-
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
 
@@ -2426,12 +2422,6 @@ msgstr ""
 
 msgid "Aprašas"
 msgstr "Description"
-
-msgid ""
-"Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - "
-"Susijęs dokumentas]."
-msgstr "Only one of the following fields is allowed to be filled in: [Rights - Description] or [Rights - "
-"Related document]"
 
 msgid "Prieigos taško aprašas"
 msgstr "Endpoint description"
@@ -7518,11 +7508,10 @@ msgid "Slaptažodžio keitimas sėkmingas"
 msgstr "Password was changed successfully"
 
 msgid ""
-"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
-"+3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
+"Neteisingas telefono numerio formatas. Priimtini formatai: +370XXXXXXXX, "
+"0XXXXXXXX"
 msgstr ""
-"Incorrect phone number format. Acceptable formats: +3706XXXXXXX, "
-"+3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
+"Incorrect phone number format. Acceptable formats: +370XXXXXXXX, 0XXXXXXXX"
 
 msgid ""
 "Slaptažodyje turi būti panaudota bent viena didžioji lotyniška raidė (A - Z)."

@@ -15,10 +15,11 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     Relation,
 )
+from vitrina.resources.models import DatasetDistribution
 
 if TYPE_CHECKING:
     from vitrina.orgs.models import Organization
-    from vitrina.dcat.forms.dataset_forms import BaseResourceForm
+    from vitrina.dcat.forms.dataset_forms import BaseResourceForm, ISPublicServiceRelationshipForm
 
 
 def datasets_in_org_scope(organization: "Organization") -> QuerySet:
@@ -41,7 +42,9 @@ def datasets_in_org_scope(organization: "Organization") -> QuerySet:
     return Dataset.objects.filter(conditions)
 
 
-def wizard_breadcrumb_ancestors(dataset: "Dataset | None", organization, include_self: bool = False) -> list[dict]:
+def wizard_breadcrumb_ancestors(
+    dataset: "Dataset | None", organization: "Organization", include_self: bool = False
+) -> list[dict]:
     """Build the breadcrumb ancestor list for wizard fragment templates.
 
     Returns one dict per crumb that precedes the current item (the last shown separately in the template).
@@ -119,7 +122,7 @@ PRODUCES_FIELDS = ["produces_datasets", "produces_services", "produces_catalogs"
 
 
 @transaction.atomic
-def save_produces_relations(request: WSGIRequest, dataset: Dataset, form) -> None:
+def save_produces_relations(request: WSGIRequest, dataset: Dataset, form: "ISPublicServiceRelationshipForm") -> None:
     if not any(field in form.changed_data for field in PRODUCES_FIELDS):
         return
 
@@ -187,5 +190,5 @@ def can_delete_dataset_in_wizard(dataset: Dataset) -> bool:
     )
 
 
-def can_delete_distribution_in_wizard(distribution) -> bool:
+def can_delete_distribution_in_wizard(distribution: DatasetDistribution) -> bool:
     return not distribution.dataset.is_public

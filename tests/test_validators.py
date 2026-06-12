@@ -9,8 +9,10 @@ from vitrina.validators import phone_validator
     [
         "+37061234567",
         "+37051234567",
+        "+37041234567",
         "061234567",
         "051234567",
+        "041234567",
     ],
 )
 def test_phone_validator_valid(phone):
@@ -22,7 +24,6 @@ def test_phone_validator_valid(phone):
     [
         "",
         "861234567",
-        "+37041234567",
         "+3706123456",
         "+370612345678",
         "06123456",

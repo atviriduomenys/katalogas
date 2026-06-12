@@ -412,7 +412,7 @@ class FormFieldText(TranslatableModel):
 
     class Meta:
         unique_together = [("form_name", "field_name")]
-        verbose_name = _("Formos lauko tekstai")
+        verbose_name = _("Formos lauko tekstas")
         verbose_name_plural = _("Formų laukų tekstai")
 
     def __str__(self) -> str:

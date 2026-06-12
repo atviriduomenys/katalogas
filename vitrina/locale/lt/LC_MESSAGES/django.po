@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-11 11:59+0300\n"
+"POT-Creation-Date: 2026-06-12 15:56+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,12 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < "
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
+
+msgid "Organizacija"
+msgstr ""
+
+msgid "Duomenų skelbėjas"
+msgstr ""
 
 msgid "Versijos duomenys"
 msgstr ""
@@ -51,9 +57,6 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
-msgstr ""
-
-msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -110,11 +113,9 @@ msgstr ""
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr ""
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
@@ -315,7 +316,7 @@ msgid ""
 "ikonėlę, jei forma tai palaiko"
 msgstr ""
 
-msgid "Formos lauko tekstai"
+msgid "Formos lauko tekstas"
 msgstr ""
 
 msgid "Formų laukų tekstai"
@@ -330,27 +331,21 @@ msgstr ""
 msgid "Teritorinės aprėptys"
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr ""
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr ""
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
@@ -905,7 +900,9 @@ msgstr ""
 msgid "Detalus metaduomenų katalogo aprašas"
 msgstr ""
 
-msgid "Užpildykite tik vieną teisių deklaracijų lauką."
+msgid ""
+"Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - "
+"Susijęs dokumentas]."
 msgstr ""
 
 msgid "Atsakingas subjektas"
@@ -1808,9 +1805,6 @@ msgstr ""
 msgid "Atsisiuntimo formatas"
 msgstr ""
 
-msgid "Duomenų skelbėjas"
-msgstr ""
-
 msgid "Kontaktinė informacija"
 msgstr ""
 
@@ -2234,11 +2228,6 @@ msgid "Institucija, pagal nuostatus IS valdytoja. Atitinka dct:creator."
 msgstr ""
 
 msgid "Aprašas"
-msgstr ""
-
-msgid ""
-"Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - "
-"Susijęs dokumentas]."
 msgstr ""
 
 msgid "Prieigos taško aprašas"
@@ -6936,8 +6925,8 @@ msgid "Slaptažodžio keitimas sėkmingas"
 msgstr ""
 
 msgid ""
-"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
-"+3705XXXXXXX, 06XXXXXXX, 05XXXXXXX"
+"Neteisingas telefono numerio formatas. Priimtini formatai: +370XXXXXXXX, "
+"0XXXXXXXX"
 msgstr ""
 
 msgid ""

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 import pytest
@@ -54,3 +55,41 @@ def test_status_chart_counts_each_dataset_once(app: DjangoTestApp, datasets_with
     counts = {str(b["display_value"]): b["count"] for b in resp.context["bar_chart_data"]}
     assert counts["Atverti duomenys"] == 1
     assert counts["Tik inventorinti"] == 1
+
+
+def _yearly_series(resp):
+    return {
+        series["label"]: {point["x"]: point["y"] for point in series["data"]}
+        for series in json.loads(resp.context["time_chart_data"])
+    }
+
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_status_chart_counts_commentless_dataset_at_published_date(app: DjangoTestApp, db):
+    DatasetFactory(
+        status=Dataset.HAS_DATA,
+        slug="status-corr-no-comment",
+        published=datetime(2022, 8, 1, 10, 0, 0, tzinfo=timezone.utc),
+    )
+    with freeze_time(FROZEN_NOW):
+        resp = app.get(reverse("dataset-stats-status"), params={"duration": "duration-yearly"})
+    counts = {str(b["display_value"]): b["count"] for b in resp.context["bar_chart_data"]}
+    assert counts["Atverti duomenys"] == 1
+    assert _yearly_series(resp)["Atverti duomenys"]["2022"] == 1
+
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_status_chart_falls_back_to_created_date_when_never_published(app: DjangoTestApp, db):
+    with freeze_time("2021-03-01"):
+        DatasetFactory(
+            status=Dataset.INVENTORED,
+            slug="status-corr-no-published",
+            published=None,
+        )
+    with freeze_time(FROZEN_NOW):
+        resp = app.get(reverse("dataset-stats-status"), params={"duration": "duration-yearly"})
+    counts = {str(b["display_value"]): b["count"] for b in resp.context["bar_chart_data"]}
+    assert counts["Tik inventorinti"] == 1
+    assert _yearly_series(resp)["Tik inventorinti"]["2021"] == 1

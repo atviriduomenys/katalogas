@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 from django.urls import reverse
@@ -13,34 +13,34 @@ from tests.stats_utils import DURATIONS, FROZEN_NOW
 
 EXPECTED = {
     ("dataset-count", "duration-yearly"): {
-        "time_chart_data": '[{"label": "Atverti duomenys", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 0}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Tik inventorinti", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 0}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Planuojama atverti", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 0}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Nepriskirta", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 0}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}]',
+        "time_chart_data": '[{"label": "Atverti duomenys", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 1}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Tik inventorinti", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 1}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Planuojama atverti", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 1}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Nepriskirta", "data": [{"x": "2019", "y": 0}, {"x": "2020", "y": 0}, {"x": "2021", "y": 0}, {"x": "2022", "y": 0}, {"x": "2023", "y": 0}], "borderWidth": 1, "fill": true}]',
         "bar_chart_data": [
-            {"display_value": "Atverti duomenys", "count": 0},
-            {"display_value": "Tik inventorinti", "count": 0},
-            {"display_value": "Planuojama atverti", "count": 0},
+            {"display_value": "Atverti duomenys", "count": 1},
+            {"display_value": "Tik inventorinti", "count": 1},
+            {"display_value": "Planuojama atverti", "count": 1},
             {"display_value": "Nepriskirta", "count": 0},
         ],
-        "max_count": 0,
+        "max_count": 1,
     },
     ("dataset-count", "duration-quarterly"): {
-        "time_chart_data": '[{"label": "Atverti duomenys", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 0}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Tik inventorinti", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 0}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Planuojama atverti", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 0}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Nepriskirta", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 0}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}]',
+        "time_chart_data": '[{"label": "Atverti duomenys", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 1}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Tik inventorinti", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 1}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Planuojama atverti", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 1}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Nepriskirta", "data": [{"x": "2021 Bir", "y": 0}, {"x": "2021 Rugs", "y": 0}, {"x": "2021 Grd", "y": 0}, {"x": "2022 Kov", "y": 0}, {"x": "2022 Bir", "y": 0}, {"x": "2022 Rugs", "y": 0}, {"x": "2022 Grd", "y": 0}, {"x": "2023 Kov", "y": 0}, {"x": "2023 Bir", "y": 0}], "borderWidth": 1, "fill": true}]',
         "bar_chart_data": [
-            {"display_value": "Atverti duomenys", "count": 0},
-            {"display_value": "Tik inventorinti", "count": 0},
-            {"display_value": "Planuojama atverti", "count": 0},
+            {"display_value": "Atverti duomenys", "count": 1},
+            {"display_value": "Tik inventorinti", "count": 1},
+            {"display_value": "Planuojama atverti", "count": 1},
             {"display_value": "Nepriskirta", "count": 0},
         ],
-        "max_count": 0,
+        "max_count": 1,
     },
     ("dataset-count", "duration-monthly"): {
-        "time_chart_data": '[{"label": "Atverti duomenys", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 0}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Tik inventorinti", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 0}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Planuojama atverti", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 0}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Nepriskirta", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 0}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}]',
+        "time_chart_data": '[{"label": "Atverti duomenys", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 1}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Tik inventorinti", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 1}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Planuojama atverti", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 1}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Nepriskirta", "data": [{"x": "2022 06", "y": 0}, {"x": "2022 07", "y": 0}, {"x": "2022 08", "y": 0}, {"x": "2022 09", "y": 0}, {"x": "2022 10", "y": 0}, {"x": "2022 11", "y": 0}, {"x": "2022 12", "y": 0}, {"x": "2023 01", "y": 0}, {"x": "2023 02", "y": 0}, {"x": "2023 03", "y": 0}, {"x": "2023 04", "y": 0}, {"x": "2023 05", "y": 0}, {"x": "2023 06", "y": 0}], "borderWidth": 1, "fill": true}]',
         "bar_chart_data": [
-            {"display_value": "Atverti duomenys", "count": 0},
-            {"display_value": "Tik inventorinti", "count": 0},
-            {"display_value": "Planuojama atverti", "count": 0},
+            {"display_value": "Atverti duomenys", "count": 1},
+            {"display_value": "Tik inventorinti", "count": 1},
+            {"display_value": "Planuojama atverti", "count": 1},
             {"display_value": "Nepriskirta", "count": 0},
         ],
-        "max_count": 0,
+        "max_count": 1,
     },
     ("dataset-count", "duration-weekly"): {
         "time_chart_data": '[{"label": "Atverti duomenys", "data": [{"x": "2022 50", "y": 0}, {"x": "2022 51", "y": 0}, {"x": "2022 52", "y": 0}, {"x": "2023 1", "y": 0}, {"x": "2023 2", "y": 0}, {"x": "2023 3", "y": 0}, {"x": "2023 4", "y": 0}, {"x": "2023 5", "y": 0}, {"x": "2023 6", "y": 0}, {"x": "2023 7", "y": 0}, {"x": "2023 8", "y": 0}, {"x": "2023 9", "y": 0}, {"x": "2023 10", "y": 0}, {"x": "2023 11", "y": 0}, {"x": "2023 12", "y": 0}, {"x": "2023 13", "y": 0}, {"x": "2023 14", "y": 0}, {"x": "2023 15", "y": 0}, {"x": "2023 16", "y": 0}, {"x": "2023 17", "y": 0}, {"x": "2023 18", "y": 0}, {"x": "2023 19", "y": 0}, {"x": "2023 20", "y": 0}, {"x": "2023 21", "y": 0}, {"x": "2023 22", "y": 0}, {"x": "2023 23", "y": 0}, {"x": "2023 24", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Tik inventorinti", "data": [{"x": "2022 50", "y": 0}, {"x": "2022 51", "y": 0}, {"x": "2022 52", "y": 0}, {"x": "2023 1", "y": 0}, {"x": "2023 2", "y": 0}, {"x": "2023 3", "y": 0}, {"x": "2023 4", "y": 0}, {"x": "2023 5", "y": 0}, {"x": "2023 6", "y": 0}, {"x": "2023 7", "y": 0}, {"x": "2023 8", "y": 0}, {"x": "2023 9", "y": 0}, {"x": "2023 10", "y": 0}, {"x": "2023 11", "y": 0}, {"x": "2023 12", "y": 0}, {"x": "2023 13", "y": 0}, {"x": "2023 14", "y": 0}, {"x": "2023 15", "y": 0}, {"x": "2023 16", "y": 0}, {"x": "2023 17", "y": 0}, {"x": "2023 18", "y": 0}, {"x": "2023 19", "y": 0}, {"x": "2023 20", "y": 0}, {"x": "2023 21", "y": 0}, {"x": "2023 22", "y": 0}, {"x": "2023 23", "y": 0}, {"x": "2023 24", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Planuojama atverti", "data": [{"x": "2022 50", "y": 0}, {"x": "2022 51", "y": 0}, {"x": "2022 52", "y": 0}, {"x": "2023 1", "y": 0}, {"x": "2023 2", "y": 0}, {"x": "2023 3", "y": 0}, {"x": "2023 4", "y": 0}, {"x": "2023 5", "y": 0}, {"x": "2023 6", "y": 0}, {"x": "2023 7", "y": 0}, {"x": "2023 8", "y": 0}, {"x": "2023 9", "y": 0}, {"x": "2023 10", "y": 0}, {"x": "2023 11", "y": 0}, {"x": "2023 12", "y": 0}, {"x": "2023 13", "y": 0}, {"x": "2023 14", "y": 0}, {"x": "2023 15", "y": 0}, {"x": "2023 16", "y": 0}, {"x": "2023 17", "y": 0}, {"x": "2023 18", "y": 0}, {"x": "2023 19", "y": 0}, {"x": "2023 20", "y": 0}, {"x": "2023 21", "y": 0}, {"x": "2023 22", "y": 0}, {"x": "2023 23", "y": 0}, {"x": "2023 24", "y": 0}], "borderWidth": 1, "fill": true}, {"label": "Nepriskirta", "data": [{"x": "2022 50", "y": 0}, {"x": "2022 51", "y": 0}, {"x": "2022 52", "y": 0}, {"x": "2023 1", "y": 0}, {"x": "2023 2", "y": 0}, {"x": "2023 3", "y": 0}, {"x": "2023 4", "y": 0}, {"x": "2023 5", "y": 0}, {"x": "2023 6", "y": 0}, {"x": "2023 7", "y": 0}, {"x": "2023 8", "y": 0}, {"x": "2023 9", "y": 0}, {"x": "2023 10", "y": 0}, {"x": "2023 11", "y": 0}, {"x": "2023 12", "y": 0}, {"x": "2023 13", "y": 0}, {"x": "2023 14", "y": 0}, {"x": "2023 15", "y": 0}, {"x": "2023 16", "y": 0}, {"x": "2023 17", "y": 0}, {"x": "2023 18", "y": 0}, {"x": "2023 19", "y": 0}, {"x": "2023 20", "y": 0}, {"x": "2023 21", "y": 0}, {"x": "2023 22", "y": 0}, {"x": "2023 23", "y": 0}, {"x": "2023 24", "y": 0}], "borderWidth": 1, "fill": true}]',
@@ -169,7 +169,13 @@ EXPECTED = {
 def status_stats_data(db):
     ds = []
     for i, status in enumerate([Dataset.HAS_DATA, Dataset.INVENTORED, Dataset.PLANNED, Dataset.UNASSIGNED]):
-        d = DatasetFactory(status=status, slug=f"ds-char-{i}")
+        # published is pinned because commentless datasets are counted in the
+        # status chart at their published date
+        d = DatasetFactory(
+            status=status,
+            slug=f"ds-char-{i}",
+            published=datetime(2022, 12, 28, 10, 0, 0, tzinfo=timezone.utc),
+        )
         DatasetStatsFactory(
             dataset_id=d.pk,
             created=date(2022, 12, 28),

@@ -87,7 +87,7 @@ class StatsMixin:
             count_data = self.get_data_for_indicator(indicator, values, filter_queryset)
             buckets = bucket_grouped_rows(count_data, frequency, date_field)
 
-            bar_count = 0
+            bar_count = self.get_out_of_window_count(indicator, buckets, frequency, date_field, labels)
             for label in labels:
                 time_count = buckets.get(get_period_key(frequency, date_field, label), 0)
                 bar_count += time_count
@@ -144,6 +144,19 @@ class StatsMixin:
         context["max_count"] = max_count
 
         return context
+
+    def get_out_of_window_count(
+        self,
+        indicator: str,
+        buckets: dict[tuple, int],
+        frequency: str,
+        date_field: str,
+        labels: list,
+    ) -> int:
+        if indicator != "dataset-count" or not labels:
+            return 0
+        in_window_keys = {get_period_key(frequency, date_field, label) for label in labels}
+        return sum(count for key, count in buckets.items() if None not in key and key not in in_window_keys)
 
     def get_filter_data(self, facet_fields):
         return update_facet_data(

@@ -21,6 +21,7 @@ from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import QuerySet, Count, Q, Avg, Sum, Func, F, Value, TextField
+from django.db.models.functions import Coalesce
 from django.forms import BaseForm
 from django.http import (
     JsonResponse,
@@ -2185,10 +2186,14 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         time_chart_data = []
         bar_chart_data = []
 
+        non_unassigned_ids = {
+            int(pk) for pk in datasets.exclude(status=Dataset.UNASSIGNED).values_list("pk", flat=True)
+        }
+
         status_comments = (
             Comment.objects.filter(
                 content_type=ContentType.objects.get_for_model(Dataset),
-                object_id__in=datasets.exclude(status=Dataset.UNASSIGNED).values_list("pk", flat=True),
+                object_id__in=non_unassigned_ids,
                 status__isnull=False,
             )
             .order_by("object_id", "created")
@@ -2204,6 +2209,30 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
             )
         )
         latest_status_by_dataset = {row["object_id"]: row for row in status_comments}
+
+        # datasets whose status was set without a status comment (imports,
+        # admin edits) are counted at their published date, falling back to
+        # their created date
+        status_to_comment_value = {Dataset.HAS_DATA: "OPENED"}
+        fallback_rows = (
+            Dataset.objects.filter(pk__in=non_unassigned_ids - set(latest_status_by_dataset))
+            .annotate(status_date=Coalesce("published", "created"))
+            .values("pk", "status", "status_date")
+        )
+        for row in fallback_rows:
+            status_date = row["status_date"]
+            if not status_date:
+                continue
+            if timezone.is_aware(status_date):
+                status_date = timezone.localtime(status_date)
+            latest_status_by_dataset[row["pk"]] = {
+                "status": status_to_comment_value.get(row["status"], row["status"]),
+                "created__year": status_date.year,
+                "created__quarter": (status_date.month - 1) // 3 + 1,
+                "created__month": status_date.month,
+                "created__week": status_date.isocalendar()[1],
+                "created__day": status_date.day,
+            }
 
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()

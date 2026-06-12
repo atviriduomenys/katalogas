@@ -49,6 +49,7 @@ https://github.com/atviriduomenys/katalogas/issues/1585
 - The dataset list download counter (tooltip "Atsisiuntimų skaičius") now counts actual downloads from the portal instead of external get.data.gov.lt API request statistics.
 - Fix statistics charts collapsing to one dataset per period; dataset-count bars and time charts now show real counts.
 - Fix the status chart double-counting datasets with coinciding comment times.
+- Count datasets without a status comment in the status chart, at their published date.
 
 https://github.com/atviriduomenys/katalogas/issues/2643
 

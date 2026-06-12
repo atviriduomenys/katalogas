@@ -458,9 +458,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
     class Meta:
         model = Dataset
         fields = (
+            "codename_preview",
             "description",
             "title",
-            "codename_preview",
             "name",
             "tags",
             "organization",
@@ -502,6 +502,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
     def __init__(self, organization: Organization, url_parent: Dataset | None, *args, **kwargs) -> None:
         super().__init__(organization, url_parent, *args, **kwargs)
 
+        self.fields["codename_preview"].label = _("Kodinis pavadinimas")
         self.fields["codename_preview"].help_text = _(
             "Pilnas URI, pagal https://ivpk.github.io/uapi/#section/Concepts/URI, identifikuojantis duomenų rinkinį."
         )
@@ -551,9 +552,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
         )
 
         self.helper.layout = Layout(
+            Field("codename_preview"),
             Field("description"),
             Field("title"),
-            Field("codename_preview"),
             Field("name"),
             Field("tags"),
             Field("organization"),

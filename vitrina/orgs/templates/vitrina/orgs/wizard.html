@@ -343,9 +343,6 @@
             _setDirty();
         });
 
-        // Prevent dropdown from auto-opening after individual tag removal.
-        // Selector matches both django-select2 and Tagulous selects via the shared
-        // .select2-hidden-accessible class added by Select2 during init.
         $(document).on('select2:clear select2:unselect', '#wizard-main-pane select.select2-hidden-accessible', function () {
             var $el = $(this);
             $el.one('select2:open', function () {
@@ -353,11 +350,6 @@
             });
         });
 
-        // Take over Select2's "clear all" (x) button on multi-selects in capture
-        // phase. Select2's AllowClear reads `this.placeholder.id`; without a
-        // placeholder (e.g. Tagulous tag fields) it throws, leaving selections
-        // intact, and the click bubbles up to MultipleSelection's handler which
-        // opens the dropdown.
         function _wizardSelect2InterceptClearAll(e) {
             var clearBtn = e.target.closest && e.target.closest('.select2-selection__clear');
             if (!clearBtn) return;

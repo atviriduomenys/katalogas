@@ -2122,7 +2122,7 @@ class DatasetStatsMixin(StatsMixin):
             ).values_list("name", flat=True)
             data = ModelDownloadStats.objects.filter(model__in=model_names).values(*values).annotate(count=Sum(field))
         else:
-            data = filter_queryset.values(*values).annotate(count=Count("pk"))
+            data = filter_queryset.order_by().values(*values).annotate(count=Count("pk"))
         return data
 
     def get_count(self, label, indicator, frequency, data, count):

@@ -212,7 +212,8 @@ def bucket_grouped_rows(
 ) -> dict[tuple, Any]:
     buckets: dict[tuple, Any] = {}
     for row in rows:
-        buckets[row_period_key(row, frequency, field)] = row.get(value) or 0
+        key = row_period_key(row, frequency, field)
+        buckets[key] = buckets.get(key, 0) + (row.get(value) or 0)
     return buckets
 
 

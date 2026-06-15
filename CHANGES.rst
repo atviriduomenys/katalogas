@@ -6,6 +6,13 @@ v 1.22.0 (current)
 
 <No Ticket>
 
+- Add a Content Security Policy via ``django-csp``. Directives with no breakage trade-off for this site are locked
+  down (``default-src 'self'``, ``object-src 'none'``, ``base-uri 'self'``, ``frame-ancestors 'self'``,
+  ``form-action 'self'``), while ``script-src``/``style-src`` still allow ``'unsafe-inline'``/``'unsafe-eval'`` because
+  the templates rely on inline scripts, event handlers and styles. Tightening those is deferred to a later nonce/refactor
+  pass. Also switch the Leaflet OpenStreetMap tile URLs from ``http://`` to ``https://`` (they were mixed content on an
+  HTTPS page).
+
 - Update ``django-allauth`` to 65.18.x. The new version reverses ``account_login`` (unguarded) while rendering the
   email-confirmation page; since this project uses VIISP with a custom login view and never registered that URL name,
   this broke ``test_email_confirmation_after_sign_up`` with ``NoReverseMatch``. Register an ``account_login`` URL alias

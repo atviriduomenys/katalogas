@@ -2247,7 +2247,6 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
             status_period_counts[(row["status"], row_period_key(row, frequency, date_field))] += 1
 
         for status in statuses:
-            bar_count = 0
             time_data = []
             bar_data = []
             status_dataset_ids = datasets.filter(status=status["filter_value"]).values_list("pk", flat=True)
@@ -2257,21 +2256,25 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
             buckets = bucket_grouped_rows(count_data, frequency, date_field)
 
-            for label in labels:
-                time_count = 0
-                if status["filter_value"] == Dataset.UNASSIGNED or indicator != "dataset-count":
-                    time_count = buckets.get(get_period_key(frequency, date_field, label), 0)
-                    bar_count += time_count
+            if status["filter_value"] == Dataset.UNASSIGNED or indicator != "dataset-count":
+                lookup = buckets
+            else:
+                if status["filter_value"] == "HAS_DATA":
+                    comm_val = "OPENED"
+                elif status["filter_value"] == "INVENTORED":
+                    comm_val = "INVENTORED"
                 else:
-                    if status["filter_value"] == "HAS_DATA":
-                        comm_val = "OPENED"
-                    elif status["filter_value"] == "INVENTORED":
-                        comm_val = "INVENTORED"
-                    else:
-                        comm_val = status["filter_value"]
+                    comm_val = status["filter_value"]
+                lookup = {
+                    key: count
+                    for (comment_status, key), count in status_period_counts.items()
+                    if comment_status == comm_val
+                }
 
-                    time_count = status_period_counts.get((comm_val, get_period_key(frequency, date_field, label)), 0)
-                    bar_count += time_count
+            bar_count = self.get_out_of_window_count(indicator, lookup, frequency, date_field, labels)
+            for label in labels:
+                time_count = lookup.get(get_period_key(frequency, date_field, label), 0)
+                bar_count += time_count
 
                 if frequency == "W":
                     time_data.append({"x": _date(label.start_time, ff), "y": time_count})

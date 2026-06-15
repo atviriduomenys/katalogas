@@ -50,6 +50,7 @@ https://github.com/atviriduomenys/katalogas/issues/1585
 - Fix statistics charts collapsing to one dataset per period; dataset-count bars and time charts now show real counts.
 - Fix the status chart double-counting datasets with coinciding comment times.
 - Count datasets without a status comment in the status chart, at their published date.
+- Include datasets outside the visible time window in dataset-count bar totals.
 
 https://github.com/atviriduomenys/katalogas/issues/2643
 

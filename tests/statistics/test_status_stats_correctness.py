@@ -81,6 +81,21 @@ def test_status_chart_counts_commentless_dataset_at_published_date(app: DjangoTe
 
 @pytest.mark.haystack
 @pytest.mark.django_db
+def test_status_chart_bar_includes_status_changes_before_window(app: DjangoTestApp, db):
+    ct = ContentType.objects.get_for_model(Dataset)
+    user = UserFactory()
+    ds = DatasetFactory(status=Dataset.HAS_DATA, slug="status-corr-old-open")
+    _status_comment(user, ct, ds, "OPENED", datetime(2020, 6, 1, 10, 0, 0, tzinfo=timezone.utc))
+
+    for duration in ("duration-quarterly", "duration-daily"):
+        with freeze_time(FROZEN_NOW):
+            resp = app.get(reverse("dataset-stats-status"), params={"duration": duration})
+        counts = {str(b["display_value"]): b["count"] for b in resp.context["bar_chart_data"]}
+        assert counts["Atverti duomenys"] == 1, duration
+
+
+@pytest.mark.haystack
+@pytest.mark.django_db
 def test_status_chart_falls_back_to_created_date_when_never_published(app: DjangoTestApp, db):
     with freeze_time("2021-03-01"):
         DatasetFactory(

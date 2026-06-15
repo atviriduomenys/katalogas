@@ -322,6 +322,16 @@ def test_email_confirmation_after_sign_up(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_account_login_alias_redirects_to_login(app: DjangoTestApp):
+    # django-allauth (>=65.18) reverses "account_login" while rendering the
+    # email-confirmation page. This project uses VIISP + a custom login view, so
+    # "account_login" is aliased to our "login" URL, preserving the ?next= param.
+    resp = app.get(reverse("account_login") + "?next=/datasets/")
+    assert resp.status_code == 302
+    assert resp.url == reverse("login") + "?next=/datasets/"
+
+
+@pytest.mark.django_db
 def test_login_second_time(app: DjangoTestApp):
     user = User.objects.create_user(email="testas1@testas.com", password="testas123", status=User.ACTIVE)
     app.set_user(user)

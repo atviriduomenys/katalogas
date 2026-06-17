@@ -48,15 +48,15 @@
                     </span>
 
                     {% if resource.file %}
-                        <a href="{{ resource.file.url }}" download >
+                        <a href="{% url 'dataset-distribution-download' pk=resource.dataset.pk distribution_id=resource.id %}">
                             {% translate "Atsisiųsti pateiktį" %}
                         </a>
                     {% elif resource.download_url %}
-                        <a href="{{ resource.download_url }}" target="_blank">
+                        <a href="{% url 'dataset-distribution-download' pk=resource.dataset.pk distribution_id=resource.id %}" target="_blank">
                             {% translate "Atidaryti pateiktį" %}
                         </a>
                     {% elif resource.access_url %}
-                        <a href="{{ resource.access_url }}" target="_blank">
+                        <a href="{% url 'dataset-distribution-download' pk=resource.dataset.pk distribution_id=resource.id %}" target="_blank">
                             {% translate "Atidaryti pateiktį" %}
                         </a>
                     {% endif %}

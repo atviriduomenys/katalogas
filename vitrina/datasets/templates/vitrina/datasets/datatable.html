@@ -65,18 +65,20 @@
                             <a class="button is-link is-small preview-button"
                                id="{{ r.pk }}">{% translate "Peržiūrėti" %}</a>
                         {% endif %}
-                    <a href="{{ r.file.url }}" download
+                    <a href="{% url 'dataset-distribution-download' pk=dataset.id distribution_id=r.id %}"
                        class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
                     </div>
                 </td>
             {% elif r.download_url %}
                 <td>
-                    <a class="button is-primary is-small is-pulled-right" href="{{ r.download_url }}"
+                    <a class="button is-primary is-small is-pulled-right"
+                       href="{% url 'dataset-distribution-download' pk=dataset.id distribution_id=r.id %}"
                        target="_blank">{% translate "Atidaryti" %}</a>
                 </td>
             {% elif r.access_url %}
                 <td>
-                    <a class="button is-primary is-small is-pulled-right" href="{{ r.access_url }}"
+                    <a class="button is-primary is-small is-pulled-right"
+                       href="{% url 'dataset-distribution-download' pk=dataset.id distribution_id=r.id %}"
                        target="_blank">{% translate "Atidaryti" %}</a>
                 </td>
             {% endif %}

@@ -9,7 +9,7 @@ from uuid import uuid4
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, connection
-from django.db.models import Sum, QuerySet, Q
+from django.db.models import QuerySet, Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
@@ -260,6 +260,8 @@ class Dataset(Resource):
     )  # TODO: Deprecated, slugs are formed from id's
     uuid = models.UUIDField(unique=True, default=uuid4, editable=False)
     internal_id = models.CharField(max_length=255, blank=True, null=True)
+
+    download_count = models.PositiveIntegerField(default=0)
 
     theme = models.CharField(
         max_length=255,
@@ -1221,15 +1223,8 @@ class Dataset(Resource):
             object_id=self.pk,
         ).count()
 
-    def get_download_count(self):
-        from vitrina.statistics.models import ModelDownloadStats
-
-        model_names = Metadata.objects.filter(
-            content_type=ContentType.objects.get_for_model(Model), dataset__pk=self.pk
-        ).values_list("name", flat=True)
-        return (ModelDownloadStats.objects.filter(model__in=model_names).aggregate(Sum("model_requests")))[
-            "model_requests__sum"
-        ] or 0
+    def get_download_count(self) -> int:
+        return self.download_count
 
     def get_metadata_objects_for_version(self, metadata_version):
         meta_objects = []

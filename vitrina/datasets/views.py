@@ -22,7 +22,15 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
 from django.forms import BaseForm
-from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
+from django.http import (
+    JsonResponse,
+    HttpResponseRedirect,
+    HttpResponse,
+    HttpRequest,
+    HttpResponseBase,
+    FileResponse,
+    Http404,
+)
 from django.http.response import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import date as _date
@@ -630,8 +638,48 @@ class DatasetRDFDownloadView(PermissionRequiredMixin, View):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
-    def get(self, request, **kwargs):
-        return render_rdf_response(request, Dataset.objects.filter(pk=kwargs.get("pk")))
+    def get(self, request: HttpRequest, **kwargs) -> HttpResponse:
+        # Render first, count only once the response is successfully built, so a rendering
+        # error does not get counted as a download.
+        response = render_rdf_response(request, Dataset.objects.filter(pk=kwargs.get("pk")))
+        Dataset.objects.filter(pk=kwargs["pk"]).update(download_count=F("download_count") + 1)
+        return response
+
+
+class DatasetDistributionDownloadView(PermissionRequiredMixin, View):
+    distribution = None
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
+        self.distribution = get_object_or_404(
+            DatasetDistribution, dataset__pk=kwargs["pk"], pk=kwargs["distribution_id"]
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, self.distribution.dataset)
+
+    def get(self, request: HttpRequest, **kwargs) -> HttpResponseBase:
+        # Build the response first; only count once the download has actually started
+        response = self._build_download_response()
+        Dataset.objects.filter(pk=self.distribution.dataset_id).update(download_count=F("download_count") + 1)
+        return response
+
+    def _build_download_response(self) -> HttpResponseBase:
+        if self.distribution.file:
+            try:
+                file = self.distribution.file.file.open("rb")
+            except (OSError, ValueError) as e:
+                raise Http404("Distribution file is not available.") from e
+            return FileResponse(
+                file,
+                as_attachment=True,
+                filename=self.distribution.filename_without_path() or "download",
+            )
+        elif self.distribution.download_url:
+            return HttpResponseRedirect(self.distribution.download_url)
+        elif self.distribution.access_url:
+            return HttpResponseRedirect(self.distribution.access_url)
+        raise Http404
 
 
 class OpenDataPortalDatasetDetailView(View):

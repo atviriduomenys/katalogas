@@ -1307,6 +1307,28 @@ class TestRepresentativeDeleteView:
 
         assert not Representative.objects.filter(pk=representative.pk).exists()
 
+    def test_delete_representative_removes_org_subscription(self, app: DjangoTestApp) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        organization = OrganizationFactory()
+        org_ct = ContentType.objects.get_for_model(Organization)
+        representative = RepresentativeFactory(content_type=org_ct, object_id=organization.pk)
+        Subscription.objects.create(
+            user=representative.user,
+            content_type=org_ct,
+            object_id=organization.pk,
+            sub_type=Subscription.ORGANIZATION,
+            email_subscribed=True,
+            dataset_comments_sub=True,
+        )
+
+        app.post(reverse("representative-delete", args=[organization.pk, representative.pk]))
+
+        assert not Subscription.objects.filter(
+            user=representative.user, content_type=org_ct, object_id=organization.pk
+        ).exists()
+
     def test_remove_publisher_from_all_representative_organization_datasets(self, app: DjangoTestApp) -> None:
         user = UserFactory(is_staff=True)
         app.set_user(user)

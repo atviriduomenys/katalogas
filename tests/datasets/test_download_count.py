@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.settings import SPINTA_SERVER_URL
 
 
 @pytest.mark.django_db
@@ -91,6 +92,47 @@ def test_distribution_file_download_is_not_counted_when_file_is_missing(client):
     os.remove(distribution.file.file.path)
 
     response = client.get(reverse("dataset-distribution-download", args=[dataset.pk, distribution.pk]))
+
+    assert response.status_code == 404
+    dataset.refresh_from_db()
+    assert dataset.download_count == 0
+
+
+@pytest.mark.django_db
+def test_dynamic_resource_download_increments_and_redirects_to_spinta(client):
+    dataset = DatasetFactory()
+    spinta_url = f"{SPINTA_SERVER_URL}/datasets/gov/x/Model/:all/:format/json"
+
+    response = client.get(reverse("dataset-dynamic-resource-download", args=[dataset.pk]), {"url": spinta_url})
+
+    assert response.status_code == 302
+    assert response["Location"] == spinta_url
+    dataset.refresh_from_db()
+    assert dataset.download_count == 1
+
+
+@pytest.mark.django_db
+def test_dynamic_resource_download_rejects_non_spinta_url(client):
+    dataset = DatasetFactory()
+
+    response = client.get(
+        reverse("dataset-dynamic-resource-download", args=[dataset.pk]),
+        {"url": "https://evil.example.com/x"},
+    )
+
+    assert response.status_code == 404
+    dataset.refresh_from_db()
+    assert dataset.download_count == 0
+
+
+@pytest.mark.django_db
+def test_dynamic_resource_download_rejects_lookalike_host(client):
+    dataset = DatasetFactory()
+
+    response = client.get(
+        reverse("dataset-dynamic-resource-download", args=[dataset.pk]),
+        {"url": f"{SPINTA_SERVER_URL}.evil.example.com/x"},
+    )
 
     assert response.status_code == 404
     dataset.refresh_from_db()

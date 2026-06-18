@@ -46,7 +46,7 @@ https://github.com/atviriduomenys/katalogas/issues/2660
 
 https://github.com/atviriduomenys/katalogas/issues/1585
 
-- The dataset list download counter (tooltip "Atsisiuntimų skaičius") now counts actual downloads from the catalogue instead of external get.data.gov.lt API request statistics. Distribution file downloads, external distribution link clicks ("Atidaryti") and dataset RDF/DCAT exports each increment a per-dataset ``download_count``. File distribution downloads are now served through ``DatasetDistributionDownloadView`` so they can be counted.
+- The dataset list download counter (tooltip "Atsisiuntimų skaičius") now counts actual downloads from the portal instead of external get.data.gov.lt API request statistics.
 
 https://github.com/atviriduomenys/katalogas/issues/2643
 

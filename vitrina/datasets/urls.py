@@ -59,6 +59,7 @@ from vitrina.datasets.views import (
     FilterGroupsView,
     DatasetRDFDownloadView,
     DatasetDistributionDownloadView,
+    DatasetDynamicResourceDownloadView,
     DatasetChildResourceListView,
     ResourceSubclassCreateView,
     DatasetChildResourceCreateView,
@@ -200,6 +201,11 @@ urlpatterns = [
         "datasets/<int:pk>/distribution/<int:distribution_id>/download/",
         DatasetDistributionDownloadView.as_view(),
         name="dataset-distribution-download",
+    ),
+    path(
+        "datasets/<int:pk>/dynamic-resource/download/",
+        DatasetDynamicResourceDownloadView.as_view(),
+        name="dataset-dynamic-resource-download",
     ),
     path(
         "datasets/<int:pk>/versions/<int:version_id>/structure/",

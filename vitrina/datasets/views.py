@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, date
 from functools import cached_property
 from typing import List, Any, Type as TypingType
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -680,6 +680,25 @@ class DatasetDistributionDownloadView(PermissionRequiredMixin, View):
         elif self.distribution.access_url:
             return HttpResponseRedirect(self.distribution.access_url)
         raise Http404
+
+
+class DatasetDynamicResourceDownloadView(PermissionRequiredMixin, View):
+    dataset = None
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
+        self.dataset = get_object_or_404(Dataset, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, self.dataset)
+
+    def get(self, request: HttpRequest, **kwargs) -> HttpResponseBase:
+        url = request.GET.get("url", "")
+        target = urlsplit(url)
+        if target.scheme not in ("http", "https") or target.netloc != urlsplit(SPINTA_SERVER_URL).netloc:
+            raise Http404
+        Dataset.objects.filter(pk=self.dataset.pk).update(download_count=F("download_count") + 1)
+        return HttpResponseRedirect(url)
 
 
 class OpenDataPortalDatasetDetailView(View):

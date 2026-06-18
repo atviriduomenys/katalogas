@@ -175,7 +175,7 @@
             {% if r.download_url %}
             <td>
                 <a class="button is-primary is-small is-pulled-right"
-                   href="{% url 'dataset-dynamic-resource-download' pk=dataset.id %}?url={{ r.download_url|urlencode }}"
+                   href="{% url 'dataset-dynamic-resource-download' pk=dataset.id version_id=r.version_id distribution_name=r.title format=r.format|lower %}"
                    target="_blank">{% translate "Atidaryti" %}</a>
             </td>
             {% endif %}

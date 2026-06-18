@@ -203,7 +203,7 @@ urlpatterns = [
         name="dataset-distribution-download",
     ),
     path(
-        "datasets/<int:pk>/dynamic-resource/download/",
+        "datasets/<int:pk>/versions/<int:version_id>/dynamic-resource/<str:distribution_name>/<str:format>/download/",
         DatasetDynamicResourceDownloadView.as_view(),
         name="dataset-dynamic-resource-download",
     ),

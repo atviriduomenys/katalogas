@@ -547,6 +547,7 @@ class DynamicResourceService:
         return {
             "title": distribution_name,
             "format": distribution_format,
+            "version_id": self.metadata_version.pk,
             "download_url": download_url,
             "models": list(models),
             "created": self.uapi_distribution.created,

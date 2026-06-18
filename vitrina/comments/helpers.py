@@ -92,6 +92,8 @@ def send_mail_and_create_tasks_for_subs(
         )
 
     for sub in object_subs:
+        if not sub.user.is_active:
+            continue
         if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
             create_task(
                 comment_type=comment_type,
@@ -104,6 +106,8 @@ def send_mail_and_create_tasks_for_subs(
         if sub.user.email and sub.user.email not in email_list and sub.user.email not in excluded_emails:
             email_list.append(sub.user.email)
     for sub in org_subs:
+        if not sub.user.is_active:
+            continue
         if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
             create_task(
                 comment_type=comment_type,

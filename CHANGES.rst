@@ -31,6 +31,12 @@ https://github.com/atviriduomenys/katalogas/pull/2650
 - Move webpack css building step to run before before collectstatic. Previously it copied older css files.
 
 
+https://github.com/atviriduomenys/katalogas/issues/2660
+
+- Fix a bug where comment notification emails were still sent to users who had been removed from an organization's
+  representatives or whose accounts were deactivated.
+- Remove a representative's auto-created subscription when they are deleted.
+
 <No Ticket>
 
 - Update ``django-allauth`` to 65.18.x. The new version reverses ``account_login`` (unguarded) while rendering the

@@ -440,6 +440,37 @@ class TestDcatDatasetCreateView:
         assert child is not None
         assert child.get_parent().pk == parent.pk
 
+    def test_parent_from_different_org_returns_404(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        other_org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        parent = DatasetFactory(organization=other_org, subclass=subclass, is_public=False)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create-with-parent",
+            kwargs={"organization_id": org.pk, "parent_id": parent.pk, "subclass_uuid": subclass.pk},
+        )
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 404
+
+    def test_public_parent_returns_404(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        parent = DatasetFactory(organization=org, subclass=subclass, is_public=True)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-create-with-parent",
+            kwargs={"organization_id": org.pk, "parent_id": parent.pk, "subclass_uuid": subclass.pk},
+        )
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 404
+
     def test_post_saves_dataset_without_parent(self, app: DjangoTestApp):
         org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)

@@ -242,6 +242,8 @@ class PostDatasetSerializer(DatasetSerializer):
         instance = super().create(validated_data)
         instance.origin = Dataset.API_ORIGIN
         instance.organization = self.context.get("organization")
+        if instance.access_rights is None:
+            instance.access_rights = Dataset.PUBLIC
         instance.language = " ".join(languages) or None
         if periodicity:
             frequency = Frequency.objects.filter(title=periodicity["title"]).first()

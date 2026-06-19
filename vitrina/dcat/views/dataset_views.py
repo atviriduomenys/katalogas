@@ -169,7 +169,12 @@ class DcatDatasetCreateView(
     @cached_property
     def dataset_parent(self) -> Dataset | None:
         if parent_id := self.kwargs.get("parent_id"):
-            return get_object_or_404(Dataset.objects.select_related("organization", "subclass"), pk=parent_id)
+            return get_object_or_404(
+                datasets_in_org_scope(self.organization)
+                .filter(is_public=False)
+                .select_related("organization", "subclass"),
+                pk=parent_id,
+            )
         return None
 
     def has_permission(self) -> bool:
@@ -212,13 +217,12 @@ class DcatDatasetCreateView(
             }
         )
         parent = self.dataset_parent
-        parent_id = self.kwargs.get("parent_id")
-        if parent_id:
+        if parent:
             context["wizard_create_post_url"] = reverse(
                 "dcat-dataset-create-with-parent",
                 kwargs={
                     "organization_id": self.organization.pk,
-                    "parent_id": parent_id,
+                    "parent_id": parent.pk,
                     "subclass_uuid": self.subclass.pk,
                 },
             )
@@ -380,12 +384,6 @@ class DcatDatasetUpdateView(
     def subclass(self) -> DCATResourceSubclass:
         return self.get_object().subclass
 
-    @cached_property
-    def dataset_parent(self) -> Dataset | None:
-        if parent_id := self.kwargs.get("parent_id"):
-            return get_object_or_404(Dataset.objects.select_related("organization", "subclass"), pk=parent_id)
-        return None
-
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE_WIZARD, self.get_object())
 
@@ -447,7 +445,7 @@ class DcatDatasetUpdateView(
     def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
-        kwargs["url_parent"] = self.dataset_parent
+        kwargs["url_parent"] = None
 
         return kwargs
 

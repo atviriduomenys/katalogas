@@ -340,10 +340,10 @@ msgid "Eilės numeris"
 msgstr "Order number"
 
 msgid "Teritorinė aprėptis"
-msgstr "Spacial coverage"
+msgstr "Spatial coverage"
 
 msgid "Teritorinės aprėptys"
-msgstr "Spacial coverages"
+msgstr "Spatial coverages"
 
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
@@ -1388,7 +1388,7 @@ msgid "Nurodo e. paslaugos statusą. Atitinka adms:status."
 msgstr "Indicates the status of e-service. Corresponds to adms:status."
 
 msgid "Erdvinė / geografinė aprėptis"
-msgstr "Spacial / Geographical coverage"
+msgstr "Spatial / Geographical coverage"
 
 msgid "Regionas, kurį apima taikoma e. paslauga. Atitinka dct:spatial."
 msgstr ""
@@ -2274,7 +2274,7 @@ msgid "Duomenų ištekliaus redagavimas"
 msgstr "Resource edit"
 
 msgid "Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."
-msgstr "Can not import structure, when the version status is draft"
+msgstr "Can not import structure, when the version status isn't draft."
 
 msgid "Struktūros importas"
 msgstr "Structure import"
@@ -2527,8 +2527,8 @@ msgid ""
 "Nurodo, kaip patikimas yra pateiktas duomenų rinkinys. Atitinka "
 "dqv:hasQualityMeasurement."
 msgstr ""
-"Indicates how consistent the dataset is across the system. Corresponds to "
-"dqv:hasQualityAnnotation"
+"Indicates how reliable the provided dataset is. Corresponds to "
+"dqv:hasQualityMeasurement."
 
 msgid ""
 "PASIS kodas. Jei nėra - institucijos suteiktas vidinis teikiamos paslaugos "

@@ -15,6 +15,10 @@ class TestDcatContactForm:
         form = DcatContactForm()
         assert form.fields["contact_name"].required is True
 
+    def test_email_is_required(self):
+        form = DcatContactForm()
+        assert form.fields["email"].required is True
+
     def test_contact_name_label(self):
         form = DcatContactForm()
         assert form.fields["contact_name"].label == "Palaikomas produktas ar paslauga"
@@ -66,6 +70,12 @@ class TestDcatContactUpdateForm:
         contact = ContactFactory(organization=org, kind="service")
         form = DcatContactUpdateForm(instance=contact)
         assert form.fields["contact_name"].required is True
+
+    def test_email_is_required(self):
+        org = OrganizationFactory()
+        contact = ContactFactory(organization=org, kind="service")
+        form = DcatContactUpdateForm(instance=contact)
+        assert form.fields["email"].required is True
 
     def test_phone_validator_attached(self):
         org = OrganizationFactory()

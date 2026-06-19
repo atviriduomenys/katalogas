@@ -65,10 +65,17 @@ class OrganizationWizardView(
 
 class OrganizationWizardTreeView(
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     OrganizationBaseViewMixin,
     TemplateView,
 ):
     template_name = "vitrina/orgs/_wizard_tree_children_fragment.html"
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.UPDATE, self.organization)
+
+    def handle_no_permission(self) -> HttpResponseBase:
+        return redirect("organization-detail", pk=self.organization.pk)
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
@@ -79,9 +86,16 @@ class OrganizationWizardTreeView(
 
 class OrganizationWizardNodesView(
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     OrganizationBaseViewMixin,
     View,
 ):
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.UPDATE, self.organization)
+
+    def handle_no_permission(self) -> HttpResponseBase:
+        return redirect("organization-detail", pk=self.organization.pk)
+
     def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         _, nodes_by_key = _build_wizard_tree(self.organization)
         return JsonResponse(nodes_by_key)
@@ -89,9 +103,16 @@ class OrganizationWizardNodesView(
 
 class OrganizationWizardCreateRedirectView(
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     OrganizationBaseViewMixin,
     View,
 ):
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.UPDATE, self.organization)
+
+    def handle_no_permission(self) -> HttpResponseBase:
+        return redirect("organization-detail", pk=self.organization.pk)
+
     def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         child_type = request.GET.get("type", "")
         parent_type = request.GET.get("parent_type", "")

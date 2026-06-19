@@ -39,6 +39,8 @@ class BaseDcatContactForm(ModelForm):
         self.fields["phone"].validators.append(phone_validator)
         self.fields["phone"].widget.attrs["placeholder"] = _("Formatas 0... arba +370...")
 
+        self.fields["email"].required = True  # There is a unique index for organization+email
+
         apply_dynamic_help_texts(self, FormFieldText.DCAT_CONTACT)
 
     @staticmethod

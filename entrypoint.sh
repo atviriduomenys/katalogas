@@ -5,6 +5,7 @@ echo "RUN_MODE=$RUN_MODE"
 python3 manage.py collectstatic --noinput
 python3 manage.py migrate -v 2 || exit 1
 python3 manage.py rebuild_index --noinput --using default
+python3 manage.py compilemessages
 
 cd webpack
 npm run build || echo "⚠️ Webpack build (partially) failed, continuing..."

@@ -22,6 +22,7 @@ steps:
       - docker compose -p katalogas-${DRONE_BRANCH/\//-} -f docker-compose.${DRONE_BRANCH/\//-}.yml down || true
       - docker compose -p katalogas-${DRONE_BRANCH/\//-} -f docker-compose.${DRONE_BRANCH/\//-}.yml up -d
       - docker image prune -a -f
+      - echo "Deployed application to https://${DRONE_BRANCH/\//-}.branch-test.data.gov.lt"
 volumes:
 - name: docker_sock
   host:

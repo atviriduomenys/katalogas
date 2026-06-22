@@ -115,7 +115,8 @@ class TestDatasetNameMixin:
 
     def test_create_form_raise_error_when_url_parent_that_has_no_metadata_name(self):
         organization = OrganizationFactory(name="")
-        url_parent = DatasetFactory(metadata=False)
+        url_parent = DatasetFactory()
+        url_parent.metadata.all().delete()
 
         form = InformationSystemResourceForm(
             organization=organization,

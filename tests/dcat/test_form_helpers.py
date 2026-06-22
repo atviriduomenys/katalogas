@@ -33,7 +33,8 @@ class TestGetAvailableDcatNamePrefixes:
 
     def test_returns_org_prefix_and_whitelist_when_parent_has_no_name(self):
         organization = OrganizationFactory()
-        parent = DatasetFactory(metadata=False)
+        parent = DatasetFactory()
+        parent.metadata.all().delete()
 
         result = get_available_dcat_name_prefixes(parent, organization)
 

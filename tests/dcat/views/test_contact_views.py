@@ -117,6 +117,7 @@ class TestDcatContactCreateView:
         form = app.get(reverse("dcat-contact-create", kwargs={"organization_id": org.pk})).forms["contact-form"]
         form["contact_name"] = "Palaikymo paslauga"
         form["phone"] = "+37061234567"
+        form["email"] = "test@example.com"
         response = form.submit()
 
         assert response.status_code == 302

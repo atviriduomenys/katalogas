@@ -138,7 +138,7 @@ WIZARD_SCHEMA_MATRIX: dict = _build_schema_matrix()
 _WIZARD_TREE_MAX_DEPTH = 8
 
 
-def _wizard_node_type(dataset: Dataset) -> str:
+def wizard_node_type(dataset: Dataset) -> str:
     name = dataset.subclass.name if dataset.subclass_id else None
     if name == DCATResourceSubclass.INFORMATION_SYSTEM:
         return WIZARD_NODE_IS
@@ -213,7 +213,12 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
     conditions = Q(organization=organization)
     for path in information_system_paths:
         conditions |= Q(path__startswith=path)
-    org_datasets = list(Dataset.objects.filter(conditions, is_public=False).select_related("subclass").order_by("path"))
+    org_datasets = list(
+        Dataset.objects.filter(conditions, is_public=False)
+        .select_related("subclass")
+        .prefetch_related("translations", "datasetdistribution_set__translations")
+        .order_by("path")
+    )
     datasets_by_id = {dataset.pk: dataset for dataset in org_datasets}
     datasets_by_path = {dataset.path: dataset for dataset in org_datasets}
 
@@ -256,7 +261,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
         if depth >= _WIZARD_TREE_MAX_DEPTH or dataset.pk in visited:
             return None
         visited = visited | {dataset.pk}
-        node_type = _wizard_node_type(dataset)
+        node_type = wizard_node_type(dataset)
         node_key = f"{node_type}:{dataset.pk}"
         node_title = _wizard_dataset_title(dataset)
         my_ancestor = _wizard_ancestor_summary(node_type, dataset.pk, node_title)

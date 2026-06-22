@@ -35,7 +35,7 @@ from vitrina.dcat.view_helpers import (
     save_produces_relations,
     wizard_breadcrumb_ancestors,
 )
-from vitrina.dcat.wizard import WIZARD_SUBCLASS_TO_NODE_TYPE, _wizard_node_type
+from vitrina.dcat.wizard import WIZARD_SUBCLASS_TO_NODE_TYPE, wizard_node_type
 from vitrina.dcat.forms.dataset_forms import (
     InformationSystemResourceForm,
     BaseResourceForm,
@@ -637,7 +637,7 @@ class DcatDatasetDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteV
 
         if parent:
             response = _render_dataset_fragment(self.request, parent, self.organization)
-            parent_node_key = f"{_wizard_node_type(parent)}:{parent.pk}"
+            parent_node_key = f"{wizard_node_type(parent)}:{parent.pk}"
             response["HX-Trigger"] = json.dumps(
                 {
                     "treeRefresh": None,

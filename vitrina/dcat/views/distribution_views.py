@@ -12,6 +12,7 @@ from django.views.generic import DeleteView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina.datasets.models import Dataset
+from vitrina.dcat.wizard import wizard_node_type
 from vitrina.orgs.models import Organization
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.services import has_perm, Action
@@ -283,7 +284,7 @@ class DcatDistributionDeleteView(LoginRequiredMixin, PermissionRequiredMixin, De
         messages.success(self.request, _("Pateiktis ištrinta sėkmingai!"))
 
         response = _render_dataset_fragment(self.request, dataset, self.organization)
-        dataset_node_key = f"dataset:{dataset.pk}"
+        dataset_node_key = f"{wizard_node_type(dataset)}:{dataset.pk}"
         response["HX-Trigger"] = json.dumps(
             {
                 "treeRefresh": None,

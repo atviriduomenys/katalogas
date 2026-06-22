@@ -450,6 +450,12 @@ class DcatDatasetUpdateView(
 
     def form_valid(self, form: BaseResourceForm) -> HttpResponseBase:
         self.object = form.save(commit=False)
+
+        rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
+        rel_form = rel_form_class(self.object, data=self.request.POST) if rel_form_class else None
+        if rel_form and not rel_form.is_valid():
+            return _render_dataset_fragment(self.request, self.object, self.organization, rel_form)
+
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags or [])
         self.object.information_system_publishers.set(form.cleaned_data.get("information_system_publishers") or [])
@@ -563,13 +569,10 @@ class DcatDatasetUpdateView(
         save_dataset_attribution(self.request, self.object, form)
         save_dataset_creator(self.request, self.object, form)
 
-        rel_form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.subclass.name)
-        if rel_form_class:
-            rel_form = rel_form_class(self.object, data=self.request.POST)
-            if rel_form.is_valid():
-                save_dataset_relations(self.request, self.object, rel_form)
-                save_dataset_attribution(self.request, self.object, rel_form)
-                save_produces_relations(self.request, self.object, rel_form)
+        if rel_form:
+            save_dataset_relations(self.request, self.object, rel_form)
+            save_dataset_attribution(self.request, self.object, rel_form)
+            save_produces_relations(self.request, self.object, rel_form)
 
         messages.success(self.request, DCAT_SUBCLASS_UPDATE_SUCCESS_MAP.get(self.subclass.name).format(dataset_name))
 

@@ -1386,6 +1386,32 @@ class TestDcatDatasetUpdateView:
             relation=produces_relation, dataset=dataset, part_of=produced_dataset
         ).exists()
 
+    def test_post_invalid_rel_form_does_not_save_dataset(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=subclass,
+            is_public=False,
+            title="Original Title",
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        form = app.get(url).forms["wizard-fragment-form"]
+        form["title"] = "New Title"
+        form["has_part"].force_value(["999999"])  # non-existent PK — fails rel form validation
+
+        response = form.submit()
+
+        assert response.status_code == 200
+        dataset.refresh_from_db()
+        assert dataset.title == "Original Title"
+
 
 class TestDcatDatasetDeleteView:
     def test_unauthenticated_redirects_to_login(self, app: DjangoTestApp):

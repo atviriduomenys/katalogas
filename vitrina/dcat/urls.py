@@ -4,7 +4,6 @@ from vitrina.dcat.views.contact_views import DcatContactCreateView, DcatContactU
 from vitrina.dcat.views.dataset_views import (
     DcatDatasetCreateView,
     DcatDatasetUpdateView,
-    DcatDatasetRelationshipUpdateView,
     DcatDatasetDeleteView,
 )
 from vitrina.dcat.views.distribution_views import (
@@ -38,11 +37,6 @@ urlpatterns = [
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/update/",
         DcatDatasetUpdateView.as_view(),
         name="dcat-dataset-update",
-    ),
-    path(
-        "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/relationships/update/",
-        DcatDatasetRelationshipUpdateView.as_view(),
-        name="dcat-dataset-relationships-update",
     ),
     path(
         "organization/<int:organization_id>/dcat/dataset/<int:dataset_id>/delete/",

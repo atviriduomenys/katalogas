@@ -14,7 +14,6 @@ from django.urls import reverse
 from django.views.generic import DeleteView
 from django.utils.functional import cached_property
 from django.utils.translation import get_language
-from django.views import View
 from parler.views import TranslatableCreateView, LanguageChoiceMixin, TranslatableUpdateView
 from django.utils.translation import gettext_lazy as _
 
@@ -575,42 +574,6 @@ class DcatDatasetUpdateView(
         messages.success(self.request, DCAT_SUBCLASS_UPDATE_SUCCESS_MAP.get(self.subclass.name).format(dataset_name))
 
         response = _render_dataset_fragment(self.request, self.object, self.organization)
-        response["HX-Trigger"] = "treeRefresh"
-        return response
-
-
-class DcatDatasetRelationshipUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    @cached_property
-    def organization(self) -> Organization:
-        return get_object_or_404(Organization, pk=self.kwargs["organization_id"])
-
-    @cached_property
-    def dataset(self) -> Dataset:
-        return get_object_or_404(
-            Dataset.objects.select_related("subclass"),
-            pk=self.kwargs["dataset_id"],
-            organization=self.organization,
-        )
-
-    def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE_WIZARD, self.dataset)
-
-    def post(self, request: WSGIRequest, *_args, **_kwargs) -> HttpResponseBase:
-        form_class = DCAT_SUBCLASS_RELATIONSHIP_FORM_MAP.get(self.dataset.subclass.name)
-        if not form_class:
-            return self._render_fragment()
-
-        relationship_form = form_class(self.dataset, data=request.POST)
-        if relationship_form.is_valid():
-            save_dataset_relations(request, self.dataset, relationship_form)
-            save_dataset_attribution(request, self.dataset, relationship_form)
-            messages.success(request, _("Ryšiai atnaujinti sėkmingai"))
-            relationship_form = form_class(self.dataset)
-
-        return self._render_fragment(relationship_form=relationship_form)
-
-    def _render_fragment(self, relationship_form=None) -> HttpResponseBase:
-        response = _render_dataset_fragment(self.request, self.dataset, self.organization, relationship_form)
         response["HX-Trigger"] = "treeRefresh"
         return response
 

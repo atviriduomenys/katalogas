@@ -1614,6 +1614,7 @@ class Dataset(Resource):
             object_id=org.id,
             content_object=org,
             phone=org.phone if org.phone else None,
+            kind=Contact.kind_for_object(org),
         )
         return contact
 

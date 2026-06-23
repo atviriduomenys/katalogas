@@ -4,12 +4,16 @@ import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.classifiers.models import (
+    Activity,
     Category,
+    FormFieldText,
     Frequency,
     Licence,
     AreaOfManagement,
     GeoportalCategory,
     GeoportalFrequency,
+    ProvenanceStatement,
+    Rule,
     Status,
     Concept,
     ConceptSchema,
@@ -122,3 +126,49 @@ class DocumentationFactory(DjangoModelFactory):
         django_get_or_create = ("documentation_link",)
 
     documentation_link = factory.Faker("url")
+
+
+class RuleFactory(DjangoModelFactory):
+    class Meta:
+        model = Rule
+
+    identifier = factory.Sequence(lambda n: f"rule-{n}")
+
+
+class ProvenanceStatementFactory(DjangoModelFactory):
+    class Meta:
+        model = ProvenanceStatement
+
+    url = factory.Faker("url")
+    description = factory.Faker("sentence")
+
+
+class ActivityFactory(DjangoModelFactory):
+    class Meta:
+        model = Activity
+
+    title = factory.Faker("catch_phrase")
+
+
+class FormFieldTextFactory(DjangoModelFactory):
+    class Meta:
+        model = FormFieldText
+
+    form_name = FormFieldText.DCAT_DATASET
+    field_name = factory.Faker("word")
+
+    @classmethod
+    def _create(cls, model_class: type[FormFieldText], *args, **kwargs) -> FormFieldText:
+        help_text_lt = kwargs.pop("help_text_lt", "")
+        help_text_en = kwargs.pop("help_text_en", "")
+        label_lt = kwargs.pop("label_lt", "")
+        label_en = kwargs.pop("label_en", "")
+        entry = model_class(*args, **kwargs)
+        entry.set_current_language("lt")
+        entry.help_text = help_text_lt
+        entry.label = label_lt
+        entry.set_current_language("en")
+        entry.help_text = help_text_en
+        entry.label = label_en
+        entry.save()
+        return entry

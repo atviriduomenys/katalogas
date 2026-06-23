@@ -16,10 +16,12 @@ from django.utils.translation import gettext_lazy as _
 from parler.admin import TranslatableAdmin
 
 from vitrina import settings
+from vitrina.datasets.admin_forms import QualityAnnotationAdminForm, QualityMeasurementAdminForm
 from vitrina.datasets.forms import DatasetAdminForm
 from vitrina.datasets.models import (
     Dataset,
     DatasetGroup,
+    MeasurementTitleItem,
     Attribution,
     Type,
     Relation,
@@ -28,6 +30,11 @@ from vitrina.datasets.models import (
     GeoportalDataServiceTypeValue,
     DCATResourceSubclass,
     DatasetRelation,
+    QualityAnnotation,
+    QualityAnnotationBody,
+    QualityMeasurement,
+    Measurement,
+    MeasurementTitle,
 )
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
@@ -557,6 +564,43 @@ class DatasetTagAdmin(RevisionCommentVersionAdmin):
         if not request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags"):
             return [field.name for field in self.model._meta.fields]
         return []
+
+
+@admin.register(QualityAnnotationBody)
+class QualityAnnotationBodyAdmin(RevisionCommentVersionAdmin):
+    list_display = ["uuid", "value"]
+
+
+@admin.register(QualityAnnotation)
+class QualityAnnotationAdmin(RevisionCommentVersionAdmin):
+    form = QualityAnnotationAdminForm
+    list_display = ["uuid", "codename"]
+    filter_horizontal = ["has_target_dataset", "has_target_distribution", "has_body"]
+
+
+@admin.register(MeasurementTitle)
+class MeasurementTitleAdmin(RevisionCommentVersionAdmin):
+    list_display = ["uuid", "value"]
+
+
+class MeasurementTitleItemInline(admin.TabularInline):
+    model = MeasurementTitleItem
+    extra = 1
+    min_num = 1
+    validate_min = True
+
+
+@admin.register(Measurement)
+class MeasurementAdmin(RevisionCommentVersionAdmin):
+    list_display = ["uuid", "codename"]
+    inlines = [MeasurementTitleItemInline]
+
+
+@admin.register(QualityMeasurement)
+class QualityMeasurementAdmin(RevisionCommentVersionAdmin):
+    form = QualityMeasurementAdminForm
+    list_display = ["uuid", "codename", "value"]
+    filter_horizontal = ["is_measurement_of", "computed_on_dataset", "computed_on_distribution"]
 
 
 admin.site.register(Dataset, DatasetAdmin)

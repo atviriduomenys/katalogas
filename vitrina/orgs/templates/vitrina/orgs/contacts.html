@@ -9,14 +9,20 @@
 
 	{% include 'vitrina/orgs/tabs.html' %}
 
-    {% if has_permission %}
-        <div class="buttons is-right">
+    <div class="buttons is-right">
+        {% if has_permission %}
             <a class="button is-primary m-t-xs m-b-lg"
                href="{% url 'contact-create' request.resolver_match.kwargs.pk %}">
                 {% translate "Pridėti kontaktą" %}
             </a>
-        </div>
-    {% endif %}
+        {% endif %}
+        {% if has_dcat_wizard_permissions %}
+            <a class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'dcat-contact-create' request.resolver_match.kwargs.pk %}">
+                {% translate "Pridėti kontaktinę informaciją" %}
+            </a>
+        {% endif %}
+    </div>
     {% if contacts %}
         <table class="table is-fullwidth">
             <tbody>
@@ -51,16 +57,34 @@
                     </td>
                     <td>{{ c.get_type }}</td>
                     {% if has_permission %}
-                        <td>
-                            <a id="update-member-{{ c.pk }}-btn" href="{% url 'contact-update' pk=request.resolver_match.kwargs.pk contact_id=c.pk %}" class="button is-primary is-small">
-                                {% translate "Redaguoti" %}
-                            </a>
-                        </td>
-                        <td>
-                            <a id="delete-contact-{{ c.pk }}-btn"  href="{% url 'contact-delete' pk=request.resolver_match.kwargs.pk contact_id=c.pk %}" class="button is-link is-small">
-                                {% translate "Pašalinti" %}
-                            </a>
-                        </td>
+                        {% if c.is_service_kind and has_dcat_wizard_permissions %}
+                            <td>
+                                <a id="update-member-{{ c.pk }}-btn" href="{% url 'dcat-contact-update' request.resolver_match.kwargs.pk c.pk %}" class="button is-primary is-small">
+                                    {% translate "Redaguoti" %}
+                                </a>
+                                <a id="delete-contact-{{ c.pk }}-btn"  href="{% url 'contact-delete' pk=request.resolver_match.kwargs.pk contact_id=c.pk %}" class="button is-link is-small">
+                                    {% translate "Pašalinti" %}
+                                </a>
+                            </td>
+                        {% elif c.is_service_kind %}
+                            <td>
+                                <button class="button is-primary is-small" disabled>
+                                    {% translate "Redaguoti" %}
+                                </button>
+                                <button class="button is-primary is-small" disabled>
+                                    {% translate "Pašalinti" %}
+                                </button>
+                            </td>
+                        {% else %}
+                            <td>
+                                <a id="update-member-{{ c.pk }}-btn" href="{% url 'contact-update' pk=request.resolver_match.kwargs.pk contact_id=c.pk %}" class="button is-primary is-small">
+                                    {% translate "Redaguoti" %}
+                                </a>
+                                <a id="delete-contact-{{ c.pk }}-btn"  href="{% url 'contact-delete' pk=request.resolver_match.kwargs.pk contact_id=c.pk %}" class="button is-link is-small">
+                                    {% translate "Pašalinti" %}
+                                </a>
+                            </td>
+                        {% endif %}
                     {% endif %}
                 </tr>
             {% endfor %}

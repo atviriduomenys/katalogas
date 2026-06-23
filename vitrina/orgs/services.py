@@ -46,6 +46,9 @@ class Action(Enum):
     MANAGE_KEYS = "manage_keys"
     MANAGE_PROJECT_KEYS = "manage_project_keys"
     ASSIGN = "assign"
+    CREATE_WIZARD = "create_wizard"
+    UPDATE_WIZARD = "update_wizard"
+    DELETE_WIZARD = "delete_wizard"
 
 
 class Role(Enum):
@@ -73,6 +76,8 @@ WRITE_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.INFORMATION_SYSTEM_UPDATE,
     Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
+    Action.CREATE_WIZARD,
+    Action.UPDATE_WIZARD,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -88,6 +93,7 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.PLAN,
     Action.REQUEST_UPDATE,
     Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
+    Action.CREATE_WIZARD,
 }
 
 DATASET_IS_PUBLIC = True
@@ -128,7 +134,7 @@ def inherit_structure_acl(
     return new_acl
 
 
-_dataset_update_acl: ACL = {
+_dataset_base_update_acl: ACL = {
     (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_COORDINATOR,
@@ -178,7 +184,51 @@ _dataset_update_acl: ACL = {
         Role.RESOURCE_MANAGER,
     },
 }
-_dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW) | {
+_dataset_update_acl: ACL = inherit_acl(_dataset_base_update_acl) | {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+}
+_dataset_delete_wizard_acl: ACL = {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.DELETE_WIZARD): {
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    },
+}
+_dataset_view_acl: ACL = inherit_acl(_dataset_base_update_acl, new_action=Action.VIEW) | {
     (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.VIEW): {
         Role.AUTHENTICATED,
         Role.VISITOR,
@@ -214,7 +264,12 @@ _dataset_create_acl: ACL = {
         Role.GLOBAL_MANAGER,
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
-    )
+    ),
+    (Dataset, Action.CREATE_WIZARD): (
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+    ),
 }
 _information_system_update_acl: ACL = inherit_acl(
     _dataset_update_acl,
@@ -234,6 +289,9 @@ _dataset_structure_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action
 _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetDistribution)
+_dataset_distribution_delete_wizard_acl: ACL = inherit_acl(
+    _dataset_delete_wizard_acl, new_model_class=DatasetDistribution
+)
 
 _dataset_attribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetAttribution)
 _dataset_attribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
@@ -337,12 +395,14 @@ acl: ACL = (
     | _dataset_create_acl
     | _information_system_update_acl
     | _dataset_update_acl
+    | _dataset_delete_wizard_acl
     | _dataset_comment_acl
     | _dataset_delete_acl
     | _dataset_history_view_acl
     | _dataset_distribution_create_acl
     | _dataset_distribution_update_acl
     | _dataset_distribution_delete_acl
+    | _dataset_distribution_delete_wizard_acl
     | _dataset_attribution_create_acl
     | _dataset_attribution_update_acl
     | _dataset_attribution_delete_acl
@@ -389,6 +449,8 @@ acl: ACL = (
             Role.OPEN_DATA_COORDINATOR,
             Role.OPEN_DATA_MANAGER,
         ),
+        (Contact, Action.CREATE_WIZARD): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
+        (Contact, Action.UPDATE_WIZARD): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
         (Request, Action.CREATE): (Role.AUTHENTICATED,),
         (Request, Action.REQUEST_UPDATE): (Role.AUTHOR,),
         (Request, Action.DELETE): (Role.AUTHOR,),

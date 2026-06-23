@@ -1,0 +1,222 @@
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Field, Layout, Div
+from django import forms
+from django.core.exceptions import ValidationError
+from django.db.models import QuerySet, Q
+from django.forms.widgets import URLInput
+from django_select2.forms import Select2Widget, Select2MultipleWidget
+from parler.forms import TranslatableModelForm
+
+from vitrina.classifiers.models import Concept, FormFieldText, Licence
+from vitrina.dcat.form_helpers import apply_dynamic_help_texts
+from vitrina.datasets.form_helpers import validate_urls
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
+from vitrina.fields import StringListField
+from vitrina.resources.models import (
+    DatasetDistribution,
+    DISTRIBUTION_STANDARD_URI,
+    DISTRIBUTION_AVAILABILITY_SCHEMA_URI,
+)
+
+from django.utils.translation import gettext_lazy as _
+
+
+class DatasetDistributionForm(TranslatableModelForm):
+    documentation = StringListField(
+        label=_("Puslapis (dokumentacija)"),
+        help_text=_("Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."),
+        required=False,
+        unique=True,
+    )
+
+    class Meta:
+        model = DatasetDistribution
+        fields = (
+            "name",
+            "access_url",
+            "availability",
+            "title",
+            "description",
+            "data_service",
+            "licence",
+            "media_type",
+            "format",
+            "compression_format",
+            "packaging_format",
+            "size",
+            "policy",
+            "download_url",
+            "checksum_algorithm",
+            "checksum_value",
+            "issued",
+            "date_modified",
+            "languages",
+            "conforms_to",
+            "documentation",
+            "conditions",
+            "rights_relation",
+            "spatial_resolution",
+            "status",
+            "temporal_resolution",
+        )
+        field_classes = {
+            "access_url": forms.URLField,
+            "download_url": forms.URLField,
+        }
+        widgets = {
+            "availability": Select2Widget,
+            "data_service": Select2Widget,
+            "licence": Select2Widget,
+            "media_type": Select2Widget,
+            "format": Select2Widget,
+            "compression_format": Select2Widget,
+            "packaging_format": Select2Widget,
+            "checksum_algorithm": Select2Widget,
+            "download_url": URLInput,
+            "status": Select2Widget,
+            "issued": forms.TextInput(attrs={"type": "date"}),
+            "date_modified": forms.TextInput(attrs={"type": "date"}),
+            "languages": Select2MultipleWidget,
+            "conforms_to": Select2MultipleWidget,
+        }
+
+    def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
+        self.dataset = dataset
+        super().__init__(*args, **kwargs)
+        self.resource = self.instance if self.instance and self.instance.pk else None
+
+        self.helper = FormHelper()
+        self.helper.attrs["novalidate"] = ""
+        self.helper.form_id = "resource-form"
+        self.helper.layout = Layout(
+            Field("name"),
+            Field("access_url"),
+            Field("availability"),
+            Field("title"),
+            Field("description"),
+            Field("data_service"),
+            Field("licence"),
+            Field("media_type"),
+            Field("format"),
+            Field("compression_format"),
+            Field("packaging_format"),
+            Field("size"),
+            Field("policy"),
+            Field("download_url"),
+            Div(
+                Div(Field("checksum_algorithm"), css_class="column"),
+                Div(Field("checksum_value"), css_class="column is-right"),
+                css_class="columns is-align-items-flex-start",
+            ),
+            Field("issued"),
+            Field("date_modified"),
+            Field("languages"),
+            Field("conforms_to"),
+            Field("documentation"),
+            Field("conditions"),
+            Field("rights_relation"),
+            Field("spatial_resolution"),
+            Field("status"),
+            Field("temporal_resolution"),
+        )
+
+        self.fields["access_url"].required = True
+        self.fields["access_url"].label = _("Prieigos URL")
+        self.fields["availability"].queryset = Concept.ordered_by_label_objects.filter(
+            concept_schemas__uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI
+        ).prefetch_related("translations")
+        self.fields["availability"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
+
+        self.fields["description"].label = _("Aprašas")
+        self.fields["description"].required = True
+
+        self.fields["data_service"].queryset = Dataset.objects.filter(
+            organization=self.dataset.organization,
+            subclass__name=DCATResourceSubclass.SERVICE,
+            is_public=False,
+        ).prefetch_related("translations")
+        self.fields["data_service"].required = False
+        self.fields["data_service"].label = _("Prieigos paslauga")
+        self.fields["licence"].queryset = self.fields["licence"].queryset.order_by("title")
+        self.fields["media_type"].queryset = self.fields["media_type"].queryset.order_by("title")
+        self.fields["format"].queryset = self.fields["format"].queryset.order_by("title")
+        self.fields["format"].required = True
+        self.fields["format"].label = _("Formatas")
+        self.fields["compression_format"].queryset = self.fields["compression_format"].queryset.order_by("title")
+        self.fields["compression_format"].label = _("Suspaudimo formatas")
+        self.fields["packaging_format"].queryset = self.fields["packaging_format"].queryset.order_by("title")
+        self.fields["download_url"].label = _("Parsisiuntimo URL")
+        self.fields["languages"].label = _("Kalba")
+        self.fields["conforms_to"].queryset = Concept.ordered_by_label_objects.filter(
+            concept_schemas__uri=DISTRIBUTION_STANDARD_URI
+        ).prefetch_related("translations")
+        self.fields["status"].queryset = self._distribution_status_queryset()
+        self.fields["status"].label_from_instance = lambda obj: obj.safe_translation_getter("label", any_language=True)
+
+        if not self.resource and (default_licence := Licence.objects.filter(is_default=True).first()):
+            self.initial["licence"] = default_licence
+
+        if self.resource:
+            self.initial["documentation"] = list(
+                self.resource.documentation.values_list("documentation_link", flat=True)
+            )
+            if resource_metadata := self.resource.metadata.first():
+                self.initial["name"] = resource_metadata.name
+
+        apply_dynamic_help_texts(self, FormFieldText.DCAT_DISTRIBUTION)
+
+    def _distribution_status_queryset(self) -> QuerySet[Concept]:
+        query_filters = Q(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_DCAT_STATUS_URI)
+        if self.resource and self.resource.status:
+            query_filters = query_filters | Q(pk=self.resource.status_id)
+
+        return Concept.ordered_by_label_objects.filter(query_filters).prefetch_related("translations")
+
+    def clean(self) -> dict:
+        if download_url := self.cleaned_data.get("download_url"):
+            same_url_dataset_distributions = self.dataset.datasetdistribution_set.filter(download_url=download_url)
+            if self.resource:
+                same_url_dataset_distributions = same_url_dataset_distributions.exclude(pk=self.resource.pk)
+
+            if same_url_dataset_distributions.exists():
+                self.add_error("download_url", _("Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."))
+
+        rights_relation = self.cleaned_data.get("rights_relation")
+        conditions = self.cleaned_data.get("conditions")
+        if rights_relation and conditions:
+            error_message = _(
+                "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            )
+            self.add_error("conditions", error_message)
+            self.add_error("rights_relation", error_message)
+
+        return self.cleaned_data
+
+    def clean_name(self) -> str:
+        if name := self.cleaned_data.get("name"):
+            if not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+            if any(character.isupper() for character in name):
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
+
+        return name
+
+    def clean_checksum_value(self) -> str:
+        if (checksum_value := self.cleaned_data.get("checksum_value")) and any(
+            character.isupper() for character in checksum_value
+        ):
+            raise ValidationError(_("Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."))
+
+        return checksum_value
+
+    def clean_documentation(self) -> list[str]:
+        documentation_urls = self.cleaned_data.get("documentation", []) or []
+
+        item_errors = validate_urls(documentation_urls)
+        if any(item_errors):
+            self.fields["documentation"].widget.validation_errors = item_errors
+            raise ValidationError(_("Yra klaidų sąraše."))
+
+        return [url for url in documentation_urls if url]  # Remove empty URL rows

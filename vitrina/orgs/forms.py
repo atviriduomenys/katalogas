@@ -36,6 +36,7 @@ from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget, Select2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
+from vitrina.validators import phone_validator
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset, Contact
 from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
@@ -178,7 +179,7 @@ class OrganizationBaseForm(ModelForm):
     )
     image = FilerImageField(label=_("Paveiksliukas"), upload_to=Organization.UPLOAD_TO, required=False)
     email = CharField(label=_("Elektroninis paštas"), required=True)
-    phone = CharField(label=_("Telefono numeris"), required=True)
+    phone = CharField(label=_("Telefono numeris"), required=True, validators=[phone_validator])
     address = CharField(label=_("Adresas"), required=True)
     description = CharField(label=_("Aprašymas"), widget=Textarea(), required=False)
 
@@ -1127,10 +1128,8 @@ class BaseContactForm(ModelForm):
     )
     phone = RegexField(
         label=_("Telefono numeris"),
-        regex=r"^\+3706\d{7}$|^0\d{8}$",
-        error_messages={
-            "invalid": _("Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
-        },
+        regex=phone_validator.regex,
+        error_messages={"invalid": phone_validator.message},
         required=False,
         help_text=_(
             "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."

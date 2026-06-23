@@ -1,0 +1,50 @@
+{% load i18n crispy_forms_tags %}
+<form id="wizard-fragment-form"
+      method="post"
+      enctype="multipart/form-data"
+      novalidate
+      hx-post="{% url 'dcat-distribution-update' organization_id=object.dataset.organization.pk dataset_id=object.dataset.pk distribution_id=object.pk %}"
+      hx-target="#wizard-main-pane"
+      hx-swap="innerHTML"
+      hx-headers='{"X-Wizard-Request": "true"}'>
+    {% csrf_token %}
+
+    <nav class="wizard-crumbs">
+        {% for crumb in breadcrumb_ancestors %}
+        <div class="is-flex is-align-items-flex-end">
+            <div class="wizard-crumb">
+                <span class="wizard-crumb-label">{{ crumb.type_label }}</span>
+                <span class="wizard-crumb-title">{{ crumb.title }}</span>
+            </div>
+            <span class="wizard-crumb-sep">&rsaquo;</span>
+        </div>
+        {% endfor %}
+        <div class="wizard-crumb is-current">
+            <span class="wizard-crumb-label">{% translate "Pateiktis" %}</span>
+            <span class="wizard-crumb-title">{{ object.display_title }}</span>
+        </div>
+    </nav>
+
+    <div class="wizard-form-section-header">
+        <p class="wizard-form-section-title">{{ object.display_title }}</p>
+        <p class="wizard-form-section-sub">{% translate "Redaguokite pateiktį" %}</p>
+    </div>
+
+    {% include "vitrina/_wizard_messages.html" %}
+    {% include "vitrina/_wizard_form_errors.html" %}
+
+    <div class="wizard-form-body">
+        {% crispy form %}
+    </div>
+
+</form>
+<div id="wizard-footer-extra" hx-swap-oob="innerHTML">
+    {% if can_delete %}
+        <a hx-get="{% url 'dcat-distribution-delete' organization_id=object.dataset.organization.pk dataset_id=object.dataset.pk distribution_id=object.pk %}"
+           hx-target="#wizard-main-pane"
+           hx-swap="innerHTML"
+           class="button is-danger is-light">
+            {% translate "Ištrinti" %}
+        </a>
+    {% endif %}
+</div>

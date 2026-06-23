@@ -170,12 +170,12 @@
     {% endif %}
     {% if dataset.subclass.name == "information_system" %}
         <tr>
-            <th>{% translate "Informacinės sistemos tvarkytojas" %}</th>
-            <td>{{ dataset.information_system_publisher }}</td>
+            <th>{% translate "Informacinės sistemos tvarkytojai" %}</th>
+            <td>{% for publisher in dataset.information_system_publishers.all %}{{ publisher }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
         </tr>
         <tr>
             <th>{% translate "Informacinės sistemos valdytojas" %}</th>
-            <td>{{ dataset.information_system_creator }}</td>
+            <td>{{ creator }}</td>
         </tr>
     {% endif %}
     {% if dataset.applicable_legislation.exists %}
@@ -393,9 +393,9 @@
     {% if dataset.subclass.is_information_system %}
         <tr>
             <th>
-                {% translate "Informacinės sistemos tipas" %}
+                {% translate "Informacinės sistemos rūšis" %}
                 <span class="icon info-icon has-tooltip-multiline is-middle"
-                      data-tooltip="{% translate 'Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Type.' %}">
+                      data-tooltip="{% translate 'Informacinės sistemos rūšis pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Type.' %}">
                     <i class="fas fa-info-circle"></i>
                 </span>
             </th>
@@ -428,7 +428,7 @@
                 <th>
                     {% translate "Teisės - Aprašymas" %}
                     <span class="icon info-icon has-tooltip-multiline is-middle"
-                          data-tooltip="{% translate 'Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description.' %}">
+                          data-tooltip="{% translate 'Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights.' %}">
                         <i class="fas fa-info-circle"></i>
                     </span>
                 </th>
@@ -531,7 +531,7 @@
         <th>
             {% translate "Teisės - Aprašymas" %}
             <span class="icon info-icon has-tooltip-multiline is-middle"
-                  data-tooltip="{% translate 'Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description.' %}">
+                  data-tooltip="{% translate 'Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights.' %}">
                 <i class="fas fa-info-circle"></i>
             </span>
         </th>

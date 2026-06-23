@@ -1,0 +1,483 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block parent_title %}{% translate "Organizacija" %}{% endblock %}
+{% block current_title %}{% translate "IS metaduomenys" %}{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/wizard.js' %}" defer></script>
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'admin/css/vendor/select2/select2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'django_select2/django_select2.css' %}">
+    <link rel="stylesheet" href="{% static 'css/wizard.css' %}">
+{% endblock %}
+
+{% block root %}
+    {{ wizard_nodes_json|json_script:"wizard-nodes" }}
+    {{ wizard_node_meta_json|json_script:"wizard-node-meta" }}
+    {{ wizard_creatable_types_json|json_script:"wizard-creatable-types" }}
+
+    <div class="wizard-overlay">
+        <div class="wizard-overlay-inner">
+    <div class="wizard-card card">
+        <header class="card-header wizard-card-header">
+            {# Left — wizard title #}
+            <div class="wizard-header-left">
+                <div class="wizard-org-info">
+                    <p class="wizard-card-title">{% translate "IS metaduomenys" %}</p>
+                    <p class="wizard-card-subtitle-label">{% translate "Organizacijos informacinių sistemų metaduomenų pildymas pagal DCAT-AP-LT" %}</p>
+                </div>
+            </div>
+
+            {# Right — org identity #}
+            <div class="wizard-header-right">
+                <div class="wizard-header-identity">
+                    <div class="wizard-org-avatar">
+                        {% if organization.image %}
+                            <img src="{{ organization.image.url }}"
+                                 alt="{{ organization.title }}"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
+                        {% else %}
+                            <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="wizard-org-info">
+                        <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
+                        <p class="wizard-org-type">{% translate "Organizacija" %}</p>
+                    </div>
+                </div>
+            </div>
+
+            {# Close button #}
+            <button type="button" class="wizard-header-close" aria-label="{% translate 'Uždaryti' %}"
+                    onclick="wizardNavigateTo('{% url 'organization-detail' pk=organization.pk %}')">
+                <span class="icon"><i class="fas fa-times"></i></span>
+            </button>
+        </header>
+
+        <div class="card-content p-0"
+             id="wizard-state"
+             x-data="{
+                 nodes: JSON.parse(document.getElementById('wizard-nodes').textContent),
+                 meta: JSON.parse(document.getElementById('wizard-node-meta').textContent),
+                 creatable: JSON.parse(document.getElementById('wizard-creatable-types').textContent),
+                 selected: null,
+                 mode: 'detail',
+                 createAttempt: null,
+                 treeExpanded: false,
+                 schemaOpen: true,
+                 canCreate(type) {
+                     return !!(this.selected && this.selected.create_urls && this.selected.create_urls[type]);
+                 },
+                 select(key, nextMode) {
+                     this.selected = this.nodes[key] || { key: key };
+                     this.mode = nextMode || 'detail';
+                     this.createAttempt = null;
+                     window._wizardSelectedKey = key;
+                 },
+                 attemptCreate(type) {
+                     if (!this.selected) return;
+                     var url = this.selected.create_urls && this.selected.create_urls[type];
+                     if (!url) return;
+                     this.mode = 'detail';
+                     htmx.ajax('GET', url, {
+                         target: '#wizard-main-pane',
+                         swap: 'innerHTML',
+                         headers: {'X-Wizard-Request': 'true'}
+                     });
+                 }
+             }"
+             x-init="select('org:{{ organization.pk }}')"
+             @wizardnodecreated.document="select($event.detail.nodeKey)">
+
+            <div class="columns is-gapless is-marginless">
+
+                {# Left sidebar — tree navigation #}
+                <aside class="column is-one-quarter wizard-sidebar p-4">
+                    <section class="wizard-schema-block">
+                        <button type="button" class="wizard-schema-header"
+                                :aria-expanded="schemaOpen ? 'true' : 'false'"
+                                @click="schemaOpen = !schemaOpen">
+                            <span>{% translate "Kūrimo tvarka" %}</span>
+                            <span class="wizard-tree-expand-icon" :class="schemaOpen ? 'is-open' : ''">
+                                <i class="fas fa-chevron-down fa-xs"></i>
+                            </span>
+                        </button>
+                        <div class="wizard-schema-body" x-show="schemaOpen" x-cloak>
+                            {% include "vitrina/orgs/_wizard_schema_matrix.html" %}
+                        </div>
+                    </section>
+                    <ul class="wizard-tree">
+                        <li class="wizard-tree-group wizard-tree-group-root">
+                            <span aria-hidden="true">{% translate "Organizacija" %}</span>
+                            {% if wizard_tree %}
+                                <button type="button" class="wizard-tree-expand-toggle"
+                                        :title="treeExpanded ? '{% translate 'Suskleisti viską' %}' : '{% translate 'Išskleisti viską' %}'"
+                                        :aria-label="treeExpanded ? '{% translate 'Suskleisti viską' %}' : '{% translate 'Išskleisti viską' %}'"
+                                        @click="treeExpanded = !treeExpanded; $dispatch('treetoggleall', treeExpanded)">
+                                    <span class="wizard-tree-expand-icon" :class="treeExpanded ? 'is-open' : ''">
+                                        <i class="fas fa-angle-double-down fa-xs"></i>
+                                    </span>
+                                </button>
+                            {% endif %}
+                        </li>
+                        <li class="wizard-tree-node wizard-tree-root" x-data="{ open: true }"
+                            @treetoggleall.window="if ($event.detail) open = true">
+                            <div class="wizard-tree-row is-flex is-align-items-center"
+                                 :class="selected && selected.key === 'org:{{ organization.pk }}' && mode === 'detail' ? 'is-active' : ''"
+                                 hx-get="{% url 'organization-change' pk=organization.pk %}"
+                                 hx-target="#wizard-main-pane"
+                                 hx-swap="innerHTML"
+                                 hx-headers='{"X-Wizard-Request": "true"}'
+                                 @click.stop="select('org:{{ organization.pk }}'){% if wizard_tree %}; open = !open{% endif %}">
+                                <span class="wizard-tree-caret has-text-grey"
+                                      {% if wizard_tree %}
+                                      :class="open ? 'is-open' : ''"
+                                      @click.stop="open = !open"
+                                      {% endif %}>
+                                    {% if wizard_tree %}
+                                        <i class="fas fa-chevron-right fa-xs"></i>
+                                    {% endif %}
+                                </span>
+                                <span class="wizard-tree-label has-text-dark" title="{{ organization.title }}">
+                                    {{ organization.title }}
+                                </span>
+                                <div class="wizard-tree-actions is-flex is-align-items-center">
+                                    {% if wizard_tree %}
+                                        <span class="wizard-tree-count"
+                                              title="{% blocktranslate count counter=wizard_tree|length %}{{ counter }} tiesioginis vaikas{% plural %}{{ counter }} tiesioginių vaikų{% endblocktranslate %}">
+                                            {{ wizard_tree|length }}
+                                        </span>
+                                    {% endif %}
+                                    <button type="button" class="button is-small is-text wizard-tree-add"
+                                            title="{% translate 'Pridėti naują elementą' %}"
+                                            @click.stop="select('org:{{ organization.pk }}', 'create')">
+                                        <span class="icon is-small"><i class="fas fa-plus"></i></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <ul class="wizard-tree-children" x-show="open" x-cloak
+                                hx-get="{% url 'organization-wizard-tree' pk=organization.pk %}"
+                                hx-trigger="treeRefresh from:body"
+                                hx-swap="innerHTML">
+                                {% include "vitrina/orgs/_wizard_tree_children_fragment.html" %}
+                            </ul>
+                        </li>
+                    </ul>
+                </aside>
+
+                {# Right main pane — form fragments load here #}
+                <main class="column wizard-main">
+
+                    {# HTMX fragment target — auto-loads org form on page open #}
+                    <div id="wizard-main-pane" x-show="mode !== 'create'"
+                         hx-get="{% url 'organization-change' pk=organization.pk %}"
+                         hx-trigger="load"
+                         hx-target="#wizard-main-pane"
+                         hx-swap="innerHTML"
+                         hx-headers='{"X-Wizard-Request": "true"}'>
+
+                        {# Initial placeholder (replaced by HTMX on first select) #}
+                        <div x-show="mode === 'detail' && selected" x-cloak>
+                            <header class="wizard-detail-header is-flex is-align-items-center mb-4">
+                                <span class="icon is-large has-text-grey-dark mr-3">
+                                    <i class="fas fa-2x" :class="selected && selected.icon"></i>
+                                </span>
+                                <div>
+                                    <p class="heading has-text-grey mb-1" x-text="selected && selected.type_label"></p>
+                                    <p class="wizard-detail-title has-text-dark" x-text="selected && selected.title"></p>
+                                    <p class="is-size-7 has-text-grey mt-1">
+                                        {% translate "Įkeliama forma..." %}
+                                    </p>
+                                </div>
+                            </header>
+                        </div>
+
+                    </div>
+
+                    {# Create mode — type picker #}
+                    <div x-show="mode === 'create' && selected" x-cloak>
+                        <nav class="wizard-crumbs" aria-label="breadcrumb">
+                            <template x-for="(crumb, index) in (selected ? selected.ancestors : [])" :key="crumb.key">
+                                <div class="is-flex is-align-items-flex-end">
+                                    <div class="wizard-crumb">
+                                        <span class="wizard-crumb-label" x-text="crumb.type_label"></span>
+                                        <span class="wizard-crumb-title" x-text="crumb.title"></span>
+                                    </div>
+                                    <span class="wizard-crumb-sep">&rsaquo;</span>
+                                </div>
+                            </template>
+                            <div class="is-flex is-align-items-flex-end">
+                                <div class="wizard-crumb">
+                                    <span class="wizard-crumb-label" x-text="selected && selected.type_label"></span>
+                                    <span class="wizard-crumb-title" x-text="selected && selected.title"></span>
+                                </div>
+                                <span class="wizard-crumb-sep">&rsaquo;</span>
+                            </div>
+                            <div class="wizard-crumb is-current">
+                                <span class="wizard-crumb-label">{% translate "Pasirinkite formą" %}</span>
+                                <span class="wizard-crumb-title">{% translate "Pasirinkite elementą" %}</span>
+                            </div>
+                        </nav>
+
+                        <h2 class="wizard-picker-title">{% translate "Pasirinkite ką norite sukurti" %}</h2>
+                        <p class="wizard-picker-sub">
+                            {% translate "Žemiau rodomi elementai, kuriuos galima sukurti po" %}
+                            „<span x-text="selected && selected.title"></span>“.
+                        </p>
+
+                        <template x-for="type in creatable" :key="type">
+                            <div class="wizard-picker-card"
+                                 :class="canCreate(type) ? '' : 'is-disabled'"
+                                 :aria-disabled="canCreate(type) ? 'false' : 'true'"
+                                 @click="canCreate(type) && attemptCreate(type)">
+                                <span class="wizard-picker-card-icon">
+                                    <i class="fas" :class="meta[type] && meta[type].icon"></i>
+                                </span>
+                                <div class="wizard-picker-card-body">
+                                    <div class="wizard-picker-card-title" x-text="meta[type] && meta[type].type_label"></div>
+                                    <div class="wizard-picker-card-helper" x-show="canCreate(type)"
+                                         x-text="meta[type] && meta[type].helper"></div>
+                                    <div class="wizard-picker-card-helper" x-show="!canCreate(type)">
+                                        {% translate "Galima sukurti tik po šiais elementais:" %}
+                                        <strong x-text="meta[type] && meta[type].parents_label"></strong>
+                                    </div>
+                                </div>
+                                <span class="wizard-picker-card-chevron" x-show="canCreate(type)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                                <span class="wizard-picker-card-locks" x-show="!canCreate(type)"
+                                      title="{% translate 'Naują elementą galima sukurti tik turint aukštesnio lygio elementą.' %}">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </div>
+                        </template>
+
+                        <div class="mt-4">
+                            <button type="button" class="button is-light"
+                                    @click="mode = 'detail'; createAttempt = null">
+                                <span class="icon"><i class="fas fa-arrow-left"></i></span>
+                                <span>{% translate "Grįžti" %}</span>
+                            </button>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            {# Sticky footer #}
+            <footer class="wizard-footer">
+                <a href="{% url 'organization-detail' pk=organization.pk %}"
+                   class="button"
+                   onclick="event.preventDefault(); wizardNavigateTo(this.href);">
+                    {% translate "Uždaryti" %}
+                </a>
+                <div class="buttons">
+                    <div id="wizard-footer-extra"></div>
+                    <button type="button" class="button is-light"
+                            id="wizard-cancel-btn"
+                            @click="window.wizardFormDirty = false; document.querySelector('.wizard-tree-row.is-active')?.click()">
+                        {% translate "Atšaukti pakeitimus" %}
+                    </button>
+                    <button type="submit" form="wizard-fragment-form"
+                            class="button is-dark"
+                            id="wizard-save-btn">
+                        {% translate "Išsaugoti" %}
+                    </button>
+                </div>
+            </footer>
+            {# end wizard-card-content #}
+        </div>
+    </div>
+
+    <script>
+        // Offset overlay below any fixed CMS toolbar (absent in production, so top stays 0).
+        // Uses window.load so Django CMS has fully initialised and applied its body margin-top.
+        function applyToolbarOffset() {
+            var overlay = document.querySelector('.wizard-overlay');
+            if (!overlay) return;
+            var top = document.body.getBoundingClientRect().top;
+            if (top <= 0) {
+                var cmsEl = document.getElementById('cms-top');
+                top = cmsEl ? cmsEl.offsetHeight : 0;
+            }
+            if (top > 0) overlay.style.top = top + 'px';
+        }
+        window.addEventListener('load', applyToolbarOffset);
+
+        // --- Unsaved-changes guard ---
+        window.wizardFormDirty = false;
+        window._wizardSelectedKey = null;
+        var _wizardDirtyMsg = '{% translate "Turite neišsaugotų pakeitimų. Ar tikrai norite išeiti ir prarasti pakeitimus?" %}';
+        // True during the post-swap initialization window — suppresses spurious events
+        // from Select2 init (AJAX label loading, search-input focus, etc.)
+        var _wizardInitializing = false;
+
+        function _setDirty() {
+            if (_wizardInitializing) return;
+            window.wizardFormDirty = true;
+        }
+
+        function wizardNavigateTo(url) {
+            if (!window.wizardFormDirty || confirm(_wizardDirtyMsg)) {
+                window.wizardFormDirty = false;
+                window.location = url;
+            }
+        }
+
+        // Mark form dirty on text input inside the main pane
+        document.body.addEventListener('input', function(e) {
+            var pane = document.getElementById('wizard-main-pane');
+            if (pane && pane.contains(e.target)) _setDirty();
+        });
+        // For non-Select2 selects (checkboxes, radio, plain selects)
+        $(document).on('change', '#wizard-main-pane select:not(.django-select2)', function() {
+            _setDirty();
+        });
+        // For Select2 widgets: select2:select / select2:unselect fire on user interaction.
+        // Still gated by _wizardInitializing in case init triggers these events.
+        $(document).on('select2:select select2:unselect', '#wizard-main-pane .django-select2', function() {
+            _setDirty();
+        });
+
+        $(document).on('select2:clear select2:unselect', '#wizard-main-pane select.select2-hidden-accessible', function () {
+            var $el = $(this);
+            $el.one('select2:open', function () {
+                $el.select2('close');
+            });
+        });
+
+        function _wizardSelect2InterceptClearAll(e) {
+            var clearBtn = e.target.closest && e.target.closest('.select2-selection__clear');
+            if (!clearBtn) return;
+            var selection = clearBtn.closest('.select2-selection--multiple');
+            if (!selection) return;
+            var container = selection.closest('.select2-container');
+            if (!container) return;
+            var select = container.previousElementSibling;
+            if (!select || !select.classList.contains('select2-hidden-accessible')) return;
+            var pane = document.getElementById('wizard-main-pane');
+            if (!pane || !pane.contains(select)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (e.type === 'mousedown') {
+                var $select = $(select);
+                $select.find('option').prop('selected', false);
+                $select.val(null).trigger('change');
+                _setDirty();
+            }
+        }
+        document.addEventListener('mousedown', _wizardSelect2InterceptClearAll, true);
+        document.addEventListener('click', _wizardSelect2InterceptClearAll, true);
+
+        // Prevent Enter in single-line inputs from submitting the wizard form
+        // prematurely (which otherwise saves, re-renders the pane and scrolls to
+        // the top). Delegated off document so it survives HTMX pane swaps.
+        // Textarea fields, Select2 search (rendered outside the form) and the
+        // submit button keep their default behaviour.
+        $(document).on('keydown', '#wizard-fragment-form input:not([type=submit]):not([type=button])', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+
+        // Block HTMX GET navigations into the main pane when dirty
+        document.body.addEventListener('htmx:beforeRequest', function(e) {
+            if (!window.wizardFormDirty) return;
+            var target = e.detail.target;
+            if (!target || target.id !== 'wizard-main-pane') return;
+            var cfg = e.detail.requestConfig;
+            if (cfg && cfg.verb && cfg.verb.toLowerCase() !== 'get') return;
+            if (!confirm(_wizardDirtyMsg)) e.preventDefault();
+        });
+
+        // Browser-level guard (tab close / address-bar navigation)
+        window.addEventListener('beforeunload', function(e) {
+            if (window.wizardFormDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // Intercept "+" (create) button clicks in capture phase so we warn before
+        // Alpine switches to create mode (which hides the form without firing an HTMX request).
+        document.body.addEventListener('click', function(e) {
+            var addBtn = e.target.closest('.wizard-tree-add');
+            if (!addBtn) return;
+            if (window.wizardFormDirty && !confirm(_wizardDirtyMsg)) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            } else {
+                // Already confirmed (or wasn't dirty) — clear flag so attemptCreate's
+                // htmx:beforeRequest doesn't double-prompt.
+                window.wizardFormDirty = false;
+            }
+        }, true);
+
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            // Tree refresh: re-expand the ancestor chain + refresh Alpine nodes dict
+            if (e.detail.target.classList && e.detail.target.classList.contains('wizard-tree-children')) {
+                fetch('{% url "organization-wizard-nodes" pk=organization.pk %}')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var state = document.getElementById('wizard-state');
+                        if (state && window.Alpine) {
+                            window.Alpine.$data(state).nodes = data;
+                        }
+                    });
+                var selectedKey = window._wizardSelectedKey;
+                if (selectedKey) {
+                    setTimeout(function() {
+                        var li = document.querySelector('.wizard-tree-node[data-node-key="' + selectedKey + '"]');
+                        while (li) {
+                            if (li.hasAttribute('x-data')) {
+                                var data = window.Alpine && window.Alpine.$data(li);
+                                if (data && typeof data.open !== 'undefined') data.open = true;
+                            }
+                            li = li.parentElement ? li.parentElement.closest('.wizard-tree-node') : null;
+                        }
+                    }, 0);
+                }
+                return;
+            }
+
+            if (e.detail.target.id === 'wizard-main-pane') {
+                var mainCol = e.detail.target.closest('.wizard-main');
+                if (mainCol) mainCol.scrollTop = 0;
+                var verb = (e.detail.requestConfig && e.detail.requestConfig.verb || 'get').toLowerCase();
+                var hxTrigger = (e.detail.xhr && e.detail.xhr.getResponseHeader('HX-Trigger')) || '';
+                var keepDirty = verb === 'post' && hxTrigger.indexOf('treeRefresh') === -1;
+                _wizardInitializing = true;
+                var target = e.detail.target;
+                $(target).find('.django-select2').not('[name*=__prefix__]').each(function() {
+                    if ($(this).data('select2')) { $(this).select2('destroy'); }
+                    $(this).djangoSelect2({ width: '100%', dropdownParent: $('body') });
+                });
+                // Hold the initializing flag for 200 ms to cover any async events fired
+                // during Select2 setup (AJAX label fetching, search-input focus, etc.).
+                setTimeout(function() {
+                    window.wizardFormDirty = keepDirty;
+                    _wizardInitializing = false;
+                }, 300);
+            }
+        });
+
+        document.body.addEventListener('htmx:responseError', function(e) {
+            if (e.detail.target.id === 'wizard-main-pane') {
+                var pane = document.getElementById('wizard-main-pane');
+                var existing = pane.querySelector('.wizard-server-error');
+                if (existing) existing.remove();
+                var err = document.createElement('div');
+                err.className = 'notification is-danger is-light wizard-server-error';
+                err.textContent = '{% translate "Serverio klaida. Patikrinkite laukų reikšmes ir bandykite dar kartą." %}';
+                pane.insertAdjacentElement('afterbegin', err);
+            }
+        });
+    </script>
+        </div>{# /wizard-overlay-inner #}
+    </div>{# /wizard-overlay #}
+{% endblock %}

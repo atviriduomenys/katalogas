@@ -1,0 +1,305 @@
+import pytest
+from django.utils.translation import override as translation_override
+
+from vitrina.classifiers.factories import FormFieldTextFactory
+from vitrina.classifiers.models import FormFieldText
+from vitrina.datasets.factories import DatasetFactory
+from vitrina.dcat.form_helpers import get_available_dcat_name_prefixes
+from vitrina.dcat.forms.dataset_forms import (
+    DatasetRelationshipForm,
+    DatasetResourceForm,
+    DatasetUpdateForm,
+    InformationSystemRelationshipForm,
+    InformationSystemResourceForm,
+    InformationSystemUpdateForm,
+    ServiceRelationshipForm,
+    ServiceResourceForm,
+    ServiceUpdateForm,
+)
+from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
+from vitrina.orgs.factories import OrganizationFactory
+
+pytestmark = pytest.mark.django_db
+
+
+class TestGetAvailableDcatNamePrefixes:
+    def test_returns_parent_name_when_parent_has_name(self):
+        organization = OrganizationFactory()
+        parent = DatasetFactory(metadata="some/parent")
+
+        result = get_available_dcat_name_prefixes(parent, organization)
+
+        assert result == ["some/parent"]
+
+    def test_returns_org_prefix_and_whitelist_when_parent_has_no_name(self):
+        organization = OrganizationFactory()
+        parent = DatasetFactory()
+        parent.metadata.all().delete()
+
+        result = get_available_dcat_name_prefixes(parent, organization)
+
+        assert result == [organization.name, "datasets/gov/ivpk/"]
+
+    def test_returns_org_prefix_and_whitelist_when_no_parent(self):
+        organization = OrganizationFactory()
+
+        result = get_available_dcat_name_prefixes(None, organization)
+
+        assert result == [organization.name, "datasets/gov/ivpk/"]
+
+    def test_returns_whitelist_only_when_org_has_no_name(self):
+        organization = OrganizationFactory(name="")
+
+        result = get_available_dcat_name_prefixes(None, organization)
+
+        assert result == ["datasets/gov/ivpk/"]
+
+    def test_returns_empty_when_org_has_no_name_nor_whitelist(self):
+        organization = OrganizationFactory(name="")
+        organization.whitelisted_code_names.all().delete()
+
+        result = get_available_dcat_name_prefixes(None, organization)
+
+        assert result == []
+
+
+class TestApplyDynamicHelpTexts:
+    def test_default_help_text_preserved_when_no_entry_exists(self):
+        organization = OrganizationFactory()
+
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["name"].help_text != ""
+
+    def test_dynamic_help_text_overrides_default(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="name",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["name"].help_text == "Dinaminis tekstas"
+
+    def test_empty_dynamic_help_text_keeps_default(self):
+        organization = OrganizationFactory()
+        default_help_text = (
+            InformationSystemResourceForm(organization=organization, url_parent=None).fields["name"].help_text
+        )
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="name",
+            help_text_lt="",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["name"].help_text == default_help_text
+
+    def test_dynamic_help_text_respects_active_language(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="name",
+            help_text_lt="LT tekstas",
+            help_text_en="EN text",
+        )
+
+        with translation_override("lt"):
+            form_lt = InformationSystemResourceForm(organization=organization, url_parent=None)
+        with translation_override("en"):
+            form_en = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form_lt.fields["name"].help_text == "LT tekstas"
+        assert form_en.fields["name"].help_text == "EN text"
+
+    def test_dynamic_label_overrides_default(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="name",
+            label_lt="Dinaminis pavadinimas",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["name"].label == "Dinaminis pavadinimas"
+
+    def test_empty_dynamic_label_keeps_default(self):
+        organization = OrganizationFactory()
+        default_label = InformationSystemResourceForm(organization=organization, url_parent=None).fields["name"].label
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="name",
+            label_lt="",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["name"].label == default_label
+
+    def test_dynamic_label_respects_active_language(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="name",
+            label_lt="Lietuviškas pavadinimas",
+            label_en="English label",
+        )
+
+        with translation_override("lt"):
+            form_lt = InformationSystemResourceForm(organization=organization, url_parent=None)
+        with translation_override("en"):
+            form_en = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert form_lt.fields["name"].label == "Lietuviškas pavadinimas"
+        assert form_en.fields["name"].label == "English label"
+
+    def test_unknown_field_name_does_not_raise(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="nonexistent_field",
+            help_text_lt="Tekstas",
+        )
+
+        form = InformationSystemResourceForm(organization=organization, url_parent=None)
+
+        assert "nonexistent_field" not in form.fields
+
+    def test_information_system_update_form_inherits_dynamic_help_text(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_INFORMATION_SYSTEM,
+            field_name="name",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemUpdateForm(organization=organization, url_parent=None)
+
+        assert form.fields["name"].help_text == "Dinaminis tekstas"
+
+    def test_service_form_applies_dynamic_help_text(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_SERVICE,
+            field_name="endpoint_url",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = ServiceResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["endpoint_url"].help_text == "Dinaminis tekstas"
+
+    def test_service_update_form_inherits_dynamic_help_text(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_SERVICE,
+            field_name="endpoint_url",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = ServiceUpdateForm(organization=organization, url_parent=None)
+
+        assert form.fields["endpoint_url"].help_text == "Dinaminis tekstas"
+
+    def test_dataset_form_applies_dynamic_help_text(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DATASET,
+            field_name="documentation",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetResourceForm(organization=organization, url_parent=None)
+
+        assert form.fields["documentation"].help_text == "Dinaminis tekstas"
+
+    def test_dataset_update_form_inherits_dynamic_help_text(self):
+        organization = OrganizationFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DATASET,
+            field_name="documentation",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetUpdateForm(organization=organization, url_parent=None)
+
+        assert form.fields["documentation"].help_text == "Dinaminis tekstas"
+
+    def test_distribution_form_applies_dynamic_help_text(self):
+        dataset = DatasetFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DISTRIBUTION,
+            field_name="documentation",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetDistributionForm(dataset=dataset)
+
+        assert form.fields["documentation"].help_text == "Dinaminis tekstas"
+
+    def test_distribution_form_empty_dynamic_help_text_keeps_default(self):
+        dataset = DatasetFactory()
+        default_help_text = DatasetDistributionForm(dataset=dataset).fields["documentation"].help_text
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DISTRIBUTION,
+            field_name="documentation",
+            help_text_lt="",
+        )
+
+        with translation_override("lt"):
+            form = DatasetDistributionForm(dataset=dataset)
+
+        assert form.fields["documentation"].help_text == default_help_text
+
+    def test_is_relationship_form_applies_dynamic_help_text(self):
+        dataset = DatasetFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_IS_RELATIONSHIPS,
+            field_name="has_part",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = InformationSystemRelationshipForm(dataset=dataset)
+
+        assert form.fields["has_part"].help_text == "Dinaminis tekstas"
+
+    def test_service_relationship_form_applies_dynamic_help_text(self):
+        dataset = DatasetFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_SERVICE_RELATIONSHIPS,
+            field_name="serves_datasets",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = ServiceRelationshipForm(dataset=dataset)
+
+        assert form.fields["serves_datasets"].help_text == "Dinaminis tekstas"
+
+    def test_dataset_relationship_form_applies_dynamic_help_text(self):
+        dataset = DatasetFactory()
+        FormFieldTextFactory(
+            form_name=FormFieldText.DCAT_DATASET_RELATIONSHIPS,
+            field_name="qualified_attribution",
+            help_text_lt="Dinaminis tekstas",
+        )
+
+        with translation_override("lt"):
+            form = DatasetRelationshipForm(dataset=dataset)
+
+        assert form.fields["qualified_attribution"].help_text == "Dinaminis tekstas"

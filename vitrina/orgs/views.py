@@ -63,7 +63,11 @@ from vitrina.helpers import (
     prepare_email_by_identifier,
 )
 from vitrina.api.models import ApiKey, ApiScope
-from vitrina.datasets.models import Dataset, Contact
+from vitrina.datasets import ContactKind
+from vitrina.datasets.models import (
+    Dataset,
+    Contact,
+)
 from vitrina.helpers import (
     get_current_domain,
     send_email_with_logging,
@@ -580,6 +584,12 @@ class OrganizationContactsView(
             Contact,
             self.organization,
         )
+        context_data["has_dcat_wizard_permissions"] = has_perm(
+            self.request.user,
+            Action.CREATE_WIZARD,
+            Contact,
+            self.organization,
+        )
         context_data["parent_links"].update({None: _("Kontaktai")})
         return context_data
 
@@ -635,6 +645,7 @@ class ContactCreateView(
             email=email if email else contact.email,
             phone=phone if phone else contact.phone,
             position=position,
+            kind=Contact.kind_for_object(contact),
         )
 
         return HttpResponseRedirect(self.get_success_url())
@@ -656,6 +667,9 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
     def has_permission(self):
         contact = get_object_or_404(Contact, pk=self.kwargs.get("contact_id"))
         return has_perm(self.request.user, Action.UPDATE, contact)
+
+    def get_queryset(self):
+        return super().get_queryset().exclude(kind=ContactKind.SERVICE)
 
     def get_success_url(self):
         return reverse("organization-contacts", kwargs={"pk": self.kwargs.get("pk")})
@@ -679,6 +693,7 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
         contact_name = form.cleaned_data.get("contact_name")
         position = form.cleaned_data.get("position")
 
+        self.object.kind = Contact.kind_for_object(contact)
         self.object.email = email or contact.email
         self.object.phone = phone or contact.phone
         self.object.object_id = contact.pk if contact else None
@@ -895,10 +910,26 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
             org = get_object_or_404(Organization, id=self.kwargs["pk"])
             return redirect(org)
 
+    def _is_wizard_request(self) -> bool:
+        return bool(self.request.headers.get("X-Wizard-Request"))
+
+    def get_template_names(self):
+        if self._is_wizard_request():
+            return ["vitrina/orgs/_wizard_org_fragment.html"]
+        return super().get_template_names()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Organizacijos redagavimas")
         context["page_title"] = build_page_title_context(organization=self.object)
+        if self._is_wizard_request():
+            form = context.get("form")
+            if form and hasattr(form, "helper"):
+                from crispy_forms.layout import Submit
+
+                form.helper.form_tag = False
+                if form.helper.layout:
+                    form.helper.layout.fields = [f for f in form.helper.layout.fields if not isinstance(f, Submit)]
         return context
 
     def get_form_kwargs(self):
@@ -936,6 +967,17 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
             # save related requests to update search index
             for request_assignment in self.object.requestassignment_set.all():
                 request_assignment.request.save()
+
+        messages.success(self.request, _("Organizacija atnaujinta sėkmingai"))
+
+        if self._is_wizard_request():
+            response = render(
+                self.request,
+                "vitrina/orgs/_wizard_org_fragment.html",
+                self.get_context_data(form=form),
+            )
+            response["HX-Trigger"] = "treeRefresh"
+            return response
 
         return HttpResponseRedirect(self.get_success_url())
 

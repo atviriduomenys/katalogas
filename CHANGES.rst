@@ -4,6 +4,33 @@ Changes
 v 1.22.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/pull/2650
+
+- Add single-page DCAT wizard for creating datasets and dataset distributions, accessible from the Organisation detail page; supports non-public resources and exposes additional DCAT-AP fields not available in the standard dataset creation flow.
+- Wizard displays the full dataset parent-child structure (Information System → Service → Dataset → Distribution) in a sidebar tree; datasets created via the wizard remain fully compatible with existing dataset views and editing flows.
+- Adds new `DCATResourceSubclass.IS_PUBLIC_SERVICE` type. It's only possible to create it via wizard forms
+- Adds new `Contact` creation: creating contacts not related to user or organization. Form is only accessible with wizard permissions
+- Add new classifier models with corresponding migrations:
+    - `classifiers.Rule`
+    - `classifiers.ServiceQualityPage`
+    - `classifiers.ProvenanceStatement`
+    - `classifiers.Activity`
+    - `classifiers.FormFieldText`
+    - `classifiers.SpatialCoverage`
+    - `datasets.DatasetQualifiedRelation`
+    - `datasets.QualityAnnotationBody`
+    - `datasets.QualityAnnotation`
+    - `datasets.MeasurementTitle`
+    - `datasets.MeasurementTitleItem`
+    - `datasets.Measurement`
+    - `datasets.QualityMeasurement`
+    - `resources.MediaType`
+- Add new fields to exising models (relations to new models + non-relation fields) needed to save DCAT related data.
+- Model `classifiers.FormFieldText` allows changing label and/or help text for any wizard form field. With small development same model can be used with any other form if needed.
+- Add `wizard.js` webpack entry point driving the wizard UI interactions.
+- Move webpack css building step to run before before collectstatic. Previously it copied older css files.
+
+
 <No Ticket>
 
 - Update ``django-allauth`` to 65.18.x. The new version reverses ``account_login`` (unguarded) while rendering the

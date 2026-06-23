@@ -49,7 +49,7 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.models import Dataset, DatasetStructure, Type, Relation, Attribution
+from vitrina.datasets.models import Dataset, DatasetAttribution, DatasetStructure, Type, Relation, Attribution
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -1296,8 +1296,12 @@ class TestDatasetUpdateView:
             subclass=subclass,
             information_system_type=information_system_type_concept,
             information_system_importance=information_system_importance_concept,
-            information_system_creator=organization,
-            information_system_publisher=organization,
+            information_system_publishers=[organization],
+        )
+        DatasetAttributionFactory(
+            dataset=dataset,
+            attribution=Attribution.objects.get(name=Attribution.CREATOR),
+            organization=organization,
         )
         agency = Agency.objects.filter(name="Registrų ir valstybės informacinių sistemų registras").first()
         IdentifierFactory(resource=dataset, notation="1234", scheme_agency=agency)
@@ -1345,8 +1349,12 @@ class TestDatasetUpdateView:
             subclass=subclass,
             information_system_type=information_system_type_concept,
             information_system_importance=information_system_importance_concept,
-            information_system_creator=organization,
-            information_system_publisher=organization,
+            information_system_publishers=[organization],
+        )
+        DatasetAttributionFactory(
+            dataset=dataset,
+            attribution=Attribution.objects.get(name=Attribution.CREATOR),
+            organization=organization,
         )
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -1472,8 +1480,8 @@ class TestDatasetUpdateView:
             "landing_page": "https://www.test.test",
             "information_system_type": information_system_type_concept.pk,
             "information_system_importance": information_system_importance_concept.pk,
-            "information_system_publisher": organization.pk,
-            "information_system_creator": organization.pk,
+            "information_system_publishers": [organization.pk],
+            "creator": organization.pk,
         }
         response = app.post(url, data)
 
@@ -1491,8 +1499,10 @@ class TestDatasetUpdateView:
         assert dataset.landing_page == "https://www.test.test"
         assert dataset.information_system_type == information_system_type_concept
         assert dataset.information_system_importance == information_system_importance_concept
-        assert dataset.information_system_publisher == organization
-        assert dataset.information_system_creator == organization
+        assert dataset.information_system_publishers.filter(pk=organization.pk).exists()
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution__name=Attribution.CREATOR, organization=organization
+        ).exists()
 
     def test_dataset_with_name_error(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
@@ -1877,8 +1887,8 @@ class TestDatasetCreateView:
             "landing_page": "https://www.test.test",
             "information_system_type": information_system_type_concept.pk,
             "information_system_importance": information_system_importance_concept.pk,
-            "information_system_publisher": organization.pk,
-            "information_system_creator": organization.pk,
+            "information_system_publishers": [organization.pk],
+            "creator": organization.pk,
         }
         response = app.post(url, data)
 
@@ -1896,8 +1906,10 @@ class TestDatasetCreateView:
         assert dataset.landing_page == "https://www.test.test"
         assert dataset.information_system_type == information_system_type_concept
         assert dataset.information_system_importance == information_system_importance_concept
-        assert dataset.information_system_publisher == organization
-        assert dataset.information_system_creator == organization
+        assert dataset.information_system_publishers.filter(pk=organization.pk).exists()
+        assert DatasetAttribution.objects.filter(
+            dataset=dataset, attribution__name=Attribution.CREATOR, organization=organization
+        ).exists()
 
     def test_dataset_with_subclass(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
@@ -2008,8 +2020,8 @@ class TestDatasetCreateView:
         form["identifier"] = "1234"
         form["information_system_type"] = information_system_type_concept.pk
         form["information_system_importance"] = information_system_importance_concept.pk
-        form["information_system_creator"] = organization.pk
-        form["information_system_publisher"] = organization.pk
+        form["creator"].force_value(str(organization.pk))
+        form["information_system_publishers"] = [str(organization.pk)]
         form.submit()
         added_dataset = Dataset.objects.filter(translations__title="Test dataset")
         assert added_dataset.first().is_public is True

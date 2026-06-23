@@ -11,7 +11,9 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
-from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
+from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept, LANGUAGE_CONCEPT_SCHEMA_URI
+from vitrina.datasets.models import Documentation
+from vitrina.models import UUIDBaseModel
 from vitrina.structure import AccessType
 from vitrina.structure.models import Metadata, Version
 from vitrina.helpers import get_file_extension
@@ -19,6 +21,10 @@ from vitrina.utils import translate_text
 from vitrina.datasets.tasks import update_applicable_legislation_description
 
 logger = logging.getLogger()
+
+
+DISTRIBUTION_AVAILABILITY_SCHEMA_URI = "http://publications.europa.eu/resource/authority/planned-availability"
+DISTRIBUTION_STANDARD_URI = "https://data.gov.lt/id/non-standard/DistributionStandard"
 
 
 def get_default_status() -> uuid.UUID:
@@ -125,8 +131,40 @@ class PackagingFormat(models.Model):
         return self.title
 
 
+class MediaType(UUIDBaseModel):
+    title = models.CharField(max_length=255, verbose_name=_("Pavadinimas"))
+    uri = models.URLField(unique=True, max_length=255, verbose_name=_("Nuoroda į kontroliuojamą žodyną"))
+
+    class Meta:
+        verbose_name = _("Medijos tipas")
+        verbose_name_plural = _("Medijos tipai")
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class DatasetDistribution(TranslatableModel):
     DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
+    DISTRIBUTION_DCAT_STATUS_URI = "http://purl.org/adms/status/"
+    CHECKSUM_ALGORITHM_CHOICES = [
+        ("SHA1", "SHA1"),
+        ("SHA224", "SHA224"),
+        ("SHA256", "SHA256"),
+        ("SHA384", "SHA384"),
+        ("SHA512", "SHA512"),
+        ("SHA3-256", "SHA3-256"),
+        ("SHA3-384", "SHA3-384"),
+        ("SHA3-512", "SHA3-512"),
+        ("BLAKE2b-256", "BLAKE2b-256"),
+        ("BLAKE2b-384", "BLAKE2b-384"),
+        ("BLAKE2b-512", "BLAKE2b-512"),
+        ("BLAKE3", "BLAKE3"),
+        ("MD2", "MD2"),
+        ("MD4", "MD4"),
+        ("MD5", "MD5"),
+        ("MD6", "MD6"),
+        ("ADLER32", "ADLER32"),
+    ]
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -136,13 +174,20 @@ class DatasetDistribution(TranslatableModel):
     deleted_on = models.DateTimeField(blank=True, null=True)
     dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE)
     translations = TranslatedFields(
-        title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
-        description=models.TextField(_("Aprašymas"), blank=True),
+        title=models.CharField(
+            _("Pavadinimas"),
+            help_text=_("Pateikties pavadinimas. Atitinka dct:title."),
+            blank=True,
+            max_length=255,
+        ),
+        description=models.TextField(
+            _("Aprašymas"),
+            help_text=_("Pateikties aprašymas. Atitinka dct:description."),
+            blank=True,
+        ),
         conditions=models.TextField(
             _("Teisės - Aprašymas"),
-            help_text=_(
-                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
-            ),
+            help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights."),
             blank=True,
             null=True,
         ),
@@ -152,7 +197,10 @@ class DatasetDistribution(TranslatableModel):
         max_length=255,
         blank=True,
         verbose_name=_("Prieigos nuoroda"),
-        help_text=_("Nuoroda į svetainę iš kurios galima atsisiųsti duomenis."),
+        help_text=_(
+            "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo nuorodas. "
+            "Atitinka dcat:accessUrl."
+        ),
     )
 
     format = models.ForeignKey(
@@ -160,8 +208,9 @@ class DatasetDistribution(TranslatableModel):
         models.SET_NULL,
         blank=False,
         null=True,
-        verbose_name=_("Duomenų formatas"),
         related_name="format_distributions",
+        verbose_name=_("Duomenų formatas"),
+        help_text=_("Pateikties failų formatas. Atitinka dct:format."),
     )
     compression_format = models.ForeignKey(
         CompressionFormat,
@@ -169,20 +218,37 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Suspausto failo formatas"),
+        help_text=_(
+            "Ši savybė nurodo failo, kuriame yra duomenys, formatą suspaustoje formoje. Atitinka dcat:compressFormat."
+        ),
     )
     packaging_format = models.ForeignKey(
         PackagingFormat,
         models.SET_NULL,
         blank=True,
         null=True,
-        verbose_name=_("Suspausto failų paketo formatas"),
+        verbose_name=_("(Failų) Pakavimo formatas"),
+        help_text=_(
+            "Ši savybė nurodo failo, kuriame yra vienas ar daugiau duomenų, formatą. Atitinka dcat:packageFormat."
+        ),
+    )
+    media_type = models.ForeignKey(
+        MediaType,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_("Medijos tipas"),
+        help_text=_("Pateikties medijos tipas. Atitinka dcat:mediaType."),
     )
 
     download_url = models.TextField(
         blank=True,
         null=True,
         verbose_name=_("Atsisiuntimo nuoroda"),
-        help_text=_("Tiesioginė duomenų atsisiuntimo nuoroda."),
+        help_text=_(
+            "Tiesioginė duomenų atsisiuntimo nuoroda. Ši nuoroda turi rodyti tiesiogiai į CSV, JSON "
+            "ar kito formato duomenų failą. Atitinka dcat:downloadURL."
+        ),
     )
 
     file = FilerFileField(
@@ -208,10 +274,27 @@ class DatasetDistribution(TranslatableModel):
 
     distribution_version = models.IntegerField(blank=True, null=True)
 
-    issued = models.CharField(max_length=255, blank=True, null=True)
+    issued = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Išleista"),
+        help_text=_("Data, kada pateiktis buvo pirmą kartą išleista. Atitinka dct:issued."),
+    )
+    date_modified = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Atnaujinimo / pakeitimo data"),
+        help_text=_("Paskutinio pateikties atnaujinimo ar pakeitimo data. Atitinka dct:modified."),
+    )
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(
-        "vitrina_datasets.Dataset", models.SET_NULL, null=True, related_name="data_service_distributions"
+        "vitrina_datasets.Dataset",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="data_service_distributions",
+        verbose_name=_("Duomenų paslauga"),
+        help_text=_("Duomenų paslauga, per kurią prieinama duomenų pateiktis. Atitinka dcat:accessService."),
     )
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
     upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
@@ -222,6 +305,7 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Licencija"),
+        help_text=_("Licencija, pagal kurią platinamas pateikimas. Atitinka dct:license."),
     )
     applicable_legislation = models.ManyToManyField(
         ApplicableLegislation,
@@ -229,13 +313,34 @@ class DatasetDistribution(TranslatableModel):
         related_name="dataset_distributions",
         blank=True,
     )
+    languages = models.ManyToManyField(
+        Concept,
+        blank=True,
+        verbose_name=_("Kalbos"),
+        help_text=_("Ši savybė nurodo pateikties kalbą. Atitinka dct:language."),
+        limit_choices_to={"concept_schemas__uri": LANGUAGE_CONCEPT_SCHEMA_URI},
+    )
+    conforms_to = models.ManyToManyField(
+        Concept,
+        blank=True,
+        related_name="distribution_conforms_to",
+        verbose_name=_("Susijusi schema"),
+        help_text=_("Nurodo, kokį standartą ar schemą atitinka pateiktis. Atitinka dct:conformsTo."),
+    )
+    documentation = models.ManyToManyField(
+        Documentation,
+        blank=True,
+        related_name="distributions",
+        verbose_name=_("Puslapis (dokumentacija)"),
+        help_text=_("Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."),
+    )
 
     temporal_resolution = models.CharField(
         max_length=255,
         blank=True,
         null=True,
-        verbose_name=_("Laiko skiriamoji geba (sekundėmis)"),
-        help_text=_("Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."),
+        verbose_name=_("Laiko skiriamoji geba"),
+        help_text=_("Minimali laiko skiriamoji geba. Atitinka dcat:temporalResolution."),
     )
 
     spatial_resolution = models.CharField(
@@ -243,17 +348,17 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
-        help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
+        help_text=_("Minimali erdvinė skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
 
     status = models.ForeignKey(
         Concept,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="dataset_distributions",
         verbose_name=_("Statusas"),
-        help_text=_(
-            "Pateiktis gali būti įgyvendinta - veikianti, kuriama, suplanuota kūrimui, pasenusi arba atsisakyta.",
-        ),
+        help_text=_("Nurodomas pateikties brandos lygmuo. Atitinka adms:status."),
         default=get_default_status,
     )
 
@@ -265,6 +370,41 @@ class DatasetDistribution(TranslatableModel):
         help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
     is_hvd = models.BooleanField(_("Ar pateiktis yra didelės vertės"), default=False)
+
+    availability = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        related_name="distributions",
+        blank=True,
+        null=True,
+        verbose_name=_("Prieinamumas"),
+        help_text=_(
+            "Ši savybė nurodo, kiek laiko planuojama išlaikyti duomenų rinkinio platinimą. "
+            "Atitinka dcatap:availability."
+        ),
+        limit_choices_to={"concept_schemas__uri": DISTRIBUTION_AVAILABILITY_SCHEMA_URI},
+    )
+    size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Dydis baitais"),
+        help_text=_("Pateikties dydis baitais. Atitinka dcat:byteSize."),
+    )
+    checksum_value = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Kontrolinės sumos reikšmė"),
+        help_text=_("Šešioliktaine sistema užkoduota kontrolinės sumos reikšmė. Atitinka spdx:checksumValue."),
+    )
+    checksum_algorithm = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        choices=CHECKSUM_ALGORITHM_CHOICES,
+        verbose_name=_("Kontrolinės sumos algoritmas"),
+        help_text=_("Algoritmas, naudojamas objekto kontrolinei sumai sukurti. Atitinka spdx:algorithm."),
+    )
 
     # Deprecated fields bellow
     period_start = models.DateField(
@@ -280,8 +420,16 @@ class DatasetDistribution(TranslatableModel):
     type = models.CharField(max_length=255, blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True)
-    size = models.BigIntegerField(blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
+    policy = models.TextField(
+        verbose_name=_("Politika"),
+        help_text=_(
+            "Pateikiama duomenų naudojimo politika, kuri yra susijusių taisyklių rinkinys, "
+            "aprašoma pagal ODRL. Atitinka odrl:hasPolicy"
+        ),
+        blank=True,
+        null=True,
+    )
 
     metadata = GenericRelation("vitrina_structure.Metadata")
     params = GenericRelation("vitrina_structure.Param")
@@ -301,7 +449,11 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
     )
-    name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    name = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("Kodinis pavadinimas"),
+    )
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
 
     class Meta:
@@ -309,6 +461,14 @@ class DatasetDistribution(TranslatableModel):
 
     def __str__(self):
         return self.safe_translation_getter("title", language_code=self.get_current_language()) or ""
+
+    @property
+    def display_title(self) -> str:
+        return (
+            self.safe_translation_getter("title", language_code=self.get_current_language())
+            or self.access_url
+            or f"#{self.pk}"
+        )
 
     def extension(self) -> str:
         if self.file and self.file.file:
@@ -426,6 +586,15 @@ class DatasetDistribution(TranslatableModel):
 
         update_applicable_legislation_description.delay(legislation_ids_to_update)
         self.applicable_legislation.set(legislations)
+
+    def update_documentation(self, urls: list[str]) -> None:
+        documentations: list[Documentation] = []
+
+        for url in urls:
+            documentation, created = Documentation.objects.get_or_create(documentation_link=url)
+            documentations.append(documentation)
+
+        self.documentation.set(documentations)
 
     def create_or_reuse_metadata_instance_and_assign_version(self, metadata_version_id: int) -> Metadata:
         metadata_version = Version.objects.filter(pk=metadata_version_id).first()

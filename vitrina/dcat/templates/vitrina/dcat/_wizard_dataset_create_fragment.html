@@ -1,0 +1,41 @@
+{% load i18n crispy_forms_tags %}
+<form id="wizard-fragment-form"
+      method="post"
+      enctype="multipart/form-data"
+      novalidate
+      hx-post="{{ wizard_create_post_url }}"
+      hx-target="#wizard-main-pane"
+      hx-swap="innerHTML"
+      hx-headers='{"X-Wizard-Request": "true"}'>
+    {% csrf_token %}
+
+    <nav class="wizard-crumbs">
+        {% for crumb in breadcrumb_ancestors %}
+        <div class="is-flex is-align-items-flex-end">
+            <div class="wizard-crumb">
+                <span class="wizard-crumb-label">{{ crumb.type_label }}</span>
+                <span class="wizard-crumb-title">{{ crumb.title }}</span>
+            </div>
+            <span class="wizard-crumb-sep">&rsaquo;</span>
+        </div>
+        {% endfor %}
+        <div class="wizard-crumb is-current">
+            <span class="wizard-crumb-label">{{ form_title }}</span>
+            <span class="wizard-crumb-title">{{ new_word }}</span>
+        </div>
+    </nav>
+
+    <div class="wizard-form-section-header">
+        <p class="wizard-form-section-title">{{ new_word }} {{ form_title|lower }}</p>
+        <p class="wizard-form-section-sub">{{ information_description }}</p>
+    </div>
+
+    {% include "vitrina/_wizard_messages.html" %}
+    {% include "vitrina/_wizard_form_errors.html" %}
+
+    <div class="wizard-form-body">
+        {% crispy form %}
+    </div>
+</form>
+{% include "vitrina/dcat/_wizard_codename_preview_script.html" %}
+<div id="wizard-footer-extra" hx-swap-oob="innerHTML"></div>

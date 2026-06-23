@@ -7,7 +7,7 @@ from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2Widget, Select2Widget
+from django_select2.forms import ModelSelect2Widget, Select2MultipleWidget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -30,7 +30,7 @@ from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.form_helpers import (
     validate_dataset_name,
-    validate_applicable_legislation,
+    validate_urls,
     validate_identifier,
     get_contact_form_choices,
     DATA_SERVICE_STANDARD_URI,
@@ -49,6 +49,7 @@ from vitrina.orgs.forms import (
 )
 
 from vitrina.datasets.models import (
+    Attribution,
     Dataset,
     DatasetStructure,
     DatasetGroup,
@@ -76,7 +77,7 @@ class ResourceSubclassTypeField(ModelChoiceField):
 class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
     subclass = ResourceSubclassTypeField(
         label=_("Duomenų ištekliaus rūšis"),
-        queryset=DCATResourceSubclass.objects.all(),
+        queryset=DCATResourceSubclass.objects.all().exclude(name=DCATResourceSubclass.IS_PUBLIC_SERVICE),
         widget=forms.RadioSelect,
     )
 
@@ -279,7 +280,7 @@ class BaseResourceForm(TranslatableModelForm):
     def clean_applicable_legislation(self) -> list[str]:
         urls = self.cleaned_data.get("applicable_legislation", []) or []
 
-        item_errors = validate_applicable_legislation(urls)
+        item_errors = validate_urls(urls)
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors
@@ -347,6 +348,10 @@ class ServiceResourceForm(BaseResourceForm):
         self.fields["contact"].required = True
         organization = self.organization if self.organization else self.instance.organization
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=organization)
+
+        if not self.instance.pk:
+            self.fields["access_rights"].initial = Dataset.PUBLIC
+
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
@@ -431,12 +436,22 @@ class CatalogResourceForm(BaseResourceForm):
         rights_relation = self.cleaned_data.get("rights_relation")
         conditions = self.cleaned_data.get("conditions")
         if rights_relation and conditions:
-            self.add_error("conditions", _("Užpildykite tik vieną teisių deklaracijų lauką."))
-            self.add_error("rights_relation", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+            error_message = _(
+                "Užpildykite tik vieną teisių lauką: [Teisės - Aprašymas] arba [Teisės - Susijęs dokumentas]."
+            )
+            self.add_error("conditions", error_message)
+            self.add_error("rights_relation", error_message)
 
 
 class InformationSystemResourceForm(CatalogResourceForm):
     identifier = forms.CharField(label=_("Identifikatorius"), required=False)
+    creator = forms.ModelChoiceField(
+        Organization.objects.all(),
+        required=True,
+        label=_("Atsakingas subjektas"),
+        help_text=_("Subjektas, atsakingas už IS parengimą. Atitinka dct:creator."),
+        widget=Select2Widget,
+    )
 
     class Meta:
         model = Dataset
@@ -454,15 +469,13 @@ class InformationSystemResourceForm(CatalogResourceForm):
             "landing_page",
             "information_system_type",
             "information_system_importance",
-            "information_system_publisher",
-            "information_system_creator",
+            "information_system_publishers",
             "applicable_legislation",
             "conditions",
             "rights_relation",
         )
         widgets = {
-            "information_system_publisher": Select2Widget,
-            "information_system_creator": Select2Widget,
+            "information_system_publishers": Select2MultipleWidget,
         }
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -470,6 +483,9 @@ class InformationSystemResourceForm(CatalogResourceForm):
         instance = self.instance if self.instance and self.instance.pk else None
         if instance:
             self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
+            dataset_attribution = instance.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first()
+            if dataset_attribution:
+                self.fields["creator"].initial = dataset_attribution.organization_id
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
@@ -486,8 +502,8 @@ class InformationSystemResourceForm(CatalogResourceForm):
             Field("organization"),
             Field("information_system_type"),
             Field("information_system_importance"),
-            Field("information_system_publisher"),
-            Field("information_system_creator"),
+            Field("information_system_publishers"),
+            Field("creator"),
             Field("parent"),
             Field("applicable_legislation"),
             Field("conditions"),
@@ -499,16 +515,9 @@ class InformationSystemResourceForm(CatalogResourceForm):
             "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. Atitinka foaf:homepage."
         )
         organization_qs = Organization.objects.all().order_by("title")
-        self.fields["information_system_publisher"].queryset = organization_qs
-        self.fields["information_system_publisher"].required = True
-        self.fields["information_system_publisher"].help_text = _(
-            "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
-        )
-        self.fields["information_system_creator"].queryset = organization_qs
-        self.fields["information_system_creator"].required = True
-        self.fields["information_system_creator"].help_text = _(
-            "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
-        )
+        self.fields["information_system_publishers"].queryset = organization_qs
+        self.fields["information_system_publishers"].required = True
+        self.fields["creator"].queryset = organization_qs
 
         self.fields["information_system_type"].queryset = Concept.objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI

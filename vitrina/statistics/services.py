@@ -103,13 +103,15 @@ def _fetch_object_count(model):
     url = f"{SPINTA_SERVER_URL}/{model}?count()"
     try:
         response = requests.get(url, timeout=30)
-        data = json.loads(response.content).get("_data", [])
+        response.raise_for_status()
+        data = json.loads(response.content).get("_data")
     except (requests.RequestException, json.JSONDecodeError):
         logger.warning("Failed to retrieve object count for model: %s", model)
         return None
-    if data:
-        return data[0].get("count()", 0) or 0
-    return 0
+    if not data:
+        logger.warning("Unexpected object count response (no _data) for model: %s", model)
+        return None
+    return data[0].get("count()", 0) or 0
 
 
 def _update_dataset_maturity_level_and_object_count_stats(stats, published_datasets):
@@ -141,7 +143,7 @@ def _update_dataset_maturity_level_and_object_count_stats(stats, published_datas
 def build_dataset_stats():
     stats = {}
 
-    published_datasets = Dataset.objects.filter(published__isnull=False)
+    published_datasets = Dataset.objects.filter(published__isnull=False).prefetch_related("model_set", "metadata")
 
     stats = _update_dataset_maturity_level_and_object_count_stats(stats, published_datasets)
     stats = _update_stat_dict(stats, _get_distributions(), "distribution_count")

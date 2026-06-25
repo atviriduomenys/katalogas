@@ -41,6 +41,39 @@ def test_build_dataset_stats_preserves_object_count_when_spinta_fails():
 
 
 @pytest.mark.django_db
+def test_build_dataset_stats_preserves_object_count_when_response_has_no_data():
+    from vitrina.statistics.services import build_dataset_stats
+
+    dataset = DatasetFactory(published=datetime(2023, 5, 10, 10, 0, 0, tzinfo=timezone.utc))
+    ModelFactory(dataset=dataset)
+    DatasetStats.objects.create(created=dataset.published.date(), dataset_id=dataset.pk, object_count=999)
+
+    response = Mock(content=json.dumps({"errors": ["not found"]}))
+    with patch("vitrina.statistics.services.requests.get", return_value=response):
+        build_dataset_stats()
+
+    stat = DatasetStats.objects.get(dataset_id=dataset.pk, created=dataset.published.date())
+    assert stat.object_count == 999
+
+
+@pytest.mark.django_db
+def test_build_dataset_stats_preserves_object_count_on_http_error():
+    from vitrina.statistics.services import build_dataset_stats
+
+    dataset = DatasetFactory(published=datetime(2023, 5, 10, 10, 0, 0, tzinfo=timezone.utc))
+    ModelFactory(dataset=dataset)
+    DatasetStats.objects.create(created=dataset.published.date(), dataset_id=dataset.pk, object_count=999)
+
+    response = Mock()
+    response.raise_for_status.side_effect = requests.HTTPError("500 Server Error")
+    with patch("vitrina.statistics.services.requests.get", return_value=response):
+        build_dataset_stats()
+
+    stat = DatasetStats.objects.get(dataset_id=dataset.pk, created=dataset.published.date())
+    assert stat.object_count == 999
+
+
+@pytest.mark.django_db
 def test_build_dataset_stats_counts_distributions_by_created_date():
     from vitrina.statistics.services import build_dataset_stats
 

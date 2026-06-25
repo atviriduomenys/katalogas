@@ -13,9 +13,9 @@ def add_schedule(apps, schema_editor):
         day_of_month="*",
         month_of_year="*",
     )
-    PeriodicTask.objects.get_or_create(
-        task=TASK,
-        defaults={"name": "Create dataset statistics", "crontab": schedule},
+    PeriodicTask.objects.update_or_create(
+        name="Create dataset statistics",
+        defaults={"task": TASK, "crontab": schedule},
     )
 
 

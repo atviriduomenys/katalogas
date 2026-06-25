@@ -2196,7 +2196,8 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
                 object_id__in=non_unassigned_ids,
                 status__isnull=False,
             )
-            .order_by("object_id", "created")
+            .order_by("object_id", "-created")
+            .distinct("object_id")
             .values(
                 "object_id",
                 "status",
@@ -2249,15 +2250,12 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         for status in statuses:
             time_data = []
             bar_data = []
-            status_dataset_ids = datasets.filter(status=status["filter_value"]).values_list("pk", flat=True)
-            status_datasets = Dataset.objects.filter(pk__in=status_dataset_ids)
-
-            count_data = self.get_data_for_indicator(indicator, values, status_datasets)
-
-            buckets = bucket_grouped_rows(count_data, frequency, date_field)
 
             if status["filter_value"] == Dataset.UNASSIGNED or indicator != "dataset-count":
-                lookup = buckets
+                status_dataset_ids = datasets.filter(status=status["filter_value"]).values_list("pk", flat=True)
+                status_datasets = Dataset.objects.filter(pk__in=status_dataset_ids)
+                count_data = self.get_data_for_indicator(indicator, values, status_datasets)
+                lookup = bucket_grouped_rows(count_data, frequency, date_field)
             else:
                 if status["filter_value"] == "HAS_DATA":
                     comm_val = "OPENED"

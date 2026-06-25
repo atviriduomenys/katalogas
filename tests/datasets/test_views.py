@@ -2577,6 +2577,28 @@ class TestDatasetMembers:
         assert len(subscriptions) == 1
         assert subscriptions[0].sub_type == Subscription.DATASET
 
+    def test_delete_member_removes_dataset_subscription(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        ct = ContentType.objects.get_for_model(Dataset)
+        coordinator = RepresentativeFactory(
+            content_type=ct, object_id=dataset.pk, role=Representative.OPEN_DATA_COORDINATOR
+        )
+        member = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.OPEN_DATA_MANAGER)
+        Subscription.objects.create(
+            user=member.user,
+            content_type=ct,
+            object_id=dataset.pk,
+            sub_type=Subscription.DATASET,
+            email_subscribed=True,
+            dataset_comments_sub=True,
+        )
+
+        app.set_user(coordinator.user)
+        app.post(reverse("dataset-representative-delete", args=[dataset.pk, member.pk]))
+
+        assert not Representative.objects.filter(pk=member.pk).exists()
+        assert not Subscription.objects.filter(user=member.user, content_type=ct, object_id=dataset.pk).exists()
+
     def test_dataset_members_create_member_with_api_access(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)

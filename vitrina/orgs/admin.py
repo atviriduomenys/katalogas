@@ -30,7 +30,7 @@ from vitrina.orgs.models import (
 )
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.orgs.services import pre_representative_delete
+from vitrina.orgs.services import pre_representative_delete, remove_representative_subscription
 from vitrina.admin import RevisionCommentVersionAdmin
 
 
@@ -108,11 +108,13 @@ class RepresentativeAdmin(RevisionCommentVersionAdmin):
     readonly_fields = ("can_make_agreements",)
 
     def delete_model(self, request, obj):
+        remove_representative_subscription(obj)
         pre_representative_delete(obj)
         super().delete_model(request, obj)
 
     def delete_queryset(self, request, queryset):
         for obj in queryset:
+            remove_representative_subscription(obj)
             pre_representative_delete(obj)
         super().delete_queryset(request, queryset)
 

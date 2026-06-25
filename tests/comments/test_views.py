@@ -747,6 +747,86 @@ def test_reply_no_notification_when_replying_to_own_comment(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_comment_emailed_to_public_organization_subscriber(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(organization=org)
+    org_ct = ContentType.objects.get_for_model(org)
+
+    subscriber = UserFactory(email="public_subscriber@example.com")
+    Subscription.objects.create(
+        user=subscriber,
+        content_type=org_ct,
+        object_id=org.pk,
+        sub_type=Subscription.ORGANIZATION,
+        email_subscribed=True,
+        dataset_comments_sub=True,
+    )
+
+    commenter = UserFactory(email="commenter@example.com")
+    app.set_user(commenter)
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
+    form["is_public"] = True
+    form["body"] = "Test comment"
+    form.submit()
+
+    recipients = {addr for message in mail.outbox for addr in message.to}
+    assert "public_subscriber@example.com" in recipients
+
+
+@pytest.mark.django_db
+def test_comment_not_emailed_to_inactive_org_subscriber(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(organization=org)
+    org_ct = ContentType.objects.get_for_model(org)
+
+    inactive = UserFactory(email="inactive_sub@example.com", is_active=False)
+    Subscription.objects.create(
+        user=inactive,
+        content_type=org_ct,
+        object_id=org.pk,
+        sub_type=Subscription.ORGANIZATION,
+        email_subscribed=True,
+        dataset_comments_sub=True,
+    )
+
+    commenter = UserFactory(email="commenter@example.com")
+    app.set_user(commenter)
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
+    form["is_public"] = True
+    form["body"] = "Test comment"
+    form.submit()
+
+    recipients = {addr for message in mail.outbox for addr in message.to}
+    assert "inactive_sub@example.com" not in recipients
+
+
+@pytest.mark.django_db
+def test_comment_not_emailed_to_inactive_dataset_subscriber(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+
+    inactive = UserFactory(email="inactive_sub@example.com", is_active=False)
+    Subscription.objects.create(
+        user=inactive,
+        content_type=ct,
+        object_id=dataset.pk,
+        sub_type=Subscription.DATASET,
+        email_subscribed=True,
+        dataset_comments_sub=True,
+    )
+
+    commenter = UserFactory(email="commenter@example.com")
+    app.set_user(commenter)
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
+    form["is_public"] = True
+    form["body"] = "Test comment"
+    form.submit()
+
+    recipients = {addr for message in mail.outbox for addr in message.to}
+    assert "inactive_sub@example.com" not in recipients
+
+
+@pytest.mark.django_db
 def test_delete_comment_without_login(client):
     comment = CommentFactory()
     url = reverse("delete-comment", kwargs={"pk": comment.pk})

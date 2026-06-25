@@ -131,7 +131,7 @@ from vitrina.helpers import (
 )
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action, hash_api_key
+from vitrina.orgs.services import has_perm, Action, hash_api_key, remove_representative_subscription
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.requests.models import RequestObject, RequestAssignment, Request
@@ -1718,9 +1718,7 @@ class DeleteMemberView(
         )
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
-        if self.object.content_type != ContentType.objects.get_for_model(Dataset):
-            return super().form_valid(form)
-
+        remove_representative_subscription(self.object)
         return super().form_valid(form)
 
 

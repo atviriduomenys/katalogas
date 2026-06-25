@@ -743,6 +743,26 @@ def manage_subscriptions_for_representative(subscribe, user, organization, link)
             subscription.delete()
 
 
+def remove_representative_subscription(rep: Representative) -> None:
+    if not rep.user_id:
+        return
+    still_representative = (
+        Representative.objects.filter(
+            user_id=rep.user_id,
+            content_type=rep.content_type_id,
+            object_id=rep.object_id,
+        )
+        .exclude(pk=rep.pk)
+        .exists()
+    )
+    if not still_representative:
+        Subscription.objects.filter(
+            user_id=rep.user_id,
+            content_type=rep.content_type_id,
+            object_id=rep.object_id,
+        ).delete()
+
+
 def pre_representative_delete(rep: Representative):
     if isinstance(rep.content_object, Organization) and rep.user:
         org_repr = rep.user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))

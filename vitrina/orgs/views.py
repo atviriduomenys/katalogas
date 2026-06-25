@@ -108,6 +108,7 @@ from vitrina.orgs.services import (
     hash_api_key,
     manage_subscriptions_for_representative,
     pre_representative_delete,
+    remove_representative_subscription,
 )
 from vitrina.plans.models import Plan
 from vitrina.projects.models import Project
@@ -1329,6 +1330,7 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
                 publisher__isnull=False,
             ).update(publisher=None)
 
+        remove_representative_subscription(self.object)
         pre_representative_delete(self.object)
         return super().form_valid(form)
 

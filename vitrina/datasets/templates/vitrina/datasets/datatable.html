@@ -69,13 +69,7 @@
                        class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
                     </div>
                 </td>
-            {% elif r.download_url %}
-                <td>
-                    <a class="button is-primary is-small is-pulled-right"
-                       href="{% url 'dataset-distribution-download' pk=dataset.id distribution_id=r.id %}"
-                       target="_blank">{% translate "Atidaryti" %}</a>
-                </td>
-            {% elif r.access_url %}
+            {% elif r.download_url or r.access_url %}
                 <td>
                     <a class="button is-primary is-small is-pulled-right"
                        href="{% url 'dataset-distribution-download' pk=dataset.id distribution_id=r.id %}"

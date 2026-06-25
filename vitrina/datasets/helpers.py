@@ -2,6 +2,7 @@ import re
 from django.contrib.contenttypes.models import ContentType
 from functools import partial
 
+from crawleruseragents import is_crawler
 from django.db.models import Q
 from django.http import HttpRequest
 from slugify import slugify
@@ -16,6 +17,21 @@ def is_child_resources_list(request: HttpRequest) -> bool:
 
 def is_manager_dataset_list(request: HttpRequest):
     return request.resolver_match.url_name == "manager-dataset-list"
+
+
+def is_prefetch_request(request: HttpRequest) -> bool:
+    sec_purpose = request.headers.get("Sec-Purpose", "").lower()
+    if any(value in sec_purpose for value in ("prefetch", "prerender")):
+        return True
+    if request.headers.get("Purpose", "").lower() == "prefetch":
+        return True
+    return request.headers.get("X-Moz", "").lower() == "prefetch"
+
+
+def should_count_download(request: HttpRequest) -> bool:
+    if is_prefetch_request(request):
+        return False
+    return not is_crawler(request.headers.get("User-Agent", ""))
 
 
 def generate_dataset_name(organization: Organization, dataset_title: str) -> str:

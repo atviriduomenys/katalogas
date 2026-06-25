@@ -28,7 +28,6 @@ from django.http import (
     HttpResponse,
     HttpRequest,
     HttpResponseBase,
-    FileResponse,
     Http404,
 )
 from django.http.response import HttpResponsePermanentRedirect
@@ -83,7 +82,12 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name, is_child_resources_list
+from vitrina.datasets.helpers import (
+    is_manager_dataset_list,
+    generate_unique_dataset_name,
+    is_child_resources_list,
+    should_count_download,
+)
 from vitrina.structure import VersionStatus
 from vitrina.structure.views import DatasetStructureMixin
 
@@ -642,7 +646,8 @@ class DatasetRDFDownloadView(PermissionRequiredMixin, View):
         # Render first, count only once the response is successfully built, so a rendering
         # error does not get counted as a download.
         response = render_rdf_response(request, Dataset.objects.filter(pk=kwargs.get("pk")))
-        Dataset.objects.filter(pk=kwargs["pk"]).update(download_count=F("download_count") + 1)
+        if should_count_download(request):
+            Dataset.objects.filter(pk=kwargs["pk"]).update(download_count=F("download_count") + 1)
         return response
 
 
@@ -661,20 +666,16 @@ class DatasetDistributionDownloadView(PermissionRequiredMixin, View):
     def get(self, request: HttpRequest, **kwargs) -> HttpResponseBase:
         # Build the response first; only count once the download has actually started
         response = self._build_download_response()
-        Dataset.objects.filter(pk=self.distribution.dataset_id).update(download_count=F("download_count") + 1)
+        if should_count_download(request):
+            Dataset.objects.filter(pk=self.distribution.dataset_id).update(download_count=F("download_count") + 1)
         return response
 
     def _build_download_response(self) -> HttpResponseBase:
         if self.distribution.file:
-            try:
-                file = self.distribution.file.file.open("rb")
-            except (OSError, ValueError) as e:
-                raise Http404("Distribution file is not available.") from e
-            return FileResponse(
-                file,
-                as_attachment=True,
-                filename=self.distribution.filename_without_path() or "download",
-            )
+            file = self.distribution.file.file
+            if not file.storage.exists(file.name):
+                raise Http404("Distribution file is not available.")
+            return HttpResponseRedirect(self.distribution.file.url)
         elif self.distribution.download_url:
             return HttpResponseRedirect(self.distribution.download_url)
         elif self.distribution.access_url:
@@ -704,7 +705,8 @@ class DatasetDynamicResourceDownloadView(PermissionRequiredMixin, View):
         download_url = data.get("get_download_url")
         if not download_url:
             raise Http404
-        Dataset.objects.filter(pk=self.dataset.pk).update(download_count=F("download_count") + 1)
+        if should_count_download(request):
+            Dataset.objects.filter(pk=self.dataset.pk).update(download_count=F("download_count") + 1)
         return HttpResponseRedirect(download_url)
 
 

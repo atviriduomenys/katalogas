@@ -22,7 +22,14 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
 from django.forms import BaseForm
-from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
+from django.http import (
+    JsonResponse,
+    HttpResponseRedirect,
+    HttpResponse,
+    HttpRequest,
+    HttpResponseBase,
+    Http404,
+)
 from django.http.response import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import date as _date
@@ -75,7 +82,12 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name, is_child_resources_list
+from vitrina.datasets.helpers import (
+    is_manager_dataset_list,
+    generate_unique_dataset_name,
+    is_child_resources_list,
+    should_count_download,
+)
 from vitrina.structure import VersionStatus
 from vitrina.structure.views import DatasetStructureMixin
 
@@ -630,8 +642,72 @@ class DatasetRDFDownloadView(PermissionRequiredMixin, View):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
-    def get(self, request, **kwargs):
-        return render_rdf_response(request, Dataset.objects.filter(pk=kwargs.get("pk")))
+    def get(self, request: HttpRequest, **kwargs) -> HttpResponse:
+        # Render first, count only once the response is successfully built, so a rendering
+        # error does not get counted as a download.
+        response = render_rdf_response(request, Dataset.objects.filter(pk=kwargs.get("pk")))
+        if should_count_download(request):
+            Dataset.objects.filter(pk=kwargs["pk"]).update(download_count=F("download_count") + 1)
+        return response
+
+
+class DatasetDistributionDownloadView(PermissionRequiredMixin, View):
+    distribution = None
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
+        self.distribution = get_object_or_404(
+            DatasetDistribution, dataset__pk=kwargs["pk"], pk=kwargs["distribution_id"]
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, self.distribution.dataset)
+
+    def get(self, request: HttpRequest, **kwargs) -> HttpResponseBase:
+        # Build the response first; only count once the download has actually started
+        response = self._build_download_response()
+        if should_count_download(request):
+            Dataset.objects.filter(pk=self.distribution.dataset_id).update(download_count=F("download_count") + 1)
+        return response
+
+    def _build_download_response(self) -> HttpResponseBase:
+        if self.distribution.file:
+            file = self.distribution.file.file
+            if not file.storage.exists(file.name):
+                raise Http404("Distribution file is not available.")
+            return HttpResponseRedirect(self.distribution.file.url)
+        elif self.distribution.download_url:
+            return HttpResponseRedirect(self.distribution.download_url)
+        elif self.distribution.access_url:
+            return HttpResponseRedirect(self.distribution.access_url)
+        raise Http404
+
+
+class DatasetDynamicResourceDownloadView(PermissionRequiredMixin, View):
+    dataset = None
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
+        self.dataset = get_object_or_404(Dataset, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, self.dataset)
+
+    def get(self, request: HttpRequest, **kwargs) -> HttpResponseBase:
+        version = get_object_or_404(_Version, pk=kwargs["version_id"])
+        service = DynamicResourceService(self.dataset, version)
+        try:
+            data = service.retrieve_data(
+                self.dataset.pk, version, kwargs["distribution_name"], kwargs["format"].upper()
+            )
+        except (StopIteration, IndexError):
+            raise Http404
+        download_url = data.get("get_download_url")
+        if not download_url:
+            raise Http404
+        if should_count_download(request):
+            Dataset.objects.filter(pk=self.dataset.pk).update(download_count=F("download_count") + 1)
+        return HttpResponseRedirect(download_url)
 
 
 class OpenDataPortalDatasetDetailView(View):

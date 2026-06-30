@@ -1,7 +1,11 @@
 Changes
 #######
 
-v 1.22.0 (current)
+v 1.23.0 (2026-06-30)
+==================
+
+
+v 1.22.0 (2026-06-30)
 ==================
 
 https://github.com/atviriduomenys/katalogas/pull/2707

@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic.base import View
 
 from vitrina.classifiers.models import AreaOfManagement
-from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.settings import ELASTIC_FACET_SIZE, ELASTIC_TAGS_FACET_SIZE
 from vitrina.requests.forms import RequestDatasetsEditForm
 from django.db.models import Count, Q, Case, When
 from django.template.defaultfilters import date as _date
@@ -117,9 +117,9 @@ class RequestListView(FacetedSearchView):
     def get_queryset(self):
         requests = super().get_queryset()
         sorting = self.request.GET.get("sort", None)
-        options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
-            requests = requests.facet(field, **options)
+            size = ELASTIC_TAGS_FACET_SIZE if field == "tags" else ELASTIC_FACET_SIZE
+            requests = requests.facet(field, size=size)
         if sorting is None or sorting == "sort-by-date-newest":
             requests = requests.order_by("-type_order", "-created")
         elif sorting == "sort-by-date-oldest":

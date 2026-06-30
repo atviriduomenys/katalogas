@@ -20,7 +20,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
-from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
+from django.db.models import QuerySet, Count, Q, Avg, Sum, Func, F, Value, TextField
+from django.db.models.functions import Coalesce
 from django.forms import BaseForm
 from django.http import (
     JsonResponse,
@@ -148,7 +149,7 @@ from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.requests.models import RequestObject, RequestAssignment, Request
 from vitrina.resources.models import DatasetDistribution, Format
-from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
+from vitrina.settings import ELASTIC_FACET_SIZE, ELASTIC_TAGS_FACET_SIZE, SPINTA_SERVER_URL
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
@@ -219,9 +220,9 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         if self.request.GET.get("q") and not sorting:
             sorting = "sort-by-relevance"
 
-        options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
-            queryset = queryset.facet(field, **options)
+            size = ELASTIC_TAGS_FACET_SIZE if field == "tags" else ELASTIC_FACET_SIZE
+            queryset = queryset.facet(field, size=size)
 
         if is_manager_dataset_list(self.request):
             dataset_ct = ContentType.objects.get_for_model(Dataset)
@@ -2122,7 +2123,7 @@ class DatasetStatsMixin(StatsMixin):
             ).values_list("name", flat=True)
             data = ModelDownloadStats.objects.filter(model__in=model_names).values(*values).annotate(count=Sum(field))
         else:
-            data = filter_queryset.values(*values).annotate(count=Count("pk"))
+            data = filter_queryset.order_by().values(*values).annotate(count=Count("pk"))
         return data
 
     def get_count(self, label, indicator, frequency, data, count):
@@ -2185,32 +2186,54 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         time_chart_data = []
         bar_chart_data = []
 
-        most_recent_comments = (
+        non_unassigned_ids = {
+            int(pk) for pk in datasets.exclude(status=Dataset.UNASSIGNED).values_list("pk", flat=True)
+        }
+
+        status_comments = (
             Comment.objects.filter(
                 content_type=ContentType.objects.get_for_model(Dataset),
-                object_id__in=datasets.exclude(status=Dataset.UNASSIGNED).values_list("pk", flat=True),
+                object_id__in=non_unassigned_ids,
                 status__isnull=False,
             )
-            .values("object_id")
-            .annotate(latest_status_change=Max("created"))
-            .values("object_id", "latest_status_change")
-            .order_by("latest_status_change")
+            .order_by("object_id", "-created")
+            .distinct("object_id")
+            .values(
+                "object_id",
+                "status",
+                "created",
+                "created__year",
+                "created__quarter",
+                "created__month",
+                "created__week",
+                "created__day",
+            )
         )
+        latest_status_by_dataset = {row["object_id"]: row for row in status_comments}
 
-        dataset_status = Comment.objects.filter(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id__in=most_recent_comments.values("object_id"),
-            created__in=most_recent_comments.values("latest_status_change"),
-        ).values(
-            "object_id",
-            "status",
-            "created",
-            "created__year",
-            "created__quarter",
-            "created__month",
-            "created__week",
-            "created__day",
+        # datasets whose status was set without a status comment (imports,
+        # admin edits) are counted at their published date, falling back to
+        # their created date
+        status_to_comment_value = {Dataset.HAS_DATA: "OPENED"}
+        fallback_rows = (
+            Dataset.objects.filter(pk__in=non_unassigned_ids - set(latest_status_by_dataset))
+            .annotate(status_date=Coalesce("published", "created"))
+            .values("pk", "status", "status_date")
         )
+        for row in fallback_rows:
+            status_date = row["status_date"]
+            if not status_date:
+                continue
+            if timezone.is_aware(status_date):
+                status_date = timezone.localtime(status_date)
+            latest_status_by_dataset[row["pk"]] = {
+                "status": status_to_comment_value.get(row["status"], row["status"]),
+                "created__year": status_date.year,
+                "created__quarter": (status_date.month - 1) // 3 + 1,
+                "created__month": status_date.month,
+                "created__week": status_date.isocalendar()[1],
+                "created__day": status_date.day,
+            }
 
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()
@@ -2221,35 +2244,35 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         values = get_values_for_frequency(frequency, date_field)
 
         status_period_counts: Counter = Counter()
-        for row in dataset_status:
+        for row in latest_status_by_dataset.values():
             status_period_counts[(row["status"], row_period_key(row, frequency, date_field))] += 1
 
         for status in statuses:
-            bar_count = 0
             time_data = []
             bar_data = []
-            status_dataset_ids = datasets.filter(status=status["filter_value"]).values_list("pk", flat=True)
-            status_datasets = Dataset.objects.filter(pk__in=status_dataset_ids)
 
-            count_data = self.get_data_for_indicator(indicator, values, status_datasets)
-
-            buckets = bucket_grouped_rows(count_data, frequency, date_field)
-
-            for label in labels:
-                time_count = 0
-                if status["filter_value"] == Dataset.UNASSIGNED or indicator != "dataset-count":
-                    time_count = buckets.get(get_period_key(frequency, date_field, label), 0)
-                    bar_count += time_count
+            if status["filter_value"] == Dataset.UNASSIGNED or indicator != "dataset-count":
+                status_dataset_ids = datasets.filter(status=status["filter_value"]).values_list("pk", flat=True)
+                status_datasets = Dataset.objects.filter(pk__in=status_dataset_ids)
+                count_data = self.get_data_for_indicator(indicator, values, status_datasets)
+                lookup = bucket_grouped_rows(count_data, frequency, date_field)
+            else:
+                if status["filter_value"] == "HAS_DATA":
+                    comm_val = "OPENED"
+                elif status["filter_value"] == "INVENTORED":
+                    comm_val = "INVENTORED"
                 else:
-                    if status["filter_value"] == "HAS_DATA":
-                        comm_val = "OPENED"
-                    elif status["filter_value"] == "INVENTORED":
-                        comm_val = "INVENTORED"
-                    else:
-                        comm_val = status["filter_value"]
+                    comm_val = status["filter_value"]
+                lookup = {
+                    key: count
+                    for (comment_status, key), count in status_period_counts.items()
+                    if comment_status == comm_val
+                }
 
-                    time_count = status_period_counts.get((comm_val, get_period_key(frequency, date_field, label)), 0)
-                    bar_count += time_count
+            bar_count = self.get_out_of_window_count(indicator, lookup, frequency, date_field, labels)
+            for label in labels:
+                time_count = lookup.get(get_period_key(frequency, date_field, label), 0)
+                bar_count += time_count
 
                 if frequency == "W":
                     time_data.append({"x": _date(label.start_time, ff), "y": time_count})

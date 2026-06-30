@@ -44,17 +44,22 @@ def update_facet_data(
 ) -> List[Any]:
     updated_facet_data = []
     if facet_fields and field_name in facet_fields:
+        objects_by_pk = {}
+        if model_class:
+            objects_by_pk = {
+                str(obj.pk): obj
+                for obj in model_class.objects.filter(pk__in=[facet[0] for facet in facet_fields[field_name]])
+            }
         for facet in facet_fields[field_name]:
             display_value = facet[0]
             if model_class:
-                try:
-                    obj = model_class.objects.get(pk=facet[0])
-                    if use_str:
-                        display_value = str(obj)
-                    else:
-                        display_value = obj.title
-                except ObjectDoesNotExist:
+                obj = objects_by_pk.get(str(facet[0]))
+                if obj is None:
                     continue
+                if use_str:
+                    display_value = str(obj)
+                else:
+                    display_value = obj.title
             elif choices:
                 display_value = choices.get(facet[0])
                 if not display_value:
@@ -212,7 +217,8 @@ def bucket_grouped_rows(
 ) -> dict[tuple, Any]:
     buckets: dict[tuple, Any] = {}
     for row in rows:
-        buckets[row_period_key(row, frequency, field)] = row.get(value) or 0
+        key = row_period_key(row, frequency, field)
+        buckets[key] = buckets.get(key, 0) + (row.get(value) or 0)
     return buckets
 
 

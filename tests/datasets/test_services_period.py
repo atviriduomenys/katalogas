@@ -18,3 +18,14 @@ def test_bucket_grouped_rows_none_to_zero():
     buckets = bucket_grouped_rows(rows, "Y", "created")
     assert buckets[(2023,)] == 0
     assert buckets[(2022,)] == 5
+
+
+def test_bucket_grouped_rows_sums_rows_with_same_period():
+    rows = [
+        {"created__year": 2022, "count": 2},
+        {"created__year": 2022, "count": 3},
+        {"created__year": 2023, "count": 1},
+    ]
+    buckets = bucket_grouped_rows(rows, "Y", "created")
+    assert buckets[(2022,)] == 5
+    assert buckets[(2023,)] == 1

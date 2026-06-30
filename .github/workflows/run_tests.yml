@@ -48,6 +48,9 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libmagic1
+
       # https://github.com/elastic/elastic-github-actions/tree/master/elasticsearch
       - name: Configure sysctl limits
         run: |

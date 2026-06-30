@@ -31,6 +31,7 @@ RUN apt-get update && \
     libpangoft2-1.0-0 \
     libharfbuzz-subset0 \
     libffi-dev \
+    libmagic1 \
     libxml2 \
     libxslt1.1 \
     fonts-liberation \

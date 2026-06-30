@@ -13,7 +13,9 @@ from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
+import magic
 import markdown
+from django.apps import apps
 from django.contrib.sites.models import Site
 from django.core.files import File
 from django.core.handlers.wsgi import WSGIRequest
@@ -702,17 +704,60 @@ def get_encoding(file_path):
             return "utf-8"
 
 
+def _detect_content_type(file) -> Optional[str]:
+    """Sniff the real MIME type from the file's bytes using libmagic.
+
+    Returns None for empty files (nothing to sniff). The file position is
+    restored so callers can keep reading/saving the file afterwards.
+    """
+    try:
+        file.seek(0)
+        header = file.read(2048)
+    finally:
+        file.seek(0)
+    if not header:
+        return None
+    return magic.from_buffer(header, mime=True)
+
+
+def _run_deny_validators(file_name: str, file, mime_type: str) -> None:
+    """Run only the configured deny/scan validators for ``mime_type``.
+
+    Unlike filer.validation.validate_upload this deliberately skips the MIME
+    whitelist gate: it is used with the *sniffed* content type, where harmless
+    detections (e.g. a .docx sniffing as application/zip, a legacy .doc as an OLE
+    container) must not be rejected. Only types with an explicit deny/scan rule
+    in FILER_ADD_FILE_VALIDATORS are blocked.
+    """
+    validators = apps.get_app_config("filer").FILE_VALIDATORS.get(mime_type, [])
+    for validator in validators:
+        file.seek(0)
+        validator(file_name, file, None, mime_type)
+    file.seek(0)
+
+
 def validate_file(file: File) -> None:
     # Adding any additional types that are not in Python's built-in MIME type registry.
     mimetypes.add_type("text/asciidoc", ".adoc")  # ADOC
+    mimetypes.add_type("application/gzip", ".gz")  # gzip
+    mimetypes.add_type("image/webp", ".webp")  # webp
 
-    mime_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+    # First gate: validate by the declared (extension-based) MIME type. This runs
+    # the FILER_MIME_TYPE_WHITELIST check followed by the deny validators.
+    declared_mime = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
     validate_upload(
         file_name=file.name,
         file=file.file,
         owner=None,
-        mime_type=mime_type,
+        mime_type=declared_mime,
     )
+
+    # Defense in depth: sniff the actual content type and re-run the deny
+    # validators against it. This catches active content (HTML/PHP/shell/SVG/
+    # executables) smuggled past the extension gate under a benign extension.
+    detected_mime = _detect_content_type(file.file)
+    if detected_mime and detected_mime != declared_mime:
+        _run_deny_validators(file.name, file.file, detected_mime)
 
 
 def get_file_extension(file_name: str) -> str:

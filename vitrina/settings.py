@@ -360,16 +360,94 @@ THUMBNAIL_ALIASES = {
     },
 }
 
+# Upload security follows a "whitelist + defense in depth" model:
+#
+# 1. FILER_MIME_TYPE_WHITELIST is the primary gate. django-filer checks the
+#    incoming MIME type against it *before* running any validator and denies
+#    anything that does not match (with "type/*" wildcard support). This is
+#    fail-closed: a new dangerous format that nobody added to a blacklist is
+#    rejected by default because it simply is not on the allow list.
+#
+# 2. FILER_ADD_FILE_VALIDATORS still denies known-dangerous active content as a
+#    second layer. These validators are also what content sniffing reuses (see
+#    vitrina.helpers.validate_file): the detected MIME type of the actual bytes
+#    is run through them, so a file disguised with a safe extension (e.g. HTML
+#    renamed to .csv) is still caught.
+#
+# The whitelist reflects the formats users legitimately upload (dataset
+# distributions, documentation, images). Add new legitimate types here rather
+# than relying on a blacklist.
+FILER_MIME_TYPE_WHITELIST = [
+    # Images
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/tiff",
+    "image/svg+xml",  # allowed but scanned for scripting by validate_svg
+    # Documents
+    "application/pdf",
+    "text/plain",
+    "text/csv",
+    "text/tab-separated-values",
+    "text/asciidoc",  # .adoc, registered in vitrina.helpers.validate_file
+    # OpenDocument formats
+    "application/vnd.oasis.opendocument.text",
+    "application/vnd.oasis.opendocument.spreadsheet",
+    "application/vnd.oasis.opendocument.presentation",
+    # MS Office (legacy)
+    "application/msword",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    # MS Office (OOXML)
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    # Structured / open data
+    "application/json",
+    "application/ld+json",
+    "application/geo+json",
+    "application/xml",
+    "text/xml",
+    "application/rdf+xml",
+    "text/turtle",
+    "application/n-triples",
+    "text/n3",
+    # Archives
+    "application/zip",
+    "application/gzip",
+    "application/x-tar",
+    "application/x-7z-compressed",
+    "application/x-bzip2",
+]
+
+# Known-dangerous active content. The keys cover both the extension-derived MIME
+# types and the variants that libmagic reports when sniffing the raw bytes, so
+# the same deny rules apply whether a payload arrives with an honest extension or
+# a spoofed one. application/octet-stream is intentionally NOT listed: the
+# whitelist already rejects it on the declared side, and treating a sniffed
+# octet-stream as dangerous would reject legitimate binaries (e.g. some office
+# files) that happen to detect as a generic byte stream.
 FILER_ADD_FILE_VALIDATORS = {
+    # Markup browsers may render/execute
     "text/html": ["filer.validation.deny_html"],
     "application/xhtml+xml": ["filer.validation.deny"],
-    "image/svg+xml": ["filer.validation.deny"],
+    # Scripts
     "text/javascript": ["filer.validation.deny"],
     "application/javascript": ["filer.validation.deny"],
-    "application/x-msdownload": ["filer.validation.deny"],
-    "application/x-sh": ["filer.validation.deny"],
+    "application/x-javascript": ["filer.validation.deny"],
     "application/x-httpd-php": ["filer.validation.deny"],
-    "application/octet-stream": ["filer.validation.deny"],
+    "text/x-php": ["filer.validation.deny"],
+    "application/x-sh": ["filer.validation.deny"],
+    "text/x-shellscript": ["filer.validation.deny"],
+    # Executables
+    "application/x-msdownload": ["filer.validation.deny"],
+    "application/x-dosexec": ["filer.validation.deny"],
+    "application/x-executable": ["filer.validation.deny"],
+    "application/x-mach-binary": ["filer.validation.deny"],
+    # SVG is allowed (whitelisted) but scanned for embedded scripting
+    "image/svg+xml": ["filer.validation.validate_svg"],
 }
 
 META_USE_OG_PROPERTIES = True

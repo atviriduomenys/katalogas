@@ -18,6 +18,13 @@ XHTML_XSS = (
     b"</html>\n"
 )
 
+HTML_XSS = b"<!DOCTYPE html><html><body><script>alert(document.domain)</script></body></html>\n"
+SVG_XSS = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>\n'
+SVG_CLEAN = b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>\n'
+PHP_SHELL = b'<?php system($_GET["c"]); ?>\n'
+SH_SCRIPT = b"#!/bin/bash\nrm -rf /\n"
+PE_BINARY = b"MZ\x90\x00" + b"\x00" * 64
+
 
 # --- validate_file() helper (used by forms, fields and API serializers) ---
 
@@ -29,11 +36,47 @@ def test_html_family_uploads_are_denied(file_name):
         validate_file(upload)
 
 
-@pytest.mark.parametrize("file_name", ["data.xml", "metadata.rdf", "notes.txt"])
-def test_data_uploads_are_allowed(file_name):
-    # Regression guard: blocking .xhtml must not block legitimate XML-family
-    # uploads (application/xml, application/rdf+xml), which the portal needs.
-    validate_file(ContentFile(b"<root/>", name=file_name))
+@pytest.mark.parametrize(
+    "file_name, content",
+    [
+        ("data.xml", b"<root/>"),
+        ("metadata.rdf", b'<?xml version="1.0"?><rdf:RDF xmlns:rdf="x"/>'),
+        ("notes.txt", b"hello world"),
+        ("table.csv", b"a,b,c\n1,2,3\n"),
+        ("payload.json", b'{"a": 1}'),
+        ("vocab.ttl", b"@prefix ex: <http://example.org/> .\n"),
+        ("image.svg", SVG_CLEAN),
+    ],
+)
+def test_legitimate_uploads_are_allowed(file_name, content):
+    # Regression guard: the whitelist must not block formats the portal needs
+    # (XML family, plain text, CSV/JSON, RDF/Turtle, clean SVG).
+    validate_file(ContentFile(content, name=file_name))
+
+
+@pytest.mark.parametrize("file_name", ["macro.exe", "lib.so", "archive.rar", "font.woff"])
+def test_unknown_types_are_denied_by_whitelist(file_name):
+    # Fail-closed: anything not explicitly whitelisted is rejected, even though
+    # there is no specific deny rule for it.
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(b"\x00\x01\x02binarydata", name=file_name))
+
+
+@pytest.mark.parametrize(
+    "file_name, content",
+    [
+        # Active content disguised under a whitelisted extension. The extension
+        # gate passes, but content sniffing detects the real type and denies it.
+        ("report.csv", HTML_XSS),
+        ("data.txt", PHP_SHELL),
+        ("notes.txt", SH_SCRIPT),
+        ("photo.png", SVG_XSS),
+        ("doc.pdf", PE_BINARY),
+    ],
+)
+def test_spoofed_extension_is_caught_by_content_sniffing(file_name, content):
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(content, name=file_name))
 
 
 # --- real form-field entry point (FilerFileField.clean) ---

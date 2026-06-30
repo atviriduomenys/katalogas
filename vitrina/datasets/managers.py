@@ -181,6 +181,8 @@ class EdpPublicDatasetManager(TranslatableManager):
             super()
             .get_queryset()
             .filter(
+                is_public=True,
+                status__in=(self.model.INVENTORED, self.model.HAS_DATA),
                 access_rights=self.model.PUBLIC,
                 deleted__isnull=True,
                 deleted_on__isnull=True,
@@ -195,6 +197,8 @@ class EdpRestrictedDatasetManager(TranslatableManager):
             super()
             .get_queryset()
             .filter(
+                is_public=True,
+                status__in=(self.model.INVENTORED, self.model.HAS_DATA),
                 access_rights=self.model.RESTRICTED,
                 deleted__isnull=True,
                 deleted_on__isnull=True,

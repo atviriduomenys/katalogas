@@ -3027,6 +3027,7 @@ class EdpDcatApRestrictedRdfTests(TestCase):
         Dataset.objects.create(
             title="Restricted Dataset",
             access_rights=Dataset.RESTRICTED,
+            status=Dataset.HAS_DATA,
             deleted=None,
             deleted_on=None,
             organization_id=organization.pk,
@@ -3063,6 +3064,7 @@ class EdpDcatApPublicRdfTests(TestCase):
         Dataset.objects.create(
             title="Public Dataset",
             access_rights=Dataset.PUBLIC,
+            status=Dataset.HAS_DATA,
             deleted=None,
             deleted_on=None,
             organization_id=organization.pk,
@@ -3272,6 +3274,7 @@ def test_edp_dcat_ap_rdf_encodes_tabs_in_rights_statement(app: DjangoTestApp, ac
     dataset = Dataset.objects.create(
         title="Dataset with tabs",
         access_rights=access_rights,
+        status=Dataset.HAS_DATA,
         deleted=None,
         deleted_on=None,
         organization_id=organization.pk,
@@ -3286,3 +3289,68 @@ def test_edp_dcat_ap_rdf_encodes_tabs_in_rights_statement(app: DjangoTestApp, ac
     assert response.status_code == 200
     assert b"&#x9;" in response.content
     assert b"Legal document\t" not in response.content
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "url_name, access_rights",
+    [
+        ("edp-dcat-ap-rdf", Dataset.PUBLIC),
+        ("edp-dcat-ap-restricted-rdf", Dataset.RESTRICTED),
+    ],
+)
+def test_edp_dcat_ap_rdf_excludes_non_public_datasets(app: DjangoTestApp, url_name, access_rights):
+    DatasetFactory(
+        title={"lt": "Viešinamas", "en": "Published resource"},
+        access_rights=access_rights,
+        is_public=True,
+        status=Dataset.HAS_DATA,
+        organization=OrganizationFactory(),
+    )
+    DatasetFactory(
+        title={"lt": "Neviešinamas", "en": "Unpublished resource"},
+        access_rights=access_rights,
+        is_public=False,
+        status=Dataset.HAS_DATA,
+        organization=OrganizationFactory(),
+    )
+
+    res = app.get(reverse(url_name))
+
+    assert res.status_code == 200
+    assert "Published resource" in res.text
+    assert "Unpublished resource" not in res.text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "url_name, access_rights",
+    [
+        ("edp-dcat-ap-rdf", Dataset.PUBLIC),
+        ("edp-dcat-ap-restricted-rdf", Dataset.RESTRICTED),
+    ],
+)
+@pytest.mark.parametrize("excluded_status", [Dataset.PLANNED, Dataset.UNASSIGNED])
+def test_edp_dcat_ap_rdf_only_inventored_and_opened_statuses(
+    app: DjangoTestApp, url_name, access_rights, excluded_status
+):
+    DatasetFactory(
+        title={"lt": "Inventorintas", "en": "Inventored dataset"},
+        access_rights=access_rights,
+        is_public=True,
+        status=Dataset.INVENTORED,
+        organization=OrganizationFactory(),
+    )
+    DatasetFactory(
+        title={"lt": "Kitas statusas", "en": "Other status dataset"},
+        access_rights=access_rights,
+        is_public=True,
+        status=excluded_status,
+        organization=OrganizationFactory(),
+    )
+
+    res = app.get(reverse(url_name))
+
+    assert res.status_code == 200
+    assert "Inventored dataset" in res.text
+    assert "Other status dataset" not in res.text

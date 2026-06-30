@@ -4,6 +4,10 @@ Changes
 v 1.22.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/pull/2707
+
+- Fix EDP DCAT-AP harvesting (`/edp/dcat-ap.rdf` and `/edp/dcat-ap-restricted.rdf`) exposing datasets that should not be published.
+
 https://github.com/atviriduomenys/katalogas/pull/2650
 
 - Add single-page DCAT wizard for creating datasets and dataset distributions, accessible from the Organisation detail page; supports non-public resources and exposes additional DCAT-AP fields not available in the standard dataset creation flow.

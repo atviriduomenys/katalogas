@@ -14,7 +14,10 @@ from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
-import magic
+try:
+    import magic
+except ImportError:
+    magic = None
 import markdown
 from django.apps import apps
 from django.contrib.sites.models import Site

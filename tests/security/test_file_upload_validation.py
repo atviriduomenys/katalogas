@@ -79,6 +79,20 @@ def test_spoofed_extension_is_caught_by_content_sniffing(file_name, content):
         validate_file(ContentFile(content, name=file_name))
 
 
+def test_sniffing_failure_fails_closed(monkeypatch):
+    # If libmagic errors (e.g. missing/misconfigured on the server), the upload
+    # must be rejected with a user-visible error, not silently accepted without
+    # the content-based check.
+    import vitrina.helpers as helpers
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("libmagic exploded")
+
+    monkeypatch.setattr(helpers.magic, "from_buffer", boom)
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))
+
+
 # --- real form-field entry point (FilerFileField.clean) ---
 
 

@@ -2,6 +2,7 @@
 import math
 import datetime
 import calendar
+import logging
 import mimetypes
 from pathlib import Path
 from typing import Optional, List, Any
@@ -26,7 +27,7 @@ from django.db.models import Model
 from django.urls import reverse
 from django.template.loader import get_template
 from django.template import Template, Context
-from filer.validation import validate_upload
+from filer.validation import FileValidationError, validate_upload
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -707,17 +708,30 @@ def get_encoding(file_path):
 def _detect_content_type(file) -> Optional[str]:
     """Sniff the real MIME type from the file's bytes using libmagic.
 
-    Returns None for empty files (nothing to sniff). The file position is
-    restored so callers can keep reading/saving the file afterwards.
+    Returns None for empty files (nothing to sniff). If reading or libmagic
+    fails, this fails closed: the failure is logged and a FileValidationError is
+    raised so the upload is rejected with a user-visible message instead of
+    silently skipping the content-based defense-in-depth check (which would let
+    spoofed content through when libmagic is missing or misconfigured).
     """
     try:
         file.seek(0)
         header = file.read(2048)
-    finally:
         file.seek(0)
+    except Exception:
+        logging.exception("Could not read uploaded file for content-type sniffing")
+        raise FileValidationError(_("Nepavyko perskaityti įkelto failo turinio."))
+
     if not header:
         return None
-    return magic.from_buffer(header, mime=True)
+
+    try:
+        return magic.from_buffer(header, mime=True)
+    except Exception:
+        logging.exception("libmagic content-type sniffing failed")
+        raise FileValidationError(
+            _("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių.")
+        )
 
 
 def _run_deny_validators(file_name: str, file, mime_type: str) -> None:

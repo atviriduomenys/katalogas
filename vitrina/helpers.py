@@ -728,6 +728,10 @@ def _detect_content_type(file) -> Optional[str]:
     if not header:
         return None
 
+    if magic is None:
+        logging.error("python-magic/libmagic is not available; rejecting upload")
+        raise FileValidationError(_("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių."))
+
     try:
         detected = magic.from_buffer(header, mime=True)
         return detected.split(";", 1)[0].strip().lower()

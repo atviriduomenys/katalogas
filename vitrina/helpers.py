@@ -726,7 +726,8 @@ def _detect_content_type(file) -> Optional[str]:
         return None
 
     try:
-        return magic.from_buffer(header, mime=True)
+        detected = magic.from_buffer(header, mime=True)
+        return detected.split(";", 1)[0].strip().lower()
     except Exception:
         logging.exception("libmagic content-type sniffing failed")
         raise FileValidationError(_("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių."))

@@ -20,7 +20,7 @@ https://github.com/atviriduomenys/katalogas/issues/2632
 DVMS-514
 
 - Fix insufficient file upload validation (CWE-434): block ``.xhtml`` (``application/xhtml+xml``) uploads,
-which previously bypassed the HTML deny rule and allowed stored XSS / phishing pages to be served from the media URL.
+  which previously bypassed the HTML deny rule and allowed stored XSS / phishing pages to be served from the media URL.
 
 
 v 1.22.0 (2026-06-30)

@@ -77,7 +77,7 @@
                     $('div[id^="map_"]').each( function () {
                         let id = $(this)[0].id;
                         let map = L.map(id);
-                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
                         let layerGroup = L.layerGroup().addTo(map);
 

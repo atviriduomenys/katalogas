@@ -186,6 +186,7 @@ SERIALIZATION_MODULES = {
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -498,6 +499,54 @@ SECURE_HSTS_PRELOAD = True
 
 # Referrer Policy - controls how much information is sent in the Referer header
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+# Content Security Policy (django-csp).
+# The directives below are split into two groups:
+#   1. Locked-down directives that carry no breakage trade-off for this site
+#      (no <object>/<embed>, no external form actions, framing already limited
+#      to same-origin via X-Frame-Options). These give real defense in depth.
+#   2. script-src / style-src, which still allow 'unsafe-inline' (and
+#      'unsafe-eval') because the templates rely heavily on inline scripts,
+#      inline event handlers and inline styles. Tightening these requires a
+#      nonce/refactor pass and is deliberately deferred -- see the TODOs.
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ["'self'"],
+        # TODO: drop 'unsafe-inline'/'unsafe-eval' once inline scripts and
+        # event handlers are moved to nonce'd/external scripts.
+        "script-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "'unsafe-eval'",
+            "https://cdnjs.cloudflare.com",  # CodeMirror
+            "https://cdn.jsdelivr.net",  # Chart.js
+            "https://unpkg.com",  # Leaflet
+            "https://www.googletagmanager.com",  # Google Tag Manager
+        ],
+        # TODO: drop 'unsafe-inline' once inline style attributes are removed.
+        "style-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "https://cdnjs.cloudflare.com",  # CodeMirror
+            "https://unpkg.com",  # Leaflet
+        ],
+        "img-src": ["'self'", "data:", "https:"],
+        "font-src": ["'self'", "data:"],
+        "connect-src": [
+            "'self'",
+            "https://www.googletagmanager.com",
+            "https://www.google-analytics.com",
+            "https://*.google-analytics.com",
+            "https://*.analytics.google.com",
+        ],
+        "frame-src": ["'self'", "https://www.youtube.com"],  # video embeds
+        # Locked-down directives (no trade-off for this site):
+        "object-src": ["'none'"],
+        "base-uri": ["'self'"],
+        "frame-ancestors": ["'self'"],
+        "form-action": ["'self'"],
+    },
+}
 
 if env("RECAPTCHA_SILENCE_KEY_ERROR", default=False):
     SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]

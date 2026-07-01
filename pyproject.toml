@@ -83,6 +83,7 @@ djangocms-picture = "^4.1.1"
 djangocms-link = "^5.1.1"
 django-celery-beat = "^2.9.0"
 crawler-user-agents = "^1.57.0"
+django-csp = "^4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

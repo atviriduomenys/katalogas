@@ -88,6 +88,11 @@ def test_sniffing_failure_fails_closed(monkeypatch):
     def boom(*args, **kwargs):
         raise RuntimeError("libmagic exploded")
 
+    if helpers.magic is None:
+        with pytest.raises(FileValidationError):
+            validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))
+        return
+
     monkeypatch.setattr(helpers.magic, "from_buffer", boom)
     with pytest.raises(FileValidationError):
         validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))

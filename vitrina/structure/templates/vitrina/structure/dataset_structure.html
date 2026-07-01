@@ -300,7 +300,7 @@
         {% comments obj=structure user=request.user is_structure=True %}
     </div>
     {% endif %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
     document.querySelectorAll('.show-model-delete-form').forEach(button => {
         button.addEventListener('click', (e) => {
             e.preventDefault();

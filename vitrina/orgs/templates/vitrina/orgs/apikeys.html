@@ -5,7 +5,7 @@
 {% block current_title %}{% translate "Raktai" %}{% endblock%}
 
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .list_item {
 		  	list-style-type: disc;
 		  	margin-left: 1em;

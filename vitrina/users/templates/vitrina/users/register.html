@@ -22,7 +22,7 @@
 
 {% block scripts %}
     {% translate "naudojimo sąlygomis" as terms_of_use %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
             let termsOfUse = '{{ terms_of_use }}';
             let agree_to_terms_label =  $('#div_id_agree_to_terms').find('label');

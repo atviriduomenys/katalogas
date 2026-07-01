@@ -12,7 +12,7 @@
 
 {% block head %}
     {{ block.super }}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         #div_id_request_form label span.asterisk {
             display: none;
         }

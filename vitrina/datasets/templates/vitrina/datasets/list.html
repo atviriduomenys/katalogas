@@ -11,7 +11,7 @@
     | {% translate "Duomenų ištekliai" %}
 {% endblock %}
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .autocomplete {
             /*the container must be positioned relative:*/
             position: relative;
@@ -303,7 +303,7 @@
     {% include '../component/requestBlock.twig' %}
 {% endblock %}
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
 
             var query = $('#search-q-val').val();

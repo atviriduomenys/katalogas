@@ -69,7 +69,7 @@
     {% endfor %}
 </nav>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
      $(document).ready(function() {
         $('span#side_menu_elem').each(function() {
             let width = this.offsetWidth;

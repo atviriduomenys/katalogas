@@ -2,7 +2,7 @@
 {% load i18n parler_tags %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
         $(document).ready(function() {
             function updateFieldState(updateField, commentsField, fieldDiv) {
                 if (updateField.is(':checked')) {

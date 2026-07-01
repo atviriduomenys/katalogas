@@ -4,7 +4,7 @@
 {% block current_title %}{{ object.topic }}{% endblock %}
 
 {% block head %}
-<style>
+<style nonce="{{ request.csp_nonce }}">
 .file-download-section {
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;

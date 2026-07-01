@@ -6,7 +6,7 @@
 {% block current_title %}{% translate "Prisijungimas" %}{% endblock %}
 
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .hidden-fields {
             display: none;
         }

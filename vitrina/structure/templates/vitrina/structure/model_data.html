@@ -34,7 +34,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         const MODEL_DATA_TABLE_URL = "{% url 'model-data-table' pk=dataset.pk version_id=version_id model=model.name %}";
         $(function () {
             let datasetId = {{ dataset.pk }};

@@ -50,7 +50,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
             let ctx = document.getElementById("chart").getContext("2d");
             const data = {{data|safe}};

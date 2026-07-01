@@ -13,7 +13,7 @@
         {% translate "Eksportuoti" %}
     </button>
 </form>
-<style>
+<style nonce="{{ request.csp_nonce }}">
      #changelist-form .results {
     transform: rotateX(180deg);
     overflow-x: auto;

@@ -24,7 +24,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/mode/yaml/yaml.min.js" integrity="sha384-LekyoEGHzBMGUx26EEtC5G6HD6iyIr0msuy3LP3F8V98vVS5ZoNfIyiirXsoqAt/" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/theme/eclipse.min.css" integrity="sha384-dq10nYMe5EzlTlySS4PL3lt13I+hSWRGzpsgTbwcrbXrI3hXw2NpiZIi4vAnxjI3" crossorigin="anonymous">
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
             var editor = CodeMirror.fromTextArea(document.querySelector('.codemirror'), {
                 lineNumbers: true,

@@ -340,7 +340,7 @@
 {% endblock %}
 {% block scripts %}
     {% get_hit_count_js_variables for request_object as hitcount %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
             $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
 

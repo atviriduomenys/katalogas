@@ -293,7 +293,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // Offset overlay below any fixed CMS toolbar (absent in production, so top stays 0).
         // Uses window.load so Django CMS has fully initialised and applied its body margin-top.
         function applyToolbarOffset() {

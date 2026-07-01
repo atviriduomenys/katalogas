@@ -112,7 +112,7 @@
 
 {% endfor %}
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="{{ request.csp_nonce }}">
     $(function () {
         $('.filters-more').click(function () {
             let targetClass = 'filter-hidden-' + $(this).attr('id').split('-').pop();

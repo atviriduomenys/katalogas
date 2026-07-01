@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .max-128x128 {
 		  	max-width: 128px;
 		  	max-height: 128px;

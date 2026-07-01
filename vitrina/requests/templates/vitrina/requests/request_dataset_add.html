@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         let manFilter = $('#request-dataset-input');
         manFilter.on('input', function(){
             $('#dataset-list').html('').load(

@@ -53,7 +53,7 @@
 
 
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
             let datasetId = {{ dataset.pk }};
             let model = "{{model.name}}";

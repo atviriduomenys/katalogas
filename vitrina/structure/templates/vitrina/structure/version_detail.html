@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .model_metadata {
             padding-left: 1.5em;
         }

@@ -7,7 +7,7 @@
 {% block current_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .dataset-list-description {
             word-break: break-word;
         }
@@ -209,7 +209,7 @@
     </div>
 {% endblock %}
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
 
             var query = $('#search-q-val').val();

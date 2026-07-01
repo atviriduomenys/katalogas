@@ -19,7 +19,7 @@
 {% endblock %}
 
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         #div_id_metadata div.control {
           margin-bottom: 0.5rem;
        }
@@ -36,7 +36,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         $(document).ready(function() {
             const $related_version = $('#id_related_version').closest('.field, .form-group, .control');
             const $related_version_label = $('label[for="id_related_version"]');

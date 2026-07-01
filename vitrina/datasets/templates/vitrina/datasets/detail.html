@@ -19,7 +19,7 @@
     {% include "component/page_title.html" %}
 {% endblock %}
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .max-128x128 {
 		  	max-width: 128px;
 		  	max-height: 128px;
@@ -310,7 +310,7 @@
 {% block scripts %}
     {% load static %}
     {% get_hit_count_js_variables for dataset as hitcount %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(document).ready(function () {
             $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
 
@@ -401,6 +401,6 @@
         });
     </script>
     {% if public_status %}
-        <script type="application/ld+json" async>{{ json_ld|safe }}</script>
+        <script type="application/ld+json" async nonce="{{ request.csp_nonce }}">{{ json_ld|safe }}</script>
     {% endif %}
 {% endblock %}

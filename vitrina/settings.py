@@ -505,10 +505,10 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 #   1. Locked-down directives that carry no breakage trade-off for this site
 #      (no <object>/<embed>, no external form actions, framing already limited
 #      to same-origin via X-Frame-Options). These give real defense in depth.
-#   2. script-src / style-src, which still allow 'unsafe-inline' (and
-#      'unsafe-eval') because the templates rely heavily on inline scripts,
-#      inline event handlers and inline styles. Tightening these requires a
-#      nonce/refactor pass and is deliberately deferred -- see the TODOs.
+#   2. script-src / style-src, which still allow 'unsafe-inline' because the
+#      templates rely heavily on inline scripts, inline event handlers and inline styles.
+#      Note: 'unsafe-eval' is not required for inline code; keep it only if the JS bundle/build tooling uses eval()/new Function().
+#      Tightening these requires a nonce/refactor pass and is deliberately deferred -- see the TODOs.
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
         "default-src": ["'self'"],

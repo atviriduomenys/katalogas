@@ -37,7 +37,7 @@
         <table class="table is-fullwidth">
             <tbody>
                 <tr>
-                    <th style="width:30%">{% translate "Kodinis pavadinimas" %}</th>
+                    <th class="u-w-30">{% translate "Kodinis pavadinimas" %}</th>
                     <td>{{ metadata.ref }}</td>
                 </tr>
                 {% if metadata.prepare %}
@@ -84,12 +84,10 @@
                 </form>
             {% else %}
                 <a class="button is-primary is-disabled"
-                   style="pointer-events: none; opacity: 0.5;"
                    aria-disabled="true">
                     {% translate "Keisti" %}
                 </a>
                 <a class="button is-danger is-light is-disabled"
-                   style="pointer-events: none; opacity: 0.5;"
                    aria-disabled="true">
                     {% translate "Ištrinti" %}
                 </a>

@@ -23,7 +23,7 @@
         </a>
       </p>
         {% endif %}
-       <input type="file" id="fileInput" style="display:none" />
+       <input class="u-hidden" type="file" id="fileInput" />
       {% endif %}
       <p class="control">
         <button type="button" class="button" data-action="download-data">
@@ -91,7 +91,7 @@
                 </div>
             </div>
             {% for tag in tags %}
-                <span class="tag" id="remove_tag_{{ forloop.counter0 }}_id" style="margin: 5px;">
+                <span class="tag u-m-5" id="remove_tag_{{ forloop.counter0 }}_id">
                     {{ tag }}
                     <button
                         id="remove_tag_{{ tag }}_id"
@@ -139,7 +139,7 @@
                                 </small>
                             </div>
 
-                            <div id="{{ col }}_filter_id" style="display: none">
+                            <div class="u-hidden" id="{{ col }}_filter_id">
                                 <div class="table-menu">
                                     <div class="field has-addons">
                                       <div class="control">
@@ -165,7 +165,7 @@
                                     </div>
                                     <div class="mb-3 is-inine-block">
                                         <div class="buttons is-right">
-                                            <span style="flex: auto; margin-bottom: 0.5em;">{% translate "Rūšiuoti" %}</span>
+                                            <span class="u-flex-auto-mb">{% translate "Rūšiuoti" %}</span>
                                             <button id="{{ col }}_order_asc_id"
                                                     class="button is-primary is-small"
                                                     data-action="order-by" data-col="{{ col }}" data-order="false"

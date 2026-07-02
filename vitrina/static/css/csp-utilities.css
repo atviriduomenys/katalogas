@@ -1,0 +1,90 @@
+/*
+ * CSP utility classes.
+ *
+ * These replace inline style="" attributes across the templates so the site can
+ * run under a strict Content-Security-Policy that drops style-src 'unsafe-inline'
+ * (see the CSP hardening work / pentest WEB-5). Each rule is a 1:1 port of a former
+ * inline style; class names encode the properties they set. No !important unless the
+ * original inline style used it.
+ *
+ * NOTE: .u-hidden intentionally omits !important so JavaScript (el.style.display / jQuery
+ * .show()) can still reveal elements that start hidden — matching the previous behaviour.
+ */
+
+/* Disabled look — applied wherever the .is-disabled marker class is used
+   (previously each such element also carried an inline pointer-events/opacity style). */
+.is-disabled { pointer-events: none; opacity: 0.5; }
+
+/* Display */
+.u-hidden { display: none; }
+.u-inline { display: inline; }
+.u-inline-block { display: inline-block; }
+.u-flex { display: flex; }
+.u-flex-center { display: flex; align-items: center; }
+.u-flex-between-center-full { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.u-inline-flex-gap { display: inline-flex; gap: 2px; }
+.u-self-center { align-self: center; }
+.u-flex-auto-mb { flex: auto; margin-bottom: 0.5em; }
+
+/* Position */
+.u-pos-relative { position: relative; }
+.u-abs-top-right { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10; }
+.u-abs-top-right-2 { position: absolute; top: 10px; right: 12px; }
+.u-bg-cover { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+
+/* Sizing */
+.u-w-full { width: 100%; }
+.u-w-10 { width: 10%; }
+.u-w-20 { width: 20%; }
+.u-w-30 { width: 30%; }
+.u-uml-canvas { width: 800px; height: 640px; }
+.u-h-300 { height: 300px; }
+.u-h-400 { height: 400px; }
+.u-maxw-200 { max-width: 200px; }
+.u-maxw-600-center { max-width: 600px; margin: 0 auto; }
+.u-maxh-96 { max-height: 96px; }
+
+/* Spacing */
+.u-m-5 { margin: 5px; }
+.u-mt-10 { margin-top: 10px; }
+.u-mt-20 { margin-top: 20px; }
+.u-ml-half { margin-left: 0.5em; }
+.u-mr-1rem { margin-right: 1rem; }
+.u-px-1rem { padding-left: 1rem; padding-right: 1rem; }
+.u-pb-30 { padding-bottom: 30px; }
+
+/* Typography */
+.u-color-black { color: black; }
+.u-color-green { color: green; }
+.u-color-gray { color: gray; }
+.u-color-007bff { color: #007bff; }
+.u-color-007db2 { color: #007db2; }
+.u-color-20c997 { color: #20c997; }
+.u-color-28a745 { color: #28a745; }
+.u-color-6c757d { color: #6c757d; }
+.u-color-6f42c1 { color: #6f42c1; }
+.u-color-dc3545 { color: #dc3545; }
+.u-color-fd7e14 { color: #fd7e14; }
+.u-fs-68 { font-size: 68px; }
+.u-fw-bold { font-weight: bold; }
+.u-monospace { font-family: monospace; }
+.u-underline { text-decoration: underline; }
+.u-lh-1 { line-height: 1; }
+.u-float-right { float: right; }
+
+/* Borders / backgrounds / misc */
+.u-no-shadow { box-shadow: none; }
+.u-clickable { cursor: pointer; }
+.u-overflow-x { overflow-x: auto; margin-bottom: 0; }
+.u-radius-12 { border-radius: 12px; }
+.u-border-f1 { border-radius: 4px; border: 1px solid #F1F1F1; }
+.u-border-pink { border: 2px solid #ff9999; border-radius: 12px; }
+.u-border-gray { border: 1px solid #d0d0d0; border-radius: 4px; }
+.u-code-box { background-color: #f2f2f2; padding: 6px; border-radius: 3px; border: 1px solid #ddd; }
+
+/* Metadata status tag colours */
+.u-status-develop { background-color: #eaedfa; color: #304cd3; }
+.u-status-discont { background-color: #fff5e5; color: #ffa525; }
+
+/* Organization card placeholder avatar box */
+.u-avatar-box { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.04); border-radius: 6px; }

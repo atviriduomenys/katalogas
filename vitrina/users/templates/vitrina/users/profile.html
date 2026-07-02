@@ -24,7 +24,7 @@
             </span>
         </div>
         <div class="column is-two-thirds">
-            <div class="field" style="display: flex;">
+            <div class="field u-flex">
                 <h1 class="title">{{ user.first_name }} {{ user.last_name }}</h1>
             </div>
             <div class="tabs">
@@ -41,7 +41,7 @@
                     </li>
                 </ul>
            </div>
-            <div class="tab-content mt-5" style="display: none;" id="info_id">
+            <div class="tab-content mt-5 u-hidden" id="info_id">
                 <div class="columns">
                     <div class="column is-one-third has-text-right">
                         <strong>{% translate "Užsiregistravo prieš" %}</strong>
@@ -111,7 +111,7 @@
                 </div>
                 {% endif %}
             </div>
-            <div class="tab-content" style="display: none;" id="sub_id">
+            <div class="tab-content u-hidden" id="sub_id">
                 <div class="column">
                     {% if newsletter_subscription %}
                         <article class="box media is-expanded">
@@ -164,9 +164,9 @@
                                         {% for field in sub.fields %}
                                             <p>{{ field.0 }}:
                                                 {% if field.1 %}
-                                                    <i class="fas fa-check-circle" style="color: green"></i>
+                                                    <i class="fas fa-check-circle u-color-green"></i>
                                                 {% else %}
-                                                    <i class="fas fa-minus-circle" style="color: gray"></i>
+                                                    <i class="fas fa-minus-circle u-color-gray"></i>
                                                 {% endif %}
                                             </p>
                                         {% endfor %}

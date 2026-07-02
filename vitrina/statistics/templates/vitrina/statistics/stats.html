@@ -31,7 +31,7 @@
             {% endif %}
            <div class="mb-5">
                <div>
-                   <div class="tab-content mt-5" style="display: none;" id="bar_id">
+                   <div class="tab-content mt-5 u-hidden" id="bar_id">
                         <div class="is-flex">
                             <span>{{ title }}</span>
                             <div class="stays-right">
@@ -46,7 +46,7 @@
                                 {% else %}
                                     <a href="{{ list_url }}{{ item.url }}" id="{{ item.filter_value }}">
                                 {% endif %}
-                                    <strong style="color: black;">{{ item.display_value }}</strong>
+                                    <strong class="u-color-black">{{ item.display_value }}</strong>
                                 </a>
                                 <div class="stays-right">
                                     <a href="">{{ item.count|intcomma:False }}</a>
@@ -55,7 +55,7 @@
                             <progress class="progress is-info" value="{{ item.count }}" max="{{ max_count }}"></progress>
                         {% endfor %}
                    </div>
-                   <div class="tab-content" style="display: none;" id="time_id">
+                   <div class="tab-content u-hidden" id="time_id">
                         {% if time_chart_data %}
                             {% include "vitrina/statistics/stats_graph.html" %}
                         {% endif %}

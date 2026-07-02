@@ -60,7 +60,7 @@
 
             {% if r.file %}
                 <td>
-                    <div style="display:inline-flex; gap: 2px">
+                    <div class="u-inline-flex-gap">
                         {% if r.is_previewable %}
                             <a class="button is-link is-small preview-button"
                                id="{{ r.pk }}">{% translate "Peržiūrėti" %}</a>
@@ -85,7 +85,6 @@
                         {% if not selected_version.external_version %}
                             href="{% url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
                         {% else %}
-                            style="pointer-events: none; opacity: 0.5;"
                             aria-disabled="true"
                         {% endif %}
                         id="change_resource"
@@ -110,7 +109,6 @@
                         <button type="submit"
                             class="button is-link is-small is-pulled-right {% if selected_version.external_version %}is-disabled{% endif %}"
                             {% if selected_version.external_version %}
-                                style="pointer-events: none; opacity: 0.5;"
                                 aria-disabled="true"
                             {% else %}
                                 data-action="confirm" data-confirm-message="{% translate 'Ar jūs tikrai norite ištrinti šią pateiktį?' %}"
@@ -184,8 +182,7 @@
     <div class="modal-card">
         <header class="modal-card-head">
             <h1 class="modal-card-title">{% translate "Peržiūrėti" %}</h1>
-            <button class="button is-link is-small preview-fullscreen-toggle" type="button"
-                    style="margin-right:1rem;"
+            <button class="button is-link is-small preview-fullscreen-toggle u-mr-1rem" type="button"
                     data-label-expand="{% translate 'Visas ekranas' %}"
                     data-label-compress="{% translate 'Sumažinti' %}"
                     aria-label="{% translate 'Visas ekranas' %}">

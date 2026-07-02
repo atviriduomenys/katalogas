@@ -4,8 +4,7 @@
   {% if use_custom_radio %}
     {% if organization_id %}
       <a href="{% url 'organization-datasets' pk=organization_id %}"
-         class="has-text-info mr-4"
-         style="align-self: center;">
+         class="has-text-info mr-4 u-self-center">
         {% translate "Atšaukti" %}
       </a>
   {% endif %}
@@ -15,8 +14,7 @@
   {% else %}
     {% if organization_id %}
       <a href="{% url 'resource-subclass-add' pk=organization_id %}"
-         class="has-text-info mr-4"
-         style="align-self: center;">
+         class="has-text-info mr-4 u-self-center">
         {% translate "Grįžti" %}
       </a>
     {% endif %}

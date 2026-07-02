@@ -36,12 +36,11 @@
             {% translate "Atšaukti" %}
         </a>
 
-        <form id="delete-form"
+        <form class="u-inline-block" id="delete-form"
               method="post"
               hx-post="{{ delete_url }}"
               hx-target="#wizard-main-pane"
-              hx-swap="innerHTML"
-              style="display: inline-block;">
+              hx-swap="innerHTML">
             {% csrf_token %}
             <button type="submit" class="button is-danger">{% translate "Ištrinti" %}</button>
         </form>

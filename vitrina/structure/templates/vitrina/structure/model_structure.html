@@ -56,7 +56,7 @@
 
             {% if metadata.status.codename %}
                 {% if metadata.status.codename == "develop" %}
-                    <span class="ml-3 tag" style="background-color: #eaedfa; color: #304cd3;">
+                    <span class="ml-3 tag u-status-develop">
                         {{ metadata.status.name }}
                     </span>
                 {% elif metadata.status.codename == "completed" %}
@@ -64,7 +64,7 @@
                         {{ metadata.status.name }}
                     </span>
                 {% elif metadata.status.codename == "discont" %}
-                   <span class="ml-3 tag" style="background-color: #fff5e5; color: #ffa525;">
+                   <span class="ml-3 tag u-status-discont">
                         {{ metadata.status.name }}
                    </span>
                 {% elif metadata.status.codename == "deprecated" %}
@@ -139,7 +139,6 @@
             <a
                 class="button is-primary {% if is_disabled %}is-disabled{% endif %}"
                 {% if is_disabled %}
-                    style="pointer-events: none; opacity: 0.5;"
                     aria-disabled="true"
                 {% else %}
                     href="{% url 'model-update' dataset.pk version_id model.name %}"
@@ -249,8 +248,8 @@
                         <div class="column is-1">
                             {% if prop_metadata.status.codename %}
                                 {% if prop_metadata.status.codename == "develop" %}
-                                    <span class="tag has-tooltip"
-                                          data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
+                                    <span class="tag has-tooltip u-status-develop"
+                                          data-tooltip="{% translate 'Būsena' %}">
                                         {{ prop_metadata.status.name }}
                                     </span>
                                 {% elif prop_metadata.status.codename == "completed" %}
@@ -259,8 +258,8 @@
                                         {{ prop_metadata.status.name }}
                                     </span>
                                 {% elif prop_metadata.status.codename == "discont" %}
-                                   <span class="tag has-tooltip"
-                                         data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
+                                   <span class="tag has-tooltip u-status-discont"
+                                         data-tooltip="{% translate 'Būsena' %}">
                                         {{ prop_metadata.status.name }}
                                    </span>
                                 {% elif prop_metadata.status.codename == "deprecated" %}
@@ -337,7 +336,6 @@
                 </a>
             {% else %}
                 <a class="button is-primary is-disabled"
-                   style="pointer-events: none; opacity: 0.5;"
                    aria-disabled="true">
                     {% translate "Naujas duomenų laukas" %}
                 </a>
@@ -498,7 +496,7 @@
                         {% translate "Naujas leidimas" %}
                     </a>
                 {% else %}
-                    <a class="button is-primary is-disabled" style="pointer-events: none; opacity: 0.5;" aria-disabled="true">
+                    <a class="button is-primary is-disabled" aria-disabled="true">
                         {% translate "Naujas leidimas" %}
                     </a>
                 {% endif %}

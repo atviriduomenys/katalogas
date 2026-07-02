@@ -33,7 +33,7 @@
                                 href="/datasets/stats/jurisdiction/{{ o.id }}"
                             {% endif %}
                                 id="{{ o.id }}">
-                            <strong style="color: black;">{{ o.title }}</strong>
+                            <strong class="u-color-black">{{ o.title }}</strong>
                         </a>
                         <div class="stays-right">
                             <a href="">{{ o.count }}</a>
@@ -50,7 +50,7 @@
                                 href="/datasets/stats/jurisdiction/{{ org.filter_value }}?{{ request.GET.urlencode }}"
                             {% endif %}
                             id="{{ area.filter_value }}_id">
-                            <strong style="color: black;">{{ org.display_value }}</strong>
+                            <strong class="u-color-black">{{ org.display_value }}</strong>
                         </a>
                         <div class="stays-right">
                             <a href="/datasets/{{ org.url }}">

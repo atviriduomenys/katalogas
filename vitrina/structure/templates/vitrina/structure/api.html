@@ -38,7 +38,7 @@
 
            <div>
                {% for key, tab in tabs.items %}
-               <div class="tab-content" style="display: none;" id="{{ key }}_id">
+               <div class="tab-content u-hidden" id="{{ key }}_id">
                    {{ tab.query|safe }}
                </div>
                {% endfor %}

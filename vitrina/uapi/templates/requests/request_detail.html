@@ -94,7 +94,7 @@
 
 <p class="title is-5 mb-4">{% translate "Informacija" %}</p>
 {% if request_history.details %}
-    <div class="notification is-light" style="border-radius: 12px;">
+    <div class="notification is-light u-radius-12">
         <p class="is-size-7 mb-2">
             <span class="is-size-6 has-text-dark">{{ request_history.details|linebreaksbr }}</span>
         </p>
@@ -109,7 +109,7 @@
 
 <p class="title is-5 mb-4">{% translate "Klaidos" %}</p>
 {% if formatted_error %}
-    <div class="notification is-danger is-light" style="border: 2px solid #ff9999; border-radius: 12px;">
+    <div class="notification is-danger is-light u-border-pink">
         <p class="is-size-7 mb-2">
             <span class="icon is-small mr-2">
                 <i class="fas fa-times-circle"></i>

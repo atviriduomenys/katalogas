@@ -72,13 +72,13 @@
                                     {% if i.client_name %}{{ i.client_name }}{% else %}{{ i.client_id }}{% endif %}
                                 </a>
                             </td>
-                                <td style="width:10%">
+                                <td class="u-w-10">
                                     <a href="{% url 'organization-apikeys-update' organization.id i.pk %}"
                                        class="button is-primary is-small">
                                         {% translate "Redaguoti" %}
                                     </a>
                                 </td>
-                                <td style="width:10%">
+                                <td class="u-w-10">
                                     <a href="{% url 'organization-apikeys-delete' organization.id i.pk %}"
                                        class="button is-danger is-small">
                                         {% translate "Pašalinti" %}
@@ -118,20 +118,20 @@
                                     {% if i.client_name %}{{ i.client_name }}{% else %}{{ i.client_id }}{% endif %}
                                 </a>
                             </td>
-                                <td style="width:10%">
+                                <td class="u-w-10">
                                     <a href="{% url 'organization-apikeys-update' organization.id i.pk %}"
                                        class="button is-primary is-small">
                                         {% translate "Redaguoti" %}
                                     </a>
                                 </td>
-                                <td style="width:10%">
+                                <td class="u-w-10">
                                     <a href="{% url 'organization-apikeys-delete' organization.id i.pk %}"
                                        class="button is-danger is-small">
                                         {% translate "Pašalinti" %}
                                     </a>
                                 </td>
                                 {% if can_manage_keys %}
-                                    <td style="width:10%">
+                                    <td class="u-w-10">
                                     <a href="{% url 'organization-apikeys-toggle' organization.id i.pk %}"
                                        class="button is-warning is-small">
                                         {% if i.enabled %}

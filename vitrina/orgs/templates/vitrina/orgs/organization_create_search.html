@@ -4,16 +4,15 @@
 {% block current_title %}{% translate "Nauja organizacija" %}{% endblock %}
 
 {% block content %}
-<input 
+<input class="u-w-full" 
     id="company_name_input"
     type="text" 
     name="city" 
     list="company_name_input_choices"
     placeholder="Paieška ribojama, įveskite bent 3 simbolius"
-    style="width: 100%;"
 >
 {% include "vitrina/orgs/organization_create_search_items.html" %}
-<button id="organization_create_continue_button" style="margin-top: 10px;"> {% translate "Tęsti" %}</button>
+<button class="u-mt-10" id="organization_create_continue_button"> {% translate "Tęsti" %}</button>
 {% endblock %}
 
 {% block scripts %}

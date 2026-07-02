@@ -76,12 +76,12 @@
                     </tr>
                     {% for k, v in scopes.items %}
                         <tr>
-                            <td style="width:10%">
+                            <td class="u-w-10">
                                 <a href="{{ k.get_absolute_url }}">
                                     {{ k }}
                                 </a>
                             </td>
-                            <td style="width:10%">
+                            <td class="u-w-10">
                                 <span class="icon">
                                     {% if v.0 %}
                                         {% if v.0.enabled == None %}

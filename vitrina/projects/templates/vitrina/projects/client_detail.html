@@ -65,10 +65,9 @@
                 {% for scope in scopes %}
                     <tr>
                         <th scope="row">{{ scope.scope }}</th>
-                        <td style="width:10%">
-                            <form method="post"
-                                action="{% url 'project-clients-scopes-detail-toggle' project.pk client.uuid scope.uuid %}"
-                                style="display:inline;">
+                        <td class="u-w-10">
+                            <form class="u-inline" method="post"
+                                action="{% url 'project-clients-scopes-detail-toggle' project.pk client.uuid scope.uuid %}">
                                 {% csrf_token %}
                                 <button type="submit" class="button is-warning is-small">
                                     {% if scope.is_active %}

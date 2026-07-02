@@ -1,17 +1,17 @@
 {% load i18n %}
-<div class="card" style="box-shadow: none;">
-    <header class="card-header" style="box-shadow: none;">
+<div class="card u-no-shadow">
+    <header class="card-header u-no-shadow">
         <p class="card-header-title">
             {{ header }}
         </p>
     </header>
-    <div class="card-content" style="padding-left:1rem; padding-right:1rem;">
+    <div class="card-content u-px-1rem">
         <div class="media">
             {% if organization %}
             {% if organization.image %}
             <div class="media-left">
                 <figure class="image is-48x48">
-                    <img src="{{ organization.image.url }}" alt="{{ organization.name }}" style="border-radius:4px; border:1px solid  #F1F1F1;">
+                    <img class="u-border-f1" src="{{ organization.image.url }}" alt="{{ organization.name }}">
                 </figure>
             </div>
             {% endif %}
@@ -20,7 +20,7 @@
                 <p class="title is-6">{{ organization.title }}</p>
                 {% endif %}
                 <p class="subtitle is-6">
-                    <a href="{% url 'organization-detail' organization.pk %}" rel="noopener" style="text-decoration: underline;">
+                    <a class="u-underline" href="{% url 'organization-detail' organization.pk %}" rel="noopener">
                     {% firstof name organization.name %}
                     </a>
                 </p>
@@ -56,15 +56,7 @@
             {% else %}
             <div class="media-left">
                 <figure class="image is-48x48">
-                    <span style="
-                        width:48px;
-                        height:48px;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        background-color:rgba(0,0,0,0.04);
-                        border-radius:6px;
-                        ">
+                    <span class="u-avatar-box">
                         <svg viewBox="0 0 24 24" width="24" height="24"
                             xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                             <path

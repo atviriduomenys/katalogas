@@ -518,6 +518,8 @@ CONTENT_SECURITY_POLICY = {
             "'self'",
             "'unsafe-inline'",
             "'unsafe-eval'",
+            "https://www.google.com",  # reCAPTCHA
+            "https://www.gstatic.com",  # reCAPTCHA
             "https://cdnjs.cloudflare.com",  # CodeMirror
             "https://cdn.jsdelivr.net",  # Chart.js
             "https://unpkg.com",  # Leaflet

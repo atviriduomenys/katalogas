@@ -541,7 +541,7 @@ CONTENT_SECURITY_POLICY = {
             "https://*.google-analytics.com",
             "https://*.analytics.google.com",
         ],
-        "frame-src": ["'self'", "https://www.youtube.com"],  # video embeds
+        "frame-src": ["'self'", "https://www.youtube.com", "https://www.google.com", "https://www.gstatic.com"],  # video embeds, reCAPTCHA
         # Locked-down directives (no trade-off for this site):
         "object-src": ["'none'"],
         "base-uri": ["'self'"],

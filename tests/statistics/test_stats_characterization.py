@@ -1,3 +1,4 @@
+import json
 from datetime import date, datetime, timezone
 
 import pytest
@@ -201,7 +202,7 @@ def test_status_stats_snapshot(app: DjangoTestApp, status_stats_data, duration, 
         resp = app.get(reverse("dataset-stats-status"), params={"indicator": indicator, "duration": duration})
     assert resp.status_code == 200
     snapshot = {
-        "time_chart_data": resp.context["time_chart_data"],
+        "time_chart_data": json.dumps(resp.context["time_chart_data"]),
         "bar_chart_data": [
             {"display_value": str(b.get("display_value")), "count": b.get("count")}
             for b in resp.context["bar_chart_data"]

@@ -1,4 +1,3 @@
-import json
 from datetime import datetime, timezone
 
 import pytest
@@ -60,7 +59,7 @@ def test_status_chart_counts_each_dataset_once(app: DjangoTestApp, datasets_with
 def _yearly_series(resp):
     return {
         series["label"]: {point["x"]: point["y"] for point in series["data"]}
-        for series in json.loads(resp.context["time_chart_data"])
+        for series in resp.context["time_chart_data"]
     }
 
 

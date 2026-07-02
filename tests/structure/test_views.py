@@ -2,6 +2,7 @@ import csv
 import datetime
 import io
 import json
+import re
 import uuid
 from http import HTTPStatus
 from urllib.parse import unquote
@@ -8694,7 +8695,13 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params)
 
         assert response.status_code == 200
-        assert mermaid in response.text
+        block = re.search(
+            r'<script id="mermaid-source" type="application/json">(.*?)</script>',
+            response.text,
+            re.S,
+        )
+        assert block, "mermaid json_script block not found"
+        assert json.loads(block.group(1)) == mermaid
         expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
         assert any(expected_template in template.name for template in response.templates)
 

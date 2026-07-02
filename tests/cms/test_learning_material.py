@@ -1,4 +1,5 @@
 import tempfile
+from django.urls import reverse
 from django.utils import timezone
 from django.test import TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -208,3 +209,20 @@ class IntegrationTest(TestCase):
         ppt_file = material.files.filter(name="").first()
         self.assertIsNotNone(ppt_file)
         self.assertTrue(ppt_file.file.name.endswith(".pptx"))
+
+
+class DescriptionSanitizationTest(TestCase):
+    def test_description_script_is_escaped_in_detail_page(self):
+        material = LearningMaterial.objects.create(
+            topic="Test",
+            description="<p>Safe <strong>text</strong></p><script>alert(1)</script>",
+            published=timezone.now(),
+            version=1,
+        )
+
+        response = self.client.get(reverse("learning-material-detail", args=[material.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "<script>alert(1)</script>")
+        self.assertContains(response, "&lt;script&gt;")
+        self.assertContains(response, "<strong>text</strong>")

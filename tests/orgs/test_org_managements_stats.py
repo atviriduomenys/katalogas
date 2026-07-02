@@ -185,13 +185,13 @@ def test_org_managements_stats_snapshot(jur_org_data, duration):
     bar_raw = ctx["bar_chart_data"]
     max_count = ctx["max_count"]
 
-    parsed = json.loads(tcd)
+    parsed = tcd
     total_y = sum(pt["y"] for series in parsed for pt in series["data"])
     assert total_y > 0, f"Time series is all-zero for {duration}; fixture data may not land in the window"
     assert len(parsed) >= 2, f"Expected ≥2 jurisdiction series but got {len(parsed)}"
 
     snapshot = {
-        "time_chart_data": tcd,
+        "time_chart_data": json.dumps(tcd),
         "bar_chart_data_titles_counts": [(str(b["title"]), b["count"]) for b in bar_raw],
         "max_count": max_count,
     }

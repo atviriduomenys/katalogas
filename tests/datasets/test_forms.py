@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse, resolve
+from django.utils.html import escape
 from django_webtest import DjangoTestApp
 from django.test import RequestFactory
 
@@ -13,14 +14,20 @@ from vitrina.datasets.forms import (
     ResourceSubclassForm,
     CatalogResourceForm,
     DatasetResourceForm,
+    ResourceSubclassTypeField,
+    PlanChoiceField,
 )
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
+from vitrina.plans.factories import PlanFactory
 from vitrina.users.factories import UserFactory
 from vitrina.uapi.factories import AgentFactory
 from vitrina.users.models import User
 from vitrina.resources.models import Format
+
+
+XSS_PAYLOAD = "<script>alert('xss')</script>"
 
 pytestmark = pytest.mark.django_db
 
@@ -395,3 +402,30 @@ class TestResourceSubclassForm:
         assert Dataset.CONFIDENTIAL not in choices
         assert Dataset.PUBLIC in choices
         assert Dataset.RESTRICTED in choices
+
+
+@pytest.mark.django_db
+class TestResourceSubclassTypeFieldXSS:
+    def test_label_from_instance_escapes_title_and_description(self):
+        subclass = DCATResourceSubclass.objects.create(
+            title=XSS_PAYLOAD,
+            description=XSS_PAYLOAD,
+        )
+        field = ResourceSubclassTypeField(queryset=DCATResourceSubclass.objects.all())
+
+        result = field.label_from_instance(subclass)
+
+        assert XSS_PAYLOAD not in str(result)
+        assert escape(XSS_PAYLOAD) in str(result)
+
+
+@pytest.mark.django_db
+class TestPlanChoiceFieldDatasetsXSS:
+    def test_label_from_instance_escapes_title(self):
+        plan = PlanFactory(title=XSS_PAYLOAD)
+        field = PlanChoiceField(queryset=type(plan).objects.all())
+
+        result = field.label_from_instance(plan)
+
+        assert XSS_PAYLOAD not in str(result)
+        assert escape(XSS_PAYLOAD) in str(result)

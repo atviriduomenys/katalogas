@@ -6,7 +6,7 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django_select2.forms import ModelSelect2Widget, Select2MultipleWidget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
@@ -69,9 +69,9 @@ from vitrina.uapi.models import Agent
 class ResourceSubclassTypeField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.description:
-            return mark_safe(f'{obj.title}<br/><p class="help">{obj.description}</p>')
+            return format_html('{}<br/><p class="help">{}</p>', obj.title, obj.description)
         else:
-            return obj.title
+            return format_html("{}", obj.title)
 
 
 class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
@@ -1024,9 +1024,9 @@ class DatasetRelationForm(forms.ModelForm):
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.deadline:
-            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+            return format_html('<a href="{}">{} ({})</a>', obj.get_absolute_url(), obj.title, obj.deadline)
         else:
-            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
+            return format_html('<a href="{}">{}</a>', obj.get_absolute_url(), obj.title)
 
 
 class DatasetPlanForm(forms.ModelForm):

@@ -123,9 +123,7 @@
                         {% endfor %}
                    </div>
                    <div class="tab-content u-hidden" id="time_id">
-                        {% if time_chart_data %}
-                            {% include "vitrina/statistics/stats_graph.html" %}
-                        {% endif %}
+                       {% include "vitrina/statistics/stats_graph.html" %}
                    </div>
                </div>
            </div>
@@ -134,11 +132,12 @@
     <br/>
 {% endblock %}
 {% block scripts %}
+    {{ time_chart_data|json_script:"timeChartData" }}
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
             selectTab();
             let ctx = document.getElementById("chart").getContext("2d");
-            const data = {{time_chart_data|safe}};
+            const data = JSON.parse(document.getElementById("timeChartData").textContent);
             var graph_title = "{{graph_title}}";
             var y_title = "{{yAxis_title}}";
             var x_title = "{{xAxis_title}}";

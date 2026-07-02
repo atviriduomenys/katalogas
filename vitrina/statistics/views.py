@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 
 import pandas as pd
@@ -138,7 +137,7 @@ class StatsMixin:
         context["graph_title"] = self.get_graph_title(indicator)
         context["xAxis_title"] = self.get_time_axis_title(indicator)
         context["yAxis_title"] = self.get_title_for_indicator(indicator)
-        context["time_chart_data"] = json.dumps(time_chart_data[: self.max_values_in_time_chart])
+        context["time_chart_data"] = time_chart_data[: self.max_values_in_time_chart]
 
         context["bar_chart_data"] = bar_chart_data
         context["max_count"] = max_count

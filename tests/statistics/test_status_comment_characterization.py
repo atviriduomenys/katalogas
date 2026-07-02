@@ -137,7 +137,7 @@ def test_status_comment_snapshot(app: DjangoTestApp, comment_seeded_data, durati
     assert resp.status_code == 200
 
     snapshot = {
-        "time_chart_data": resp.context["time_chart_data"],
+        "time_chart_data": json.dumps(resp.context["time_chart_data"]),
         "bar_chart_data": _normalize_bar_chart(resp.context["bar_chart_data"]),
         "max_count": resp.context["max_count"],
     }
@@ -150,7 +150,7 @@ def test_status_comment_snapshot(app: DjangoTestApp, comment_seeded_data, durati
     assert snapshot == expected
 
     if duration == "duration-yearly":
-        chart = json.loads(resp.context["time_chart_data"])
+        chart = resp.context["time_chart_data"]
         all_y = [pt["y"] for series in chart for pt in series["data"]]
         assert any(y > 0 for y in all_y), "Branch B produced no non-zero counts — seeding may be wrong"
 

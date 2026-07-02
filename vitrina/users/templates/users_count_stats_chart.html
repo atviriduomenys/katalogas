@@ -21,10 +21,11 @@
         integrity="sha384-YAshAm4KKjf8V01c4sdNbPYiwU0D0Q82fjMHhKw8VvP0ecY4fxXsZAHxC4r4Ei+T"
         crossorigin="anonymous"></script>
 
+{{ data|json_script:"chartData" }}
 <script type="text/javascript" nonce="{{ request.csp_nonce }}">
     $(function () {
             let ctx = document.getElementById("chart").getContext("2d");
-            const data = {{data|safe}};
+            const data = JSON.parse(document.getElementById("chartData").textContent);
             const chart = new Chart(ctx, {
                 type: 'line',
                 data: data,

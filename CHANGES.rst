@@ -4,6 +4,24 @@ Changes
 v 1.23.0 (current)
 ==================
 
+https://github.com/atviriduomenys/dvms/issues/515
+
+- Replace unsanitized ``mark_safe`` with ``format_html`` in admin display methods and form labels
+  (classifiers, datasets, orgs, resources, statistics, users).
+- Rewrite version metadata labels in ``Dataset.get_metadata_objects_for_version`` to use ``format_html``
+  instead of manually escaped f-strings.
+- Sanitize user HTML in comments before rendering.
+- Validate URL scheme in links to prevent ``javascript:`` XSS.
+- Fix unquoted ``href`` attributes.
+- Sanitize learning material description instead of rendering it raw.
+- Escape ``<``, ``>`` and ``&`` in JSON-LD output so a dataset title cannot break out of the
+  ``<script>`` block on the dataset detail page.
+- Render chart data with ``json_script`` instead of ``|safe`` on statistics, jurisdiction,
+  publication and user charts, so organisation and jurisdiction names cannot break out of the
+  ``<script>`` block.
+- Render the UML diagram mermaid source with ``json_script``.
+- Add tests for JSON-LD escaping, learning material sanitization and metadata label escaping.
+
 <No ticket>
 - Remove unused files: stale SQL dumps in ``resources/`` (``adp-dev.sql``, ``adp-dev-fresh.sql``, ``adp-pg.sql``, ``migrations_squash.sql``) and ``uml.drawio.svg``.
 - Remove unused ``BASE_DB_PATH`` setting (only referenced the removed ``adp-pg.sql``).

@@ -3,7 +3,6 @@ from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpRequest
 from django.shortcuts import redirect
-from django.utils.safestring import mark_safe
 
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
@@ -357,12 +356,10 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
         return redirect(reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist"))
 
     def response_change(self, request, obj):
-        msg = mark_safe(
-            _(
-                f'Duomenų teikėjo "'
-                f'<a href="{reverse("supervisor_admin:vitrina_orgs_representativerequest_change", args=[obj.pk])}">'
-                f'{str(obj)}</a>" prašymas pakeistas sėkmingai.'
-            )
+        msg = format_html(
+            _('Duomenų teikėjo "<a href="{url}">{obj}</a>" prašymas pakeistas sėkmingai.'),
+            url=reverse("supervisor_admin:vitrina_orgs_representativerequest_change", args=[obj.pk]),
+            obj=str(obj),
         )
         self.message_user(request, msg, messages.SUCCESS)
         return self.response_post_save_change(request, obj)

@@ -2330,7 +2330,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         context["graph_title"] = self.get_graph_title(indicator)
         context["xAxis_title"] = self.get_time_axis_title(indicator)
         context["yAxis_title"] = self.get_title_for_indicator(indicator)
-        context["time_chart_data"] = json.dumps(time_chart_data)
+        context["time_chart_data"] = time_chart_data
 
         context["bar_chart_data"] = bar_chart_data
         context["max_count"] = max_count
@@ -2867,7 +2867,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
 
         context["title"] = self.title
         context["current_title"] = self.current_title
-        context["data"] = json.dumps(chart_data)
+        context["data"] = chart_data
         context["year_stats"] = year_stats
         context["max_count"] = max_count
 

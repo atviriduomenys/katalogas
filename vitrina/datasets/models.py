@@ -11,7 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, connection
 from django.db.models import QuerySet, Q
 from django.urls import reverse
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.timezone import make_aware
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
@@ -51,6 +51,15 @@ from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
 from vitrina.users.models import User
 from vitrina.datasets.tasks import update_applicable_legislation_description
 from vitrina.uapi.models import Agent
+
+
+# Mirrors django.utils.html._json_script_escapes: json.dumps does not escape
+# "</script>", so JSON-LD embedded in a <script> block can break out of it.
+_JSON_SCRIPT_ESCAPES = {
+    ord(">"): "\\u003E",
+    ord("<"): "\\u003C",
+    ord("&"): "\\u0026",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -1246,25 +1255,33 @@ class Dataset(Resource):
         if metadata and metadata.draft is True:
             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                 if latest_version.name != metadata.name:
-                    label = mark_safe(
-                        f"<a href={self.get_absolute_url()}>{self.title}</a> name: "
-                        f"<span class='tag is-danger is-light is-medium'>{latest_version.name}</span> -> "
-                        f"<span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                    label = format_html(
+                        "<a href='{url}'>{title}</a> name: "
+                        "<span class='tag is-danger is-light is-medium'>{old}</span> -> "
+                        "<span class='tag is-success is-light is-medium'>{new}</span>",
+                        url=self.get_absolute_url(),
+                        title=self.title,
+                        old=latest_version.name,
+                        new=metadata.name,
                     )
                     meta_objects.append((metadata.pk, label))
             else:
-                label = mark_safe(
-                    f"<a href={self.get_absolute_url()}>{self.title}</a> name: "
-                    f"<span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                label = format_html(
+                    "<a href='{url}'>{title}</a> name: <span class='tag is-success is-light is-medium'>{name}</span>",
+                    url=self.get_absolute_url(),
+                    title=self.title,
+                    name=metadata.name,
                 )
                 meta_objects.append((metadata.pk, label))
 
         for metadata_instance in all_metadata_instances:
             metadata_model = metadata_instance.content_type.model
+            dataset_param_item_metadata_ref = None
+            dataset_enum_item_metadata_ref = None
             if metadata_model == "prefix":
-                label = mark_safe(
-                    f"Prefix ref: "
-                    f"<span class='tag is-success is-light is-medium model_metadata'>{metadata_instance.name}</span>"
+                label = format_html(
+                    "Prefix ref: <span class='tag is-success is-light is-medium model_metadata'>{name}</span>",
+                    name=metadata_instance.name,
                 )
 
                 meta_objects.append((metadata_instance.pk, label))
@@ -1281,9 +1298,11 @@ class Dataset(Resource):
                         ):
                             if metadata_instance.ref:
                                 dataset_param_item_metadata_ref = metadata_instance.ref
-                            label = mark_safe(
-                                f"Param ref:  <span class='tag is-success is-light is-medium model_metadata'>{dataset_param_item_metadata_ref}</span>"
-                                f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
+                            label = format_html(
+                                "Param ref:  <span class='tag is-success is-light is-medium model_metadata'>{ref}</span>"
+                                " prepare: <span class='tag is-success is-light is-medium'>{prepare}</span>",
+                                ref=dataset_param_item_metadata_ref,
+                                prepare=metadata_instance.prepare,
                             )
                             meta_objects.append((metadata_instance.pk, label))
 
@@ -1297,9 +1316,11 @@ class Dataset(Resource):
                         ):
                             if metadata_instance.ref:
                                 dataset_enum_item_metadata_ref = metadata_instance.ref
-                            label = mark_safe(
-                                f"Enum ref:  <span class='tag is-success is-light is-medium model_metadata'>{dataset_enum_item_metadata_ref}</span> "
-                                f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
+                            label = format_html(
+                                "Enum ref:  <span class='tag is-success is-light is-medium model_metadata'>{ref}</span> "
+                                " prepare: <span class='tag is-success is-light is-medium'>{prepare}</span>",
+                                ref=dataset_enum_item_metadata_ref,
+                                prepare=metadata_instance.prepare,
                             )
                             meta_objects.append((metadata_instance.pk, label))
 
@@ -1323,9 +1344,10 @@ class Dataset(Resource):
                 and not is_metadata_inside_expected_distributions
                 and is_version_draft
             ):
-                label = mark_safe(
-                    f"<a href={dataset_distribution_for_model.get_absolute_url()}>{dataset_distribution_metadata.name}</a> name: "
-                    f"<span class='tag is-success is-light is-medium'>{dataset_distribution_metadata.name}</span>"
+                label = format_html(
+                    "<a href='{url}'>{name}</a> name: <span class='tag is-success is-light is-medium'>{name}</span>",
+                    url=dataset_distribution_for_model.get_absolute_url(),
+                    name=dataset_distribution_metadata.name,
                 )
                 dataset_distributions.add(dataset_distribution_metadata.pk)
                 meta_objects.append((dataset_distribution_metadata.pk, label))
@@ -1334,11 +1356,17 @@ class Dataset(Resource):
             if metadata and metadata.draft is True:
                 models.append(model)
                 if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
-                    label_str = f"<a href='{model.get_absolute_url()}' class='model_metadata'>{model.name}</a>"
+                    label = format_html(
+                        "<a href='{url}' class='model_metadata'>{name}</a>",
+                        url=model.get_absolute_url(),
+                        name=model.name,
+                    )
                     if latest_version.name != metadata.name:
-                        label_str += (
-                            f" name: <span class='tag is-danger is-light is-medium'>{latest_version.name}</span> ->"
-                            f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                        label += format_html(
+                            " name: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                            " <span class='tag is-success is-light is-medium'>{new}</span>",
+                            old=latest_version.name,
+                            new=metadata.name,
                         )
                     if latest_version.status != metadata.status:
                         changes_to_message = metadata.status.codename
@@ -1346,58 +1374,76 @@ class Dataset(Resource):
                             completed_status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
                             changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
 
-                        label_str += (
-                            f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
-                            f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
+                        label += format_html(
+                            " status: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                            " <span class='tag is-success is-light is-medium'>{new}</span>",
+                            old=latest_version.status.codename,
+                            new=changes_to_message,
                         )
                     latest_version.ref = None if latest_version.ref == "" else latest_version.ref
                     metadata.ref = None if metadata.ref == "" else metadata.ref
                     if latest_version.ref != metadata.ref:
-                        label_str += (
-                            f" ref: <span class='tag is-danger is-light is-medium'>{latest_version.ref}</span> -> "
-                            f"<span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                        label += format_html(
+                            " ref: <span class='tag is-danger is-light is-medium'>{old}</span> -> "
+                            "<span class='tag is-success is-light is-medium'>{new}</span>",
+                            old=latest_version.ref,
+                            new=metadata.ref,
                         )
                     if latest_version.level_given != metadata.level_given:
-                        label_str += (
-                            f" level: <span class='tag is-danger is-light is-medium'>{latest_version.level_given}"
-                            f"</span> -> <span class='tag is-success is-light is-medium'>{metadata.level_given}"
-                            f"</span>"
+                        label += format_html(
+                            " level: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                            " <span class='tag is-success is-light is-medium'>{new}</span>",
+                            old=latest_version.level_given,
+                            new=metadata.level_given,
                         )
                     if latest_version.base != model.base:
-                        label_str += (
-                            f" base: <span class='tag is-danger is-light is-medium'>{latest_version.base}</span> ->"
-                            f" <span class='tag is-success is-light is-medium'>{model.base.model.name}</span>"
+                        new_base = model.base.model.name if model.base else "-"
+                        label += format_html(
+                            " base: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                            " <span class='tag is-success is-light is-medium'>{new}</span>",
+                            old=latest_version.base,
+                            new=new_base,
                         )
-                    label = mark_safe(label_str)
                     meta_objects.append((metadata.pk, label))
                 else:
-                    label_str = (
-                        f"<a href='{model.get_absolute_url()}' class='model_metadata'>{model.name}</a>"
-                        f" name: <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                    label = format_html(
+                        "<a href='{url}' class='model_metadata'>{name}</a>"
+                        " name: <span class='tag is-success is-light is-medium'>{meta_name}</span>",
+                        url=model.get_absolute_url(),
+                        name=model.name,
+                        meta_name=metadata.name,
                     )
                     if metadata.ref:
-                        label_str += f" ref: <span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                        label += format_html(
+                            " ref: <span class='tag is-success is-light is-medium'>{ref}</span>",
+                            ref=metadata.ref,
+                        )
                     if metadata.level_given:
-                        label_str += (
-                            f" level: <span class='tag is-success is-light is-medium'>{metadata.level_given}</span>"
+                        label += format_html(
+                            " level: <span class='tag is-success is-light is-medium'>{level}</span>",
+                            level=metadata.level_given,
                         )
                     if model.base:
-                        label_str += (
-                            f" base: <span class='tag is-success is-light is-medium'>{model.base.model.name}</span>"
+                        label += format_html(
+                            " base: <span class='tag is-success is-light is-medium'>{base}</span>",
+                            base=model.base.model.name,
                         )
-                    label = mark_safe(label_str)
                     meta_objects.append((metadata.pk, label))
 
                 if param := model.params.first():
                     for param_item in param.paramitem_set.all():
+                        model_param_item_metadata_ref = None
                         metadata = param_item.metadata.first()
-                        if metadata and metadata.metadata_version.status == VersionStatus.DRAFT and metadata.ref:
-                            model_param_item_metadata_ref = metadata.ref
-                        label = mark_safe(
-                            f"Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{model_param_item_metadata_ref}</span>"
-                            f" prepare: <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
-                        )
-                        meta_objects.append((metadata.pk, label))
+                        if metadata and metadata.metadata_version.status == VersionStatus.DRAFT:
+                            if metadata.ref:
+                                model_param_item_metadata_ref = metadata.ref
+                            label = format_html(
+                                "Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{ref}</span>"
+                                " prepare: <span class='tag is-success is-light is-medium'>{prepare}</span>",
+                                ref=model_param_item_metadata_ref,
+                                prepare=metadata.prepare,
+                            )
+                            meta_objects.append((metadata.pk, label))
 
             for prop in model.model_properties.all():
                 metadata = prop.metadata.first()
@@ -1405,21 +1451,27 @@ class Dataset(Resource):
                     props.append(prop)
 
                     if prop.model not in models:
-                        label_str = (
-                            f"<a href='{prop.model.get_absolute_url()}' class='model_metadata disabled'>"
-                            f"{prop.model.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
+                        label = format_html(
+                            "<a href='{url}' class='model_metadata disabled'>{name}</a> <small>({note})</small>",
+                            url=prop.model.get_absolute_url(),
+                            name=prop.model.name,
+                            note=_("Jau įtraukta į versiją"),
                         )
-                        label = mark_safe(label_str)
                         meta_objects.append((prop.model.metadata.first().pk, label))
                         models.append(prop.model)
 
                     if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
-                        label_str = f"<a href='{prop.get_absolute_url()}' class='prop_metadata'>{prop.name}</a>"
+                        label = format_html(
+                            "<a href='{url}' class='prop_metadata'>{name}</a>",
+                            url=prop.get_absolute_url(),
+                            name=prop.name,
+                        )
                         if latest_version.name != metadata.name:
-                            label_str += (
-                                f" name: <span class='tag is-danger is-light is-medium'>"
-                                f"{latest_version.name}</span> ->"
-                                f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                            label += format_html(
+                                " name: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                                " <span class='tag is-success is-light is-medium'>{new}</span>",
+                                old=latest_version.name,
+                                new=metadata.name,
                             )
 
                         if latest_version.status != metadata.status:
@@ -1428,96 +1480,113 @@ class Dataset(Resource):
                                 completed_status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
                                 changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
 
-                            label_str += (
-                                f" status: <span class='tag is-danger is-light is-medium'>"
-                                f"{latest_version.status.codename}</span> ->"
-                                f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
+                            label += format_html(
+                                " status: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                                " <span class='tag is-success is-light is-medium'>{new}</span>",
+                                old=latest_version.status.codename,
+                                new=changes_to_message,
                             )
                         if latest_version.type_repr != metadata.type_repr:
-                            label_str += (
-                                f" type: <span class='tag is-danger is-light is-medium'>"
-                                f"{latest_version.type_repr}</span> -> "
-                                f"<span class='tag is-success is-light is-medium'>{metadata.type_repr}</span>"
+                            label += format_html(
+                                " type: <span class='tag is-danger is-light is-medium'>{old}</span> -> "
+                                "<span class='tag is-success is-light is-medium'>{new}</span>",
+                                old=latest_version.type_repr,
+                                new=metadata.type_repr,
                             )
                         latest_version.ref = None if latest_version.ref == "" else latest_version.ref
                         metadata.ref = None if metadata.ref == "" else metadata.ref
                         if latest_version.ref != metadata.ref:
-                            label_str += (
-                                f" ref: <span class='tag is-danger is-light is-medium'>"
-                                f"{latest_version.ref}</span> -> "
-                                f"<span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                            label += format_html(
+                                " ref: <span class='tag is-danger is-light is-medium'>{old}</span> -> "
+                                "<span class='tag is-success is-light is-medium'>{new}</span>",
+                                old=latest_version.ref,
+                                new=metadata.ref,
                             )
                         if latest_version.level_given != metadata.level_given:
-                            label_str += (
-                                f" level: <span class='tag is-danger is-light is-medium'>"
-                                f"{latest_version.level_given}"
-                                f"</span> -> <span class='tag is-success is-light is-medium'>"
-                                f"{metadata.level_given}</span>"
+                            label += format_html(
+                                " level: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                                " <span class='tag is-success is-light is-medium'>{new}</span>",
+                                old=latest_version.level_given,
+                                new=metadata.level_given,
                             )
                         if latest_version.access != metadata.access:
-                            label_str += (
-                                f" access: <span class='tag is-danger is-light is-medium'>"
-                                f"{latest_version.get_access_display()}</span> ->"
-                                f" <span class='tag is-success is-light is-medium'>"
-                                f"{metadata.get_access_display()}</span>"
+                            label += format_html(
+                                " access: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                                " <span class='tag is-success is-light is-medium'>{new}</span>",
+                                old=latest_version.get_access_display(),
+                                new=metadata.get_access_display(),
                             )
-                        label = mark_safe(label_str)
                         meta_objects.append((metadata.pk, label))
                     else:
-                        label_str = (
-                            f"<a href='{prop.get_absolute_url()}' class='prop_metadata'>{prop.name}</a>"
-                            f" name: <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                        label = format_html(
+                            "<a href='{url}' class='prop_metadata'>{name}</a>"
+                            " name: <span class='tag is-success is-light is-medium'>{meta_name}</span>",
+                            url=prop.get_absolute_url(),
+                            name=prop.name,
+                            meta_name=metadata.name,
                         )
                         if metadata.type:
-                            label_str += (
-                                f" type: <span class='tag is-success is-light is-medium'>{metadata.type_repr}</span>"
+                            label += format_html(
+                                " type: <span class='tag is-success is-light is-medium'>{type}</span>",
+                                type=metadata.type_repr,
                             )
                         if metadata.ref:
-                            label_str += f" ref: <span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                            label += format_html(
+                                " ref: <span class='tag is-success is-light is-medium'>{ref}</span>",
+                                ref=metadata.ref,
+                            )
                         if metadata.level_given:
-                            label_str += (
-                                f" level: <span class='tag is-success is-light is-medium'>{metadata.level_given}</span>"
+                            label += format_html(
+                                " level: <span class='tag is-success is-light is-medium'>{level}</span>",
+                                level=metadata.level_given,
                             )
                         if metadata.access:
-                            label_str += (
-                                f" access: <span class='tag is-success is-light is-medium'>"
-                                f"{metadata.get_access_display()}</span>"
+                            label += format_html(
+                                " access: <span class='tag is-success is-light is-medium'>{access}</span>",
+                                access=metadata.get_access_display(),
                             )
-                        label = mark_safe(label_str)
                         meta_objects.append((metadata.pk, label))
                 if enum := prop.enums.first():
                     for enum_item in enum.enumitem_set.all():
                         metadata = enum_item.metadata.first()
                         if metadata and metadata.draft is True:
                             if enum.object.model not in models:
-                                label_str = (
-                                    f"<a href='{enum.object.model.get_absolute_url()}' class='model_metadata disabled'>"
-                                    f"{enum.object.model.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
+                                label = format_html(
+                                    "<a href='{url}' class='model_metadata disabled'>{name}</a>"
+                                    " <small>({note})</small>",
+                                    url=enum.object.model.get_absolute_url(),
+                                    name=enum.object.model.name,
+                                    note=_("Jau įtraukta į versiją"),
                                 )
-                                label = mark_safe(label_str)
                                 meta_objects.append((enum.object.model.metadata.first().pk, label))
                                 models.append(enum.object.model)
                             if enum.object not in props:
-                                label_str = (
-                                    f"<a href='{enum.object.get_absolute_url()}' class='prop_metadata disabled'>"
-                                    f"{enum.object.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
+                                label = format_html(
+                                    "<a href='{url}' class='prop_metadata disabled'>{name}</a> <small>({note})</small>",
+                                    url=enum.object.get_absolute_url(),
+                                    name=enum.object.name,
+                                    note=_("Jau įtraukta į versiją"),
                                 )
-                                label = mark_safe(label_str)
                                 meta_objects.append((enum.object.metadata.first().pk, label))
                                 props.append(enum.object)
 
                             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
-                                label_str = f"<a href='{prop.get_absolute_url()}' class='enum_metadata'>{enum_item}</a>"
+                                label = format_html(
+                                    "<a href='{url}' class='enum_metadata'>{name}</a>",
+                                    url=prop.get_absolute_url(),
+                                    name=enum_item,
+                                )
 
                                 latest_version.prepare = (
                                     None if latest_version.prepare == "" else latest_version.prepare
                                 )
                                 metadata.prepare = None if metadata.prepare == "" else metadata.prepare
                                 if latest_version.prepare != metadata.prepare:
-                                    label_str += (
-                                        f" prepare: <span class='tag is-danger is-light is-medium'>"
-                                        f"{latest_version.prepare}</span> ->"
-                                        f" <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
+                                    label += format_html(
+                                        " prepare: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                                        " <span class='tag is-success is-light is-medium'>{new}</span>",
+                                        old=latest_version.prepare,
+                                        new=metadata.prepare,
                                     )
                                 latest_version.source = None if latest_version.source == "" else latest_version.source
                                 metadata.source = None if metadata.source == "" else metadata.source
@@ -1529,31 +1598,36 @@ class Dataset(Resource):
                                             f"{metadata.status.codename} -> {completed_status.codename}"
                                         )
 
-                                    label_str += (
-                                        f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
-                                        f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
+                                    label += format_html(
+                                        " status: <span class='tag is-danger is-light is-medium'>{old}</span> ->"
+                                        " <span class='tag is-success is-light is-medium'>{new}</span>",
+                                        old=latest_version.status.codename,
+                                        new=changes_to_message,
                                     )
                                 if latest_version.source != metadata.source:
-                                    label_str += (
-                                        f" source: <span class='tag is-danger is-light is-medium'>"
-                                        f"{latest_version.source}</span> -> "
-                                        f"<span class='tag is-success is-light is-medium'>{metadata.source}</span>"
+                                    label += format_html(
+                                        " source: <span class='tag is-danger is-light is-medium'>{old}</span> -> "
+                                        "<span class='tag is-success is-light is-medium'>{new}</span>",
+                                        old=latest_version.source,
+                                        new=metadata.source,
                                     )
-                                label = mark_safe(label_str)
                                 meta_objects.append((metadata.pk, label))
                             else:
-                                label_str = f"<a href='{prop.get_absolute_url()}' class='enum_metadata'>{enum_item}</a>"
+                                label = format_html(
+                                    "<a href='{url}' class='enum_metadata'>{name}</a>",
+                                    url=prop.get_absolute_url(),
+                                    name=enum_item,
+                                )
                                 if metadata.prepare:
-                                    label_str += (
-                                        f" prepare: <span class='tag is-success is-light is-medium'>"
-                                        f"{metadata.prepare}</span>"
+                                    label += format_html(
+                                        " prepare: <span class='tag is-success is-light is-medium'>{prepare}</span>",
+                                        prepare=metadata.prepare,
                                     )
                                 if metadata.source:
-                                    label_str += (
-                                        f" source: <span class='tag is-success is-light is-medium'>"
-                                        f"{metadata.source}</span>"
+                                    label += format_html(
+                                        " source: <span class='tag is-success is-light is-medium'>{source}</span>",
+                                        source=metadata.source,
                                     )
-                                label = mark_safe(label_str)
                                 meta_objects.append((metadata.pk, label))
 
             for scope in model.model_scopes.filter(metadata_version=metadata_version):
@@ -1563,15 +1637,17 @@ class Dataset(Resource):
                         "model-scope-detail",
                         args=[self.pk, metadata_version.pk, model.name, scope.pk],
                     )
-                    label_str = (
-                        f"<span class='prop_metadata'><a href='{scope_url}'>scope</a> ref: "
-                        f"<span class='tag is-success is-light is-medium'>{metadata.ref}</span></span>"
+                    label = format_html(
+                        "<span class='prop_metadata'><a href='{url}'>scope</a> ref: "
+                        "<span class='tag is-success is-light is-medium'>{ref}</span></span>",
+                        url=scope_url,
+                        ref=metadata.ref,
                     )
                     if metadata.prepare:
-                        label_str += (
-                            f" prepare: <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
+                        label += format_html(
+                            " prepare: <span class='tag is-success is-light is-medium'>{prepare}</span>",
+                            prepare=metadata.prepare,
                         )
-                    label = mark_safe(label_str)
                     meta_objects.append((metadata.pk, label))
 
         return meta_objects
@@ -1642,7 +1718,7 @@ class Dataset(Resource):
             "datePublished": str(self.published) if self.published else None,
             "isAccessibleForFree": self.is_public if self.is_public else None,
         }
-        return json.dumps(json_ld, ensure_ascii=False)
+        return json.dumps(json_ld, ensure_ascii=False).translate(_JSON_SCRIPT_ESCAPES)
 
     def is_part_of_dataservice(self):
         if self.datasetdistribution_set.filter(format__extension="UAPI").exists():

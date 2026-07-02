@@ -1,11 +1,13 @@
 from datetime import datetime
 
+import json
+
 import pytest
 import pytz
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-
+from django.utils.html import escape
 
 from vitrina.classifiers.factories import ConceptFactory
 from vitrina.datasets.factories import (
@@ -18,9 +20,14 @@ from vitrina.datasets import ContactKind
 from vitrina.datasets.models import DCATResourceSubclass, Dataset, Contact
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
+from vitrina.structure.factories import VersionFactory, ModelFactory, MetadataFactory
+from vitrina.structure.models import VersionStatus, Model as StructureModel, MetadataVersion
 from vitrina.users.factories import UserFactory
 from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
 from vitrina.uapi.models import Environment
+
+
+XSS_PAYLOAD = "<script>alert('xss')</script>"
 
 pytestmark = pytest.mark.django_db
 
@@ -505,3 +512,62 @@ class TestContact:
     def test_is_service_kind_false(self):
         contact = ContactFactory(kind=ContactKind.UNREGISTERED)
         assert contact.is_service_kind() is False
+
+
+@pytest.mark.django_db
+class TestDatasetGetMetadataObjectsForVersionXSS:
+    def test_model_name_is_escaped_in_label(self):
+        version = VersionFactory(status=VersionStatus.DRAFT)
+        dataset = version.dataset
+        struct_model = ModelFactory(metadata_version=version, dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            metadata_version=version,
+            draft=True,
+            name=XSS_PAYLOAD,
+            content_type=ContentType.objects.get_for_model(StructureModel),
+            object_id=struct_model.pk,
+        )
+
+        result = dataset.get_metadata_objects_for_version(version)
+        labels = "".join(str(label) for _, label in result)
+
+        assert XSS_PAYLOAD not in labels
+        assert escape(XSS_PAYLOAD) in labels
+
+    def test_metadata_name_diff_is_escaped_in_label(self):
+        version = VersionFactory(status=VersionStatus.DRAFT)
+        dataset = version.dataset
+        struct_model = ModelFactory(metadata_version=version, dataset=dataset)
+        metadata = MetadataFactory(
+            dataset=dataset,
+            metadata_version=version,
+            draft=True,
+            name=XSS_PAYLOAD,
+            content_type=ContentType.objects.get_for_model(StructureModel),
+            object_id=struct_model.pk,
+        )
+        old_version = VersionFactory(dataset=dataset)
+        MetadataVersion.objects.create(
+            metadata=metadata,
+            version=old_version,
+            name="safe_old_name",
+        )
+
+        result = dataset.get_metadata_objects_for_version(version)
+        labels = "".join(str(label) for _, label in result)
+
+        assert XSS_PAYLOAD not in labels
+        assert escape(XSS_PAYLOAD) in labels
+
+
+class TestDatasetGetJsonLd:
+    def test_json_ld_escapes_script_breakout(self):
+        title = "Test </script><script>alert('xss')</script>"
+        dataset = DatasetFactory(title=title)
+
+        json_ld = dataset.get_json_ld()
+
+        assert "</script>" not in json_ld
+        assert "<script>" not in json_ld
+        assert json.loads(json_ld)["name"] == title

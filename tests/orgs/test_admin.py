@@ -1,13 +1,20 @@
 import pytest
+from django.contrib.admin import AdminSite
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.messages import get_messages
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.test import RequestFactory
 from django.urls import reverse
+from django.utils.html import escape
 
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.admin import RepresentativeRequestAdmin
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
+from vitrina.users.factories import UserFactory
 
 from vitrina.users.models import User
 
@@ -131,3 +138,33 @@ def test_admin_organization_remove(app: DjangoTestApp, admin_user: User, publish
     assert not Representative.objects.filter(
         organization=publisher_org, content_type=ContentType.objects.get_for_model(Organization), object_id=orgs[2].id
     ).exists()
+
+
+@pytest.mark.django_db
+def test_response_change_flash_message_escapes_user_name():
+    xss_payload = "<script>alert('xss')</script>"
+
+    user = UserFactory()
+    user.first_name = xss_payload
+    user.save()
+
+    org = OrganizationFactory()
+    rep_request = RepresentativeRequest.objects.create(
+        user=user,
+        organization=org,
+        status=RepresentativeRequest.CREATED,
+    )
+
+    request = RequestFactory().post("/")
+    request.user = user
+    setattr(request, "session", "session")
+    storage = FallbackStorage(request)
+    setattr(request, "_messages", storage)
+
+    admin = RepresentativeRequestAdmin(RepresentativeRequest, AdminSite())
+    admin.response_change(request, rep_request)
+
+    messages = [str(m) for m in get_messages(request)]
+    assert messages, "Expected a flash message"
+    assert xss_payload not in messages[0]
+    assert escape(xss_payload) in messages[0]

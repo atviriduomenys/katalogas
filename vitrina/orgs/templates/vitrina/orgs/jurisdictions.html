@@ -31,7 +31,7 @@
                             {% for jurisdiction in jurisdictions %}
                                 {% if jurisdiction.title == selected_jurisdiction %}
                                 <div class="columns is-gapless  m-0 mt-1" style="cursor: pointer;"
-                                     onclick="removeFilter('{{ jurisdiction.id }}')"
+                                     data-action="remove-filter" data-filter="{{ jurisdiction.id }}"
                                 >
                                     <span class="icon">
                                         <i class="far fa-check-square"></i>
@@ -83,10 +83,10 @@
             <div class="tabs">
                 <ul>
                     <li class="format-tab" id="time_tab_id">
-                        <a name="time" onclick="selectTab('time')">{% translate "Laiko juosta" %}</a>
+                        <a name="time" data-action="select-tab" data-tab="time">{% translate "Laiko juosta" %}</a>
                     </li>
                     <li class="format-tab" id="bar_tab_id">
-                        <a name="bar" onclick="selectTab('bar')">{% translate "Stulpelinė diagrama" %}</a>
+                        <a name="bar" data-action="select-tab" data-tab="bar">{% translate "Stulpelinė diagrama" %}</a>
                     </li>
                 </ul>
            </div>

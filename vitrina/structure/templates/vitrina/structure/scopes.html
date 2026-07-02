@@ -50,7 +50,7 @@
                                             {% csrf_token %}
                                             <button type="submit"
                                                     class="button is-link is-small"
-                                                    onclick="return confirm('{% translate "Ar tikrai norite ištrinti?" %}')">
+                                                    data-action="confirm" data-confirm-message="{% translate 'Ar tikrai norite ištrinti?' %}">
                                                 {% translate "Ištrinti" %}
                                             </button>
                                         </form>

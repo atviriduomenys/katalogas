@@ -316,7 +316,7 @@
                                             {% translate "Keisti" %}
                                         </a>
                                         <a href="{% url 'enum-delete' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
-                                           onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
+                                           data-action="confirm" data-confirm-message="{% translate 'Ar jūs tikrai norite ištrinti?' %}"
                                            class="button is-link is-small"
                                            id="delete_enum">
                                             {% translate "Ištrinti" %}

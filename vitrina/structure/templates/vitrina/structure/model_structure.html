@@ -465,7 +465,7 @@
                                             <a
                                                 href="{% url 'base-property-delete' dataset.pk version_id model.pk prop.pk %}"
                                                 class="button is-link is-small"
-                                                onclick="return confirm({% translate 'Ar tikrai norite ištrinti?' %})"
+                                                data-action="confirm" data-confirm-message="{% translate 'Ar tikrai norite ištrinti?' %}"
                                             >
                                                 {% translate "Ištrinti" %}
                                             </a>

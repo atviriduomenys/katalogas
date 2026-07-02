@@ -38,7 +38,7 @@
                         {% if organization.image %}
                             <img src="{{ organization.image.url }}"
                                  alt="{{ organization.title }}"
-                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                 data-avatar-fallback>
                             <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
                         {% else %}
                             <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
@@ -53,7 +53,7 @@
 
             {# Close button #}
             <button type="button" class="wizard-header-close" aria-label="{% translate 'Uždaryti' %}"
-                    onclick="wizardNavigateTo('{% url 'organization-detail' pk=organization.pk %}')">
+                    data-action="wizard-navigate" data-url="{% url 'organization-detail' pk=organization.pk %}">
                 <span class="icon"><i class="fas fa-times"></i></span>
             </button>
         </header>
@@ -272,7 +272,7 @@
             <footer class="wizard-footer">
                 <a href="{% url 'organization-detail' pk=organization.pk %}"
                    class="button"
-                   onclick="event.preventDefault(); wizardNavigateTo(this.href);">
+                   data-action="wizard-navigate">
                     {% translate "Uždaryti" %}
                 </a>
                 <div class="buttons">
@@ -307,6 +307,22 @@
             if (top > 0) overlay.style.top = top + 'px';
         }
         window.addEventListener('load', applyToolbarOffset);
+
+        // Org avatar image fallback (former inline onerror): on load failure hide the
+        // image and reveal the letter placeholder. Also covers images that already failed
+        // before this script ran (error event does not bubble, so it can't be delegated).
+        document.querySelectorAll('img[data-avatar-fallback]').forEach(function (img) {
+            function showFallback() {
+                img.style.display = 'none';
+                if (img.nextElementSibling) {
+                    img.nextElementSibling.style.display = 'flex';
+                }
+            }
+            img.addEventListener('error', showFallback);
+            if (img.complete && img.naturalWidth === 0) {
+                showFallback();
+            }
+        });
 
         // --- Unsaved-changes guard ---
         window.wizardFormDirty = false;

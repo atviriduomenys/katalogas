@@ -28,7 +28,7 @@
             <ul>
                 {% for key, tab in tabs.items %}
                 <li class="format-tab" id="{{ key }}_tab_id">
-                    <a href="#{{ key }}" onclick="selectTab('{{ key }}')">{{ tab.name }}</a>
+                    <a href="#{{ key }}" data-action="select-tab" data-tab="{{ key }}">{{ tab.name }}</a>
                 </li>
                 {% endfor %}
             </ul>

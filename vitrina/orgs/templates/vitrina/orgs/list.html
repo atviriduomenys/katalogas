@@ -70,7 +70,7 @@
                                 {% if jurisdiction.title == selected_jurisdiction %}
                                     <div class="columns is-gapless m-0 mt-1">
                                           <div class="column is-10">
-                                                <a onclick="removeFilter('{{ jurisdiction.id }}')"
+                                                <a data-action="remove-filter" data-filter="{{ jurisdiction.id }}"
                                                    class="category-panel-block has-text-weight-bold has-text-dark"
                                                    title="{{ jurisdiction.title }}"
                                                    aria-label="{{ jurisdiction.title }}"

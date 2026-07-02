@@ -17,7 +17,7 @@
                     aria-label="menu"
                     aria-expanded="false"
                     data-target="navbarBasic"
-                    onClick="openMenu()"
+                    data-action="menu"
             >
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
@@ -113,7 +113,7 @@
                                     {% csrf_token %}
                                     <input name="language" type="hidden" value="{{ language.code }}">
                                 </form>
-                                <a href="#" rel="nofollow" class="navbar-item" onclick="document.getElementById('languageChange{{ language.code }}').submit();">
+                                <a href="#" rel="nofollow" class="navbar-item" data-action="submit-form" data-form-id="languageChange{{ language.code }}">
                                     {{ language.code|upper }}
                                 </a>
                             {% endfor %}

@@ -538,6 +538,8 @@ CONTENT_SECURITY_POLICY = {
         "font-src": ["'self'", "data:"],
         "connect-src": [
             "'self'",
+            "https://www.google.com",  # reCAPTCHA
+            "https://www.gstatic.com",  # reCAPTCHA
             "https://www.googletagmanager.com",
             "https://www.google-analytics.com",
             "https://*.google-analytics.com",

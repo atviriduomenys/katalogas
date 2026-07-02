@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Any
 
+from django.conf import settings
 from django.contrib.auth import logout
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.timezone import now
@@ -23,6 +24,44 @@ class LogContextMiddleware:
             finally:
                 reset_log_context(token)
         return self.get_response(request)
+
+
+class CSPScopeMiddleware:
+    """Relax the Content-Security-Policy to the permissive (inline-allowing) policy for the
+    Django admin, the coordinator admin and any request that renders the django-CMS toolbar
+    (logged-in editors). Those surfaces emit third-party inline scripts/styles (admin widgets,
+    CKEditor, the CMS toolbar) that cannot carry our nonce, so the strict nonce policy would
+    break — or, in the current report-only phase, spam violation reports on them.
+
+    Works with django-csp's per-response overrides, setting both the enforced (`_csp_replace`)
+    and report-only (`_csp_replace_ro`) variants so it keeps working after the strict policy is
+    promoted from report-only to enforced.
+
+    MUST be listed AFTER ``csp.middleware.CSPMiddleware`` in MIDDLEWARE so that its response
+    phase runs first and the override is in place before CSPMiddleware writes the header.
+    """
+
+    ADMIN_PREFIXES = ("/admin/", "/coordinator-admin/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if self._needs_permissive(request):
+            override = {
+                "script-src": settings.CSP_PERMISSIVE_SCRIPT_SRC,
+                "style-src": settings.CSP_PERMISSIVE_STYLE_SRC,
+            }
+            response._csp_replace = override
+            response._csp_replace_ro = override
+        return response
+
+    def _needs_permissive(self, request: HttpRequest) -> bool:
+        if request.path_info.startswith(self.ADMIN_PREFIXES):
+            return True
+        toolbar = getattr(request, "toolbar", None)
+        return bool(toolbar is not None and getattr(toolbar, "show_toolbar", False))
 
 
 class NoAutoLocaleMiddleware(MiddlewareMixin):

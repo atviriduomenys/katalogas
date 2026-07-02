@@ -1,8 +1,12 @@
+from unittest import mock
+
 import pytest
+import requests
 from django_webtest import DjangoTestApp
 from vitrina.viisp.xml_utils import (
     create_signed_authentication_request_xml,
     create_signed_authentication_data_request_xml,
+    get_response_with_user_data,
     _parse_ticket_id,
     _parse_user_data,
 )
@@ -13,6 +17,14 @@ from base64 import b64decode
 def key():
     key_content = open("tests/viisp/resources/fake_rsa_key_b64.txt", "r").read()
     return b64decode(key_content).decode("ascii")
+
+
+def test_get_response_with_user_data_returns_none_on_http_error(app: DjangoTestApp, key):
+    resp = mock.Mock()
+    resp.raise_for_status.side_effect = requests.exceptions.HTTPError()
+    with mock.patch("vitrina.viisp.xml_utils.post", return_value=resp):
+        result = get_response_with_user_data("0961ca7d-ac07-47d2-98c7-1968db7dba8f", key)
+    assert result is None
 
 
 def test_auth_request_xml_signing(app: DjangoTestApp, key):

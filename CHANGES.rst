@@ -29,6 +29,11 @@ https://github.com/atviriduomenys/katalogas/issues/2267
 - Add a fullscreen toggle to the distribution preview modal.
 - Preview reads only the requested number of rows (``rows`` query parameter) instead of the whole file, avoiding memory issues on large distributions.
 
+https://github.com/atviriduomenys/katalogas/issues/2585
+
+- Fix HTTP 500 error when registering or logging in via VIISP.
+- Return a graceful VIISP API error page instead of a 500 when the VIISP signing keys are missing or the VIISP data-request SOAP call fails.
+
 <No Ticket>
 
 - Add a Content Security Policy via ``django-csp``. Directives with no breakage trade-off for this site are locked

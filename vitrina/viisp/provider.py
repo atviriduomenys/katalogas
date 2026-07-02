@@ -66,7 +66,7 @@ class VIISPProvider(OAuth2Provider):
             if existing_social_account:
                 socialaccount = existing_social_account
 
-        sociallogin = SocialLogin(account=socialaccount, email_addresses=email_addresses)
+        sociallogin = SocialLogin(account=socialaccount, email_addresses=email_addresses, provider=self)
         if user and not existing_social_account:
             sociallogin.connect(request, user)
             social_account_added.send(sender=SocialLogin, request=request, sociallogin=sociallogin)

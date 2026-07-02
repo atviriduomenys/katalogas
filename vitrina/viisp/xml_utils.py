@@ -108,7 +108,10 @@ def get_response_with_user_data(ticket_id, key):
     signed_xml = create_signed_authentication_data_request_xml(ticket_id, key)
     soap_request = envelope.format(signed_xml)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
-    resp.raise_for_status()
+    try:
+        resp.raise_for_status()
+    except requests.exceptions.RequestException:
+        return None
     data = _parse_user_data(resp.text)
     data["ticket_id"] = ticket_id
     return data

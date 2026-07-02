@@ -524,8 +524,6 @@ CONTENT_SECURITY_POLICY = {
             "https://cdn.jsdelivr.net",  # Chart.js
             "https://unpkg.com",  # Leaflet
             "https://www.googletagmanager.com",  # Google Tag Manager
-            "https://www.google.com",  # reCAPTCHA
-            "https://www.gstatic.com",  # reCAPTCHA
         ],
         # TODO: drop 'unsafe-inline' once inline style attributes are removed.
         "style-src": [

@@ -104,6 +104,8 @@ class TestContentSecurityPolicy:
     def test_csp_middleware_ordered_right_after_security_middleware(self):
         """CSPMiddleware belongs near the top of the stack, right after SecurityMiddleware."""
         mw = settings.MIDDLEWARE
+        assert "csp.middleware.CSPMiddleware" in mw
+        assert "django.middleware.security.SecurityMiddleware" in mw
         assert mw.index("csp.middleware.CSPMiddleware") == mw.index("django.middleware.security.SecurityMiddleware") + 1
 
     def test_csp_policy_has_directives(self):

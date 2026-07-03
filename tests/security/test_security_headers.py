@@ -106,8 +106,9 @@ class TestContentSecurityPolicy:
         # Smoke-test that the header is actually added to responses.
         from django.test import Client
 
-        response = Client().get("/robots.txt")
+        response = Client(HTTP_HOST="localhost").get("/robots.txt")
         assert response.has_header("Content-Security-Policy")
+
     def test_csp_middleware_ordered_right_after_security_middleware(self):
         """CSPMiddleware belongs near the top of the stack, right after SecurityMiddleware."""
         mw = settings.MIDDLEWARE

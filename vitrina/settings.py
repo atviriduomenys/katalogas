@@ -507,7 +507,7 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 #      to same-origin via X-Frame-Options). These give real defense in depth.
 #   2. script-src / style-src, which still allow 'unsafe-inline' because the
 #      templates rely heavily on inline scripts, inline event handlers and inline styles.
-#      Note: 'unsafe-eval' is not required for inline code; keep it only if the JS bundle/build tooling uses eval()/new Function().
+#      Note: 'unsafe-eval' is currently required by Alpine.js in the wizard bundle; keep it until Alpine/config is updated to avoid eval()/new Function().
 #      Tightening these requires a nonce/refactor pass and is deliberately deferred -- see the TODOs.
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {

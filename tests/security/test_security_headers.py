@@ -133,7 +133,8 @@ assert (
 
     def test_csp_frame_src_allows_expected_embeds(self):
         """Framing is limited to the origins we actually embed (YouTube, reCAPTCHA)."""
-        frame_src = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["frame-src"]
-        # Exact allow-list membership (an == comparison, not URL substring matching).
-        assert any(source == "'self'" for source in frame_src)
-        assert any(source == "https://www.youtube.com" for source in frame_src)
+frame_src = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["frame-src"]
+assert "'self'" in frame_src
+assert "https://www.youtube.com" in frame_src
+assert "https://www.google.com" in frame_src
+assert "https://www.gstatic.com" in frame_src

@@ -97,10 +97,15 @@ class TestContentSecurityPolicy:
     reordered/removed, or the locked-down directives being weakened.
     """
 
-    def test_csp_middleware_enabled(self):
-        """CSPMiddleware must be installed for the CSP header to be emitted."""
-        assert "csp.middleware.CSPMiddleware" in settings.MIDDLEWARE
+def test_csp_middleware_enabled(self):
+    """CSPMiddleware must be installed for the CSP header to be emitted."""
+    assert "csp.middleware.CSPMiddleware" in settings.MIDDLEWARE
 
+    # Smoke-test that the header is actually added to responses.
+    from django.test import Client
+
+    response = Client().get("/robots.txt")
+    assert response.has_header("Content-Security-Policy")
     def test_csp_middleware_ordered_right_after_security_middleware(self):
         """CSPMiddleware belongs near the top of the stack, right after SecurityMiddleware."""
         mw = settings.MIDDLEWARE

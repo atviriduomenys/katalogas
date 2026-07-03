@@ -138,8 +138,8 @@ class TestContentSecurityPolicy:
 
     def test_csp_frame_src_allows_expected_embeds(self):
         """Framing is limited to the origins we actually embed (YouTube, reCAPTCHA)."""
-frame_src = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["frame-src"]
-assert "'self'" in frame_src
-assert "https://www.youtube.com" in frame_src
-assert "https://www.google.com" in frame_src
-assert "https://www.gstatic.com" in frame_src
+        frame_src = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["frame-src"]
+        assert "'self'" in frame_src
+        assert "https://www.youtube.com" in frame_src
+        assert "https://www.google.com" in frame_src
+        assert "https://www.gstatic.com" in frame_src

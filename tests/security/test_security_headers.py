@@ -2,6 +2,8 @@
 Tests for security headers and cookie settings.
 """
 
+from urllib.parse import urlsplit
+
 from django.conf import settings
 
 
@@ -140,6 +142,18 @@ class TestContentSecurityPolicy:
         """Framing is limited to the origins we actually embed (YouTube, reCAPTCHA)."""
         frame_src = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["frame-src"]
         assert "'self'" in frame_src
-        assert "https://www.youtube.com" in frame_src
-        assert "https://www.google.com" in frame_src
-        assert "https://www.gstatic.com" in frame_src
+
+        parsed_origins = set()
+        for source in frame_src:
+            if not isinstance(source, str):
+                continue
+            parsed = urlsplit(source)
+            if parsed.scheme and parsed.hostname:
+                origin = f"{parsed.scheme}://{parsed.hostname}"
+                if parsed.port:
+                    origin = f"{origin}:{parsed.port}"
+                parsed_origins.add(origin)
+
+        assert "https://www.youtube.com" in parsed_origins
+        assert "https://www.google.com" in parsed_origins
+        assert "https://www.gstatic.com" in parsed_origins

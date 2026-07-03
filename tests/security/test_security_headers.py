@@ -82,8 +82,53 @@ class TestSecureDefaults:
 
     def test_csrf_trusted_origins_configured(self):
         """Test that CSRF trusted origins are configured."""
-        assert "https://*.gov.lt" in settings.CSRF_TRUSTED_ORIGINS
+        # Exact allow-list membership (an == comparison, not URL substring matching).
+        assert any(origin == "https://*.gov.lt" for origin in settings.CSRF_TRUSTED_ORIGINS)
 
     def test_language_cookie_is_secure(self):
         """Test that language cookie is also secured."""
         assert settings.LANGUAGE_COOKIE_SECURE is True
+
+
+class TestContentSecurityPolicy:
+    """Content-Security-Policy configuration (WEB-5).
+
+    Guards against accidental regressions in the CSP setup: the middleware being
+    reordered/removed, or the locked-down directives being weakened.
+    """
+
+    def test_csp_middleware_enabled(self):
+        """CSPMiddleware must be installed for the CSP header to be emitted."""
+        assert "csp.middleware.CSPMiddleware" in settings.MIDDLEWARE
+
+    def test_csp_middleware_ordered_right_after_security_middleware(self):
+        """CSPMiddleware belongs near the top of the stack, right after SecurityMiddleware."""
+        mw = settings.MIDDLEWARE
+        assert mw.index("csp.middleware.CSPMiddleware") == mw.index("django.middleware.security.SecurityMiddleware") + 1
+
+    def test_csp_policy_has_directives(self):
+        assert "DIRECTIVES" in settings.CONTENT_SECURITY_POLICY
+
+    def test_csp_locked_down_directives(self):
+        """Directives that carry no trade-off must stay locked down (defense in depth)."""
+        directives = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]
+        assert directives["default-src"] == ["'self'"]
+        assert directives["object-src"] == ["'none'"]
+        assert directives["base-uri"] == ["'self'"]
+        assert directives["frame-ancestors"] == ["'self'"]
+        assert directives["form-action"] == ["'self'"]
+
+    def test_csp_script_and_style_src_restricted_to_self_and_allowlist(self):
+        """script-src/style-src must at least be scoped to 'self' (never a bare '*')."""
+        directives = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]
+        assert "'self'" in directives["script-src"]
+        assert "'self'" in directives["style-src"]
+        assert "*" not in directives["script-src"]
+        assert "*" not in directives["style-src"]
+
+    def test_csp_frame_src_allows_expected_embeds(self):
+        """Framing is limited to the origins we actually embed (YouTube, reCAPTCHA)."""
+        frame_src = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["frame-src"]
+        # Exact allow-list membership (an == comparison, not URL substring matching).
+        assert any(source == "'self'" for source in frame_src)
+        assert any(source == "https://www.youtube.com" for source in frame_src)

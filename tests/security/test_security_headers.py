@@ -106,7 +106,10 @@ class TestContentSecurityPolicy:
         mw = settings.MIDDLEWARE
         assert "csp.middleware.CSPMiddleware" in mw
         assert "django.middleware.security.SecurityMiddleware" in mw
-        assert mw.index("csp.middleware.CSPMiddleware") == mw.index("django.middleware.security.SecurityMiddleware") + 1
+assert (
+    mw.index("csp.middleware.CSPMiddleware")
+    == mw.index("django.middleware.security.SecurityMiddleware") + 1
+)
 
     def test_csp_policy_has_directives(self):
         assert "DIRECTIVES" in settings.CONTENT_SECURITY_POLICY

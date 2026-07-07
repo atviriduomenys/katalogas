@@ -1,4 +1,5 @@
 from django.template import Context, Template
+from django.template.loader import render_to_string
 from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
@@ -41,9 +42,9 @@ class DeploymentModelTest(TestCase):
 
 
 def _render_tag():
-    return Template("{% load util_tags %}{% get_deploy_banner as banner %}{{ banner.pk|default:'none' }}").render(
-        Context()
-    )
+    return Template(
+        "{% load util_tags %}{% get_deploy_banner as banner %}{% if banner %}{{ banner.pk }}{% else %}none{% endif %}"
+    ).render(Context())
 
 
 class GetDeployBannerTest(TestCase):
@@ -87,3 +88,38 @@ class DeploymentAdminFormTest(TestCase):
         deployment = Deployment.objects.create(message_lt="Originalus tekstas", is_published=True, **_window())
         form = DeploymentAdminForm(instance=deployment)
         self.assertEqual(form.initial["message_lt"], "Originalus tekstas")
+
+
+class DeployBannerTemplateTest(TestCase):
+    def test_link_is_not_escaped(self):
+        Deployment.objects.create(
+            message_lt='Skaitykite <a href="https://data.gov.lt">čia</a>',
+            is_published=True,
+            **_window(),
+        )
+        html = render_to_string("component/deploy_banner.html")
+        self.assertIn('<a href="https://data.gov.lt">čia</a>', html)
+        self.assertNotIn("&lt;a href", html)
+
+    def test_info_level_styling(self):
+        Deployment.objects.create(message_lt="Info", level="info", is_published=True, **_window())
+        html = render_to_string("component/deploy_banner.html")
+        self.assertIn("is-info", html)
+        self.assertIn("fa-info-circle", html)
+
+    def test_warning_level_styling(self):
+        Deployment.objects.create(message_lt="Warn", level="warning", is_published=True, **_window())
+        html = render_to_string("component/deploy_banner.html")
+        self.assertIn("is-warning", html)
+        self.assertIn("fa-exclamation-triangle", html)
+
+    def test_critical_level_styling(self):
+        Deployment.objects.create(message_lt="Crit", level="critical", is_published=True, **_window())
+        html = render_to_string("component/deploy_banner.html")
+        self.assertIn("is-danger", html)
+        self.assertIn("fa-exclamation-circle", html)
+
+    def test_no_banner_when_none_published(self):
+        Deployment.objects.create(message_lt="Draft", is_published=False, **_window())
+        html = render_to_string("component/deploy_banner.html")
+        self.assertNotIn("notification", html)

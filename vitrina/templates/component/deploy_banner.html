@@ -4,13 +4,21 @@
 {% get_current_language as LANGUAGE_CODE %}
 {% get_deploy_banner as banner %}
 {% if banner %}
-<div class="no-margin-bottom has-text-danger has-text-weight-medium py-2 pl-5">
-  <p>
-    {% if LANGUAGE_CODE == "en" and banner.message_en %}
-      {{ banner.message_en }}
-    {% else %}
-      {{ banner.message_lt }}
-    {% endif %}
-  </p>
+{% with level=banner.level %}
+<div class="notification is-light no-margin-bottom deploy-banner deploy-banner--{{ level }}
+    {% if level == 'critical' %}is-danger{% elif level == 'warning' %}is-warning{% else %}is-info{% endif %}">
+  <span class="icon-text">
+    <span class="icon">
+      <i class="fas {% if level == 'critical' %}fa-exclamation-circle{% elif level == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+    </span>
+    <span>
+      {% if LANGUAGE_CODE == "en" and banner.message_en %}
+        {{ banner.message_en|safe }}
+      {% else %}
+        {{ banner.message_lt|safe }}
+      {% endif %}
+    </span>
+  </span>
 </div>
+{% endwith %}
 {% endif %}

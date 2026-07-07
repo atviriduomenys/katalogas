@@ -116,8 +116,8 @@ def encode_uri(value: str) -> str:
 
 @assignment_tag
 def get_deploy_banner():
-    deploy = Deployment.objects.first()
     now = timezone.now()
+    deploy = Deployment.objects.filter(is_published=True).first()
 
     if deploy and deploy.start_date <= now <= deploy.end_date:
         return deploy

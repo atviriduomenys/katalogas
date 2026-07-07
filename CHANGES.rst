@@ -1,11 +1,13 @@
 Changes
 #######
 
-v 1.23.0 (2026-06-30)
+v 1.23.0 (current)
 ==================
 
+<No ticket>
 - Remove unused files: stale SQL dumps in ``resources/`` (``adp-dev.sql``, ``adp-dev-fresh.sql``, ``adp-pg.sql``, ``migrations_squash.sql``) and ``uml.drawio.svg``.
 - Remove unused ``BASE_DB_PATH`` setting (only referenced the removed ``adp-pg.sql``).
+- Clean up README.rst
 
 https://github.com/atviriduomenys/katalogas/issues/2719
 

@@ -5,7 +5,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from djangocms_text_ckeditor.fields import HTMLFormField
 
-from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
+from vitrina.cms.models import LearningMaterial, Faq, ExternalSite, Deployment
 from vitrina.orgs.models import PublishedReport
 
 
@@ -69,4 +69,20 @@ class PublishedReportAdminForm(forms.ModelForm):
         fields = (
             "title",
             "data",
+        )
+
+
+class DeploymentAdminForm(forms.ModelForm):
+    message_lt = HTMLFormField(label=_("Pranešimas (lietuvių kalba)"))
+    message_en = HTMLFormField(label=_("Pranešimas (anglų kalba)"), required=False)
+
+    class Meta:
+        model = Deployment
+        fields = (
+            "level",
+            "is_published",
+            "start_date",
+            "end_date",
+            "message_lt",
+            "message_en",
         )

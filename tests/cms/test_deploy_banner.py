@@ -3,6 +3,9 @@ from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
 
+from djangocms_text_ckeditor.fields import HTMLFormField
+
+from vitrina.cms.forms import DeploymentAdminForm
 from vitrina.cms.models import Deployment
 
 
@@ -63,3 +66,24 @@ class GetDeployBannerTest(TestCase):
             end_date=now - timedelta(days=3),
         )
         self.assertEqual(_render_tag(), "none")
+
+
+class DeploymentAdminFormTest(TestCase):
+    def test_message_fields_use_ckeditor(self):
+        form = DeploymentAdminForm()
+        self.assertIsInstance(form.fields["message_lt"], HTMLFormField)
+        self.assertIsInstance(form.fields["message_en"], HTMLFormField)
+
+    def test_form_exposes_new_fields(self):
+        form = DeploymentAdminForm()
+        for name in ("level", "is_published", "start_date", "end_date", "message_lt", "message_en"):
+            self.assertIn(name, form.fields)
+
+    def test_message_en_optional(self):
+        form = DeploymentAdminForm()
+        self.assertFalse(form.fields["message_en"].required)
+
+    def test_form_edits_existing_instance(self):
+        deployment = Deployment.objects.create(message_lt="Originalus tekstas", is_published=True, **_window())
+        form = DeploymentAdminForm(instance=deployment)
+        self.assertEqual(form.initial["message_lt"], "Originalus tekstas")

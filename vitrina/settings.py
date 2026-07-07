@@ -36,7 +36,6 @@ environ.Env.read_env(os.path.join(BASE_DIR, env_file))
 # Take environment variables from .env file
 environ.Env.read_env(BASE_DIR / ".env")
 
-BASE_DB_PATH = BASE_DIR / "resources/adp-pg.sql"
 LOCALE_PATHS = [
     env.str("VITRINA_LOCALE_PATH", default=str(BASE_DIR / "vitrina/locale/")),
 ]

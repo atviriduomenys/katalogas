@@ -86,6 +86,7 @@ from vitrina.structure.services import (
     transform_coordinates,
     get_data_from_spinta_async,
     get_allowed_visibilities,
+    build_rql_query,
 )
 from vitrina.datasets.structure import read as read_structure
 from vitrina.structure.utils import TYPE_CHECKER_MAP
@@ -846,19 +847,8 @@ class PropertyStructureView(
 
 async def get_model_data(request, *args, **kwargs):
     model = kwargs.get("model", "").replace("-", "/")
-    query = ["limit(100)"]
-    for key, val in request.GET.items():
-        if key.startswith("select("):
-            select = key
-            query.append(select)
-        else:
-            if val == "":
-                query.append(key)
-            else:
-                tag = f"{key}={val}"
-                query.append(tag)
-
-    query = "&".join(query)
+    query = build_rql_query(request.GET)
+    query = f"limit(100)&{query}" if query else "limit(100)"
     data = await get_data_from_spinta_async(model, query=query)
     return JsonResponse(data)
 
@@ -1005,17 +995,10 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
 async def get_model_data_count(request, *args, **kwargs):
     model = kwargs.get("model", "").replace("-", "/")
-    count_query = ["count()"]
-    for key, val in request.GET.items():
-        if not key.startswith("select(") and not key.startswith("sort("):
-            if val == "":
-                count_query.append(key)
-            else:
-                tag = f"{key}={val}"
-                count_query.append(tag)
+    count_query = build_rql_query(request.GET, skip_prefixes=("select(", "sort("))
+    count_query = f"count()&{count_query}" if count_query else "count()"
 
     total_count = 0
-    count_query = "&".join(count_query)
     path = f"{model}/?{count_query}"
 
     if not cache.get(path):
@@ -1112,13 +1095,9 @@ class ModelDataView(
 
     def _build_spinta_download_url(self, request: HttpRequest, fmt: str) -> str:
         url = f"{SPINTA_SERVER_URL}/{self.model}/:format/{fmt}"
-        query = []
-        for key, val in request.GET.items():
-            if key == "format":
-                continue
-            query.append(key if val == "" else f"{key}={val}")
+        query = build_rql_query(request.GET, exclude=("format",))
         if query:
-            url = f"{url}?{'&'.join(query)}"
+            url = f"{url}?{query}"
         return url
 
     def get(self, request, *args, **kwargs):
@@ -1194,14 +1173,8 @@ class ModelDataView(
     def get_api_url(self):
         url = self.model.get_api_url()
         if url:
-            query = []
-            for key, val in self.request.GET.items():
-                if val == "":
-                    query.append(key)
-                else:
-                    query.append(f"{key}={val}")
+            query = build_rql_query(self.request.GET)
             if query:
-                query = "&".join(query)
                 url = f"{url}?{query}"
         return url
 

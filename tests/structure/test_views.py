@@ -8516,8 +8516,6 @@ def test_model_data_download_redirects_to_spinta(app: DjangoTestApp):
 @pytest.mark.django_db
 @patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
 def test_model_data_download_select_reaches_spinta_verbatim(app: DjangoTestApp):
-    # Regression for issue #2719: a multi-column select(...) must reach Spinta exactly as typed,
-    # not percent-encoded and without the trailing "=" that broke Spinta's RQL parser.
     version = VersionFactory()
     dataset, model = _setup_download_model(version)
     url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
@@ -8537,21 +8535,31 @@ def test_model_data_download_select_reaches_spinta_verbatim(app: DjangoTestApp):
         "sort(-prop)",
         "limit(10)",
         "count()",
-        "prop>5",  # value-less comparison filter
-        'prop="abc"',  # equality filter parsed as key=value
-        "select(_id,prop)&sort(prop)&prop>5",  # combined query
+        "prop>5",
+        'prop="abc"',
+        "select(_id,prop)&sort(prop)&prop>5",
     ],
 )
 @patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
 def test_model_data_download_preserves_rql_query(app: DjangoTestApp, rql):
-    # The RQL query must survive the round-trip unchanged (once percent-decoding is undone).
-    # The old code appended a stray "=" to value-less fragments, which is what broke Spinta.
     version = VersionFactory()
     dataset, model = _setup_download_model(version)
     url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
     resp = app.get(f"{url}?format=csv&{rql}")
     assert resp.status_code == 302
     assert unquote(resp.location) == f"https://get.data.gov.lt/test/dataset/TestModel/:format/csv?{rql}"
+
+
+@pytest.mark.django_db
+@patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
+def test_model_data_download_encodes_delimiter_in_filter_value(app: DjangoTestApp):
+    version = VersionFactory()
+    dataset, model = _setup_download_model(version)
+    url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
+    resp = app.get(f"{url}?format=csv&prop=%22A%26B%22")
+    assert resp.status_code == 302
+    assert resp.location == "https://get.data.gov.lt/test/dataset/TestModel/:format/csv?prop=%22A%26B%22"
+    assert unquote(resp.location) == 'https://get.data.gov.lt/test/dataset/TestModel/:format/csv?prop="A&B"'
 
 
 @pytest.mark.django_db

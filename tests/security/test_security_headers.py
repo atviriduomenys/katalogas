@@ -84,7 +84,9 @@ class TestSecureDefaults:
 
     def test_csrf_trusted_origins_configured(self):
         """Test that CSRF trusted origins are configured."""
-        # Exact allow-list membership (an == comparison, not URL substring matching).
+        # `any(origin == ...)` rather than the more natural `"..." in ...` only to avoid a
+        # CodeQL incomplete-url-substring-sanitization false positive: list membership is
+        # already an exact == match (CodeQL flags the `"<url>" in x` syntax regardless).
         assert any(origin == "https://*.gov.lt" for origin in settings.CSRF_TRUSTED_ORIGINS)
 
     def test_language_cookie_is_secure(self):

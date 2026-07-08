@@ -2,7 +2,9 @@
 Tests for security headers and cookie settings.
 """
 
+from urllib.parse import urlsplit
 from django.conf import settings
+from django.test import Client
 
 
 class TestSecuritySettings:
@@ -82,8 +84,78 @@ class TestSecureDefaults:
 
     def test_csrf_trusted_origins_configured(self):
         """Test that CSRF trusted origins are configured."""
-        assert "https://*.gov.lt" in settings.CSRF_TRUSTED_ORIGINS
+        # `any(origin == ...)` rather than the more natural `"..." in ...` only to avoid a
+        # CodeQL incomplete-url-substring-sanitization false positive: list membership is
+        # already an exact == match (CodeQL flags the `"<url>" in x` syntax regardless).
+        assert any(origin == "https://*.gov.lt" for origin in settings.CSRF_TRUSTED_ORIGINS)
 
     def test_language_cookie_is_secure(self):
         """Test that language cookie is also secured."""
         assert settings.LANGUAGE_COOKIE_SECURE is True
+
+
+class TestContentSecurityPolicy:
+    """Content-Security-Policy configuration (WEB-5).
+
+    Guards against accidental regressions in the CSP setup: the middleware being
+    reordered/removed, or the locked-down directives being weakened.
+    """
+
+    def test_csp_middleware_enabled(self):
+        """CSPMiddleware must be installed for the CSP header to be emitted."""
+        assert "csp.middleware.CSPMiddleware" in settings.MIDDLEWARE
+
+        # Smoke-test that the header is actually added to responses.
+        response = Client(HTTP_HOST="localhost").get("/robots.txt")
+        assert response.has_header("Content-Security-Policy")
+
+    def test_csp_middleware_ordered_right_after_security_middleware(self):
+        """CSPMiddleware belongs near the top of the stack, right after SecurityMiddleware."""
+        mw = settings.MIDDLEWARE
+        assert "csp.middleware.CSPMiddleware" in mw
+        assert "django.middleware.security.SecurityMiddleware" in mw
+        assert mw.index("csp.middleware.CSPMiddleware") == mw.index("django.middleware.security.SecurityMiddleware") + 1
+
+    def test_csp_policy_has_directives(self):
+        assert "DIRECTIVES" in settings.CONTENT_SECURITY_POLICY
+
+    def test_csp_locked_down_directives(self):
+        """Directives that carry no trade-off must stay locked down (defense in depth)."""
+        directives = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]
+        assert directives["default-src"] == ["'self'"]
+        assert directives["object-src"] == ["'none'"]
+        assert directives["base-uri"] == ["'self'"]
+        assert directives["frame-ancestors"] == ["'self'"]
+        assert directives["form-action"] == ["'self'"]
+
+    def test_csp_script_and_style_src_restricted_to_self_and_allowlist(self):
+        """script-src/style-src must at least be scoped to 'self' (never a bare '*')."""
+        directives = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]
+        assert "'self'" in directives["script-src"]
+        assert "'self'" in directives["style-src"]
+        assert "*" not in directives["script-src"]
+        assert "*" not in directives["style-src"]
+
+    def test_csp_frame_src_allows_expected_embeds(self):
+        """Framing is limited to the origins we actually embed (YouTube, reCAPTCHA)."""
+        frame_src = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["frame-src"]
+        assert "'self'" in frame_src
+
+        parsed_origins = set()
+        for source in frame_src:
+            if not isinstance(source, str):
+                continue
+            parsed = urlsplit(source)
+            if parsed.scheme and parsed.hostname:
+                origin = f"{parsed.scheme}://{parsed.hostname}"
+                if parsed.port:
+                    origin = f"{origin}:{parsed.port}"
+                parsed_origins.add(origin)
+
+        # Subset check on parsed origins (set operation, not URL substring matching).
+        expected_embed_origins = {
+            "https://www.youtube.com",
+            "https://www.google.com",
+            "https://www.gstatic.com",
+        }
+        assert expected_embed_origins <= parsed_origins

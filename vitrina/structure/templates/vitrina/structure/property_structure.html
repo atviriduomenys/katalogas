@@ -436,7 +436,7 @@
                     else if (document.getElementById("map") != null){
                         let map = L.map('map');
                         let clusters = JSON.parse(document.getElementById('clusters').textContent);
-                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
                         let layerGroup = L.layerGroup().addTo(map);
                         let bounds = [];

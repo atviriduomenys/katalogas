@@ -4,6 +4,15 @@ Changes
 v 1.23.0 (2026-06-30)
 ==================
 
+<No Ticket>
+
+- Add a Content Security Policy via ``django-csp``. Directives with no breakage trade-off for this site are locked
+  down (``default-src 'self'``, ``object-src 'none'``, ``base-uri 'self'``, ``frame-ancestors 'self'``,
+  ``form-action 'self'``), while ``script-src`` still allows ``'unsafe-inline'``/``'unsafe-eval'`` and
+  ``style-src`` still allows ``'unsafe-inline'`` because the templates rely on inline scripts, event handlers and styles.
+  Tightening those is deferred to a later nonce/refactor pass. Also switch the Leaflet OpenStreetMap tile URLs from ``http://`` to
+  ``https://`` (they were mixed content on an HTTPS page).
+
 
 v 1.22.0 (2026-06-30)
 ==================

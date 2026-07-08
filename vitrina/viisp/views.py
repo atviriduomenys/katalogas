@@ -24,14 +24,32 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from vitrina.users.models import User
 from allauth.account.utils import perform_login
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from allauth.socialaccount.models import SocialAccount
 from itsdangerous.url_safe import URLSafeSerializer
+from itsdangerous import BadData
 from django.contrib.auth.views import LoginView
 import bcrypt
 
 
 ACCEPTED_PROXY_TYPES = ["generic", "legal"]
+
+
+def _viisp_api_error(request, error_data=None):
+    return render(request, "allauth/socialaccount/api_error.html", error_data or {})
+
+
+def _set_company_code(target_user, user_data):
+    if user_data.get("proxy_type", "").lower() in ACCEPTED_PROXY_TYPES:
+        target_user.viisp_company_code = user_data.get("lt_company_code")
+    else:
+        target_user.viisp_company_code = None
+
+
+def _mark_viisp_login(target_user, user_data):
+    target_user.is_viisp_login = True
+    _set_company_code(target_user, user_data)
+    target_user.save()
 
 
 class VIISPLoginView(TemplateView):
@@ -44,18 +62,18 @@ class VIISPLoginView(TemplateView):
         token = None
         viisp_key = ViispKey.objects.first()
         if not viisp_key:
-            return render(request, "allauth/socialaccount/api_error.html", {})
+            return _viisp_api_error(request)
         key = b64decode(viisp_key.key_content).decode("ascii")
         domain = get_current_domain(request, ensure_secure=True)
         if self.request.user.is_authenticated:
             viisp_token_key = ViispTokenKey.objects.first()
             if not viisp_token_key:
-                return render(request, "allauth/socialaccount/api_error.html", {})
+                return _viisp_api_error(request)
             fernet = Fernet(viisp_token_key.key_content.encode())
             token = fernet.encrypt(self.request.user.email.encode()).decode()
         ticket_id, error_data = get_response_with_ticket_id(key, domain, token)
         if not ticket_id:
-            return render(request, "allauth/socialaccount/api_error.html", error_data)
+            return _viisp_api_error(request, error_data)
         url = VIISPOAuth2Adapter.authorize_url
         return redirect(url + "?" + "ticket={}".format(ticket_id))
 
@@ -68,20 +86,25 @@ class VIISPCompleteLoginView(View):
     def post(self, request, token=None):
         viisp_key = ViispKey.objects.first()
         if not viisp_key:
-            return render(request, "allauth/socialaccount/api_error.html", {})
+            return _viisp_api_error(request)
         key = b64decode(viisp_key.key_content).decode("ascii")
         provider = VIISPProvider(request)
         ticket_id = self.request.POST.get("ticket")
+        if not ticket_id:
+            return _viisp_api_error(request)
         user_data = get_response_with_user_data(ticket_id, key)
         if not user_data:
-            return render(request, "allauth/socialaccount/api_error.html", {})
+            return _viisp_api_error(request)
         if token:
             viisp_token_key = ViispTokenKey.objects.first()
             if not viisp_token_key:
-                return render(request, "allauth/socialaccount/api_error.html", {})
+                return _viisp_api_error(request)
             fernet = Fernet(viisp_token_key.key_content.encode())
-            email = fernet.decrypt(token).decode()
-            if email != user_data.get("email"):
+            try:
+                email = fernet.decrypt(token).decode()
+            except (InvalidToken, ValueError):
+                return _viisp_api_error(request)
+            if email.lower() != (user_data.get("email") or "").lower():
                 return redirect("change-email")
             else:
                 user_data["email"] = email
@@ -90,19 +113,13 @@ class VIISPCompleteLoginView(View):
             return redirect("change-email")
 
         if not user_data.get("personal_code"):
-            error_data = {}
-            return render(request, "allauth/socialaccount/api_error.html", error_data)
+            return _viisp_api_error(request)
 
         user = User.objects.filter(email=user_data.get("email")).first()
         if user:
-            user.is_viisp_login = True
-            if user_data.get("proxy_type", "").lower() in ACCEPTED_PROXY_TYPES:
-                user.viisp_company_code = user_data.get("lt_company_code")
-            else:
-                user.viisp_company_code = None
-            user.save()
-            user_social_account = SocialAccount.objects.filter(user__email=user.email).first()
+            user_social_account = SocialAccount.objects.filter(user=user, provider=VIISPProvider.id).first()
             if token:
+                _mark_viisp_login(user, user_data)
                 login = provider.sociallogin_from_response(request, user_data)
                 return perform_login(
                     request,
@@ -112,12 +129,15 @@ class VIISPCompleteLoginView(View):
                     signal_kwargs={"sociallogin": login},
                 )
             elif user_social_account:
+                stored_personal_code = user_social_account.extra_data.get("personal_code")
+                if not stored_personal_code:
+                    return _viisp_api_error(request)
                 login = provider.sociallogin_from_response(request, user_data)
-                personal_code_bytes = user_data.get("personal_code").encode("utf-8")
                 if bcrypt.checkpw(
-                    personal_code_bytes,
-                    user_social_account.extra_data.get("personal_code").encode("utf-8"),
+                    user_data.get("personal_code").encode("utf-8"),
+                    stored_personal_code.encode("utf-8"),
                 ):
+                    _mark_viisp_login(user, user_data)
                     if not user_social_account.extra_data.get("password_not_set"):
                         return perform_login(
                             request,
@@ -134,12 +154,16 @@ class VIISPCompleteLoginView(View):
                             redirect_url=reverse("password-set"),
                             signal_kwargs={"sociallogin": login},
                         )
+                else:
+                    return _viisp_api_error(request)
             else:
-                _confirm_viisp_email(
+                _mark_viisp_login(user, user_data)
+                if not _confirm_viisp_email(
                     user_data.get("email"),
                     user_data,
                     get_current_domain(self.request),
-                )
+                ):
+                    return _viisp_api_error(request)
                 return redirect("confirm-email")
         login = provider.sociallogin_from_response(request, user_data)
         response = complete_social_login(request, login)
@@ -149,10 +173,7 @@ class VIISPCompleteLoginView(View):
             if reps := Representative.objects.filter(email=login.user.email, user__isnull=True):
                 reps.update(user=login.user)
             login.user.is_viisp_login = True
-            if user_data.get("proxy_type", "").lower() in ACCEPTED_PROXY_TYPES:
-                login.user.viisp_company_code = user_data.get("lt_company_code")
-            else:
-                login.user.viisp_company_code = None
+            _set_company_code(login.user, user_data)
             login.user.save()
 
         return response
@@ -187,10 +208,21 @@ def _confirm_viisp_email(
     email_address: str | None,
     user_data: dict[str, str],
     base_url: str,
-) -> None:
-    viisp_token_key = ViispTokenKey.objects.first().key_content
-    s = URLSafeSerializer(viisp_token_key)
-    token = s.dumps([user_data.get(key) for key in user_data])
+) -> bool:
+    viisp_token_key = ViispTokenKey.objects.first()
+    if not viisp_token_key:
+        return False
+    s = URLSafeSerializer(viisp_token_key.key_content)
+    token = s.dumps(
+        {
+            "personal_code": user_data.get("personal_code"),
+            "first_name": user_data.get("first_name"),
+            "last_name": user_data.get("last_name"),
+            "email": user_data.get("email"),
+            "phone": user_data.get("phone_number"),
+            "ticket_id": user_data.get("ticket_id"),
+        }
+    )
     email(
         [email_address],
         "viisp-confirmation",
@@ -199,6 +231,7 @@ def _confirm_viisp_email(
             "confirmation_url": "%s%s" % (base_url, reverse("viisp-account-merge", kwargs={"token": token})),
         },
     )
+    return True
 
 
 class ChangeEmailView(TemplateView):
@@ -223,21 +256,15 @@ class VIISPAccountMergeView(View):
         if token:
             if token == "password-set":
                 return redirect("password-set")
-            viisp_token_key = ViispTokenKey.objects.first().key_content
-            s = URLSafeSerializer(viisp_token_key)
-            merge_data = None
-            merge_data_dict = {}
+            viisp_token_key = ViispTokenKey.objects.first()
+            if not viisp_token_key:
+                return _viisp_api_error(request)
+            s = URLSafeSerializer(viisp_token_key.key_content)
             try:
-                merge_data = s.loads(token)
-                merge_data_dict = {
-                    "personal_code": merge_data[0],
-                    "first_name": merge_data[1],
-                    "last_name": merge_data[2],
-                    "email": merge_data[3],
-                    "phone": merge_data[4],
-                    "ticket_id": merge_data[5],
-                }
-            except IndexError:
+                merge_data_dict = s.loads(token)
+            except BadData:
+                return redirect("change-email")
+            if not isinstance(merge_data_dict, dict):
                 return redirect("change-email")
             provider = VIISPProvider(request)
             login = provider.sociallogin_from_response(request, merge_data_dict)

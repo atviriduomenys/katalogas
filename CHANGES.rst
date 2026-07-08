@@ -32,7 +32,12 @@ https://github.com/atviriduomenys/katalogas/issues/2267
 https://github.com/atviriduomenys/katalogas/issues/2585
 
 - Fix HTTP 500 error when registering or logging in via VIISP.
-- Return a graceful VIISP API error page instead of a 500 when the VIISP signing keys are missing or the VIISP data-request SOAP call fails.
+- Return a graceful VIISP API error page instead of a 500 when the VIISP signing keys are missing, the login ticket is absent, or the VIISP SOAP call fails (including proxy connection/timeout errors).
+- Reject VIISP login when the supplied personal code does not match the linked account instead of logging the user in.
+- Scope the linked-account lookup to the VIISP provider and guard a missing stored personal code, so a user with a non-VIISP social account (e.g. Google) or a legacy VIISP account no longer triggers a 500.
+- Only persist ``is_viisp_login`` / company code after authentication succeeds, so a rejected login no longer leaves those fields updated.
+- Guard the account-merge token decryption against tampered or malformed tokens, and serialise the confirmation token as a keyed structure so account merges decode correctly when a company code is present.
+- Compare emails case-insensitively during the token login flow, and log VIISP SOAP failures.
 
 <No Ticket>
 

@@ -12,7 +12,10 @@ from requests import post
 from vitrina.settings import VIISP_PROXY_AUTH, VIISP_PID
 import zipfile
 import io
+import logging
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 providers = (
@@ -93,13 +96,14 @@ def _generate_xml(base_element_name):
 def get_response_with_ticket_id(key, domain, token=None):
     signed_xml = create_signed_authentication_request_xml(key, domain, token)
     soap_request = envelope.format(signed_xml)
-    resp = post(VIISP_PROXY_AUTH, data=soap_request)
     try:
+        resp = post(VIISP_PROXY_AUTH, data=soap_request)
         resp.raise_for_status()
     except requests.exceptions.RequestException as e:
+        logger.exception("VIISP ticket request to %s failed: %s", VIISP_PROXY_AUTH, e)
         error_data = {}
         error_data["error_response"] = e.response
-        error_data["error_response_text"] = e.response.text
+        error_data["error_response_text"] = e.response.text if e.response is not None else str(e)
         return None, error_data
     return _parse_ticket_id(resp.text), None
 
@@ -107,10 +111,11 @@ def get_response_with_ticket_id(key, domain, token=None):
 def get_response_with_user_data(ticket_id, key):
     signed_xml = create_signed_authentication_data_request_xml(ticket_id, key)
     soap_request = envelope.format(signed_xml)
-    resp = post(VIISP_PROXY_AUTH, data=soap_request)
     try:
+        resp = post(VIISP_PROXY_AUTH, data=soap_request)
         resp.raise_for_status()
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        logger.exception("VIISP user-data request to %s failed: %s", VIISP_PROXY_AUTH, e)
         return None
     data = _parse_user_data(resp.text)
     data["ticket_id"] = ticket_id

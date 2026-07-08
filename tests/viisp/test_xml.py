@@ -7,6 +7,7 @@ from vitrina.viisp.xml_utils import (
     create_signed_authentication_request_xml,
     create_signed_authentication_data_request_xml,
     get_response_with_user_data,
+    get_response_with_ticket_id,
     _parse_ticket_id,
     _parse_user_data,
 )
@@ -25,6 +26,19 @@ def test_get_response_with_user_data_returns_none_on_http_error(app: DjangoTestA
     with mock.patch("vitrina.viisp.xml_utils.post", return_value=resp):
         result = get_response_with_user_data("0961ca7d-ac07-47d2-98c7-1968db7dba8f", key)
     assert result is None
+
+
+def test_get_response_with_user_data_returns_none_on_connection_error(app: DjangoTestApp, key):
+    with mock.patch("vitrina.viisp.xml_utils.post", side_effect=requests.exceptions.ConnectionError()):
+        result = get_response_with_user_data("0961ca7d-ac07-47d2-98c7-1968db7dba8f", key)
+    assert result is None
+
+
+def test_get_response_with_ticket_id_returns_error_data_on_connection_error(app: DjangoTestApp, key):
+    with mock.patch("vitrina.viisp.xml_utils.post", side_effect=requests.exceptions.ConnectionError("boom")):
+        ticket_id, error_data = get_response_with_ticket_id(key, "example.com")
+    assert ticket_id is None
+    assert error_data is not None
 
 
 def test_auth_request_xml_signing(app: DjangoTestApp, key):

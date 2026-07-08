@@ -8541,7 +8541,7 @@ def test_model_data_download_with_extra_params(app: DjangoTestApp):
     url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
     resp = app.get(f"{url}?format=json&select(prop)")
     assert resp.status_code == 302
-    assert resp.location == "https://get.data.gov.lt/test/dataset/TestModel/:format/json?select%28prop%29="
+    assert resp.location == "https://get.data.gov.lt/test/dataset/TestModel/:format/json?select(prop)"
 
 
 @pytest.mark.django_db

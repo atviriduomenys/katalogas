@@ -5,7 +5,7 @@ import json
 from io import StringIO
 from typing import Any, List, Union
 from urllib import parse
-from urllib.parse import unquote, urlencode, urlparse
+from urllib.parse import unquote, urlparse
 from flags.decorators import flag_required
 from django.utils.decorators import method_decorator
 
@@ -1112,9 +1112,13 @@ class ModelDataView(
 
     def _build_spinta_download_url(self, request: HttpRequest, fmt: str) -> str:
         url = f"{SPINTA_SERVER_URL}/{self.model}/:format/{fmt}"
-        params = {k: v for k, v in request.GET.items() if k != "format"}
-        if params:
-            url = f"{url}?{urlencode(params, doseq=True)}"
+        query = []
+        for key, val in request.GET.items():
+            if key == "format":
+                continue
+            query.append(key if val == "" else f"{key}={val}")
+        if query:
+            url = f"{url}?{'&'.join(query)}"
         return url
 
     def get(self, request, *args, **kwargs):

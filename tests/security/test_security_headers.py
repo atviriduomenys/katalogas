@@ -3,8 +3,8 @@ Tests for security headers and cookie settings.
 """
 
 from urllib.parse import urlsplit
-
 from django.conf import settings
+from django.test import Client
 
 
 class TestSecuritySettings:
@@ -104,8 +104,6 @@ class TestContentSecurityPolicy:
         assert "csp.middleware.CSPMiddleware" in settings.MIDDLEWARE
 
         # Smoke-test that the header is actually added to responses.
-        from django.test import Client
-
         response = Client(HTTP_HOST="localhost").get("/robots.txt")
         assert response.has_header("Content-Security-Policy")
 

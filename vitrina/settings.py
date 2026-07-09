@@ -191,6 +191,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "vitrina.middleware.LogContextMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_otp.middleware.OTPMiddleware",
     "reversion.middleware.RevisionMiddleware",
@@ -468,10 +469,22 @@ ACCOUNT_SIGNUP_REDIRECT_URL = "password-set"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "log_context": {
+            "()": "vitrina.log_context.LogContextFilter",
+        },
+    },
+    "formatters": {
+        "with_user": {
+            "format": "user ID: %(user_id)s %(levelname)s %(name)s %(message)s",
+        },
+    },
     "handlers": {
         "console": {
             "level": "INFO",
             "class": "logging.StreamHandler",
+            "filters": ["log_context"],
+            "formatter": "with_user",
         },
     },
     "root": {

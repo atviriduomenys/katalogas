@@ -90,7 +90,7 @@ def external_comments(context, content_type, object_id, user, dataset):
         "external": True,
         "dataset": dataset,
         "object": dataset,
-        "request": context.get("request"),
+        "request": context["request"],
     }
 
 

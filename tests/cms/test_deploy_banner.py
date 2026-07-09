@@ -98,8 +98,19 @@ class DeployBannerTemplateTest(TestCase):
             **_window(),
         )
         html = render_to_string("component/deploy_banner.html")
-        self.assertIn('<a href="https://data.gov.lt">čia</a>', html)
+        self.assertIn('href="https://data.gov.lt"', html)
+        self.assertIn(">čia</a>", html)
         self.assertNotIn("&lt;a href", html)
+
+    def test_dangerous_html_is_sanitized(self):
+        Deployment.objects.create(
+            message_lt='<script>alert("x")</script><strong>Labas</strong>',
+            is_published=True,
+            **_window(),
+        )
+        html = render_to_string("component/deploy_banner.html")
+        self.assertNotIn("<script>", html)
+        self.assertIn("<strong>Labas</strong>", html)
 
     def test_info_level_styling(self):
         Deployment.objects.create(message_lt="Info", level="info", is_published=True, **_window())

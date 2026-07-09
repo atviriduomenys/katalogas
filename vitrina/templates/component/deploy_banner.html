@@ -13,9 +13,9 @@
     </span>
     <span>
       {% if LANGUAGE_CODE == "en" and banner.message_en %}
-        {{ banner.message_en|safe }}
+        {{ banner.message_en|sanitize }}
       {% else %}
-        {{ banner.message_lt|safe }}
+        {{ banner.message_lt|sanitize }}
       {% endif %}
     </span>
   </span>

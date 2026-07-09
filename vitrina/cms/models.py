@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
 from filer.fields.image import FilerImageField
@@ -285,6 +285,7 @@ class Deployment(models.Model):
         verbose_name_plural = _("Diegimo pranešimai")
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.is_published:
-            Deployment.objects.exclude(pk=self.pk).filter(is_published=True).update(is_published=False)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if self.is_published:
+                Deployment.objects.exclude(pk=self.pk).filter(is_published=True).update(is_published=False)

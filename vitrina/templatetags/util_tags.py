@@ -6,12 +6,14 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from django import template
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from extra_settings.models import Setting
 from pyproj import Transformer
 from shapely.ops import transform
 from shapely.wkt import loads
 
 from vitrina.cms.models import Deployment
+from vitrina.security import sanitize_html
 from vitrina.structure.services import get_srid
 
 register = template.Library()
@@ -31,6 +33,11 @@ def is_number(value):
 @register.filter()
 def is_dict(value):
     return isinstance(value, dict)
+
+
+@register.filter()
+def sanitize(value):
+    return mark_safe(sanitize_html(value or ""))
 
 
 @register.filter

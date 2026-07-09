@@ -59,7 +59,7 @@ def comments(context, obj: "Model", user: SimpleLazyObject, is_structure: bool =
         "object": obj,
         "comment_form": comment_form_class(obj, is_opened=is_opened),
         "submit_button_id": "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button",
-        "request": context.get("request"),
+        "request": context["request"],
     }
 
 

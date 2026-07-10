@@ -12,6 +12,7 @@ from vitrina.orgs.models import Representative
 from vitrina.resources.factories import (
     DatasetDistributionFactory,
     FileFormat,
+    UapiFormat,
     CompressionFormatFactory,
     PackagingFormatFactory,
 )
@@ -904,8 +905,6 @@ def test_distribution_form_status_options(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_data_last_updated_not_set_on_create(app: DjangoTestApp):
-    from vitrina.users.factories import UserFactory
-
     dataset = DatasetFactory()
     file_format = FileFormat(extension="URL")
     user = UserFactory(is_staff=True, organization=dataset.organization)
@@ -917,6 +916,89 @@ def test_data_last_updated_not_set_on_create(app: DjangoTestApp):
     resp = form.submit()
     assert resp.status_code == 302
     distribution = DatasetDistribution.objects.first()
+    assert distribution.data_last_updated is None
+
+
+@pytest.mark.django_db
+def test_data_last_updated_not_set_on_create_for_uapi(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    uapi_format = UapiFormat()
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
+    form["title"] = "Test resource"
+    form["format"] = uapi_format.id
+    form["download_url"] = "http://www.example.com"
+    resp = form.submit()
+    assert resp.status_code == 302
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.data_last_updated is None
+
+
+@pytest.mark.django_db
+def test_data_last_updated_set_on_update_when_link_changes(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        format=FileFormat(extension="URL"),
+        file=None,
+        download_url="http://www.example.com/old",
+        type="URL",
+    )
+    distribution.data_last_updated = None
+    distribution.save(update_fields=["data_last_updated"])
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": distribution.pk})).forms["resource-form"]
+    form["download_url"] = "http://www.example.com/new"
+    resp = form.submit()
+    assert resp.status_code == 302
+    distribution.refresh_from_db()
+    assert distribution.data_last_updated is not None
+
+
+@pytest.mark.django_db
+def test_data_last_updated_not_set_on_metadata_only_update(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        format=FileFormat(extension="URL"),
+        file=None,
+        download_url="http://www.example.com/keep",
+        type="URL",
+    )
+    distribution.data_last_updated = None
+    distribution.save(update_fields=["data_last_updated"])
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": distribution.pk})).forms["resource-form"]
+    form["title"] = "Changed title only"
+    resp = form.submit()
+    assert resp.status_code == 302
+    distribution.refresh_from_db()
+    assert distribution.data_last_updated is None
+
+
+@pytest.mark.django_db
+def test_data_last_updated_not_set_on_metadata_only_update_when_download_url_null(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        format=FileFormat(extension="URL"),
+        file=None,
+        download_url=None,
+        access_url="http://www.example.com/access",
+        type="URL",
+    )
+    distribution.data_last_updated = None
+    distribution.save(update_fields=["data_last_updated"])
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": distribution.pk})).forms["resource-form"]
+    form["title"] = "Changed title only"
+    resp = form.submit()
+    assert resp.status_code == 302
+    distribution.refresh_from_db()
     assert distribution.data_last_updated is None
 
 

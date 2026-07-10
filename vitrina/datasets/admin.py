@@ -116,7 +116,7 @@ class DatasetLateFilter(admin.SimpleListFilter):
         not_late_ids = []
         for obj in queryset:
             distribution = (
-                obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+                obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "created"))
                 .filter(effective_updated__isnull=False)
                 .order_by("-effective_updated")
                 .first()
@@ -338,7 +338,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
 
     def distribution_modified_display(self, obj):
         distribution = (
-            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "created"))
             .filter(effective_updated__isnull=False)
             .order_by("-effective_updated")
             .first()
@@ -353,7 +353,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
     def _is_late_for(self, obj):
         text = ""
         distribution = (
-            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "created"))
             .filter(effective_updated__isnull=False)
             .order_by("-effective_updated")
             .first()
@@ -379,7 +379,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
 
     def _is_late_for_days(self, obj):
         distribution = (
-            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "created"))
             .filter(effective_updated__isnull=False)
             .order_by("-effective_updated")
             .first()

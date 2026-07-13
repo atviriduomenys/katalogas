@@ -152,7 +152,7 @@
     // inline call it replaced; page-specific functions (selectTab, orderBy, copyToClipboard,
     // ...) are only reached on pages that define them, so referencing them here is safe.
     document.addEventListener('click', function (e) {
-        var el = e.target.closest('[data-action]');
+        var el = e.target.closest && e.target.closest('[data-action]');
         if (!el) return;
         var d = el.dataset;
         switch (d.action) {

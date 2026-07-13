@@ -169,7 +169,13 @@
                 openMenu();
                 break;
             case 'hide-message':
-                HideMessage(d.counter);
+                if (d.counter !== undefined) {
+                    var notificationBar = document.getElementById('message-list-' + d.counter);
+                    if (notificationBar) notificationBar.classList.add('is-hidden');
+                } else {
+                    var topBar = el.closest('#top-bar') || document.getElementById('top-bar');
+                    if (topBar) topBar.classList.add('is-hidden');
+                }
                 break;
             case 'select-tab':
                 e.preventDefault();

@@ -238,7 +238,7 @@
     });
 
     document.addEventListener('change', function (e) {
-        var el = e.target.closest('[data-action-change]');
+        var el = e.target.closest && e.target.closest('[data-action-change]');
         if (!el) return;
         var d = el.dataset;
         switch (d.actionChange) {

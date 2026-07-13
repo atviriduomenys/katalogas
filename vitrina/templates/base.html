@@ -228,7 +228,8 @@
                 break;
             case 'submit-form':
                 e.preventDefault();
-                document.getElementById(d.formId).submit();
+                var form = document.getElementById(d.formId);
+                if (form) form.submit();
                 break;
             case 'wizard-navigate':
                 e.preventDefault();

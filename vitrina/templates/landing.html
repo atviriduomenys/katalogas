@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .autocomplete {
             /*the container must be positioned relative:*/
             position: relative;
@@ -82,7 +82,7 @@
     {% include "landing/stats.html" %}
 {% endblock %}
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         function HideMessage(){
           var notificationBar = document.getElementById('top-bar');
           notificationBar.classList.add('is-hidden');

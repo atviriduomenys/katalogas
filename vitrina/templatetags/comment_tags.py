@@ -22,8 +22,8 @@ register = template.Library()
 assignment_tag = getattr(register, "assignment_tag", register.simple_tag)
 
 
-@register.inclusion_tag("component/comments.html")
-def comments(obj: "Model", user: SimpleLazyObject, is_structure: bool = False) -> dict[str, Any]:
+@register.inclusion_tag("component/comments.html", takes_context=True)
+def comments(context, obj: "Model", user: SimpleLazyObject, is_structure: bool = False) -> dict[str, Any]:
     object_content_type = ContentType.objects.get_for_model(obj)
 
     query_filters = Q(content_type=object_content_type, object_id=obj.pk)
@@ -59,11 +59,12 @@ def comments(obj: "Model", user: SimpleLazyObject, is_structure: bool = False) -
         "object": obj,
         "comment_form": comment_form_class(obj, is_opened=is_opened),
         "submit_button_id": "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button",
+        "request": context["request"],
     }
 
 
-@register.inclusion_tag("component/comments.html")
-def external_comments(content_type, object_id, user, dataset):
+@register.inclusion_tag("component/comments.html", takes_context=True)
+def external_comments(context, content_type, object_id, user, dataset):
     obj_comments = Comment.objects.filter(
         external_content_type=content_type,
         external_object_id=object_id,
@@ -89,6 +90,7 @@ def external_comments(content_type, object_id, user, dataset):
         "external": True,
         "dataset": dataset,
         "object": dataset,
+        "request": context["request"],
     }
 
 

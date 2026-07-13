@@ -154,7 +154,7 @@
     <br/>
 {% endblock %}
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(function () {
             $('.facets-more').click(function () {
                 $('.' + this.id).toggleClass('is-hidden');

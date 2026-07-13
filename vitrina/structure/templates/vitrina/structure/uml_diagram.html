@@ -52,7 +52,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     document.querySelectorAll('.show-model-delete-form').forEach(button => {
         button.addEventListener('click', (e) => {
             e.preventDefault();

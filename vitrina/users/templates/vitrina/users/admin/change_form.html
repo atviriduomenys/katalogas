@@ -3,7 +3,7 @@
 
 {% block extrastyle %}
     {{ block.super }}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .fieldBox.field-created_date {
             margin-right: 20px !important;
         }

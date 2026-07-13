@@ -1,7 +1,7 @@
 {% extends "base_form.html" %}
 
 {% block scripts %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         $(document).ready(function() {
             function toggleRefFields() {
                 let type = $('select#id_type').val();

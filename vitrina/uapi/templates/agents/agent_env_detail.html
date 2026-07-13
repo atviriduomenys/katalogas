@@ -317,7 +317,7 @@ backends:
 </p>
 
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
         function copyToClipboard(id) {
             const el = document.getElementById(id);
             const text = el.innerText || el.textContent;

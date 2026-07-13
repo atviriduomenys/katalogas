@@ -5,7 +5,7 @@
 {% block extrahead %}
 {{ block.super }}
 
-<style>
+<style nonce="{{ request.csp_nonce }}">
     @media (prefers-color-scheme: dark) {
         .select2-selection--single {
             background-color: #2a2c2e;
@@ -108,7 +108,7 @@
     }
 </style>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         const availableTitleDataset = document.querySelector('.field-datasets .selector-available h2');

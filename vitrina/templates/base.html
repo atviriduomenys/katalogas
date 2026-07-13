@@ -32,7 +32,7 @@
     <link href="{% static 'fontawesomefree/css/all.min.css' %}" rel="stylesheet" type="text/css">
     <script defer src="{% static 'js/bundle.js' %}"></script>
     <script src="{% static 'js/jquery.js' %}"></script>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $ = window.jquery.$;
         jQuery = window.jquery.$;
     </script>
@@ -43,7 +43,7 @@
     {% if GOOGLE_ANALYTICS_ID != None %}
         <script async
                 src="https://www.googletagmanager.com/gtag/js?id={% get_setting 'GOOGLE_ANALYTICS_ID' default='' %}"></script>
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
             window.dataLayer = window.dataLayer || [];
 
             function gtag() {
@@ -60,7 +60,7 @@
     {% include "component/favicon.html" %}
     {% block head %}{% endblock %}
     {% if cssOverride %}
-        <style>
+        <style nonce="{{ request.csp_nonce }}">
             {{ cssOverride }}
         </style>
     {% endif %}
@@ -134,7 +134,7 @@
 {% block before_render_js %}{% endblock %}
 {% render_block "js" %}
 {% block after_render_js %}{% endblock %}
-<script type="text/javascript">
+<script type="text/javascript" nonce="{{ request.csp_nonce }}">
     function openMenu() {
         var burger = document.querySelector('.burger');
         var nav = document.querySelector('#navbarBasic');

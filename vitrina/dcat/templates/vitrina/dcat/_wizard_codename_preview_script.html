@@ -1,4 +1,4 @@
-<script>
+<script nonce="{{ request.csp_nonce }}">
     (function() {
         var prefix = "{{ form.codename_prefix|escapejs }}";
         $("#id_name").on("input", function() {

@@ -36,7 +36,7 @@
 {% endblock %}
 
 {% block head %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         {# Match select width #}
         div.select, div.select select, .select2.select2-container {
             width: 100% !important;
@@ -90,7 +90,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(document).on('select2:clear select2:unselect', 'select.select2-hidden-accessible', function () {
             var $el = $(this);
             $el.one('select2:open', function () {

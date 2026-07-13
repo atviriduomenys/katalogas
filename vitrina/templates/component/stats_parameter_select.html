@@ -50,7 +50,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     function updateURL(param, value, label) {
         var url = new URL(window.location.href);
         url.searchParams.set(param, value);

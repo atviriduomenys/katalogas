@@ -11,7 +11,7 @@
 
 {% block head %}
     {{ block.super }}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         #div_id_organizations {
             display: none;
         }

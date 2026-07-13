@@ -178,7 +178,10 @@
                 }
                 break;
             case 'select-tab':
-                e.preventDefault();
+                // Preserve hash navigation for <a href="#..."> tabs; only prevent default when there is no hash href.
+                if (!(el.tagName === 'A' && el.getAttribute('href') && el.getAttribute('href').charAt(0) === '#')) {
+                    e.preventDefault();
+                }
                 selectTab(d.tab);
                 break;
             case 'remove-filter':

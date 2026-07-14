@@ -34,6 +34,7 @@ def deny_xml_stylesheet(file_name: str, file: typing.IO, owner, mime_type: str) 
         head = head.encode("utf-8", "ignore")
     if _XML_STYLESHEET_PI.search(head):
         raise FileValidationError(
-            _('Failas „{file_name}“: XML su stilių aprašu (xml-stylesheet) uždraustas svetainės saugumo politikos')
-            .format(file_name=file_name)
+            _(
+                "Failas „{file_name}“: XML su stilių aprašu (xml-stylesheet) uždraustas svetainės saugumo politikos"
+            ).format(file_name=file_name)
         )

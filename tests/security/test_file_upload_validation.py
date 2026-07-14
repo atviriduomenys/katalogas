@@ -79,11 +79,7 @@ def test_spoofed_extension_is_caught_by_content_sniffing(file_name, content):
         validate_file(ContentFile(content, name=file_name))
 
 
-XML_STYLESHEET = (
-    b'<?xml version="1.0"?>\n'
-    b'<?xml-stylesheet type="text/xsl" href="evil.xsl"?>\n'
-    b"<root/>\n"
-)
+XML_STYLESHEET = b'<?xml version="1.0"?>\n<?xml-stylesheet type="text/xsl" href="evil.xsl"?>\n<root/>\n'
 
 
 @pytest.mark.parametrize(

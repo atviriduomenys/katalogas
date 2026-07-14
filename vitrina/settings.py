@@ -422,13 +422,29 @@ FILER_MIME_TYPE_WHITELIST = [
     "application/x-bzip2",
 ]
 
+# django-filer ships its own DEFAULT_FILE_VALIDATORS and MERGES them with our
+# FILER_ADD_FILE_VALIDATORS. Several of those defaults contradict the policy
+# below, so we drop them here (the merged registry is what both filer's own
+# validate_upload and vitrina.helpers._run_deny_validators read):
+#   - application/xml, text/xml: filer denies them, but we whitelist the XML
+#     family (XML/RDF/XSLT-free data), so the default deny would reject legit
+#     uploads (and RDF that sniffs as text/xml on the content-sniffing pass).
+#   - image/svg+xml: filer's default *sanitizes* SVGs (strips scripting) and
+#     runs before our validate_svg, silently neutralising it. We want SVGs with
+#     active content *rejected*, not quietly cleaned, so we keep only validate_svg.
+FILER_REMOVE_FILE_VALIDATORS = [
+    "application/xml",
+    "text/xml",
+    "image/svg+xml",
+]
+
 # Known-dangerous active content. The keys cover both the extension-derived MIME
 # types and the variants that libmagic reports when sniffing the raw bytes, so
 # the same deny rules apply whether a payload arrives with an honest extension or
-# a spoofed one. application/octet-stream is intentionally NOT listed: the
-# whitelist already rejects it on the declared side, and treating a sniffed
-# octet-stream as dangerous would reject legitimate binaries (e.g. some office
-# files) that happen to detect as a generic byte stream.
+# a spoofed one. application/octet-stream is intentionally NOT listed here, but
+# note filer's DEFAULT validators still deny a sniffed octet-stream (we do not
+# remove it above): the whitelist rejects it on the declared side, and the deny
+# adds a defence-in-depth layer on the sniffed side.
 FILER_ADD_FILE_VALIDATORS = {
     # Markup browsers may render/execute
     "text/html": ["filer.validation.deny_html"],

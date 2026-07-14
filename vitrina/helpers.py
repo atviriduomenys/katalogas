@@ -752,11 +752,12 @@ def _run_deny_validators(file_name: str, file, mime_type: str) -> None:
 
     The rules come from filer's effective, resolved validator registry
     (app config ``FILE_VALIDATORS``) rather than settings.FILER_ADD_FILE_VALIDATORS
-    directly. That registry is filer's DEFAULT deny rules (which cover
-    application/xml, text/xml, application/xslt+xml and application/octet-stream)
-    merged with the project's FILER_ADD_FILE_VALIDATORS, so reading it here keeps
-    this defense-in-depth pass consistent with filer's own behaviour and avoids
-    silently dropping the built-in deny rules.
+    directly. That registry is filer's built-in validators, minus the ones we
+    drop via FILER_REMOVE_FILE_VALIDATORS and plus the project's
+    FILER_ADD_FILE_VALIDATORS (see the upload-security block in settings.py for
+    which defaults are kept vs removed). Reading the resolved registry here keeps
+    this defense-in-depth pass byte-for-byte consistent with the rules filer's own
+    validate_upload applies on the declared-type gate.
     """
     validators = apps.get_app_config("filer").FILE_VALIDATORS.get(mime_type, [])
     for validator in validators:

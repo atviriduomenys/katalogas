@@ -767,14 +767,36 @@ def _run_deny_validators(file_name: str, file, mime_type: str) -> None:
 
 
 def validate_file(file: File) -> None:
-    # Adding any additional types that are not in Python's built-in MIME type registry.
+    # Register MIME types the portal whitelists that Python's built-in registry
+    # does not know (or maps differently), so the declared-type gate is
+    # deterministic regardless of the host's /etc/mime.types (e.g. a slim
+    # container image has a much smaller table than a dev machine). Extensions
+    # that mimetypes treats as *encodings* (.gz, .bz2) cannot be registered this
+    # way; they are handled via the encoding fallback below.
     mimetypes.add_type("text/asciidoc", ".adoc")  # ADOC
-    mimetypes.add_type("application/gzip", ".gz")  # gzip
     mimetypes.add_type("image/webp", ".webp")  # webp
+    mimetypes.add_type("application/geo+json", ".geojson")  # GeoJSON
+    mimetypes.add_type("application/ld+json", ".jsonld")  # JSON-LD
+    mimetypes.add_type("application/rdf+xml", ".rdf")  # RDF/XML
+    mimetypes.add_type("text/turtle", ".ttl")  # Turtle
+    mimetypes.add_type("application/n-triples", ".nt")  # N-Triples
+    mimetypes.add_type("text/n3", ".n3")  # N3
+    mimetypes.add_type("text/tab-separated-values", ".tsv")  # TSV
+    mimetypes.add_type("application/x-7z-compressed", ".7z")  # 7z
 
     # First gate: validate by the declared (extension-based) MIME type. This runs
     # the FILER_MIME_TYPE_WHITELIST check followed by the deny validators.
-    declared_mime = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+    guessed_mime, guessed_encoding = mimetypes.guess_type(file.name)
+    if guessed_mime is None and guessed_encoding:
+        # mimetypes reports .gz/.bz2 as an encoding with no type, so guess_type
+        # can never return application/gzip or application/x-bzip2 for them (and
+        # add_type does not help). Map the whitelisted archive encodings here so a
+        # standalone .gz/.bz2 is not wrongly rejected as application/octet-stream.
+        guessed_mime = {
+            "gzip": "application/gzip",
+            "bzip2": "application/x-bzip2",
+        }.get(guessed_encoding)
+    declared_mime = guessed_mime or "application/octet-stream"
     validate_upload(
         file_name=file.name,
         file=file.file,

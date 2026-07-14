@@ -16,7 +16,7 @@ from operator import itemgetter
 
 try:
     import magic
-except ImportError:
+except (ImportError, OSError):
     magic = None
 import markdown
 from django.apps import apps
@@ -748,8 +748,15 @@ def _run_deny_validators(file_name: str, file, mime_type: str) -> None:
     Unlike filer.validation.validate_upload this deliberately skips the MIME
     whitelist gate: it is used with the *sniffed* content type, where harmless
     detections (e.g. a .docx sniffing as application/zip, a legacy .doc as an OLE
-    container) must not be rejected. Only types with an explicit deny/scan rule
-    in FILER_ADD_FILE_VALIDATORS are blocked.
+    container) must not be rejected. Only types with a deny/scan rule are blocked.
+
+    The rules come from filer's effective, resolved validator registry
+    (app config ``FILE_VALIDATORS``) rather than settings.FILER_ADD_FILE_VALIDATORS
+    directly. That registry is filer's DEFAULT deny rules (which cover
+    application/xml, text/xml, application/xslt+xml and application/octet-stream)
+    merged with the project's FILER_ADD_FILE_VALIDATORS, so reading it here keeps
+    this defense-in-depth pass consistent with filer's own behaviour and avoids
+    silently dropping the built-in deny rules.
     """
     validators = apps.get_app_config("filer").FILE_VALIDATORS.get(mime_type, [])
     for validator in validators:

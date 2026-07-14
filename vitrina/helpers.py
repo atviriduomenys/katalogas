@@ -42,6 +42,8 @@ from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
 from vitrina.structure.models import Model as StructureModel, Property as StructureProperty
 
+logger = logging.getLogger(__name__)
+
 
 class Filter:
     name: str
@@ -554,9 +556,12 @@ def email(
         )
         email_send = True
     except Exception as e:
-        import logging
-
-        logging.warning("Email was not sent", subject, _(str(content)), recipients, e)
+        logger.warning(
+            "Email was not sent: subject=%s recipients=%s error=%s",
+            subject,
+            recipients,
+            e,
+        )
         email_send = False
 
     SentMail.objects.create(
@@ -580,12 +585,9 @@ def send_email_with_logging(email_data, email_list):
             recipient_list=email_list,
         )
     except Exception as e:
-        import logging
-
-        logging.warning(
-            "Email was not sent",
+        logger.warning(
+            "Email was not sent: subject=%s recipients=%s error=%s",
             email_data["email_subject"],
-            email_data["email_content"],
             email_list,
             e,
         )
@@ -722,21 +724,21 @@ def _detect_content_type(file) -> Optional[str]:
         header = file.read(2048)
         file.seek(0)
     except Exception:
-        logging.exception("Could not read uploaded file for content-type sniffing")
+        logger.exception("Could not read uploaded file for content-type sniffing")
         raise FileValidationError(_("Nepavyko perskaityti įkelto failo turinio."))
 
     if not header:
         return None
 
     if magic is None:
-        logging.error("python-magic/libmagic is not available; rejecting upload")
+        logger.error("python-magic/libmagic is not available; rejecting upload")
         raise FileValidationError(_("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių."))
 
     try:
         detected = magic.from_buffer(header, mime=True)
         return detected.split(";", 1)[0].strip().lower()
     except Exception:
-        logging.exception("libmagic content-type sniffing failed")
+        logger.exception("libmagic content-type sniffing failed")
         raise FileValidationError(_("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių."))
 
 

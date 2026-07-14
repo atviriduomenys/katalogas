@@ -79,6 +79,30 @@ def test_spoofed_extension_is_caught_by_content_sniffing(file_name, content):
         validate_file(ContentFile(content, name=file_name))
 
 
+XML_STYLESHEET = (
+    b'<?xml version="1.0"?>\n'
+    b'<?xml-stylesheet type="text/xsl" href="evil.xsl"?>\n'
+    b"<root/>\n"
+)
+
+
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        # Honest .xml/.rdf extension, and the same payload smuggled under a benign
+        # extension (caught on the content-sniffing pass).
+        "data.xml",
+        "metadata.rdf",
+        "notes.txt",
+    ],
+)
+def test_xml_with_stylesheet_pi_is_denied(file_name):
+    # An <?xml-stylesheet?> PI makes the browser run client-side XSLT when the
+    # file is opened inline from the media origin -> stored XSS.
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(XML_STYLESHEET, name=file_name))
+
+
 def test_sniffing_failure_fails_closed(monkeypatch):
     # If libmagic errors (e.g. missing/misconfigured on the server), the upload
     # must be rejected with a user-visible error, not silently accepted without

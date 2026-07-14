@@ -426,9 +426,10 @@ FILER_MIME_TYPE_WHITELIST = [
 # FILER_ADD_FILE_VALIDATORS. Several of those defaults contradict the policy
 # below, so we drop them here (the merged registry is what both filer's own
 # validate_upload and vitrina.helpers._run_deny_validators read):
-#   - application/xml, text/xml: filer denies them, but we whitelist the XML
-#     family (XML/RDF/XSLT-free data), so the default deny would reject legit
-#     uploads (and RDF that sniffs as text/xml on the content-sniffing pass).
+#   - application/xml, text/xml: filer denies them outright, but we whitelist
+#     the XML family (XML/RDF data), so a blanket deny would reject legit uploads
+#     (and RDF that sniffs as text/xml on the content-sniffing pass). We re-add a
+#     narrower deny_xml_stylesheet validator below instead of filer's blanket deny.
 #   - image/svg+xml: filer's default *sanitizes* SVGs (strips scripting) and
 #     runs before our validate_svg, silently neutralising it. We want SVGs with
 #     active content *rejected*, not quietly cleaned, so we keep only validate_svg.
@@ -464,6 +465,12 @@ FILER_ADD_FILE_VALIDATORS = {
     "application/x-mach-binary": ["filer.validation.deny"],
     # SVG is allowed (whitelisted) but scanned for embedded scripting
     "image/svg+xml": ["filer.validation.validate_svg"],
+    # XML family is allowed, but an <?xml-stylesheet?> PI triggers client-side
+    # XSLT in the browser (stored XSS from the media origin), so scan for it.
+    # text/xml also covers RDF/XML, which libmagic sniffs as text/xml.
+    "application/xml": ["vitrina.file_validators.deny_xml_stylesheet"],
+    "text/xml": ["vitrina.file_validators.deny_xml_stylesheet"],
+    "application/rdf+xml": ["vitrina.file_validators.deny_xml_stylesheet"],
 }
 
 META_USE_OG_PROPERTIES = True

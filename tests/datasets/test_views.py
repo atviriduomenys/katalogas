@@ -3449,6 +3449,56 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
     assert resp.json == {"data": [["Column"], ["Value"]]}
 
 
+def test_distribution_preview_comma_delimited(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        file__file__data=b"a,b,c\nx,y,z",
+        file__file__filename="comma.csv",
+    )
+    resp = app.get(
+        reverse(
+            "dataset-distribution-preview",
+            kwargs={"dataset_id": dataset.pk, "distribution_id": distribution.pk},
+        )
+    )
+    assert resp.json == {"data": [["a", "b", "c"], ["x", "y", "z"]]}
+
+
+def test_distribution_preview_row_limit(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    body = b"a,b\n" + b"\n".join(f"{i},{i}".encode() for i in range(10))
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        file__file__data=body,
+        file__file__filename="rows.csv",
+    )
+    url = reverse(
+        "dataset-distribution-preview",
+        kwargs={"dataset_id": dataset.pk, "distribution_id": distribution.pk},
+    )
+    assert len(app.get(url).json["data"]) == 6  # header + default 5 rows
+    assert len(app.get(url + "?rows=3").json["data"]) == 4  # header + 3 rows
+
+
+def test_distribution_preview_empty_cells(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        file__file__data=b"a,b,c\n1,,3",
+        file__file__filename="empty.csv",
+    )
+    resp = app.get(
+        reverse(
+            "dataset-distribution-preview",
+            kwargs={"dataset_id": dataset.pk, "distribution_id": distribution.pk},
+        )
+    )
+    # empty cells must not serialize as the bare token NaN (invalid JSON, breaks strict JS parsers)
+    assert b"NaN" not in resp.body
+    assert resp.json["data"] == [["a", "b", "c"], [1, "", 3]]
+
+
 def test_add_subclass_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
     response = app.get(reverse("resource-subclass-add", kwargs={"pk": org.id}))

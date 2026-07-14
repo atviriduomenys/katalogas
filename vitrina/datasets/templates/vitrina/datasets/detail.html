@@ -310,6 +310,43 @@
 {% block scripts %}
     {% load static %}
     {% get_hit_count_js_variables for dataset as hitcount %}
+    <style nonce="{{ request.csp_nonce }}">
+        #preview-modal .modal-card.is-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            width: 100dvw;
+            height: 100vh;
+            height: 100dvh;
+            max-width: 100vw;
+            max-width: 100dvw;
+            max-height: 100vh;
+            max-height: 100dvh;
+            margin: 0;
+            border-radius: 0;
+        }
+        .cms-toolbar-expanded #preview-modal .modal-card.is-fullscreen {
+            top: 46px;
+            height: calc(100vh - 46px);
+            height: calc(100dvh - 46px);
+        }
+        #preview-content {
+            padding-top: 0;
+        }
+        #info-table-body thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background-color: #fff;
+            border-bottom: 2px solid #dbdbdb;
+        }
+        @media screen and (max-width: 480px) {
+            .preview-fullscreen-toggle .fullscreen-label {
+                display: none;
+            }
+        }
+    </style>
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         $(document).ready(function () {
             $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
@@ -321,45 +358,103 @@
                 $('#extra-table').toggleClass('is-hidden');
             });
 
-            $('.preview-button').click(function () {
-                $('#preview-modal').toggleClass('is-active');
-                $('html').toggleClass('is-clipped');
-                $.getJSON('/datasets/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
-                    var table_obj = document.getElementById('info-table-body');
-                    $("#info-table-body").empty();
-                    $.each(json_data.data, function (index, item) {
-                        var newRow = table_obj.insertRow(index);
-                        newRow.classList.add("preview-tr", index === 0 ? "has-text-weight-bold" : "");
-                        $.each(item, function (i, j) {
-                            var newCell = newRow.insertCell(i);
-                            newCell.innerHTML = j;
-                            newCell.className = "preview-td";
-                        });
+            var currentPreviewId = null;
+
+            function loadPreview(distributionId, rows) {
+                $.getJSON('/datasets/{{ dataset.id }}/preview/' + distributionId + '?rows=' + rows, function (json_data) {
+                    var table = document.getElementById('info-table-body');
+                    table.innerHTML = '';
+                    var data = json_data.data || [];
+                    if (!data.length) {
+                        return;
+                    }
+                    var thead = document.createElement('thead');
+                    var headRow = document.createElement('tr');
+                    headRow.className = 'preview-tr has-text-weight-bold';
+                    $.each(data[0], function (i, value) {
+                        var th = document.createElement('th');
+                        th.textContent = value;
+                        th.className = 'preview-td';
+                        headRow.appendChild(th);
                     });
+                    thead.appendChild(headRow);
+                    table.appendChild(thead);
+
+                    var tbody = document.createElement('tbody');
+                    for (var r = 1; r < data.length; r++) {
+                        var bodyRow = document.createElement('tr');
+                        bodyRow.className = 'preview-tr';
+                        $.each(data[r], function (i, value) {
+                            var td = document.createElement('td');
+                            td.textContent = value;
+                            td.className = 'preview-td';
+                            bodyRow.appendChild(td);
+                        });
+                        tbody.appendChild(bodyRow);
+                    }
+                    table.appendChild(tbody);
                 });
+            }
+
+            $('.preview-button').click(function () {
+                currentPreviewId = $(this).attr('id');
+                $('#preview-modal').addClass('is-active');
+                $('html').addClass('is-clipped');
+                loadPreview(currentPreviewId, 5);
             });
 
             $('.new-preview-button').click(function () {
+                currentPreviewId = null;
                 $('#preview-modal').toggleClass('is-active');
                 $('html').toggleClass('is-clipped');
                 $.getJSON('/dataset/{{ dataset.id }}/previewStructure', function (json_data) {
                     var table_obj = document.getElementById('info-table-body');
+                    table_obj.innerHTML = '';
                     $.each(json_data, function (index, item) {
                         var newRow = table_obj.insertRow(index);
-                        newRow.classList.add("preview-tr", index === 0 ? "is-bold" : "");
+                        newRow.classList.add("preview-tr");
+                        if (index === 0) {
+                            newRow.classList.add("is-bold");
+                        }
                         $.each(item, function (i, j) {
                             var newCell = newRow.insertCell(i);
-                            newCell.innerHTML = j;
+                            newCell.textContent = j;
                             newCell.className = "preview-td";
                         });
                     });
                 });
             });
 
-            $('.modal-button-close').click(function () {
-                $('#preview-modal').toggleClass('is-active');
-                $('html').toggleClass('is-clipped');
+            function closePreview() {
+                currentPreviewId = null;
+                $('#preview-modal').removeClass('is-active');
+                $('html').removeClass('is-clipped');
                 $("#info-table-body").empty();
+                $('#preview-modal .modal-card').removeClass('is-fullscreen');
+                var $btn = $('.preview-fullscreen-toggle');
+                $btn.find('i').removeClass('fa-compress').addClass('fa-expand');
+                $btn.find('.fullscreen-label').text($btn.data('label-expand'));
+                $btn.attr('aria-label', $btn.data('label-expand'));
+            }
+
+            $('.preview-fullscreen-toggle').click(function () {
+                var $btn = $(this);
+                var isFullscreen = $('#preview-modal .modal-card').toggleClass('is-fullscreen').hasClass('is-fullscreen');
+                var label = isFullscreen ? $btn.data('label-compress') : $btn.data('label-expand');
+                $btn.find('i').toggleClass('fa-expand fa-compress');
+                $btn.find('.fullscreen-label').text(label);
+                $btn.attr('aria-label', label);
+                if (currentPreviewId !== null) {
+                    loadPreview(currentPreviewId, isFullscreen ? 100 : 5);
+                }
+            });
+
+            $('.modal-button-close').click(closePreview);
+
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape' && $('#preview-modal').hasClass('is-active')) {
+                    closePreview();
+                }
             });
         });
 

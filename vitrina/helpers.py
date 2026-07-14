@@ -16,7 +16,7 @@ from operator import itemgetter
 
 try:
     import magic
-except ImportError:
+except (ImportError, OSError):
     magic = None
 import markdown
 from django.apps import apps

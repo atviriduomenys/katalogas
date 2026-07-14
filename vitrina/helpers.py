@@ -561,6 +561,7 @@ def email(
             subject,
             recipients,
             e,
+            exc_info=True,
         )
         email_send = False
 

@@ -591,6 +591,7 @@ def send_email_with_logging(email_data, email_list):
             email_data["email_subject"],
             email_list,
             e,
+            exc_info=True,
         )
 
 
@@ -784,6 +785,11 @@ def validate_file(file: File) -> None:
     mimetypes.add_type("text/n3", ".n3")  # N3
     mimetypes.add_type("text/tab-separated-values", ".tsv")  # TSV
     mimetypes.add_type("application/x-7z-compressed", ".7z")  # 7z
+    # Security: pin XHTML to application/xhtml+xml so it reliably hits the deny
+    # rule, instead of falling back to a whitelisted type (e.g. application/xml)
+    # or an unregistered None on hosts with a different mimetypes table.
+    mimetypes.add_type("application/xhtml+xml", ".xhtml")  # XHTML
+    mimetypes.add_type("application/xhtml+xml", ".xht")  # XHTML
 
     # First gate: validate by the declared (extension-based) MIME type. This runs
     # the FILER_MIME_TYPE_WHITELIST check followed by the deny validators.

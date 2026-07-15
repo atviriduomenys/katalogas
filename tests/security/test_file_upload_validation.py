@@ -99,6 +99,51 @@ def test_xml_with_stylesheet_pi_is_denied(file_name):
         validate_file(ContentFile(XML_STYLESHEET, name=file_name))
 
 
+def test_xml_stylesheet_pi_past_a_padded_prolog_is_denied():
+    # The PI is only honoured before the root element, so padding the prolog with
+    # a large comment must not push it out of the scan window (>8 KiB here).
+    payload = (
+        b'<?xml version="1.0"?>\n'
+        b"<!-- " + b"x" * 9000 + b" -->\n"
+        b'<?xml-stylesheet type="text/xsl" href="evil.xsl"?>\n'
+        b"<root/>\n"
+    )
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(payload, name="data.xml"))
+
+
+def test_xml_stylesheet_pi_hidden_in_comment_is_allowed():
+    # A commented-out PI is inert (the browser never applies it), so it must not
+    # trip the validator -- confirms we skip comments as whole units.
+    payload = b'<?xml version="1.0"?>\n<!-- <?xml-stylesheet href="x.xsl"?> -->\n<root/>\n'
+    validate_file(ContentFile(payload, name="data.xml"))
+
+
+def test_xml_with_oversized_prolog_fails_closed():
+    # No root element within the scan budget -> we cannot vet it -> reject.
+    payload = b'<?xml version="1.0"?>\n<!-- ' + b"x" * (1024 * 1024 + 16) + b" -->\n<root/>\n"
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(payload, name="data.xml"))
+
+
+def test_validate_file_pins_xhtml_to_xhtml_mime():
+    # Portability guard: some hosts map .xhtml to a whitelisted type (e.g.
+    # application/xml). validate_file must pin it to application/xhtml+xml so the
+    # deny rule fires on the declared-type gate, not only via content sniffing.
+    import mimetypes as mt
+
+    try:
+        mt.init(files=())  # simulate a container without /etc/mime.types
+        mt.add_type("application/xml", ".xhtml")  # simulate a loose host mapping
+        with pytest.raises(FileValidationError):
+            validate_file(ContentFile(XHTML_XSS, name="a.xhtml"))
+        # The assertion is what actually guards the fix: without the add_type in
+        # validate_file this would still read "application/xml".
+        assert mt.guess_type("a.xhtml")[0] == "application/xhtml+xml"
+    finally:
+        mt.init()  # restore the system-backed table for other tests
+
+
 def test_sniffing_failure_fails_closed(monkeypatch):
     # If libmagic errors (e.g. missing/misconfigured on the server), the upload
     # must be rejected with a user-visible error, not silently accepted without

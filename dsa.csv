@@ -1,0 +1,434 @@
+id , dataset , resource , base , model , property , type   , ref      , source , prepare , level , status , visibility , access , uri                                         , eli              , title , description
+, datasets/gov/vssa , , , ,                       , ns     ,          ,        ,         ,       ,        ,            ,        ,                                             , viiv:12str/1/1   , Valstybės skaitmeninių sprendimų agentūra ,
+, , , , ,                                         , prefix , adms     ,        ,         ,       ,        ,            ,        , http://www.w3.org/ns/adms#                  ,                  ,       ,
+, , , , ,                                         ,        , cv       ,        ,         ,       ,        ,            ,        , http://data.europa.eu/m8g/                  ,                  ,       ,
+, , , , ,                                         ,        , dcat     ,        ,         ,       ,        ,            ,        , http://www.w3.org/ns/dcat#                  ,                  ,       ,
+, , , , ,                                         ,        , dcatap   ,        ,         ,       ,        ,            ,        , http://data.europa.eu/r5r/                  ,                  ,       ,
+, , , , ,                                         ,        , dcataplt ,        ,         ,       ,        ,            ,        , https://data.gov.lt/onto/DCATAPLT#          ,                  ,       ,
+, , , , ,                                         ,        , dct      ,        ,         ,       ,        ,            ,        , http://purl.org/dc/terms/                   ,                  ,       ,
+, , , , ,                                         ,        , dctype   ,        ,         ,       ,        ,            ,        , http://purl.org/dc/dcmitype/                ,                  ,       ,
+, , , , ,                                         ,        , foaf     ,        ,         ,       ,        ,            ,        , http://xmlns.com/foaf/0.1/                  ,                  ,       ,
+, , , , ,                                         ,        , legal    ,        ,         ,       ,        ,            ,        , http://www.w3.org/ns/legal#                 ,                  ,       ,
+, , , , ,                                         ,        , locn     ,        ,         ,       ,        ,            ,        , http://www.w3.org/ns/locn#                  ,                  ,       ,
+, , , , ,                                         ,        , odrl     ,        ,         ,       ,        ,            ,        , http://www.w3.org/ns/odrl/2/                ,                  ,       ,
+, , , , ,                                         ,        , org      ,        ,         ,       ,        ,            ,        , http://www.w3.org/ns/org#                   ,                  ,       ,
+, , , , ,                                         ,        , owl      ,        ,         ,       ,        ,            ,        , http://www.w3.org/2002/07/owl#              ,                  ,       ,
+, , , , ,                                         ,        , prov     ,        ,         ,       ,        ,            ,        , http://www.w3.org/ns/prov#                  ,                  ,       ,
+, , , , ,                                         ,        , rdf      ,        ,         ,       ,        ,            ,        , http://www.w3.org/1999/02/22-rdf-syntax-ns# ,                  ,       ,
+, , , , ,                                         ,        , rdfs     ,        ,         ,       ,        ,            ,        , http://www.w3.org/2000/01/rdf-schema#       ,                  ,       ,
+, , , , ,                                         ,        , skos     ,        ,         ,       ,        ,            ,        , http://www.w3.org/2004/02/skos/core#        ,                  ,       ,
+, , , , ,                                         ,        , spdx     ,        ,         ,       ,        ,            ,        , http://spdx.org/rdf/terms#                  ,                  ,       ,
+, , , , ,                                         ,        , time     ,        ,         ,       ,        ,            ,        , http://www.w3.org/2006/time#                ,                  ,       ,
+, , , , ,                                         ,        , vcard    ,        ,         ,       ,        ,            ,        , http://www.w3.org/2006/vcard/ns#            ,                  ,       ,
+, , , , ,                                         ,        , xsd      ,        ,         ,       ,        ,            ,        , http://www.w3.org/2001/XMLSchema#           ,                  ,       ,
+, , , , ,                                         ,        , viiv     ,        ,         ,       ,        ,            ,        , https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK# , , Valstybės informacinių išteklių valdymo įstatymas ,
+, , , , ,                                         ,        , tgi      ,        ,         ,       ,        ,            ,        , https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.94745/niOrUlWghq# , , Teisės gauti informaciją ir duomenų pakartotinio naudojimo įstatymas ,
+, , , , ,                                         ,        , jar      ,        ,         ,       ,        ,            ,        , /datasets/gov/rc/jar_ws/n17_isplestinis_israsas_aktualus_duomenys/ ,                  , Juridinių asmenų registras ,
+, , , , ,                                         ,        , isr      ,        ,         ,       ,        ,            ,        , /datasets/gov/vssa/risr/isr                 ,                  , Informacinių sistemų registras ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, datasets/gov/vssa/adp , , , ,                   ,        ,          ,        ,         ,       ,        ,            ,        ,                                             , tgi:16str/1      , Lietuvos atvirų duomenų portalas ,
+, datasets/gov/vssa/adp/dcat , , , ,              ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  , Atvirų duomenų katalgoas ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, datasets/gov/vssa/risr , , , ,                  , ns     ,          ,        ,         ,       ,        ,            ,        ,                                             , viiv:29str/1     , Registrų ir valstybės informacinių sistemų registras ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, datasets/gov/vssa/risr/isr , , , ,              ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  , Informacinių sistemų registras ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , DataController ,                          ,        ,          ,        ,         ,       ,        ,            ,        , foaf:Agent                                  , viiv:2str/11     , Duomenų valdytojas , "
+                > Valstybės ar savivaldybės institucija ar įstaiga, kitas
+                > viešojo administravimo subjektas, viešoji įstaiga ar
+                > valstybės valdoma įmonė, kurie nustato duomenų tvarkymo
+                > informacinėje sistemoje tikslus, tvarką ir priemones.
+                >
+                > -- [VIIV](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK)
+"
+, , , , DataProcessor ,                           ,        ,          ,        ,         ,       ,        ,            ,        , foaf:Agent                                  , viiv:2str/8      , Duomenų tvarkytojas , "
+                > Valstybės ar savivaldybės institucija ar įstaiga, kitas
+                > viešojo administravimo subjektas, viešoji įstaiga ar
+                > valstybės valdoma įmonė, kurie duomenų valdytojo nustatytais
+                > tikslais ir priemonėmis informacinėje sistemoje tvarko
+                > duomenis šios sistemos nuostatuose nustatyta tvarka.
+                >
+                > -- [VIIV](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , InformationSystem ,                       ,        ,          ,        ,         ,       ,        ,            ,        , dcataplt:InformationSystem                  , viiv:2str/12     , Informacinė sistema , "
+                > Programinės įrangos visuma valstybės ar savivaldybės institucijos
+                > ar įstaigos, kito viešojo administravimo subjekto, viešosios
+                > įstaigos ar valstybės valdomos įmonės veiklos procesams
+                > skaitmenizuoti, duomenims tvarkyti ir (ar) administracinėms ar
+                > viešosioms paslaugoms teikti elektroniniu būdu.
+                >
+                > -- [DCAT-AP-LT](https://ivpk.github.io/DCAT-AP-LT/)
+
+                > **Informacinė sistema** – programinės įrangos visuma
+                > valstybės ar savivaldybės institucijos ar įstaigos, kito
+                > viešojo administravimo subjekto, viešosios įstaigos ar
+                > valstybės valdomos įmonės veiklos procesams skaitmenizuoti,
+                > duomenims tvarkyti ir (ar) administracinėms ar viešosioms
+                > paslaugoms teikti elektroniniu būdu.
+                >
+                > -- [VIIV](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK)
+"
+, datasets/gov/vssa/risr/dcat , , , ,             ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  , Duomenų katalogas ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Agent ,                                   ,        ,          ,        ,         ,       ,        ,            ,        , foaf:Agent                                  ,                  , Agentas , "
+                > Entity that is able to carry out action.
+                > 
+                > In compliance with the description from FOAF, an Agent is
+                > considered as any entity that is able to carry out actions.
+                > The Agent class acts as a generic element which can be
+                > further specified by implementers for their usages, for
+                > example by defining the Person class from the Core Person
+                > Vocabulary or Organization from W3C's Organization Ontology
+                > as a subclasses of Agent. This Person or Organization can
+                > then issue a certain Requirement or be concerned by an
+                > Evidence provided.
+                > 
+                > -- [Core Business Vocabulary](https://semiceu.github.io/Core-Business-Vocabulary/releases/2.2.0/)
+"
+, , , , , type                                    ,        ,          ,        ,         ,       ,        ,            ,        , dct:type                                    ,                  ,       ,
+, , , , , name                                    ,        ,          ,        ,         ,       ,        ,            ,        , foaf:name                                   ,                  ,       ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , FormalOrganization ,                      ,        ,          ,        ,         ,       ,        ,            ,        , org:FormalOrganization                      ,                  , Formali organizacija , "
+                > An Organization which is recognized in the world at large, in
+                > particular in legal jurisdictions, with associated rights and
+                > responsibilities
+                >
+                > Examples include a corporation, charity, government or
+                > church.
+                >
+                > -- [Core Business Vocabulary](https://semiceu.github.io/Core-Business-Vocabulary/releases/2.2.0/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Organization ,                            ,        ,          ,        ,         ,       ,        ,            ,        , org:Organization                            ,                  , Organizacija , "
+                > A collection of people organized together into a community or
+                > other social, commercial or political structure. The group
+                > has some common purpose or reason for existence which goes
+                > beyond the set of people belonging to it and can act as an
+                > Agent. Organizations are often decomposable into hierarchical
+                > structures.
+                >
+                > -- [Core Business Vocabulary](https://semiceu.github.io/Core-Business-Vocabulary/releases/2.2.0/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , jar:JuridinisAsmuo , ,                      ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , LegalEntity ,                             ,        ,          ,        ,         ,       ,        ,            ,        , legal:LegalEntity                           ,                  , Juridinis asmuo , "
+                > A self-employed person, company, or organization that has
+                > legal rights and obligations.
+                > 
+                > A Legal Entity able to transact business, typically
+                > registered with a body able to confer legal status such as a
+                > national business register. It is able to trade, is legally
+                > liable for its actions, accounts, tax affairs etc. This makes
+                > Legal Entities distinct from the concept of organisations or
+                > groups. Many organisations exist that are not Legal Entities,
+                > yet to the outside world they have staff, hierarchies,
+                > locations etc. Other organisations exist that are an umbrella
+                > for several Legal Entities (universities are often good
+                > examples of this). This vocabulary is concerned solely with
+                > registered Legal Entities and does not attempt to cover all
+                > possible trading bodies.
+                > 
+                > -- [Core Business Vocabulary](https://semiceu.github.io/Core-Business-Vocabulary/releases/2.2.0/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , jar:JuridinisAsmuo , ,                      ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , PublicOrganization ,                      ,        ,          ,        ,         ,       ,        ,            ,        , legal:LegalEntity                           ,                  , Juridinis asmuo , "
+                > A self-employed person, company, or organization that has
+                > legal rights and obligations.
+                > 
+                > A Legal Entity able to transact business, typically
+                > registered with a body able to confer legal status such as a
+                > national business register. It is able to trade, is legally
+                > liable for its actions, accounts, tax affairs etc. This makes
+                > Legal Entities distinct from the concept of organisations or
+                > groups. Many organisations exist that are not Legal Entities,
+                > yet to the outside world they have staff, hierarchies,
+                > locations etc. Other organisations exist that are an umbrella
+                > for several Legal Entities (universities are often good
+                > examples of this). This vocabulary is concerned solely with
+                > registered Legal Entities and does not attempt to cover all
+                > possible trading bodies.
+                > 
+                > -- [Core Business Vocabulary](https://semiceu.github.io/Core-Business-Vocabulary/releases/2.2.0/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , isr:InformationSystem , ,                   ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , InformationSystem ,                       ,        ,          ,        ,         ,       ,        ,            ,        , dcataplt:InformationSystem                  , viiv:2str/12     , Informacinė sistema ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Catalog ,                                 ,        ,          ,        ,         ,       ,        ,            ,        , dcat:Catalog                                ,                  , Katalogas , "
+                > Katalogas arba saugykla, kurioje saugomi aprašomi duomenų
+                > rinkiniai arba duomenų paslaugos.
+                >
+                > Šia klase apibūdinama konkreti informacinė sistema –
+                > valstybės informacinė sistema ar registras, kurio apimtyje
+                > yra tvarkomi duomenų rinkiniai.
+                >
+                > -- [DCAT-AP-LT](https://ivpk.github.io/DCAT-AP-LT/)
+
+                >
+                >
+                > -- [DCAT-AP](https://semiceu.github.io/DCAT-AP/releases/3.0.0/)
+
+                >
+                >
+                >
+                >
+                > -- [DCAT](https://www.w3.org/TR/vocab-dcat-3/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Resource ,                                ,        ,          ,        ,         ,       ,        ,            ,        , dcat:Resource                               , viiv:2str/38     , Valstybės informacinis išteklius , "
+
+                > **Valstybės informaciniai ištekliai** – duomenys,
+                > informacinės sistemos, informacinių technologijų platformos
+                > ir informacinių technologijų priemonės, naudojami valstybės
+                > reikmėms.
+                >
+                > -- [VIIV](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK)
+
+                > Išteklius, paskelbtas arba kuruojamas vieno subjekto.
+                >
+                > Klasė [[dcat:Resource]] yra abstrakti DCAT-AP klasė. Todėl
+                > duomenų mainuose turėtų būti naudojamos tik jos subklasės.
+                >
+                > -- [DCAT-AP-LT](https://ivpk.github.io/DCAT-AP-LT/)
+
+                > Išteklius, paskelbtas arba kuruojamas vieno subjekto.
+                >
+                > Išteklių įtrauktų į duomenų katalogą klasė – viršutinė klasė,
+                > apimanti [[dcat:Dataset]], [[dcat:DataService]],
+                > [[dcat:Catalog]] ir bet kurį kitą [[dcat:Catalog]] narį.
+                >
+                > Ši klasė apima savybes, bendras visiems kataloguotiems
+                > ištekliams, įskaitant duomenų rinkinius ir duomenų paslaugas.
+                >
+                > Šios klasės egzemplioriai **turėtu** būti įtraukti į
+                > [[dcat:Catalog|katalogą]].
+                >
+                > Aprašant išteklių, kuris nėra nei [[dcat:Dataset]], nei
+                > [[dcat:DataService]], rekomenduojama sukurti tinkamą
+                > [[dcat:Resource]] subklasę arba naudoti [[dcat:Resource]]
+                > kartu su savybe [[dcterms:type]], nurodant konkretaus tipo
+                > išteklių.
+
+dcat:Resource yra išplėtimo taškas, leidžiantis apibrėžti bet kokio tipo katalogą. Papildomos subklasės gali būti apibrėžtos DCAT profilyje arba kitoje DCAT taikomojoje specifikacijoje, skirtose kitų tipų išteklių katalogams.
+                >
+                >
+                > -- [DCAT](https://www.w3.org/TR/vocab-dcat-3/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , DataService ,                             ,        ,          ,        ,         ,       ,        ,            ,        , dcat:DataService                            , viiv:2str/18     , Informacinių sistemų integracinė sąsaja , "
+                > Technologinis sprendinys, užtikrinantis duomenų teikimą, gavimą ir
+                > (ar) mainus tarp dviejų ar daugiau skirtingų informacinių sistemų.
+                >
+                > -- [VIIV](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK)
+
+                > Operacijų rinkinys, suteikiantis prieigą prie vieno ar daugiau
+                > duomenų rinkinių arba duomenų apdorojimo funkcijų.
+                >
+                > -- [DCAT-AP-LT](https://ivpk.github.io/DCAT-AP-LT/)
+
+                > Operacijų rinkinys, kuris suteikia prieigą prie vieno ar
+                > kelių duomenų rinkinių arba duomenų apdorojimo funkcijų.
+                >
+                > -- [DCAT-AP](https://semiceu.github.io/DCAT-AP/releases/3.0.0/)
+
+                > Operacijų rinkinys, kuris suteikia prieigą prie vieno ar
+                > kelių duomenų rinkinių arba duomenų apdorojimo funkcijų.
+                >
+                > Jei [[dcat:DataService]] yra susietas su vienu ar keliais
+                > konkrečiais duomenų rinkiniais, jie nurodomi naudojant savybę
+                > [[dcat:servesDataset]].
+                >
+                > Paslaugos tipas gali būti nurodytas naudojant savybę
+                > [[dcterms:type]]. Jos reikšmė gali būti paimta iš kontroliuojamo
+                > žodyno, pavyzdžiui, INSPIRE erdvinių duomenų paslaugų tipų
+                > sąrašo [INSPIRE-SDST](https://inspire.ec.europa.eu/metadata-codelist/SpatialDataServiceType/).
+                >
+                > -- [DCAT](https://www.w3.org/TR/vocab-dcat-3/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , DataSeries ,                              ,        ,          ,        ,         ,       ,        ,            ,        , dcat:DataSeries                             ,                  , Duomenų rinkinių serija , "
+                > Duomenų rinkinių grupė, kurie skelbiami atskirai, bet turi
+                > tam tikrų bendrų savybių, leidžiančių juos apjungti į vieną
+                > grupę.
+                >
+                > Rekomenduojama vengti duomenų rinkinių serijų, neturinčių
+                > bent vieno duomenų rinkinio kolekcijoje. Todėl bent vienas
+                > duomenų rinkinys turėtų būti susietas su duomenų rinkinių
+                > serija naudojant savybę [[dcat:inSeries]].
+                >
+                > -- [DCAT-AP](https://semiceu.github.io/DCAT-AP/releases/3.0.0/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Dataset ,                                 ,        ,          ,        ,         ,       ,        ,            ,        , dcat:Dataset                                , tgi:3str/5       , Duomenų rinkinys , "
+                > Metodiškai susistemintų duomenų, turinčių vienodą konceptualią
+                > prasmę, visuma, įskaitant juos apibūdinančius duomenis (toliau –
+                > metaduomenys).
+                >
+                > -- [TGI](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.94745/niOrUlWghq)
+
+                > Koncepcinė klasė, aprašanti kaupiamą / teikiamą informaciją.
+                > Sujungia katalogą su duomenų rinkiniu, kuris yra katalogo dalis.
+                >
+                > Šios klasės egzemplioriais apibūdinami duContainer'įomenų rinkiniai, tvarkomi
+                > informacinės sistemos apimtyje. Kiekvienas duomenų rinkinys per
+                > katalogo įrašo sąryšį CatalogRecord, priskiriamas vienam
+                > informacinės sistemos (Catalog) atvejui. Tokiu būdu aprašomi
+                > konkretūs duomenų rinkiniai, valdomi ir tvarkomi konkrečios
+                > informacinės sistemos apimtyje. Konkretaus duomenų rinkinio
+                > (Dataset) registravimo pagrindas informacinės sistemos (Information
+                > system) apimtyje yra informacinės sistemos nuostatų patvirtinimas
+                > (VII valdymo ir tvarkymo metodikoje apibrėžta tvarka). Kiekvienas
+                > duomenų rinkinys įprasmina tam tikrą valstybės informacinės
+                > sistemos ar registro nuostatuose įvardintiną informacinės
+                > struktūros dalį. Duomenų rinkinys išskiriamas ir formuluojamas kaip
+                > informacinės sistemos veiklos apimtyje suvokiama prasminga ir
+                > reikšminga koncepcija, apibūdinama reikšmingomis savybėmis/
+                > atributais.
+                >
+                > -- [DCAT-AP-LT](https://ivpk.github.io/DCAT-AP-LT/)
+
+                > Duomenų rinkinių grupė, kurie skelbiami atskirai, bet turi
+                > tam tikrų bendrų savybių, leidžiančių juos apjungti į vieną
+                > grupę.
+                >
+                > Rekomenduojama vengti duomenų rinkinių serijų, neturinčių
+                > bent vieno duomenų rinkinio kolekcijoje. Todėl bent vienas
+                > duomenų rinkinys turėtų būti susietas su duomenų rinkinių
+                > serija naudojant savybę in series [[dcat:inSeries]].
+                >
+                > -- [DCAT-AP](https://semiceu.github.io/DCAT-AP/releases/3.0.0/)
+
+                > Duomenų kolekcija, paskelbta ar kuruojama vieno subjekto,
+                > prieinama peržiūrai ar atsisiuntimui vienu ar keliais
+                > pavidalais.
+                >
+                > Ši klasė apibūdina konceptualų duomenų rinkinį. Gali būti
+                > prieinamos vienos ar daugiau reprezentacijų, besiskiriančių
+                > schemine struktūra, formatais ar serializacija.
+                >
+                > Ši klasė apibūdina faktinį duomenų rinkinį, kaip jį paskelbė
+                > duomenų tiekėjas. Tais atvejais, kai reikia atskirti faktinį
+                > duomenų rinkinį nuo jo įrašo kataloge (pvz., jei
+                > metaduomenys, tokie kaip paskutinio atnaujinimo data, gali
+                > skirtis), galima naudoti klasę [[dcat:CatalogRecord]] pastarajam
+                > aprašyti.
+                >
+                > DCAT duomenų rinkinio sąvoka yra plati ir apimanti, siekiant
+                > pritaikyti įvairių bendruomenių naudojamus išteklių tipus.
+                > Duomenys gali būti įvairių formų – skaičiai, tekstas,
+                > pikseliai, vaizdai, garsas ir kita multimedija, bei galimai
+                > kitos rūšys – ir bet kuris iš jų gali sudaryti duomenų
+                > rinkinį.
+                >
+                > -- [DCAT](https://www.w3.org/TR/vocab-dcat-3/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Distribution ,                            ,        ,          ,        ,         ,       ,        ,            ,        , dcat:Distribution                           ,                  , Pateiktis , "
+                > Fizinė duomenų rinkinio išraiškos forma tam tikru formatu
+                > arba duomenų rinkinio realizacija.
+                >
+                > Ši klasė apibūdina konkretų ir aktyviai veikiantį duomenų
+                > rinkinio įgyvendinimą informacinėje sistemoje - valstybinės
+                > informacinės sistemos arba duomenų valdymo aplinkoje, tokioje
+                > kaip duomenų bazės lentelė, duomenų failai, saugomi duomenų
+                > saugykloje, struktūrizuoti ir pusiau struktūrizuoti failai
+                > uždarame intranete arba interneto erdvėje.
+                >
+                > IS kontekste, šios klasės prioritetinis ir didžiausios
+                > apimties taikymas yra informacinės sistemos aplinkoje
+                > tvarkomų duomenų rinkinių realizacijų aprašymui, ir toliau jų
+                > modelių detalizavimui klasėmis DataObjectTypeSpecification ir
+                > DataElement.
+                >
+                > -- [DCAT-AP-LT](https://ivpk.github.io/DCAT-AP-LT/)
+
+                > Fizinis duomenų rinkinio įkūnijimas tam tikru formatu.
+                >
+                > -- [DCAT-AP](https://semiceu.github.io/DCAT-AP/releases/3.0.0/)
+
+                > Konkreti duomenų rinkinio reprezentacija. Duomenų rinkinys
+                > gali būti prieinamas keliomis serializacijomis, kurios gali
+                > skirtis įvairiais aspektais, įskaitant natūraliąją kalbą,
+                > medijos tipą ar formatą, scheminę struktūrą, laikinę ir
+                > erdvinę raišką, detalumo lygį arba profilius (kurie gali
+                > apibrėžti bet kurį ar visus iš minėtų aspektų).
+                >
+                > Tai reiškia bendrą duomenų rinkinio prieinamumą. Tai
+                > nesuteikia informacijos apie faktinį duomenų pasiekimo būdą,
+                > t. y. ar duomenys pasiekiami tiesiogiai atsisiunčiant, per
+                > API ar per interneto puslapį. Naudojant savybę
+                > `dcat:downloadURL` nurodoma, kad platinama versija gali būti
+                > atsisiunčiama tiesiogiai.
+                >
+                > -- [DCAT](https://www.w3.org/TR/vocab-dcat-3/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Agreement ,                               ,        ,          ,        ,         ,       ,        ,            ,        , odrl:Agreement                              , viiv:28str/4/5   , Išmanioji sutartis , "
+
+                > **28 straipsnis.** Informacinės sistemos duomenų teikimas ir
+                > naudojimas
+                >
+                > 4. Informacinėje sistemoje tvarkomi duomenys gali būti
+                > teikiami:
+                >
+                > 3) pagal duomenų tvarkytojų ir duomenų gavėjų sudarytas
+                > automatizuotas duomenų teikimo sutartis;
+                >
+                > -- [VIIV](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK)
+
+                > Naudojimo sąlygos suteikiamos paslaugos gavėjui dėl
+                > informacinio ištekliaus naudojimo, kurias suteikia paslaugos
+                > teikėjas.
+                >
+                > Sutarties sąlygos **privalo** turėti bent vieną leidimo arba
+                > draudimo taisyklę, vieną šalį su palsaugos teikėjo funkcija
+                > ir vieną šalį su paslaugos gavėjo funkcija (toje pačioje
+                > leidimo arba draudimo taisyklėje). Sutarties sąlygos perduoda
+                > politikos sąlygas iš paslaugos teikėjo, paslaugos gavėjui.
+                >
+                > -- [ODRL](https://www.w3.org/TR/odrl-vocab/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, datasets/gov/vssa/risr/dsa , , , ,              ,        ,          ,        ,         ,       ,        ,            ,        ,                                             , viiv:4str/4      , Duomenų struktūros aprašas , "
+                Duomenų struktūros aprašo pagrindinė paskirtis - sutapatinti
+                fizinį, loginį, koncepcinį ir smeantinį duomenų modelius.
+
+                > **4 straipsnis.** Duomenų valdysenos tikslai, duomenų valdymo
+                > ir tvarkymo principai
+                > 
+                > 4. Rengiant ir tvarkant metaduomenis, turi būti integruojami
+                > vienodi Europos Sąjungos nustatomi duomenų valdymo ir
+                > tvarkymo principai, struktūra, standartai, formatai,
+                > pagrindiniai žodynai, tezaurai, duomenų erdvių ir sričių
+                > ontologijos, kad būtų užtikrintas duomenų sąveikumas,
+                > vientisumas, kokybė, autentiškumas ir suderinamumas ne tik su
+                > Lietuvos Respublikos, bet ir su kitų Europos Sąjungos
+                > valstybių narių ir (ar) Europos ekonominės erdvės valstybių,
+                > ir (ar) Europos Sąjungos institucijų informacinėmis
+                > sistemomis.
+                > 
+                > -- [VIIV](https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.415499/HdPwEMOgJK)
+
+                > RDF sutapatinimo kalba (RML) yra sutpatinimo kalba, sukurta
+                > tam, kad būtų galima apibrėžti individualizuotas tapatinimo
+                > taisykles, skirtas heterogeniškų duomenų struktūrų ir
+                > serializacijų transformavimui į RDF duomenų modelį.
+                >
+                > -- [RML](https://rml.io/specs/rml/)
+
+                > R2RML yra kalba, skirta aprašyti pritaikytiems
+                > sutapatinimams tarp reliacinių duomenų bazių ir RDF duomenų
+                > rinkinių. Tokie sutapatinimai suteikia galimybę esamus
+                > reliacinius duomenis peržiūrėti RDF duomenų modelyje,
+                > išreikštame tokia struktūra ir tiksliniu žodynu, kokį
+                > pasirenka sutapatinimo autorius.
+                >
+                > -- [R2RML](https://www.w3.org/TR/r2rml/)
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,
+, , , , Namespace ,                               ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  , Vardų erdvė , "
+"
+, , , , ,                                         ,        ,          ,        ,         ,       ,        ,            ,        ,                                             ,                  ,       ,

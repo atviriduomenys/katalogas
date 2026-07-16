@@ -1498,13 +1498,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         )
 
         query = self.get_query()
-        query_params = []
-        for key, val in self.request.GET.items():
-            if val == "":
-                query_params.append(key)
-            else:
-                query_params.append(f"{key}={val}")
-        query_params = "&".join(query_params)
+        query_params = build_rql_query(self.request.GET)
         context["query_params"] = query_params
 
         url = f"{query}?{query_params}" if query_params else query
@@ -1546,13 +1540,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         return None
 
     def get_data_url(self):
-        query_params = []
-        for key, val in self.request.GET.items():
-            if val == "":
-                query_params.append(key)
-            else:
-                query_params.append(f"{key}={val}")
-        query_params = "&".join(query_params)
+        query_params = build_rql_query(self.request.GET)
 
         if self.model.name:
             return "%s%s" % (

@@ -8571,6 +8571,18 @@ def test_model_data_download_invalid_format_no_redirect(app: DjangoTestApp):
     assert resp.status_code == 200
 
 
+@pytest.mark.django_db
+def test_api_view_encodes_delimiter_in_filter_value(app: DjangoTestApp):
+    version = VersionFactory()
+    dataset, model = _setup_download_model(version)
+    with patch("vitrina.structure.services.requests.get") as mock_get:
+        data = {"_data": [{"_id": "c7d66fa2-a880-443d-8ab5-2ab7f9c79886", "prop": "test"}]}
+        mock_get.return_value = Mock(content=json.dumps(data))
+        resp = app.get(f"{reverse('getall-api', args=[dataset.pk, version.pk, model.name])}?prop=%22A%26B%22")
+    assert resp.context["query_params"] == 'prop="A%26B"'
+    assert resp.context["data_url"].endswith('?prop="A%26B"')
+
+
 class TestStructureUMLviews(BaseTestCreateManifest):
     MANIFEST = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"

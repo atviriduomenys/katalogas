@@ -6,6 +6,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
@@ -461,6 +462,29 @@ class DatasetDistribution(TranslatableModel):
 
     def __str__(self):
         return self.safe_translation_getter("title", language_code=self.get_current_language()) or ""
+
+    def _data_source(self):
+        return (self.file_id, self.download_url or None, self.access_url or None)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        instance._loaded_data_source = instance._data_source()
+        return instance
+
+    def save(self, *args, **kwargs):
+        loaded_data_source = getattr(self, "_loaded_data_source", None)
+        if (
+            loaded_data_source is not None
+            and self._data_source() != loaded_data_source
+            and not (self.format and self.format.extension == FormatName.UAPI)
+        ):
+            self.data_last_updated = timezone.now()
+            if (update_fields := kwargs.get("update_fields")) is not None:
+                kwargs["update_fields"] = {*update_fields, "data_last_updated"}
+        super().save(*args, **kwargs)
+        if getattr(self, "_loaded_data_source", None) is not None:
+            self._loaded_data_source = self._data_source()
 
     @property
     def display_title(self) -> str:

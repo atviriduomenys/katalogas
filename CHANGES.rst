@@ -10,6 +10,11 @@ v 1.23.0 (current)
 - Clean up README.rst
 - Fix webpack bundle output path to ``vitrina/static`` (was writing to an unserved root ``static/``).
 
+
+https://github.com/atviriduomenys/katalogas/issues/2716
+
+- Separate data freshness from metadata freshness for dataset distributions.
+
 https://github.com/atviriduomenys/katalogas/issues/2719
 
 - Fix data download in the structure "Duomenys" view producing a broken Spinta request. RQL query

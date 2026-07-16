@@ -140,7 +140,7 @@ def test_xml_with_doctype_then_stylesheet_pi_is_denied():
     # be skipped as a unit, and a stylesheet PI after it still caught.
     payload = (
         b'<?xml version="1.0"?>\n'
-        b"<!DOCTYPE root [ <!ENTITY e \"v\"> ]>\n"
+        b'<!DOCTYPE root [ <!ENTITY e "v"> ]>\n'
         b'<?xml-stylesheet type="text/xsl" href="e.xsl"?>\n'
         b"<root/>\n"
     )

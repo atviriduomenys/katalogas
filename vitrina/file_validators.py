@@ -34,8 +34,9 @@ _RBRACKET = 0x5D  # ]
 
 def _reject_stylesheet(file_name: str) -> typing.NoReturn:
     raise FileValidationError(
-        _('Failas „{file_name}“: XML su stilių aprašu (xml-stylesheet) uždraustas svetainės saugumo politikos')
-        .format(file_name=file_name)
+        _("Failas „{file_name}“: XML su stilių aprašu (xml-stylesheet) uždraustas svetainės saugumo politikos").format(
+            file_name=file_name
+        )
     )
 
 
@@ -43,7 +44,7 @@ def _reject_unparseable(file_name: str) -> typing.NoReturn:
     # Fail closed: we could not reach the root element within the scan budget, so
     # we cannot rule out a stylesheet PI hidden behind an oversized prolog.
     raise FileValidationError(
-        _('Failas „{file_name}“: nepavyko saugiai patikrinti XML pradžios.').format(file_name=file_name)
+        _("Failas „{file_name}“: nepavyko saugiai patikrinti XML pradžios.").format(file_name=file_name)
     )
 
 
@@ -84,7 +85,7 @@ def deny_xml_stylesheet(file_name: str, file: typing.IO, owner, mime_type: str) 
                 break
             i = end + 3
             continue
-        if head[i:i + 2] == b"<!":  # DOCTYPE / markup declaration
+        if head[i : i + 2] == b"<!":  # DOCTYPE / markup declaration
             i += 2
             depth = 0
             while i < n:

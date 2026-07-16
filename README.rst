@@ -44,15 +44,18 @@ Then we can run::
     poetry run python manage.py rebuild_index --noinput
     poetry run python manage.py createinitialrevisions
 
-``--skip-checks`` bypasses the URL system check that queries the Site table
-before migrations run on a fresh database (a django-cms bootstrapping quirk).
+``--skip-checks`` disables Django's system checks. It is needed because the URL
+check queries the Site table before migrations run on a fresh database (a
+django-cms bootstrapping quirk).
 
-To generate static files run::
+To generate static files run (build the webpack bundles first so
+``collectstatic`` picks them up)::
 
-    poetry run python manage.py collectstatic
     cd webpack
     npm install
     npm run build
+    cd ..
+    poetry run python manage.py collectstatic
 
 To run the development server::
 
@@ -83,13 +86,13 @@ Scripts that are run periodically:
 
 To set up a viisp social account provider:
 
-- Create a viisp_key object in admin panel as a superuser::
+- Create a viisp_key object in admin panel as a superuser:
 
   The contents of viisp_key object needs to be an rsa key encoded in base64.
   Example of a fake key can be found in test resources.
 
 
-- Create viisp provider in admin panel as a superuser::
+- Create viisp provider in admin panel as a superuser:
 
   The data should be as follows:
   Provider: Viisp
@@ -99,7 +102,7 @@ To set up a viisp social account provider:
   The host machine should be connected to vpn or whitelisted to be able to access test env of viisp provider.
   All other fields should be left unchanged.
 
-- Create a viisp_token_key object in admin panel as a superuser::
+- Create a viisp_token_key object in admin panel as a superuser:
 
   The contents of viisp_token_key object needs to be a token generated with fernet:
 

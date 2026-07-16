@@ -556,7 +556,7 @@ class DatasetDetailView(
                 )
                 else None
             ),
-            "data_maturity": dataset.metadata_set.average_level(),
+            "data_maturity": dataset.get_level(),
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),

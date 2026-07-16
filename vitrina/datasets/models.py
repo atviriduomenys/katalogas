@@ -3,7 +3,6 @@ import logging
 import pathlib
 from datetime import datetime
 from functools import cached_property
-from random import randrange
 from uuid import uuid4
 
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
@@ -966,9 +965,6 @@ class Dataset(Resource):
             categories.append({"title_en": category.title_en, "pk": category.pk})
         return categories
 
-    def level(self):
-        return randrange(5)
-
     def latest_version(self) -> Version:
         return self.dataset_version.order_by("-version").first()
 
@@ -1182,8 +1178,11 @@ class Dataset(Resource):
             ).values_list("level", flat=True)
 
             if levels:
-                metadata.average_level = sum(levels) / len(levels)
+                from vitrina.search.indexing import index_dataset_level
+
+                metadata.average_level = round(sum(levels) / len(levels))
                 metadata.save()
+                index_dataset_level(self.pk, metadata.average_level)
 
     def get_creators(self):
         return list(

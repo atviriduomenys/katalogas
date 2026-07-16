@@ -73,6 +73,21 @@ https://github.com/atviriduomenys/katalogas/issues/2822
 - Do not show the name of the parent comment author in a reply. The "Atsakymas į" line now uses
   the same rule as the comment author, so a user without access sees "Sistemos naudotojas".
 
+https://github.com/atviriduomenys/katalogas/issues/2726
+
+- Show the same maturity level ("brandos lygis") in the filter, the dataset list, the dataset page
+  and the structure description. The old code truncated the dataset level (3.75 became 3), rounded
+  the model levels, and used a third formula on the dataset page. ``Dataset.update_level()`` now
+  rounds, and the dataset page reads ``Dataset.get_level()``.
+- Refresh the level filter when a structure change sets a new dataset level. Before, the filter kept
+  the old level until the next ``rebuild_search``.
+- Recalculate the stored levels once after deployment. Run this in ``manage.py shell``. It also
+  refreshes the filter::
+
+      from vitrina.datasets.models import Dataset
+
+      for dataset in Dataset.objects.iterator():
+          dataset.update_level()
 
 
 v 1.26.0 (2026-09-30)

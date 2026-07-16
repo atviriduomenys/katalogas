@@ -4,6 +4,7 @@ import io
 import json
 import uuid
 from http import HTTPStatus
+from urllib.parse import unquote
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -8472,12 +8473,9 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         assert "GrandparentModel" in resp.text
 
 
-@pytest.mark.django_db
-@patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
-def test_model_data_download_redirects_to_spinta(app: DjangoTestApp):
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+def _setup_download_model(version):
     dataset = version.dataset
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -8501,7 +8499,14 @@ def test_model_data_download_redirects_to_spinta(app: DjangoTestApp):
         type="string",
         metadata_version=version,
     )
+    return dataset, model
 
+
+@pytest.mark.django_db
+@patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
+def test_model_data_download_redirects_to_spinta(app: DjangoTestApp):
+    version = VersionFactory()
+    dataset, model = _setup_download_model(version)
     url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
     resp = app.get(f"{url}?format=csv")
     assert resp.status_code == 302
@@ -8510,72 +8515,72 @@ def test_model_data_download_redirects_to_spinta(app: DjangoTestApp):
 
 @pytest.mark.django_db
 @patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
-def test_model_data_download_with_extra_params(app: DjangoTestApp):
+def test_model_data_download_select_reaches_spinta_verbatim(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(model),
-        object_id=model.pk,
-        dataset=dataset,
-        name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
-    )
-    prop = PropertyFactory(model=model, metadata_version=version)
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(prop),
-        object_id=prop.pk,
-        dataset=dataset,
-        name="prop",
-        type="string",
-        metadata_version=version,
+    dataset, model = _setup_download_model(version)
+    url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
+    resp = app.get(f"{url}?format=csv&select(_id,kodas,pavadinimas,isregistruotas,veikla,iregistruotas)")
+    assert resp.status_code == 302
+    assert resp.location == (
+        "https://get.data.gov.lt/test/dataset/TestModel/:format/csv"
+        "?select(_id,kodas,pavadinimas,isregistruotas,veikla,iregistruotas)"
     )
 
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "rql",
+    [
+        "select(prop)",
+        "sort(-prop)",
+        "limit(10)",
+        "count()",
+        "prop>5",
+        'prop="abc"',
+        "select(_id,prop)&sort(prop)&prop>5",
+    ],
+)
+@patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
+def test_model_data_download_preserves_rql_query(app: DjangoTestApp, rql):
+    version = VersionFactory()
+    dataset, model = _setup_download_model(version)
     url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
-    resp = app.get(f"{url}?format=json&select(prop)")
+    resp = app.get(f"{url}?format=csv&{rql}")
     assert resp.status_code == 302
-    assert resp.location == "https://get.data.gov.lt/test/dataset/TestModel/:format/json?select%28prop%29="
+    assert unquote(resp.location) == f"https://get.data.gov.lt/test/dataset/TestModel/:format/csv?{rql}"
+
+
+@pytest.mark.django_db
+@patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
+def test_model_data_download_encodes_delimiter_in_filter_value(app: DjangoTestApp):
+    version = VersionFactory()
+    dataset, model = _setup_download_model(version)
+    url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
+    resp = app.get(f"{url}?format=csv&prop=%22A%26B%22")
+    assert resp.status_code == 302
+    assert resp.location == "https://get.data.gov.lt/test/dataset/TestModel/:format/csv?prop=%22A%26B%22"
+    assert unquote(resp.location) == 'https://get.data.gov.lt/test/dataset/TestModel/:format/csv?prop="A&B"'
 
 
 @pytest.mark.django_db
 def test_model_data_download_invalid_format_no_redirect(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(model),
-        object_id=model.pk,
-        dataset=dataset,
-        name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
-    )
-    prop = PropertyFactory(model=model, metadata_version=version)
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(prop),
-        object_id=prop.pk,
-        dataset=dataset,
-        name="prop",
-        type="string",
-        metadata_version=version,
-    )
-
+    dataset, model = _setup_download_model(version)
     url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
     resp = app.get(f"{url}?format=exe")
     assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_api_view_encodes_delimiter_in_filter_value(app: DjangoTestApp):
+    version = VersionFactory()
+    dataset, model = _setup_download_model(version)
+    with patch("vitrina.structure.services.requests.get") as mock_get:
+        data = {"_data": [{"_id": "c7d66fa2-a880-443d-8ab5-2ab7f9c79886", "prop": "test"}]}
+        mock_get.return_value = Mock(content=json.dumps(data))
+        resp = app.get(f"{reverse('getall-api', args=[dataset.pk, version.pk, model.name])}?prop=%22A%26B%22")
+    assert resp.context["query_params"] == 'prop="A%26B"'
+    assert resp.context["data_url"].endswith('?prop="A%26B"')
 
 
 class TestStructureUMLviews(BaseTestCreateManifest):

@@ -32,11 +32,13 @@ from vitrina.structure.models import (
     PropertyList,
 )
 from vitrina.structure.services import (
+    build_rql_query,
     create_structure_objects,
     generate_mermaid_diagram,
     _generate_mermaid_model_click_links,
 )
 from vitrina.users.factories import UserFactory
+from django.http import QueryDict
 
 
 @pytest.fixture
@@ -50,6 +52,24 @@ def setup_default_status_data():
 
     for name, codename in defaults:
         Status.objects.get_or_create(codename=codename, defaults={"name": name})
+
+
+@pytest.mark.parametrize(
+    "query_string,kwargs,expected",
+    [
+        ("", {}, ""),
+        ("select(prop)", {}, "select(prop)"),
+        ("select(_id,a,b)&sort(-a)", {}, "select(_id,a,b)&sort(-a)"),
+        ("prop>5", {}, "prop>5"),
+        ('prop="abc"', {}, 'prop="abc"'),
+        ("prop=%22A%26B%22", {}, 'prop="A%26B"'),
+        ("prop.contains(%22A%26B%22)", {}, 'prop.contains("A%26B")'),
+        ("format=csv&select(a)", {"exclude": ("format",)}, "select(a)"),
+        ("count()&select(a)&sort(b)&prop=1", {"skip_prefixes": ("select(", "sort(")}, "count()&prop=1"),
+    ],
+)
+def test_build_rql_query(query_string, kwargs, expected):
+    assert build_rql_query(QueryDict(query_string), **kwargs) == expected
 
 
 @pytest.mark.django_db

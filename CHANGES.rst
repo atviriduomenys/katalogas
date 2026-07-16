@@ -4,6 +4,14 @@ Changes
 v 1.23.0 (2026-06-30)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2719
+
+- Fix data download in the structure "Duomenys" view producing a broken Spinta request. RQL query
+  fragments (``select(...)``, ``sort(...)``, filters) are value-less params, not ``key=value`` pairs;
+  the download path serialized them with a trailing ``=``, which Spinta's RQL parser rejected with
+  ``UnexpectedToken``. Both the ``downloadData()`` template helper and ``_build_spinta_download_url``
+  now preserve the RQL query verbatim.
+
 <No Ticket>
 
 - Add a Content Security Policy via ``django-csp``. Directives with no breakage trade-off for this site are locked

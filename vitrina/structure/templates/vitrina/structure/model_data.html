@@ -267,15 +267,12 @@
         };
 
         function downloadData() {
-            let select = $("select#select_format_id");
-            let format = select.val();
-            let url = new URL(location.pathname, location.origin);
-            url.searchParams.set("format", format);
-            location.search.replace(/^\?/, "").split("&").filter(Boolean).forEach(p => {
-                const [k, v] = p.split("=");
-                if (k !== "format") url.searchParams.set(k, v || "");
-            });
-            location.href = url.href;
+            let format = $("select#select_format_id").val();
+            let params = location.search.replace(/^\?/, "").split("&")
+                .filter(Boolean)
+                .filter(p => p.split("=")[0] !== "format");
+            params.push(`format=${encodeURIComponent(format)}`);
+            location.href = `${location.pathname}?${params.join("&")}`;
         };
     </script>
 {% endblock %}

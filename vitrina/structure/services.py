@@ -6,6 +6,7 @@ from io import StringIO
 from json import JSONDecodeError
 from typing import Union, Tuple, List, Dict, Generator
 from functools import lru_cache, cache
+from urllib.parse import quote
 
 
 import requests
@@ -1606,6 +1607,21 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
         ):
             if hasattr(meta, "errors"):
                 meta.errors.append(_(f'Prefiksas "{prefix}" duomenų ištekliuje neegzistuoja.'))
+
+
+RQL_SAFE_CHARS = "()[]<>=!*,:@'\"/.-_~"
+
+
+def build_rql_query(params, exclude=(), skip_prefixes=()):
+    parts = []
+    for key, val in params.items():
+        if key in exclude or any(key.startswith(prefix) for prefix in skip_prefixes):
+            continue
+        if val == "":
+            parts.append(quote(key, safe=RQL_SAFE_CHARS))
+        else:
+            parts.append(f"{quote(key, safe=RQL_SAFE_CHARS)}={quote(val, safe=RQL_SAFE_CHARS)}")
+    return "&".join(parts)
 
 
 def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30):

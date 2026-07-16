@@ -126,6 +126,34 @@ def test_xml_with_oversized_prolog_fails_closed():
         validate_file(ContentFile(payload, name="data.xml"))
 
 
+def test_xml_stylesheet_pi_straddling_a_read_chunk_is_denied():
+    # The <?xml-stylesheet marker itself starts right around the 8 KiB chunk
+    # boundary, so the incremental reader must fetch across the join to match it.
+    pad = b" " * (8188 - len(b'<?xml version="1.0"?>\n'))
+    payload = b'<?xml version="1.0"?>\n' + pad + b'<?xml-stylesheet type="text/xsl" href="e.xsl"?>\n<root/>\n'
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(payload, name="data.xml"))
+
+
+def test_xml_with_doctype_then_stylesheet_pi_is_denied():
+    # A DOCTYPE (with an internal subset whose ']' precedes the closing '>') must
+    # be skipped as a unit, and a stylesheet PI after it still caught.
+    payload = (
+        b'<?xml version="1.0"?>\n'
+        b"<!DOCTYPE root [ <!ENTITY e \"v\"> ]>\n"
+        b'<?xml-stylesheet type="text/xsl" href="e.xsl"?>\n'
+        b"<root/>\n"
+    )
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(payload, name="data.xml"))
+
+
+def test_xml_with_doctype_is_allowed_without_stylesheet():
+    # Same DOCTYPE shape but no stylesheet PI -> must pass (guards over-blocking).
+    payload = b'<?xml version="1.0"?>\n<!DOCTYPE root [ <!ENTITY e "v"> ]>\n<root/>\n'
+    validate_file(ContentFile(payload, name="data.xml"))
+
+
 def test_validate_file_pins_xhtml_to_xhtml_mime():
     # Portability guard: some hosts map .xhtml to a whitelisted type (e.g.
     # application/xml). validate_file must pin it to application/xhtml+xml so the

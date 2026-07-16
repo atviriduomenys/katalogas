@@ -144,21 +144,28 @@ def test_validate_file_pins_xhtml_to_xhtml_mime():
         mt.init()  # restore the system-backed table for other tests
 
 
-def test_sniffing_failure_fails_closed(monkeypatch):
-    # If libmagic errors (e.g. missing/misconfigured on the server), the upload
-    # must be rejected with a user-visible error, not silently accepted without
-    # the content-based check.
+def test_sniffing_fails_closed_when_libmagic_unavailable(monkeypatch):
+    # libmagic could not be imported at startup -> uploads must be rejected, not
+    # silently accepted without the content-based check. Patching helpers.magic
+    # makes this independent of whether libmagic is installed in the test env.
+    import vitrina.helpers as helpers
+
+    monkeypatch.setattr(helpers, "magic", None)
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))
+
+
+def test_sniffing_fails_closed_when_libmagic_errors(monkeypatch):
+    # libmagic present but throwing (misconfigured/broken) -> also fail closed
+    # with a user-visible error instead of skipping the sniffing defense layer.
+    import types
+
     import vitrina.helpers as helpers
 
     def boom(*args, **kwargs):
         raise RuntimeError("libmagic exploded")
 
-    if helpers.magic is None:
-        with pytest.raises(FileValidationError):
-            validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))
-        return
-
-    monkeypatch.setattr(helpers.magic, "from_buffer", boom)
+    monkeypatch.setattr(helpers, "magic", types.SimpleNamespace(from_buffer=boom))
     with pytest.raises(FileValidationError):
         validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))
 

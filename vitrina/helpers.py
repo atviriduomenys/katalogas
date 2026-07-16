@@ -722,26 +722,37 @@ def _detect_content_type(file) -> Optional[str]:
     spoofed content through when libmagic is missing or misconfigured).
     """
     try:
-        file.seek(0)
-        header = file.read(2048)
-        file.seek(0)
-    except Exception:
-        logger.exception("Could not read uploaded file for content-type sniffing")
-        raise FileValidationError(_("Nepavyko perskaityti įkelto failo turinio."))
+        try:
+            file.seek(0)
+            header = file.read(2048)
+        except Exception:
+            logger.exception("Could not read uploaded file for content-type sniffing")
+            raise FileValidationError(_("Nepavyko perskaityti įkelto failo turinio."))
 
-    if not header:
-        return None
+        if not header:
+            return None
 
-    if magic is None:
-        logger.error("python-magic/libmagic is not available; rejecting upload")
-        raise FileValidationError(_("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių."))
+        if magic is None:
+            logger.error("python-magic/libmagic is not available; rejecting upload")
+            raise FileValidationError(
+                _("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių.")
+            )
 
-    try:
-        detected = magic.from_buffer(header, mime=True)
+        try:
+            detected = magic.from_buffer(header, mime=True)
+        except Exception:
+            logger.exception("libmagic content-type sniffing failed")
+            raise FileValidationError(
+                _("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių.")
+            )
         return detected.split(";", 1)[0].strip().lower()
-    except Exception:
-        logger.exception("libmagic content-type sniffing failed")
-        raise FileValidationError(_("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių."))
+    finally:
+        # Best-effort: leave the read cursor at the start for downstream
+        # validators/handlers, on the success and failure paths alike.
+        try:
+            file.seek(0)
+        except Exception:
+            pass
 
 
 def _run_deny_validators(file_name: str, file, mime_type: str) -> None:

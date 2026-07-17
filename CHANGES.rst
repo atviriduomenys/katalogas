@@ -23,6 +23,12 @@ https://github.com/atviriduomenys/katalogas/issues/2719
   ``UnexpectedToken``. Both the ``downloadData()`` template helper and ``_build_spinta_download_url``
   now preserve the RQL query verbatim.
 
+https://github.com/atviriduomenys/katalogas/issues/2267
+
+- Fix dataset distribution CSV preview: auto-detect the delimiter and render data rows correctly (empty cells no longer break the preview).
+- Add a fullscreen toggle to the distribution preview modal.
+- Preview reads only the requested number of rows (``rows`` query parameter) instead of the whole file, avoiding memory issues on large distributions.
+
 <No Ticket>
 
 - Add a Content Security Policy via ``django-csp``. Directives with no breakage trade-off for this site are locked

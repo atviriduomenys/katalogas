@@ -128,3 +128,19 @@ $primary: #007db2;
   padding: 0.25em;
   border-color: #767676
 }
+
+.deploy-banner {
+  border-left: 4px solid transparent;
+
+  &--info {
+    border-left-color: $info;
+  }
+
+  &--warning {
+    border-left-color: $warning;
+  }
+
+  &--critical {
+    border-left-color: $danger;
+  }
+}

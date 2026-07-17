@@ -42,6 +42,12 @@ https://github.com/atviriduomenys/katalogas/issues/2632
 
 - Prefix log records with the authenticated user's ID (``user ID: <id>``), falling back to ``anonymous`` for unauthenticated requests and background tasks.
 - Add a request-scoped logging context (``vitrina.log_context``) and ``LogContextMiddleware`` so additional details can be surfaced in logs later.
+https://github.com/atviriduomenys/katalogas/issues/2713
+
+- Deployment banner messages are now edited with a rich-text (CKEditor) editor, so a link can be placed behind a word instead of showing the raw URL.
+- Add a "publish" flag to deployment messages: mark which single message is shown on the portal without deleting the older ones, so a message can be kept as a template.
+- Add a deployment message type (informational, warning, critical); each is shown with its own colour, icon and left-border accent.
+
 
 v 1.22.0 (2026-06-30)
 ==================

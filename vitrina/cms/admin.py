@@ -6,6 +6,7 @@ from vitrina.cms.forms import (
     FaqAdminForm,
     ExternalSiteAdminForm,
     PublishedReportAdminForm,
+    DeploymentAdminForm,
 )
 from vitrina.cms.models import (
     LearningMaterial,
@@ -86,12 +87,16 @@ class PublishedReportAdmin(RevisionCommentVersionAdmin):
 
 
 class DeploymentAdmin(RevisionCommentVersionAdmin):
+    form = DeploymentAdminForm
     list_display = (
         "message_lt_display",
         "message_en_display",
+        "level",
+        "is_published",
         "start_date",
         "end_date",
     )
+    list_editable = ("is_published",)
 
     def message_lt_display(self, obj):
         if obj.message_lt and len(obj.message_lt) >= 40:

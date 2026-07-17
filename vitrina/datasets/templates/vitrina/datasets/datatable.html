@@ -55,7 +55,7 @@
                     <td>{{dataset.frequency.title}}</td>
                 {% endif %}
             {% else %}
-                <td>{{ r.data_last_updated|default:r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
+                <td>{{ r.data_last_updated|default:r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
             {% endif %}
 
             {% if r.file %}
@@ -157,7 +157,7 @@
                 {{ r.format|default:"-" }}
             </td>
             <td>{{  r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
-            <td>{{ r.data_last_updated|default:r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
+            <td>{{ r.data_last_updated|default:r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
 
             {% if can_add_resource %}
             <td>
@@ -184,12 +184,18 @@
     <div class="modal-card">
         <header class="modal-card-head">
             <h1 class="modal-card-title">{% translate "Peržiūrėti" %}</h1>
+            <button class="button is-link is-small preview-fullscreen-toggle" type="button"
+                    style="margin-right:1rem;"
+                    data-label-expand="{% translate 'Visas ekranas' %}"
+                    data-label-compress="{% translate 'Sumažinti' %}"
+                    aria-label="{% translate 'Visas ekranas' %}">
+                <span class="icon"><i class="fas fa-expand"></i></span>
+                <span class="fullscreen-label">{% translate "Visas ekranas" %}</span>
+            </button>
             <button class="modal-button-close delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body" id="preview-content">
-            <div style="display: flex; flex-direction: column;" class="table is-striped is-fullwidth" id="info-table">
-                <table style="display: flex;" id="info-table-body"></table>
-            </div>
+            <table class="table is-striped is-hoverable is-fullwidth" id="info-table-body"></table>
         </section>
     </div>
 </div>

@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
 from filer.fields.image import FilerImageField
@@ -262,12 +262,30 @@ class TermsOfUse(models.Model):
 
 
 class Deployment(models.Model):
+    class DeploymentLevel(models.TextChoices):
+        INFO = "info", _("Informacinis")
+        WARNING = "warning", _("Įspėjamasis")
+        CRITICAL = "critical", _("Kritinis")
+
     start_date = models.DateTimeField(_("Diegimo darbų pradžia"))
     end_date = models.DateTimeField(_("Diegimo darbų pabaiga"))
     message_lt = models.TextField(_("Pranešimas (lietuvių kalba)"))
     message_en = models.TextField(_("Pranešimas (anglų kalba)"), blank=True, null=True)
+    level = models.CharField(
+        _("Pranešimo tipas"),
+        max_length=20,
+        choices=DeploymentLevel.choices,
+        default=DeploymentLevel.INFO,
+    )
+    is_published = models.BooleanField(_("Publikuoti"), default=False)
 
     class Meta:
         db_table = "deployment"
         verbose_name = _("Diegimo pranešimas")
         verbose_name_plural = _("Diegimo pranešimai")
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if self.is_published:
+                Deployment.objects.exclude(pk=self.pk).filter(is_published=True).update(is_published=False)

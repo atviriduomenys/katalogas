@@ -4,6 +4,41 @@ Changes
 v 1.23.0 (current)
 ==================
 
+<No ticket>
+- Remove unused files: stale SQL dumps in ``resources/`` (``adp-dev.sql``, ``adp-dev-fresh.sql``, ``adp-pg.sql``, ``migrations_squash.sql``) and ``uml.drawio.svg``.
+- Remove unused ``BASE_DB_PATH`` setting (only referenced the removed ``adp-pg.sql``).
+- Clean up README.rst
+- Fix webpack bundle output path to ``vitrina/static`` (was writing to an unserved root ``static/``).
+
+
+https://github.com/atviriduomenys/katalogas/issues/2716
+
+- Separate data freshness from metadata freshness for dataset distributions.
+
+https://github.com/atviriduomenys/katalogas/issues/2719
+
+- Fix data download in the structure "Duomenys" view producing a broken Spinta request. RQL query
+  fragments (``select(...)``, ``sort(...)``, filters) are value-less params, not ``key=value`` pairs;
+  the download path serialized them with a trailing ``=``, which Spinta's RQL parser rejected with
+  ``UnexpectedToken``. Both the ``downloadData()`` template helper and ``_build_spinta_download_url``
+  now preserve the RQL query verbatim.
+
+https://github.com/atviriduomenys/katalogas/issues/2267
+
+- Fix dataset distribution CSV preview: auto-detect the delimiter and render data rows correctly (empty cells no longer break the preview).
+- Add a fullscreen toggle to the distribution preview modal.
+- Preview reads only the requested number of rows (``rows`` query parameter) instead of the whole file, avoiding memory issues on large distributions.
+
+https://github.com/atviriduomenys/katalogas/issues/2585
+
+- Fix HTTP 500 error when registering or logging in via VIISP.
+- Return a graceful VIISP API error page instead of a 500 when the VIISP signing keys are missing, the login ticket is absent, or the VIISP SOAP call fails (including proxy connection/timeout errors).
+- Reject VIISP login when the supplied personal code does not match the linked account instead of logging the user in.
+- Scope the linked-account lookup to the VIISP provider and guard a missing stored personal code, so a user with a non-VIISP social account (e.g. Google) or a legacy VIISP account no longer triggers a 500.
+- Only persist ``is_viisp_login`` / company code after authentication succeeds, so a rejected login no longer leaves those fields updated.
+- Guard the account-merge token decryption against tampered or malformed tokens, and serialise the confirmation token as a keyed structure so account merges decode correctly when a company code is present.
+- Compare emails case-insensitively during the token login flow, and log VIISP SOAP failures.
+
 <No Ticket>
 
 - Add a Content Security Policy via ``django-csp``. Directives with no breakage trade-off for this site are locked
@@ -21,6 +56,12 @@ DVMS-514
 
 - Fix insufficient file upload validation (CWE-434): block ``.xhtml`` (``application/xhtml+xml``) uploads,
   which previously bypassed the HTML deny rule and allowed stored XSS / phishing pages to be served from the media URL.
+
+https://github.com/atviriduomenys/katalogas/issues/2713
+
+- Deployment banner messages are now edited with a rich-text (CKEditor) editor, so a link can be placed behind a word instead of showing the raw URL.
+- Add a "publish" flag to deployment messages: mark which single message is shown on the portal without deleting the older ones, so a message can be kept as a template.
+- Add a deployment message type (informational, warning, critical); each is shown with its own colour, icon and left-border accent.
 
 
 v 1.22.0 (2026-06-30)

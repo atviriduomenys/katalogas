@@ -1344,8 +1344,9 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
         "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
-        "data_last_updated": None,
+        "data_last_updated": res.json["data_last_updated"],
     }
+    assert res.json["data_last_updated"] is not None
 
 
 @pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
@@ -2028,8 +2029,9 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
-        "data_last_updated": None,
+        "data_last_updated": res.json["data_last_updated"],
     }
+    assert res.json["data_last_updated"] is not None
 
 
 @pytest.mark.django_db
@@ -2073,8 +2075,9 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         "url": "http://example.com/",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
-        "data_last_updated": None,
+        "data_last_updated": res.json["data_last_updated"],
     }
+    assert res.json["data_last_updated"] is not None
 
 
 @pytest.mark.django_db
@@ -2120,8 +2123,9 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         "url": f"http://{domain}{dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
-        "data_last_updated": None,
+        "data_last_updated": res.json["data_last_updated"],
     }
+    assert res.json["data_last_updated"] is not None
 
 
 @pytest.mark.django_db

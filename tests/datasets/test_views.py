@@ -3449,6 +3449,56 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
     assert resp.json == {"data": [["Column"], ["Value"]]}
 
 
+def test_distribution_preview_comma_delimited(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        file__file__data=b"a,b,c\nx,y,z",
+        file__file__filename="comma.csv",
+    )
+    resp = app.get(
+        reverse(
+            "dataset-distribution-preview",
+            kwargs={"dataset_id": dataset.pk, "distribution_id": distribution.pk},
+        )
+    )
+    assert resp.json == {"data": [["a", "b", "c"], ["x", "y", "z"]]}
+
+
+def test_distribution_preview_row_limit(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    body = b"a,b\n" + b"\n".join(f"{i},{i}".encode() for i in range(10))
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        file__file__data=body,
+        file__file__filename="rows.csv",
+    )
+    url = reverse(
+        "dataset-distribution-preview",
+        kwargs={"dataset_id": dataset.pk, "distribution_id": distribution.pk},
+    )
+    assert len(app.get(url).json["data"]) == 6  # header + default 5 rows
+    assert len(app.get(url + "?rows=3").json["data"]) == 4  # header + 3 rows
+
+
+def test_distribution_preview_empty_cells(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        file__file__data=b"a,b,c\n1,,3",
+        file__file__filename="empty.csv",
+    )
+    resp = app.get(
+        reverse(
+            "dataset-distribution-preview",
+            kwargs={"dataset_id": dataset.pk, "distribution_id": distribution.pk},
+        )
+    )
+    # empty cells must not serialize as the bare token NaN (invalid JSON, breaks strict JS parsers)
+    assert b"NaN" not in resp.body
+    assert resp.json["data"] == [["a", "b", "c"], [1, "", 3]]
+
+
 def test_add_subclass_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
     response = app.get(reverse("resource-subclass-add", kwargs={"pk": org.id}))
@@ -4202,7 +4252,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
@@ -4227,7 +4277,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dataset.landing_page}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
@@ -4357,7 +4407,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
@@ -4382,7 +4432,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
@@ -4404,6 +4454,40 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
     </dcat:Dataset>
 </rdf:RDF>'''
     )
+
+
+def test_dataset_rdf_distribution_modified_uses_created_not_metadata_modified(app: DjangoTestApp):
+    from django.utils.timezone import make_aware
+
+    from vitrina.resources.models import DatasetDistribution
+
+    po = "http://publications.europa.eu/resource/authority"
+    dataset = DatasetFactory(
+        published=datetime(2016, 8, 1),
+        frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
+        organization=OrganizationFactory(title="Data Enterprise", email="data@example.com"),
+    )
+    dist = DatasetDistributionFactory(
+        dataset=dataset,
+        title="Failas 1",
+        description="Failas su prieigos nuoroda",
+        format=FileFormat(uri=f"{po}/file-type/CSV"),
+        access_url="https://access-url.com",
+    )
+    ModelFactory(dataset=dataset, distribution=dist, metadata_version=dataset.metadata.first().metadata_version)
+
+    # created = real publication date (old); modified = later metadata churn; no storage date.
+    DatasetDistribution.objects.filter(pk=dist.pk).update(
+        created=make_aware(datetime(2019, 3, 3)),
+        modified=make_aware(datetime(2024, 9, 9)),
+        data_last_updated=None,
+    )
+
+    res = app.get(reverse("dataset-rdf-download", args=[dataset.pk]))
+
+    assert res.status_code == 200
+    assert '<dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2019-03-03</dct:modified>' in res.text
+    assert "2024-09-09" not in res.text
 
 
 def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
@@ -4538,7 +4622,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/json"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
@@ -4564,7 +4648,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/jsonl"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
@@ -4584,7 +4668,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/rdf"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
@@ -4610,7 +4694,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/TestModel/:format/csv"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>

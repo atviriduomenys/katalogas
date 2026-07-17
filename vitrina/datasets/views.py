@@ -1,3 +1,4 @@
+import csv
 import itertools
 import secrets
 import json
@@ -724,38 +725,51 @@ class OpenDataPortalDatasetDetailView(View):
         )
 
 
+def _detect_csv_delimiter(path: str, encoding: str) -> str:
+    with open(path, newline="", encoding=encoding) as csv_file:
+        sample = csv_file.read(8192)
+    try:
+        return csv.Sniffer().sniff(sample, delimiters=",;\t").delimiter
+    except csv.Error:
+        return ","
+
+
 class DatasetDistributionPreviewView(ListView):
     def get(self, request, dataset_id, distribution_id):
         distribution = get_object_or_404(DatasetDistribution, dataset__pk=dataset_id, pk=distribution_id)
+        try:
+            row_limit = int(request.GET.get("rows", 5))
+        except (TypeError, ValueError):
+            row_limit = 5
+        row_limit = max(1, min(row_limit, 1000))
         data = []
         if distribution.is_previewable():
             if "xlsx" in distribution.file.path:
-                read_data = pd.ExcelFile(distribution.file.path)
-                read_data = {sheet_name: read_data.parse(sheet_name) for sheet_name in read_data.sheet_names}
-                if len(read_data.keys()) > 1:
-                    data = [["Only one sheet is allowed in file"]]
-                else:
-                    read_data = read_data[next(iter(read_data))]
-                    headers = read_data.columns.values
-                    first_5_values = read_data.values.tolist()
-                    data.append(list(headers))
-                    data.extend(first_5_values[:5])
+                with pd.ExcelFile(distribution.file.path) as excel_file:
+                    if len(excel_file.sheet_names) > 1:
+                        data = [["Only one sheet is allowed in file"]]
+                    else:
+                        read_data = excel_file.parse(excel_file.sheet_names[0], nrows=row_limit)
+                        read_data = read_data.fillna("")
+                        data.append(list(read_data.columns.values))
+                        data.extend(read_data.values.tolist())
 
             elif "csv" in distribution.file.path:
                 read_data = None
 
-                try:
-                    read_data = pd.read_csv(distribution.file.path, delimiter=";")
-                except ValueError:
+                for encoding in (None, "cp1257"):
                     try:
-                        read_data = pd.read_csv(distribution.file.path, encoding="cp1257", delimiter=";")
+                        delimiter = _detect_csv_delimiter(distribution.file.path, encoding or "utf-8")
+                        read_data = pd.read_csv(
+                            distribution.file.path, sep=delimiter, encoding=encoding, nrows=row_limit
+                        )
+                        break
                     except ValueError:
-                        pass
+                        continue
                 if read_data is not None:
-                    headers = read_data.columns.values
-                    first_5_values = read_data.values.tolist()
-                    data.append(list(headers))
-                    data.extend(first_5_values[:5])
+                    read_data = read_data.fillna("")
+                    data.append(list(read_data.columns.values))
+                    data.extend(read_data.values.tolist())
                 else:
                     data = [[_("Nepavyko nuskaityti failo")]]
             else:

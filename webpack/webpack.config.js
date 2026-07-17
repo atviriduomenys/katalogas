@@ -10,7 +10,7 @@ module.exports = {
     wizard: path.resolve(__dirname, './src/wizard.js'),
   },
   output: {
-    path: path.resolve(__dirname, '../static'),
+    path: path.resolve(__dirname, '../vitrina/static'),
     filename: 'js/[name].js',
     library: '[name]'
   },

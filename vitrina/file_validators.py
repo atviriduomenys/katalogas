@@ -39,6 +39,8 @@ _LT = 0x3C  # <
 _GT = 0x3E  # >
 _LBRACKET = 0x5B  # [
 _RBRACKET = 0x5D  # ]
+_DQUOTE = 0x22  # "
+_SQUOTE = 0x27  # '
 
 
 def _reject_stylesheet(file_name: str) -> typing.NoReturn:
@@ -80,9 +82,12 @@ def deny_xml_stylesheet(file_name: str, file: typing.IO, owner, mime_type: str) 
             # closed if the prolog grows past the budget without a decision.
             nonlocal total, eof
             while (len(buf) - i) < count and not eof:
-                if total >= _MAX_PROLOG_BYTES:
+                remaining = _MAX_PROLOG_BYTES - total
+                if remaining <= 0:
+                    # We still need data but have read the whole budget -> the
+                    # prolog is oversized and we cannot vet it. Fail closed.
                     _reject_unparseable(file_name)
-                chunk = file.read(_CHUNK_BYTES)
+                chunk = file.read(min(_CHUNK_BYTES, remaining))
                 if not chunk:
                     eof = True
                     break
@@ -102,12 +107,14 @@ def deny_xml_stylesheet(file_name: str, file: typing.IO, owner, mime_type: str) 
                     return idx
                 if eof:
                     return -1
-                if total >= _MAX_PROLOG_BYTES:
+                remaining = _MAX_PROLOG_BYTES - total
+                if remaining <= 0:
+                    # Terminator not found within the budget -> fail closed.
                     _reject_unparseable(file_name)
                 # Resume near the current end so ``sub`` can still straddle the
                 # join with the next chunk, without rescanning the whole buffer.
                 search_pos = max(start, len(buf) - len(sub) + 1)
-                chunk = file.read(_CHUNK_BYTES)
+                chunk = file.read(min(_CHUNK_BYTES, remaining))
                 if not chunk:
                     eof = True
                     return -1
@@ -148,14 +155,22 @@ def deny_xml_stylesheet(file_name: str, file: typing.IO, owner, mime_type: str) 
                     continue
                 # DOCTYPE / markup declaration: scan to the top-level '>', keeping
                 # track of the internal-subset brackets (a '>' inside [...] is not
-                # the end).
+                # the end) and of quoted strings (brackets and '>' inside a quoted
+                # value must be ignored, otherwise a crafted DOCTYPE could
+                # terminate the scan early and hide a later <?xml-stylesheet?> PI).
                 j = i + 2
                 depth = 0
+                quote = 0  # 0 = outside a quote, else the opening quote byte
                 while True:
                     if j >= len(buf) and not ensure((j - i) + 1):
                         return  # unterminated declaration at EOF -> inert
                     c = buf[j]
-                    if c == _LBRACKET:
+                    if quote:
+                        if c == quote:
+                            quote = 0
+                    elif c == _DQUOTE or c == _SQUOTE:
+                        quote = c
+                    elif c == _LBRACKET:
                         depth += 1
                     elif c == _RBRACKET:
                         depth = max(0, depth - 1)

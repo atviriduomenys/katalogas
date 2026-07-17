@@ -154,6 +154,35 @@ def test_xml_with_doctype_is_allowed_without_stylesheet():
     validate_file(ContentFile(payload, name="data.xml"))
 
 
+def test_doctype_with_quoted_brackets_does_not_hide_stylesheet_pi():
+    # A ']' / '>' / '<r' hidden inside a quoted entity value must not make the
+    # DOCTYPE scan terminate early (which would skip the real PI that follows).
+    payload = (
+        b'<?xml version="1.0"?>\n'
+        b'<!DOCTYPE r [ <!ENTITY e "]><r"> ]>\n'
+        b'<?xml-stylesheet type="text/xsl" href="evil.xsl"?>\n'
+        b"<r/>\n"
+    )
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(payload, name="data.xml"))
+
+
+def test_doctype_with_quoted_gt_before_real_root_is_allowed():
+    # A '>' inside a quoted value is not the DOCTYPE end; with no PI present this
+    # legitimate document must still pass.
+    payload = b'<?xml version="1.0"?>\n<!DOCTYPE r [ <!ENTITY e "a>b]c"> ]>\n<r/>\n'
+    validate_file(ContentFile(payload, name="data.xml"))
+
+
+def test_stylesheet_pi_just_over_budget_fails_closed():
+    # PI sits just past the 1 MiB budget: the scan must hit the hard cap and fail
+    # closed rather than read one extra chunk beyond it.
+    pad = b"<!-- " + b"x" * (1024 * 1024) + b" -->"
+    payload = b'<?xml version="1.0"?>\n' + pad + b'\n<?xml-stylesheet href="e.xsl"?>\n<r/>\n'
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(payload, name="data.xml"))
+
+
 def test_validate_file_pins_xhtml_to_xhtml_mime():
     # Portability guard: some hosts map .xhtml to a whitelisted type (e.g.
     # application/xml). validate_file must pin it to application/xhtml+xml so the

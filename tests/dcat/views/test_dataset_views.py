@@ -1322,6 +1322,7 @@ class TestDcatDatasetUpdateView:
         publisher_org = OrganizationFactory()
         is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         is_public_service_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.IS_PUBLIC_SERVICE)
+        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
         parent_is = DatasetFactory(organization=org, subclass=is_subclass, is_public=False, metadata=f"{org.name}/myis")
         dataset = DatasetFactory(
             organization=org,
@@ -1329,6 +1330,16 @@ class TestDcatDatasetUpdateView:
             is_public=False,
             metadata=f"{org.name}/myis/old_paslauga",
         )
+        # Create the dataset referenced by produces_datasets before moving
+        # `dataset`, so no add_root rebalances the sorted MP-tree after the move.
+        produced_dataset = DatasetFactory(subclass=dataset_subclass)
+        # Adding sibling roots above rebalances the sorted tree and shifts
+        # parent_is's materialized path, so reload both nodes before the move --
+        # otherwise `dataset` is moved under a stale path and gets orphaned,
+        # which made get_parent() raise Dataset.DoesNotExist (flaky under the
+        # full-suite subclass-id ordering).
+        parent_is.refresh_from_db()
+        dataset = Dataset.objects.get(pk=dataset.pk)
         dataset.move(parent_is, "sorted-child")
         dataset.refresh_from_db()
         contact = ContactFactory(organization=org)
@@ -1344,8 +1355,6 @@ class TestDcatDatasetUpdateView:
             defaults={"name": "PASIS", "uri": "https://www.pasis.lt", "identifier_validation_type": None},
         )
         IdentifierFactory(resource=dataset, scheme_agency=pasis_agency, notation="old_paslauga")
-        dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
-        produced_dataset = DatasetFactory(subclass=dataset_subclass)
         produces_relation = Relation.objects.get(name=Relation.PRODUCES)
         user = UserFactory(is_staff=True)
         app.set_user(user)

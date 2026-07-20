@@ -773,10 +773,17 @@ def _run_deny_validators(file_name: str, file, mime_type: str) -> None:
     validate_upload applies on the declared-type gate.
     """
     validators = apps.get_app_config("filer").FILE_VALIDATORS.get(mime_type, [])
-    for validator in validators:
-        file.seek(0)
-        validator(file_name, file, None, mime_type)
-    file.seek(0)
+    try:
+        for validator in validators:
+            file.seek(0)
+            validator(file_name, file, None, mime_type)
+    finally:
+        # Reset the cursor even when a validator rejects the file, so upstream
+        # error handling sees the file object at position 0.
+        try:
+            file.seek(0)
+        except Exception:
+            pass
 
 
 def validate_file(file: File) -> None:

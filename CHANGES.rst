@@ -52,6 +52,11 @@ https://github.com/atviriduomenys/katalogas/issues/2632
 
 - Prefix log records with the authenticated user's ID (``user ID: <id>``), falling back to ``anonymous`` for unauthenticated requests and background tasks.
 - Add a request-scoped logging context (``vitrina.log_context``) and ``LogContextMiddleware`` so additional details can be surfaced in logs later.
+DVMS-514
+
+- Fix insufficient file upload validation (CWE-434): block ``.xhtml`` (``application/xhtml+xml``) uploads,
+  which previously bypassed the HTML deny rule and allowed stored XSS / phishing pages to be served from the media URL.
+
 https://github.com/atviriduomenys/katalogas/issues/2713
 
 - Deployment banner messages are now edited with a rich-text (CKEditor) editor, so a link can be placed behind a word instead of showing the raw URL.

@@ -75,12 +75,18 @@ def test_build_dataset_stats_preserves_object_count_on_http_error():
 
 @pytest.mark.django_db
 def test_build_dataset_stats_counts_distributions_by_created_date():
+    from django.utils import timezone as dj_timezone
+
     from vitrina.statistics.services import build_dataset_stats
 
     dataset = DatasetFactory(published=datetime(2023, 5, 10, 10, 0, 0, tzinfo=timezone.utc))
     distribution = DatasetDistributionFactory(dataset=dataset)
     build_dataset_stats()
-    stat = DatasetStats.objects.get(dataset_id=dataset.pk, created=distribution.created.date())
+    # build_dataset_stats groups distributions by their created date in the active
+    # timezone (F("created__date")). Assert against that same local date so the
+    # test does not flake when created falls on a different UTC calendar day.
+    expected_date = dj_timezone.localtime(distribution.created).date()
+    stat = DatasetStats.objects.get(dataset_id=dataset.pk, created=expected_date)
     assert stat.distribution_count == 1
 
 

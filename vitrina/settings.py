@@ -359,15 +359,117 @@ THUMBNAIL_ALIASES = {
     },
 }
 
+# Upload security follows a "whitelist + defense in depth" model:
+#
+# 1. FILER_MIME_TYPE_WHITELIST is the primary gate. django-filer checks the
+#    incoming MIME type against it *before* running any validator and denies
+#    anything that does not match (with "type/*" wildcard support). This is
+#    fail-closed: a new dangerous format that nobody added to a blacklist is
+#    rejected by default because it simply is not on the allow list.
+#
+# 2. FILER_ADD_FILE_VALIDATORS still denies known-dangerous active content as a
+#    second layer. These validators are also what content sniffing reuses (see
+#    vitrina.helpers.validate_file): the detected MIME type of the actual bytes
+#    is run through them, so a file disguised with a safe extension (e.g. HTML
+#    renamed to .csv) is still caught.
+#
+# The whitelist reflects the formats users legitimately upload (dataset
+# distributions, documentation, images). Add new legitimate types here rather
+# than relying on a blacklist.
+FILER_MIME_TYPE_WHITELIST = [
+    # Images
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/tiff",
+    "image/svg+xml",  # allowed but scanned for scripting by validate_svg
+    # Documents
+    "application/pdf",
+    "text/plain",
+    "text/csv",
+    "text/tab-separated-values",
+    "text/asciidoc",  # .adoc, registered in vitrina.helpers.validate_file
+    # OpenDocument formats
+    "application/vnd.oasis.opendocument.text",
+    "application/vnd.oasis.opendocument.spreadsheet",
+    "application/vnd.oasis.opendocument.presentation",
+    # MS Office (legacy)
+    "application/msword",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    # MS Office (OOXML)
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    # Structured / open data
+    "application/json",
+    "application/ld+json",
+    "application/geo+json",
+    "application/xml",
+    "text/xml",
+    "application/rdf+xml",
+    "text/turtle",
+    "application/n-triples",
+    "text/n3",
+    # Archives
+    "application/zip",
+    "application/gzip",
+    "application/x-tar",
+    "application/x-7z-compressed",
+    "application/x-bzip2",
+]
+
+# django-filer ships its own DEFAULT_FILE_VALIDATORS and MERGES them with our
+# FILER_ADD_FILE_VALIDATORS. Several of those defaults contradict the policy
+# below, so we drop them here (the merged registry is what both filer's own
+# validate_upload and vitrina.helpers._run_deny_validators read):
+#   - application/xml, text/xml: filer denies them outright, but we whitelist
+#     the XML family (XML/RDF data), so a blanket deny would reject legit uploads
+#     (and RDF that sniffs as text/xml on the content-sniffing pass). We re-add a
+#     narrower deny_xml_stylesheet validator below instead of filer's blanket deny.
+#   - image/svg+xml: filer's default *sanitizes* SVGs (strips scripting) and
+#     runs before our validate_svg, silently neutralising it. We want SVGs with
+#     active content *rejected*, not quietly cleaned, so we keep only validate_svg.
+FILER_REMOVE_FILE_VALIDATORS = [
+    "application/xml",
+    "text/xml",
+    "image/svg+xml",
+]
+
+# Known-dangerous active content. The keys cover both the extension-derived MIME
+# types and the variants that libmagic reports when sniffing the raw bytes, so
+# the same deny rules apply whether a payload arrives with an honest extension or
+# a spoofed one. application/octet-stream is intentionally NOT listed here, but
+# note filer's DEFAULT validators still deny a sniffed octet-stream (we do not
+# remove it above): the whitelist rejects it on the declared side, and the deny
+# adds a defence-in-depth layer on the sniffed side.
 FILER_ADD_FILE_VALIDATORS = {
+    # Markup browsers may render/execute
     "text/html": ["filer.validation.deny_html"],
-    "image/svg+xml": ["filer.validation.deny"],
+    "application/xhtml+xml": ["filer.validation.deny"],
+    # Scripts
     "text/javascript": ["filer.validation.deny"],
     "application/javascript": ["filer.validation.deny"],
-    "application/x-msdownload": ["filer.validation.deny"],
-    "application/x-sh": ["filer.validation.deny"],
+    "application/x-javascript": ["filer.validation.deny"],
     "application/x-httpd-php": ["filer.validation.deny"],
-    "application/octet-stream": ["filer.validation.deny"],
+    "text/x-php": ["filer.validation.deny"],
+    "application/x-sh": ["filer.validation.deny"],
+    "text/x-shellscript": ["filer.validation.deny"],
+    # Executables
+    "application/x-msdownload": ["filer.validation.deny"],
+    "application/x-dosexec": ["filer.validation.deny"],
+    "application/x-executable": ["filer.validation.deny"],
+    "application/x-mach-binary": ["filer.validation.deny"],
+    # SVG is allowed (whitelisted) but scanned for embedded scripting
+    "image/svg+xml": ["filer.validation.validate_svg"],
+    # XML family is allowed, but an <?xml-stylesheet?> PI triggers client-side
+    # XSLT in the browser (stored XSS from the media origin), so scan for it.
+    # text/xml also covers RDF/XML, which libmagic sniffs as text/xml.
+    "application/xml": ["vitrina.file_validators.deny_xml_stylesheet"],
+    "text/xml": ["vitrina.file_validators.deny_xml_stylesheet"],
+    "application/rdf+xml": ["vitrina.file_validators.deny_xml_stylesheet"],
 }
 
 META_USE_OG_PROPERTIES = True

@@ -2432,7 +2432,8 @@ def test_create_dataset_structure_with_not_allowed_file(app: DjangoTestApp):
     )
     APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(
-        params=[("title", "Test structure")], files=[("file", "file.svg", b"test")]
+        params=[("title", "Test structure")],
+        files=[("file", "file.svg", b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>')],
     )
     app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
     res = app.post(reverse("api-structure", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)

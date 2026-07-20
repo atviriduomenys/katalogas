@@ -2,6 +2,7 @@
 import math
 import datetime
 import calendar
+import logging
 import mimetypes
 from pathlib import Path
 from typing import Optional, List, Any
@@ -13,7 +14,12 @@ from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
+try:
+    import magic
+except (ImportError, OSError):
+    magic = None
 import markdown
+from django.apps import apps
 from django.contrib.sites.models import Site
 from django.core.files import File
 from django.core.handlers.wsgi import WSGIRequest
@@ -24,7 +30,7 @@ from django.db.models import Model
 from django.urls import reverse
 from django.template.loader import get_template
 from django.template import Template, Context
-from filer.validation import validate_upload
+from filer.validation import FileValidationError, validate_upload
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -35,6 +41,8 @@ from vitrina.messages.models import EmailTemplate, SentMail
 from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
 from vitrina.structure.models import Model as StructureModel, Property as StructureProperty
+
+logger = logging.getLogger(__name__)
 
 
 class Filter:
@@ -548,9 +556,13 @@ def email(
         )
         email_send = True
     except Exception as e:
-        import logging
-
-        logging.warning("Email was not sent", subject, _(str(content)), recipients, e)
+        logger.warning(
+            "Email was not sent: subject=%s recipients=%s error=%s",
+            subject,
+            recipients,
+            e,
+            exc_info=True,
+        )
         email_send = False
 
     SentMail.objects.create(
@@ -574,14 +586,12 @@ def send_email_with_logging(email_data, email_list):
             recipient_list=email_list,
         )
     except Exception as e:
-        import logging
-
-        logging.warning(
-            "Email was not sent",
+        logger.warning(
+            "Email was not sent: subject=%s recipients=%s error=%s",
             email_data["email_subject"],
-            email_data["email_content"],
             email_list,
             e,
+            exc_info=True,
         )
 
 
@@ -702,17 +712,129 @@ def get_encoding(file_path):
             return "utf-8"
 
 
-def validate_file(file: File) -> None:
-    # Adding any additional types that are not in Python's built-in MIME type registry.
-    mimetypes.add_type("text/asciidoc", ".adoc")  # ADOC
+def _detect_content_type(file) -> Optional[str]:
+    """Sniff the real MIME type from the file's bytes using libmagic.
 
-    mime_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+    Returns None for empty files (nothing to sniff). If reading or libmagic
+    fails, this fails closed: the failure is logged and a FileValidationError is
+    raised so the upload is rejected with a user-visible message instead of
+    silently skipping the content-based defense-in-depth check (which would let
+    spoofed content through when libmagic is missing or misconfigured).
+    """
+    try:
+        try:
+            file.seek(0)
+            header = file.read(2048)
+        except Exception:
+            logger.exception("Could not read uploaded file for content-type sniffing")
+            raise FileValidationError(_("Nepavyko perskaityti įkelto failo turinio."))
+
+        if not header:
+            return None
+
+        if magic is None:
+            logger.error("python-magic/libmagic is not available; rejecting upload")
+            raise FileValidationError(
+                _("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių.")
+            )
+
+        try:
+            detected = magic.from_buffer(header, mime=True)
+        except Exception:
+            logger.exception("libmagic content-type sniffing failed")
+            raise FileValidationError(
+                _("Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos administratorių.")
+            )
+        return detected.split(";", 1)[0].strip().lower()
+    finally:
+        # Best-effort: leave the read cursor at the start for downstream
+        # validators/handlers, on the success and failure paths alike.
+        try:
+            file.seek(0)
+        except Exception:
+            pass
+
+
+def _run_deny_validators(file_name: str, file, mime_type: str) -> None:
+    """Run only the configured deny/scan validators for ``mime_type``.
+
+    Unlike filer.validation.validate_upload this deliberately skips the MIME
+    whitelist gate: it is used with the *sniffed* content type, where harmless
+    detections (e.g. a .docx sniffing as application/zip, a legacy .doc as an OLE
+    container) must not be rejected. Only types with a deny/scan rule are blocked.
+
+    The rules come from filer's effective, resolved validator registry
+    (app config ``FILE_VALIDATORS``) rather than settings.FILER_ADD_FILE_VALIDATORS
+    directly. That registry is filer's built-in validators, minus the ones we
+    drop via FILER_REMOVE_FILE_VALIDATORS and plus the project's
+    FILER_ADD_FILE_VALIDATORS (see the upload-security block in settings.py for
+    which defaults are kept vs removed). Reading the resolved registry here keeps
+    this defense-in-depth pass byte-for-byte consistent with the rules filer's own
+    validate_upload applies on the declared-type gate.
+    """
+    validators = apps.get_app_config("filer").FILE_VALIDATORS.get(mime_type, [])
+    try:
+        for validator in validators:
+            file.seek(0)
+            validator(file_name, file, None, mime_type)
+    finally:
+        # Reset the cursor even when a validator rejects the file, so upstream
+        # error handling sees the file object at position 0.
+        try:
+            file.seek(0)
+        except Exception:
+            pass
+
+
+def validate_file(file: File) -> None:
+    # Register MIME types the portal whitelists that Python's built-in registry
+    # does not know (or maps differently), so the declared-type gate is
+    # deterministic regardless of the host's /etc/mime.types (e.g. a slim
+    # container image has a much smaller table than a dev machine). Extensions
+    # that mimetypes treats as *encodings* (.gz, .bz2) cannot be registered this
+    # way; they are handled via the encoding fallback below.
+    mimetypes.add_type("text/asciidoc", ".adoc")  # ADOC
+    mimetypes.add_type("image/webp", ".webp")  # webp
+    mimetypes.add_type("application/geo+json", ".geojson")  # GeoJSON
+    mimetypes.add_type("application/ld+json", ".jsonld")  # JSON-LD
+    mimetypes.add_type("application/rdf+xml", ".rdf")  # RDF/XML
+    mimetypes.add_type("text/turtle", ".ttl")  # Turtle
+    mimetypes.add_type("application/n-triples", ".nt")  # N-Triples
+    mimetypes.add_type("text/n3", ".n3")  # N3
+    mimetypes.add_type("text/tab-separated-values", ".tsv")  # TSV
+    mimetypes.add_type("application/x-7z-compressed", ".7z")  # 7z
+    # Security: pin XHTML to application/xhtml+xml so it reliably hits the deny
+    # rule, instead of falling back to a whitelisted type (e.g. application/xml)
+    # or an unregistered None on hosts with a different mimetypes table.
+    mimetypes.add_type("application/xhtml+xml", ".xhtml")  # XHTML
+    mimetypes.add_type("application/xhtml+xml", ".xht")  # XHTML
+
+    # First gate: validate by the declared (extension-based) MIME type. This runs
+    # the FILER_MIME_TYPE_WHITELIST check followed by the deny validators.
+    guessed_mime, guessed_encoding = mimetypes.guess_type(file.name)
+    if guessed_mime is None and guessed_encoding:
+        # mimetypes reports .gz/.bz2 as an encoding with no type, so guess_type
+        # can never return application/gzip or application/x-bzip2 for them (and
+        # add_type does not help). Map the whitelisted archive encodings here so a
+        # standalone .gz/.bz2 is not wrongly rejected as application/octet-stream.
+        guessed_mime = {
+            "gzip": "application/gzip",
+            "bzip2": "application/x-bzip2",
+        }.get(guessed_encoding)
+    declared_mime = guessed_mime or "application/octet-stream"
     validate_upload(
         file_name=file.name,
         file=file.file,
         owner=None,
-        mime_type=mime_type,
+        mime_type=declared_mime,
     )
+
+    # Defense in depth: sniff the actual content type and re-run the deny
+    # validators against it. This catches active content (HTML/PHP/shell/SVG/
+    # executables) smuggled past the extension gate under a benign extension.
+    detected_mime = _detect_content_type(file.file)
+    if detected_mime and detected_mime != declared_mime:
+        _run_deny_validators(file.name, file.file, detected_mime)
 
 
 def get_file_extension(file_name: str) -> str:

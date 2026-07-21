@@ -55,18 +55,3 @@ class AgencyAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("name", "uri")
     search_fields = ("name", "uri")
     inlines = [IdentifierInline]
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "name",
-                    "code",
-                    "uri",
-                    "identifier_validation_type",
-                    "identifier_validation_options",
-                    "identifier_validation_error_message",
-                )
-            },
-        ),
-    )

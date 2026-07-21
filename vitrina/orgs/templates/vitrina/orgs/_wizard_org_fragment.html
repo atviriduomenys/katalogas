@@ -22,3 +22,10 @@
     </div>
 </form>
 <div id="wizard-footer-extra" hx-swap-oob="innerHTML"></div>
+<p id="wizard-org-name" class="wizard-org-name" title="{{ organization.title }}" hx-swap-oob="true">{{ organization.title }}</p>
+<span id="wizard-org-avatar-letter" class="wizard-org-avatar-letter"
+      {% if organization.image %}style="display:none;"{% endif %}
+      hx-swap-oob="true">{{ organization.title|first|upper }}</span>
+<span id="wizard-tree-root-label" class="wizard-tree-label has-text-dark" title="{{ organization.title }}" hx-swap-oob="true">
+    {{ organization.title }}
+</span>

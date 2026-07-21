@@ -1,4 +1,5 @@
 from django.contrib import admin
+from parler.admin import TranslatableAdmin
 
 from .models import Identifier, Agency
 from vitrina.admin import RevisionCommentVersionAdmin
@@ -50,7 +51,22 @@ class IdentifierAdmin(RevisionCommentVersionAdmin):
 
 
 @admin.register(Agency)
-class AgencyAdmin(RevisionCommentVersionAdmin):
+class AgencyAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("name", "uri")
     search_fields = ("name", "uri")
     inlines = [IdentifierInline]
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "name",
+                    "code",
+                    "uri",
+                    "identifier_validation_type",
+                    "identifier_validation_options",
+                    "identifier_validation_error_message",
+                )
+            },
+        ),
+    )

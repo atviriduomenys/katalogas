@@ -287,7 +287,7 @@ class TestInformationSystemResourceForm:
 
         assert not form.is_valid()
         assert "identifier" in form.errors
-        assert "Žymėjimas turi atitikti šabloną: ^\\d{4}$" in form.errors["identifier"]
+        assert "Žymėjimas turi būti sudarytas iš keturių skaitmenų." in form.errors["identifier"]
 
     def test_valid_identifier_passes(self):
         organization = OrganizationFactory()
@@ -602,6 +602,7 @@ class TestInformationSystemUpdateForm:
                 "uri": "http://registrai.lt",
                 "identifier_validation_type": "REGEXP",
                 "identifier_validation_options": r"^\d{4}$",
+                "identifier_validation_error_message": "Žymėjimas turi būti sudarytas iš keturių skaitmenų.",
             },
         )
         Identifier.objects.create(

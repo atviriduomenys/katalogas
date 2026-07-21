@@ -206,7 +206,6 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
     information_system_paths = list(
         Dataset.objects.filter(
             organization=organization,
-            is_public=False,
             subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,
         ).values_list("path", flat=True)
     )
@@ -214,7 +213,7 @@ def _build_wizard_tree(organization: Organization) -> tuple[list[dict], dict[str
     for path in information_system_paths:
         conditions |= Q(path__startswith=path)
     org_datasets = list(
-        Dataset.objects.filter(conditions, is_public=False)
+        Dataset.objects.filter(conditions)
         .select_related("subclass")
         .prefetch_related("translations", "datasetdistribution_set__translations")
         .order_by("path")

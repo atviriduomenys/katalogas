@@ -274,6 +274,9 @@
     border-color: #f14668;
     box-shadow: 0 0 0 2px rgba(241,70,104,0.08);
 }
+.wizard-form-body .field:has(.input:disabled, .textarea:disabled, select:disabled) {
+    background: #f5f7f9;
+}
 .wizard-form-body .help.is-danger {
     color: #f14668;
 }
@@ -324,6 +327,12 @@
 .wizard-form-body .textarea {
     min-height: 5rem;
     resize: vertical;
+}
+.wizard-form-body .input:disabled,
+.wizard-form-body .textarea:disabled,
+.wizard-form-body .select select:disabled {
+    color: #9aabb4;
+    cursor: not-allowed;
 }
 .wizard-form-body .select select {
     border: none;

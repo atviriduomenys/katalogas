@@ -1330,7 +1330,7 @@ class TestDatasetUpdateView:
         form["identifier"] = "not-valid-identifier"
         form.submit()
         response = form.submit(expect_errors=True)
-        assert "Žymėjimas turi atitikti šabloną" in response.text
+        assert "Žymėjimas turi būti sudarytas iš keturių skaitmenų." in response.text
 
     def test_dataset_update_non_existing_identifier(self, app: DjangoTestApp):
         subclass = DCATResourceSubclassFactory(name="information_system")
@@ -2047,7 +2047,7 @@ class TestDatasetCreateView:
         form["identifier"] = "not-valid-identifier"
         form.submit()
         response = form.submit(expect_errors=True)
-        assert "Žymėjimas turi atitikti šabloną" in response.text
+        assert "Žymėjimas turi būti sudarytas iš keturių skaitmenų." in response.text
 
     def test_dataset_create_with_applicable_legislation(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)

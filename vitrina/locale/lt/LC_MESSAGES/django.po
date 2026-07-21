@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-22 15:45+0300\n"
+"POT-Creation-Date: 2026-07-21 12:37+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,12 +19,6 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < "
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
-
-msgid "Organizacija"
-msgstr ""
-
-msgid "Duomenų skelbėjas"
-msgstr ""
 
 msgid "Versijos duomenys"
 msgstr ""
@@ -57,6 +51,9 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
+msgstr ""
+
+msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -113,9 +110,11 @@ msgstr ""
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr ""
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
@@ -331,21 +330,27 @@ msgstr ""
 msgid "Teritorinės aprėptys"
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr ""
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr ""
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
@@ -415,10 +420,25 @@ msgstr ""
 msgid "Mokymosi medžiaga"
 msgstr ""
 
+msgid "Informacinis"
+msgstr ""
+
+msgid "Įspėjamasis"
+msgstr ""
+
+msgid "Kritinis"
+msgstr ""
+
 msgid "Diegimo darbų pradžia"
 msgstr ""
 
 msgid "Diegimo darbų pabaiga"
+msgstr ""
+
+msgid "Pranešimo tipas"
+msgstr ""
+
+msgid "Publikuoti"
 msgstr ""
 
 msgid "Diegimo pranešimas"
@@ -764,10 +784,6 @@ msgstr ""
 msgid ""
 "Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
 "pavadinimą."
-msgstr ""
-
-#, python-format
-msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
 msgstr ""
 
 #, python-brace-format
@@ -1606,15 +1622,6 @@ msgstr ""
 msgid "Duomenų išteklių kategorijos"
 msgstr ""
 
-msgid "Teminiai duomenų ištekliai"
-msgstr ""
-
-msgid "Sveikatos duomenys"
-msgstr ""
-
-msgid "Atsidaro naujame lange"
-msgstr ""
-
 msgid "Patinka"
 msgstr ""
 
@@ -1802,6 +1809,12 @@ msgstr ""
 msgid "Ištrinti"
 msgstr ""
 
+msgid "Visas ekranas"
+msgstr ""
+
+msgid "Sumažinti"
+msgstr ""
+
 msgid "Duomenų ištekliaus peržiūros"
 msgstr ""
 
@@ -1812,6 +1825,9 @@ msgid "Pašalinti"
 msgstr ""
 
 msgid "Atsisiuntimo formatas"
+msgstr ""
+
+msgid "Duomenų skelbėjas"
 msgstr ""
 
 msgid "Kontaktinė informacija"
@@ -1887,6 +1903,9 @@ msgid "Pridėti vaikinį duomenų išteklių"
 msgstr ""
 
 msgid "Rasta duomenų išteklių"
+msgstr ""
+
+msgid "Atsisiuntimų skaičius"
 msgstr ""
 
 msgid "Narių sąrašas"
@@ -2630,6 +2649,16 @@ msgstr ""
 msgid "Reikšmės privalo būti unikalios."
 msgstr ""
 
+#, python-brace-format
+msgid ""
+"Failas „{file_name}“: XML su stilių aprašu (xml-stylesheet) uždraustas "
+"svetainės saugumo politikos"
+msgstr ""
+
+#, python-brace-format
+msgid "Failas „{file_name}“: nepavyko saugiai patikrinti XML pradžios."
+msgstr ""
+
 msgid "I ketvirtis"
 msgstr ""
 
@@ -2690,6 +2719,14 @@ msgstr ""
 msgid "Tvarkytojų skaičius"
 msgstr ""
 
+msgid "Nepavyko perskaityti įkelto failo turinio."
+msgstr ""
+
+msgid ""
+"Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos "
+"administratorių."
+msgstr ""
+
 msgid "Modelio laukas"
 msgstr ""
 
@@ -2727,6 +2764,14 @@ msgid ""
 "įveskite regex šabloną "
 msgstr ""
 
+msgid "Identifikatoriaus tikrinimo klaidos pranešimas"
+msgstr ""
+
+msgid ""
+"Pranešimas, rodomas naudotojui, kai identifikatorius neatitinka nustatyto "
+"šablono. Privalomas, kai pasirinkta reguliarioji išraiška."
+msgstr ""
+
 msgid "Atstovybė"
 msgstr ""
 
@@ -2736,6 +2781,11 @@ msgstr ""
 msgid ""
 "Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba "
 "„parinktys“, abu turi būti užpildyti."
+msgstr ""
+
+msgid ""
+"Identifikatoriaus tikrinimo klaidos pranešimas privalomas, kai pasirinkta "
+"reguliarioji išraiška."
 msgstr ""
 
 msgid "Nuoroda (URI)"
@@ -5310,9 +5360,6 @@ msgstr ""
 msgid "Priklauso versijai"
 msgstr ""
 
-msgid "Publikuoti"
-msgstr ""
-
 msgid "Tėvinė versija turi būti pasirinkta"
 msgstr ""
 
@@ -5483,6 +5530,16 @@ msgid "UML diagramos"
 msgstr ""
 
 msgid "UML diagrama mermaid sintaksės formatu."
+msgstr ""
+
+#, python-format
+msgid ""
+"Kodinis pavadinimas (%(manifest_names)s) nesutampa su rinkinio kodiniu "
+"pavadinimu %(dataset_name)s."
+msgstr ""
+
+msgid ""
+"Duomenų struktūros apraše nenurodytas duomenų rinkinio kodinis pavadinimas."
 msgstr ""
 
 #, python-brace-format
@@ -5997,6 +6054,15 @@ msgid "Ieškoti duomenų..."
 msgstr ""
 
 msgid "Prenumeruoja:"
+msgstr ""
+
+msgid "Teminiai duomenų ištekliai"
+msgstr ""
+
+msgid "Atsidaro naujame lange"
+msgstr ""
+
+msgid "Sveikatos duomenys"
 msgstr ""
 
 msgid "Ar tikrai norite patvirtinti"
@@ -6842,9 +6908,6 @@ msgid "Slaptažodžio atstatymas"
 msgstr ""
 
 msgid "Naudotojo profilis"
-msgstr ""
-
-msgid "Pranešimo tipas"
 msgstr ""
 
 msgid "Prenumeratos"

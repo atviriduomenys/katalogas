@@ -24,7 +24,7 @@ class OrganizationFactory(DjangoModelFactory):
         )
 
     title = factory.Faker("company")
-    kind = factory.Faker("word")
+    kind = Organization.ORG
     name = factory.Sequence(lambda n: f"datasets/gov/test/{n:04d}/")
     company_code = factory.Faker("bothify", text="?????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     email = factory.Faker("email")

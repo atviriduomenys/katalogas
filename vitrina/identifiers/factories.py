@@ -1,5 +1,4 @@
 import factory
-from django.conf import settings
 from factory.django import DjangoModelFactory
 
 from vitrina.identifiers.models import Agency, Identifier
@@ -16,19 +15,6 @@ class AgencyFactory(DjangoModelFactory):
 
     class Meta:
         model = Agency
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        error_message = kwargs.pop(
-            "identifier_validation_error_message",
-            "Žymėjimas turi būti sudarytas iš keturių skaitmenų.",
-        )
-        agency = model_class(*args, **kwargs)
-        for lang in settings.LANGUAGES:
-            agency.set_current_language(lang[0])
-            agency.identifier_validation_error_message = error_message
-        agency.save()
-        return agency
 
 
 class IdentifierFactory(DjangoModelFactory):

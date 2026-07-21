@@ -68,7 +68,6 @@
                  mode: 'detail',
                  createAttempt: null,
                  treeExpanded: false,
-                 schemaOpen: true,
                  canCreate(type) {
                      return !!(this.selected && this.selected.create_urls && this.selected.create_urls[type]);
                  },
@@ -97,19 +96,6 @@
 
                 {# Left sidebar — tree navigation #}
                 <aside class="column is-one-quarter wizard-sidebar p-4">
-                    <section class="wizard-schema-block">
-                        <button type="button" class="wizard-schema-header"
-                                :aria-expanded="schemaOpen ? 'true' : 'false'"
-                                @click="schemaOpen = !schemaOpen">
-                            <span>{% translate "Kūrimo tvarka" %}</span>
-                            <span class="wizard-tree-expand-icon" :class="schemaOpen ? 'is-open' : ''">
-                                <i class="fas fa-chevron-down fa-xs"></i>
-                            </span>
-                        </button>
-                        <div class="wizard-schema-body" x-show="schemaOpen" x-cloak>
-                            {% include "vitrina/orgs/_wizard_schema_matrix.html" %}
-                        </div>
-                    </section>
                     <ul class="wizard-tree">
                         <li class="wizard-tree-group wizard-tree-group-root">
                             <span aria-hidden="true">{% translate "Organizacija" %}</span>

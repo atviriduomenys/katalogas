@@ -97,44 +97,6 @@ def _build_allowed_parents() -> dict[str, list[str]]:
 WIZARD_ALLOWED_PARENTS: dict[str, list[str]] = _build_allowed_parents()
 
 
-def _build_schema_matrix() -> dict:
-    """„Kūrimo tvarka“ legend matrix derived from WIZARD_ALLOWED_CHILDREN.
-
-    Columns are all creatable child types; rows are parent types that can have
-    children. Each cell marks whether the column type can be created under the
-    row type.
-    """
-    columns = [
-        {
-            "type": child_type,
-            "label": WIZARD_NODE_LABELS[child_type],
-            "icon": WIZARD_NODE_ICONS[child_type],
-        }
-        for child_type in WIZARD_CREATABLE_TYPES
-    ]
-    rows = [
-        {
-            "type": parent_type,
-            "label": WIZARD_NODE_LABELS[parent_type],
-            "icon": WIZARD_NODE_ICONS[parent_type],
-            "cells": [
-                {
-                    "label": WIZARD_NODE_LABELS[child_type],
-                    "allowed": child_type in allowed_children,
-                }
-                for child_type in WIZARD_CREATABLE_TYPES
-            ],
-        }
-        for parent_type, allowed_children in sorted(
-            WIZARD_ALLOWED_CHILDREN.items(), key=lambda item: WIZARD_TYPE_ORDER.get(item[0], 99)
-        )
-        if allowed_children
-    ]
-    return {"columns": columns, "rows": rows}
-
-
-WIZARD_SCHEMA_MATRIX: dict = _build_schema_matrix()
-
 _WIZARD_TREE_MAX_DEPTH = 8
 
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-22 15:45+0300\n"
+"POT-Creation-Date: 2026-07-21 12:37+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
-
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -58,6 +52,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -114,9 +111,11 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -345,21 +344,27 @@ msgstr "Spatial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spatial coverages"
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -429,11 +434,26 @@ msgstr "Publication date"
 msgid "Mokymosi medžiaga"
 msgstr "Learning material"
 
+msgid "Informacinis"
+msgstr "Informative"
+
+msgid "Įspėjamasis"
+msgstr "Indicating"
+
+msgid "Kritinis"
+msgstr "Critical"
+
 msgid "Diegimo darbų pradžia"
 msgstr "Deployment start"
 
 msgid "Diegimo darbų pabaiga"
 msgstr "Deployment end"
+
+msgid "Pranešimo tipas"
+msgstr "Message type"
+
+msgid "Publikuoti"
+msgstr "Publish"
 
 msgid "Diegimo pranešimas"
 msgstr "Deployment message"
@@ -816,10 +836,6 @@ msgid ""
 "Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
 "pavadinimą."
 msgstr "A codename is required if the dataset already has a codename."
-
-#, python-format
-msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
-msgstr "The notation must match the pattern: %(pattern)s"
 
 #, python-brace-format
 msgid "Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija."
@@ -1759,15 +1775,6 @@ msgstr "Go back to resources"
 msgid "Duomenų išteklių kategorijos"
 msgstr "Resource categories"
 
-msgid "Teminiai duomenų ištekliai"
-msgstr "Thematic data resources"
-
-msgid "Sveikatos duomenys"
-msgstr "Health data"
-
-msgid "Atsidaro naujame lange"
-msgstr "Opens in a new window"
-
 msgid "Patinka"
 msgstr "Like"
 
@@ -1979,6 +1986,12 @@ msgstr "Are you sure you want to delete this distribution?"
 msgid "Ištrinti"
 msgstr "Delete"
 
+msgid "Visas ekranas"
+msgstr "Full screen"
+
+msgid "Sumažinti"
+msgstr "Minimize"
+
 msgid "Duomenų ištekliaus peržiūros"
 msgstr "Resource views"
 
@@ -1990,6 +2003,9 @@ msgstr "Delete"
 
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
@@ -2065,6 +2081,9 @@ msgstr "Add a child resource"
 
 msgid "Rasta duomenų išteklių"
 msgstr "Found resources"
+
+msgid "Atsisiuntimų skaičius"
+msgstr "Number of downloads"
 
 msgid "Narių sąrašas"
 msgstr "Members"
@@ -2868,6 +2887,18 @@ msgstr "Select a file"
 msgid "Reikšmės privalo būti unikalios."
 msgstr "Values must be unique."
 
+#, python-brace-format
+msgid ""
+"Failas „{file_name}“: XML su stilių aprašu (xml-stylesheet) uždraustas "
+"svetainės saugumo politikos"
+msgstr ""
+"File \"{file_name}\": XML with a stylesheet declaration (xml-stylesheet) is "
+"forbidden by the site's security policy"
+
+#, python-brace-format
+msgid "Failas „{file_name}“: nepavyko saugiai patikrinti XML pradžios."
+msgstr "File \"{file_name}\": could not securely verify the XML declaration."
+
 msgid "I ketvirtis"
 msgstr "I quarter"
 
@@ -2928,6 +2959,16 @@ msgstr "Coordinator count"
 msgid "Tvarkytojų skaičius"
 msgstr "Manager count"
 
+msgid "Nepavyko perskaityti įkelto failo turinio."
+msgstr "Failed to read the contents of the uploaded file"
+
+msgid ""
+"Nepavyko patikrinti failo turinio tipo. Kreipkitės į sistemos "
+"administratorių."
+msgstr ""
+"Could not verify the file's content type. Please contact your system "
+"administrator."
+
 msgid "Modelio laukas"
 msgstr "Model field."
 
@@ -2969,6 +3010,16 @@ msgstr ""
 "Validation parameters according to the selected type. For regular expression "
 "- enter regex pattern"
 
+msgid "Identifikatoriaus tikrinimo klaidos pranešimas"
+msgstr "Identifier validation error message"
+
+msgid ""
+"Pranešimas, rodomas naudotojui, kai identifikatorius neatitinka nustatyto "
+"šablono. Privalomas, kai pasirinkta reguliarioji išraiška."
+msgstr ""
+"The message displayed to the user when the identifier does not match the "
+"configured pattern. Required when a regular expression is selected."
+
 msgid "Atstovybė"
 msgstr "Agency"
 
@@ -2981,6 +3032,13 @@ msgid ""
 msgstr ""
 "If one of the fields “Identifier validation type” or “options” is set, both "
 "must be filled."
+
+msgid ""
+"Identifikatoriaus tikrinimo klaidos pranešimas privalomas, kai pasirinkta "
+"reguliarioji išraiška."
+msgstr ""
+"The identifier validation error message is required when a regular "
+"expression is selected."
 
 msgid "Nuoroda (URI)"
 msgstr "URI"
@@ -5784,9 +5842,6 @@ msgstr ""
 msgid "Priklauso versijai"
 msgstr "Depends on version"
 
-msgid "Publikuoti"
-msgstr "Publish"
-
 msgid "Tėvinė versija turi būti pasirinkta"
 msgstr "The parent version must be selected"
 
@@ -5977,7 +6032,8 @@ msgstr ""
 "Code name (%(manifest_names)s) does not match with the dataset code name "
 "%(dataset_name)s."
 
-msgid "Duomenų struktūros apraše nenurodytas duomenų rinkinio kodinis pavadinimas."
+msgid ""
+"Duomenų struktūros apraše nenurodytas duomenų rinkinio kodinis pavadinimas."
 msgstr "Dataset code name not defined in the manifest"
 
 #, python-brace-format
@@ -6506,6 +6562,15 @@ msgstr "Look for data..."
 
 msgid "Prenumeruoja:"
 msgstr "Subscribers"
+
+msgid "Teminiai duomenų ištekliai"
+msgstr "Thematic data resources"
+
+msgid "Atsidaro naujame lange"
+msgstr "Opens in a new window"
+
+msgid "Sveikatos duomenys"
+msgstr "Health data"
 
 msgid "Ar tikrai norite patvirtinti"
 msgstr "Are you sure you want ro confirm"
@@ -7430,9 +7495,6 @@ msgstr "Password reset"
 
 msgid "Naudotojo profilis"
 msgstr "User profile"
-
-msgid "Pranešimo tipas"
-msgstr "Message type"
 
 msgid "Prenumeratos"
 msgstr "Subscriptions"

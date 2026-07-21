@@ -14,7 +14,7 @@
 
 {% block form_scripts %}
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
-        if (django != undefined && django.jQuery != undefined) {
+        if (typeof django !== 'undefined' && django.jQuery != undefined) {
             var $ = django.jQuery;
         }
 

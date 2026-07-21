@@ -11,6 +11,7 @@ class AgencyFactory(DjangoModelFactory):
     uri = "http://registrai.lt"
     identifier_validation_type = "REGEXP"
     identifier_validation_options = r"^\d{4}$"
+    identifier_validation_error_message = "Žymėjimas turi būti sudarytas iš keturių skaitmenų."
 
     class Meta:
         model = Agency

@@ -96,11 +96,7 @@ def validate_identifier(identifier: str | None) -> None:
     is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
 
     if is_regexp and (pattern := agency.identifier_validation_options) and not re.fullmatch(pattern, identifier):
-        raise ValidationError(
-            _("Žymėjimas turi atitikti šabloną: %(pattern)s"),
-            params={"pattern": pattern},
-            code="invalid_format",
-        )
+        raise ValidationError(agency.identifier_validation_error_message, code="invalid_format")
 
 
 def set_default_agent_endpoint_fields(cleaned_data: dict[str, Any]) -> dict[str, Any]:

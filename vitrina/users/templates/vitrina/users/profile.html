@@ -7,8 +7,8 @@
 {% block notification %}
     {% if notification %}
         <div id="top-bar">
-            <p>{% translate "Pranešimo tipas" %}<span class="is-pulled-right message-close-button"
-                                                       data-action="hide-message">X</span></p>
+            <p>{% translate "Pranešimo tipas" %}<button type="button" class="is-pulled-right message-close-button"
+                                                       data-action="hide-message">X</button></p>
         </div>
     {% endif %}
 {% endblock %}

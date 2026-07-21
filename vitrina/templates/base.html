@@ -246,6 +246,17 @@
                 break;
         }
     });
+
+    // Keyboard activation for non-native controls marked role="button" (a <div>/<span>/<a>
+    // without href). Enter/Space fires the same click-based dispatcher; native <button> and
+    // <a href> elements already activate on Enter/Space themselves.
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+        var el = e.target.closest && e.target.closest('[data-action][role="button"]');
+        if (!el) return;
+        e.preventDefault();
+        el.click();
+    });
 </script>
 {% block scripts %}{% endblock %}
 {% block form_scripts %}{% endblock %}

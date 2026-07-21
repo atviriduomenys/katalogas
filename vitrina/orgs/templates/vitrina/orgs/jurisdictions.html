@@ -31,6 +31,7 @@
                             {% for jurisdiction in jurisdictions %}
                                 {% if jurisdiction.title == selected_jurisdiction %}
                                 <div class="columns is-gapless  m-0 mt-1" style="cursor: pointer;"
+                                     role="button" tabindex="0"
                                      data-action="remove-filter" data-filter="{{ jurisdiction.id }}"
                                 >
                                     <span class="icon">

@@ -39,13 +39,13 @@
                             <img src="{{ organization.image.url }}"
                                  alt="{{ organization.title }}"
                                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                            <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
+                            <span id="wizard-org-avatar-letter" class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
                         {% else %}
-                            <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
+                            <span id="wizard-org-avatar-letter" class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
                         {% endif %}
                     </div>
                     <div class="wizard-org-info">
-                        <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
+                        <p id="wizard-org-name" class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
                         <p class="wizard-org-type">{% translate "Organizacija" %}</p>
                     </div>
                 </div>
@@ -128,7 +128,7 @@
                                         <i class="fas fa-chevron-right fa-xs"></i>
                                     {% endif %}
                                 </span>
-                                <span class="wizard-tree-label has-text-dark" title="{{ organization.title }}">
+                                <span id="wizard-tree-root-label" class="wizard-tree-label has-text-dark" title="{{ organization.title }}">
                                     {{ organization.title }}
                                 </span>
                                 <div class="wizard-tree-actions is-flex is-align-items-center">

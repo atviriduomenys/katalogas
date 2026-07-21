@@ -142,11 +142,6 @@
         nav.classList.toggle('is-active');
     }
 
-    function HideMessage(counter) {
-        var notificationBar = document.getElementById('message-list-' + counter);
-        notificationBar.classList.add('is-hidden');
-    }
-
     // CSP: central dispatcher for former inline on* handlers. Elements opt in with
     // data-action / data-action-change (+ data-* args). Each case mirrors exactly the
     // inline call it replaced; page-specific functions (selectTab, orderBy, copyToClipboard,
@@ -244,7 +239,7 @@
         var d = el.dataset;
         switch (d.actionChange) {
             case 'submit-form':
-                el.form.submit();
+                if (el.form) el.form.submit();
                 break;
             case 'file-selected':
                 onFileSelected(el, d.field);

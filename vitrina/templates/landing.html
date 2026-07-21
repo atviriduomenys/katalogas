@@ -83,10 +83,6 @@
 {% endblock %}
 {% block scripts %}
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
-        function HideMessage(){
-          var notificationBar = document.getElementById('top-bar');
-          notificationBar.classList.add('is-hidden');
-        }
         document.addEventListener("DOMContentLoaded", function (event) {
             var suggestions = {};
 

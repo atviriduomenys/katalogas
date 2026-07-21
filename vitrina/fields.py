@@ -43,6 +43,8 @@ class MultipleIntField(MultipleValueField):
 
 
 class FilerClearableFileInput(ClearableFileInput):
+    template_name = "component/clearable_file_input.html"
+
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         if value is not False and isinstance(value, int):
@@ -58,6 +60,7 @@ class FilerClearableFileInput(ClearableFileInput):
                 "initial_text": self.initial_text,
                 "clear_checkbox_label": self.clear_checkbox_label,
                 "value": value,
+                "file_input_text": _("Pasirinkti failą"),
             }
         )
         return context

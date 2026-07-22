@@ -51,7 +51,7 @@
                     <form action="/requests/stats/{{ filter }}{% if current_object %}/{{ current_object }}{% endif %}" method="GET">
                         <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
                         <div class="select">
-                            <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
+                            <select name="sort" id="sorting-parameter" data-action-change="submit-form">
                                 <option value="sort-year-desc" {% if sort == 'sort-year-desc' %}selected{% endif %}>{% translate "Naujausi" %}</option>
                                 <option value="sort-year-asc" {% if sort == 'sort-year-asc' %}selected{% endif %}>{% translate "Seniausi" %}</option>
                                 <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>

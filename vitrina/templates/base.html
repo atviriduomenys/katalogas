@@ -86,7 +86,7 @@
                         <div class="message-header">
                             <p>{{ message }}</p>
                             <button class="delete" aria-label="delete"
-                                    onClick="HideMessage({{ forloop.counter }})"></button>
+                                    data-action="hide-message" data-counter="{{ forloop.counter }}"></button>
                         </div>
                     </article>
                 </li>
@@ -142,10 +142,121 @@
         nav.classList.toggle('is-active');
     }
 
-    function HideMessage(counter) {
-        var notificationBar = document.getElementById('message-list-' + counter);
-        notificationBar.classList.add('is-hidden');
-    }
+    // CSP: central dispatcher for former inline on* handlers. Elements opt in with
+    // data-action / data-action-change (+ data-* args). Each case mirrors exactly the
+    // inline call it replaced; page-specific functions (selectTab, orderBy, copyToClipboard,
+    // ...) are only reached on pages that define them, so referencing them here is safe.
+    document.addEventListener('click', function (e) {
+        var el = e.target.closest && e.target.closest('[data-action]');
+        if (!el) return;
+        var d = el.dataset;
+        switch (d.action) {
+            case 'history-back':
+                e.preventDefault();
+                window.history.back();
+                break;
+            case 'confirm':
+                if (!confirm(d.confirmMessage)) {
+                    e.preventDefault();
+                }
+                break;
+            case 'menu':
+                openMenu();
+                break;
+            case 'hide-message':
+                if (d.counter !== undefined) {
+                    var notificationBar = document.getElementById('message-list-' + d.counter);
+                    if (notificationBar) notificationBar.classList.add('is-hidden');
+                } else {
+                    var topBar = el.closest('#top-bar') || document.getElementById('top-bar');
+                    if (topBar) topBar.classList.add('is-hidden');
+                }
+                break;
+            case 'select-tab':
+                // Preserve hash navigation for <a href="#..."> tabs; only prevent default when there is no hash href.
+                if (!(el.tagName === 'A' && el.getAttribute('href') && el.getAttribute('href').charAt(0) === '#')) {
+                    e.preventDefault();
+                }
+                selectTab(d.tab);
+                break;
+            case 'remove-filter':
+                if (d.index !== undefined) {
+                    removeFilter(d.filter, parseInt(d.index, 10));
+                } else {
+                    removeFilter(d.filter);
+                }
+                break;
+            case 'download-data':
+                downloadData();
+                break;
+            case 'select-rows':
+                select();
+                break;
+            case 'show-filter-window':
+                showFilterWindow(d.col);
+                break;
+            case 'order-by':
+                if (d.order === 'false') {
+                    orderBy(d.col, false);
+                } else {
+                    orderBy(d.col);
+                }
+                break;
+            case 'hide-col':
+                hide(d.col);
+                break;
+            case 'filter-col':
+                filter(d.col, d.type);
+                break;
+            case 'copy':
+                copyToClipboard(d.target);
+                break;
+            case 'open-file-select':
+                openFileSelect(d.field);
+                break;
+            case 'close-delete-modal':
+                closeDeleteModal(d.commentId);
+                break;
+            case 'update-url':
+                e.preventDefault();
+                updateURL(d.type, d.value, d.label);
+                break;
+            case 'submit-form':
+                e.preventDefault();
+                var form = document.getElementById(d.formId);
+                if (form) form.submit();
+                break;
+            case 'wizard-navigate':
+                e.preventDefault();
+                wizardNavigateTo(d.url || el.href);
+                break;
+        }
+    });
+
+    document.addEventListener('change', function (e) {
+        var el = e.target.closest && e.target.closest('[data-action-change]');
+        if (!el) return;
+        var d = el.dataset;
+        switch (d.actionChange) {
+            case 'submit-form':
+                if (el.form) el.form.submit();
+                break;
+            case 'file-selected':
+                onFileSelected(el, d.field);
+                break;
+        }
+    });
+
+    // Keyboard activation for non-native controls marked role="button" (a <div>/<span>/<a>
+    // without href). Enter/Space fires the same click-based dispatcher; native <button> and
+    // <a href> elements already activate on Enter/Space themselves.
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+        var el = e.target.closest && e.target.closest('[data-action][role="button"]');
+        if (!el) return;
+        e.preventDefault();
+        el.click();
+    });
 </script>
 {% block scripts %}{% endblock %}
 {% block form_scripts %}{% endblock %}

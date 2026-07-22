@@ -34,7 +34,7 @@
                             <div class="dropdown-content">
                                 {% for option in option_data.fields %}
                                     <a href="#" class="dropdown-item"
-                                       onclick="updateURL('{{ option_type }}', '{{ option.value }}', '{{ option.label }}'); return false;"
+                                       data-action="update-url" data-type="{{ option_type }}" data-value="{{ option.value }}" data-label="{{ option.label }}"
                                        style="{% if option.value == option_data.selected %}font-weight: bold;{% endif %}"
                                     >
                                         {{ option.label }}

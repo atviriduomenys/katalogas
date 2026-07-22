@@ -8,13 +8,13 @@
     {% endif %}<br>
     {{ widget.input_text }}:
 {% endif %}
-<button type="button" id="{{ widget.name }}_button" onclick="openFileSelect('{{widget.name}}')">{{ widget.file_input_text }}</button>
+<button type="button" id="{{ widget.name }}_button" data-action="open-file-select" data-field="{{widget.name}}">{{ widget.file_input_text }}</button>
 <span id="{{ widget.name }}_span"></span>
-<input type="file" name="{{ widget.name }}" onchange="onFileSelected(this, '{{widget.name}}')" style="display: none;" {% include "django/forms/widgets/attrs.html" %}>
+<input type="file" name="{{ widget.name }}" data-action-change="file-selected" data-field="{{widget.name}}" style="display: none;" {% include "django/forms/widgets/attrs.html" %}>
 
 {% block form_scripts %}
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
-        if (django != undefined && django.jQuery != undefined) {
+        if (typeof django !== 'undefined' && django.jQuery != undefined) {
             var $ = django.jQuery;
         }
 

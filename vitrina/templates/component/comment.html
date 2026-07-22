@@ -197,8 +197,8 @@
                                 {% translate "Šis veiksmas negrąžinamas." %}
                             </section>
                             <footer class="modal-card-foot">
-                                <button class="button" onclick="closeDeleteModal('{{ comment.id }}')">{% translate "Atšaukti" %}</button>
-                                <button class="button is-danger delete-confirm"
+                                <button type="button" class="button" data-action="close-delete-modal" data-comment-id="{{ comment.id }}">{% translate "Atšaukti" %}</button>
+                                <button type="button" class="button is-danger delete-confirm"
                                         data-comment-id="{{ comment.id }}">{% translate "Ištrinti" %}</button>
                             </footer>
                         </div>

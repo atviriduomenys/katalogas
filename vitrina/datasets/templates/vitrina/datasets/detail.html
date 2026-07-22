@@ -197,7 +197,7 @@
                                                 {% csrf_token %}
                                                 <button type="submit"
                                                         class="button is-link is-small is-pulled-right"
-                                                        onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
+                                                        data-action="confirm" data-confirm-message="{% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %}"
                                                         id="delete_resource">{% translate "Ištrinti" %}</button>
                                             </form>
                                         {% endif %}
@@ -238,7 +238,7 @@
                                                 {% csrf_token %}
                                                 <button type="submit"
                                                         class="button is-link is-small is-pulled-right"
-                                                        onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
+                                                        data-action="confirm" data-confirm-message="{% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %}"
                                                         id="delete_resource">{% translate "Ištrinti" %}</button>
                                             </form>
                                         {% endif %}
@@ -284,7 +284,7 @@
                                         {% csrf_token %}
                                         <button type="submit"
                                                 class="button is-link is-small is-pulled-right"
-                                                onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
+                                                data-action="confirm" data-confirm-message="{% translate 'Ar jūs tikrai norite ištrinti?' %}"
                                                 id="delete_attribution">{% translate "Ištrinti" %}</button>
                                     </form>
                                 {% endif %}

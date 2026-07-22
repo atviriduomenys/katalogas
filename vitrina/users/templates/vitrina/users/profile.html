@@ -7,8 +7,8 @@
 {% block notification %}
     {% if notification %}
         <div id="top-bar">
-            <p>{% translate "Pranešimo tipas" %}<span class="is-pulled-right message-close-button"
-                                                       onClick="HideMessage()">X</span></p>
+            <p>{% translate "Pranešimo tipas" %}<button type="button" class="is-pulled-right message-close-button"
+                                                       data-action="hide-message">X</button></p>
         </div>
     {% endif %}
 {% endblock %}
@@ -30,12 +30,12 @@
             <div class="tabs">
                 <ul>
                     <li class="format-tab" id="info_tab_id">
-                        <a name="#info" onclick="event.preventDefault(); selectTab('info')">
+                        <a href="#info" data-action="select-tab" data-tab="info">
                             {% translate "Informacija" %}
                         </a>
                     </li>
                     <li class="format-tab" id="sub_tab_id">
-                        <a name="#sub" onclick="event.preventDefault(); selectTab('sub')">
+                        <a href="#sub" data-action="select-tab" data-tab="sub">
                             {% translate "Prenumeratos" %}
                         </a>
                     </li>
@@ -195,11 +195,6 @@
 
 {% block scripts %}
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
-        function HideMessage() {
-            var notificationBar = document.getElementById('top-bar');
-            notificationBar.classList.add('is-hidden');
-        }
-
         $(document).ready(function () {
             selectTab();
             $('.pass-input').hover(function () {

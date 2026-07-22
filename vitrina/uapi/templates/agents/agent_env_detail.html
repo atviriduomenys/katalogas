@@ -128,7 +128,7 @@
 
             <div class="column is-7">
                 <div class="has-background-light is-relative px-4 py-3" style="position: relative;">
-                    <button onclick="copyToClipboard('credentials-text')"
+                    <button data-action="copy" data-target="credentials-text"
                             class="button is-light is-small"
                             style="position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10;">
                         <span class="icon is-small"><i class="fas fa-copy"></i></span>
@@ -175,7 +175,7 @@ scopes =
 
             <div class="column is-7">
                 <div class="has-background-light is-relative px-4 py-3" style="position: relative;">
-                    <button onclick="copyToClipboard('config-text')"
+                    <button data-action="copy" data-target="config-text"
                             class="button is-light is-small"
                             style="position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10;">
                         <span class="icon is-small"><i class="fas fa-copy"></i></span>
@@ -215,7 +215,7 @@ backends:
                         {% if secret %}
                             <code id="api-key-text"
                                   class="has-text-dark is-family-monospace mr-4">{{ secret }}</code>
-                            <button onclick="copyToClipboard('api-key-text')"
+                            <button data-action="copy" data-target="api-key-text"
                                     class="button is-light is-small mt-2-mobile">
                                 <span class="icon is-small"><i class="fas fa-copy"></i></span>
                                 <span>{% translate "Kopijuoti" %}</span>

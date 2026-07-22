@@ -26,9 +26,9 @@
        <input type="file" id="fileInput" style="display:none" />
       {% endif %}
       <p class="control">
-        <a class="button" onclick="downloadData()">
+        <button type="button" class="button" data-action="download-data">
           {% translate "Atsisiųsti" %}
-        </a>
+        </button>
       </p>
       <p class="control">
         <span class="select">
@@ -83,9 +83,9 @@
                         </ul>
 
                         <div class="buttons">
-                            <a class="button is-primary is-small m-t-md is-flex" onclick="select()">
+                            <button type="button" class="button is-primary is-small m-t-md is-flex" data-action="select-rows">
                                 {% translate "Rodyti" %}
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                     <button
                         id="remove_tag_{{ tag }}_id"
                         class="delete is-small"
-                        onclick="removeFilter('{{ tag }}', {{ forloop.counter0 }})"
+                        data-action="remove-filter" data-filter="{{ tag }}" data-index="{{ forloop.counter0 }}"
                         title="{% translate 'Pašalinti filtrą' %}"
                         aria-label="{% translate 'Pašalinti filtrą' %}">
                     </button>
@@ -127,7 +127,7 @@
                                         <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
                                     {% endif %}
                                 </span>
-                                <a class="is-size-7" id="{{ col }}_button_id" onclick="showFilterWindow('{{ col }}')">▼</a>
+                                <a class="is-size-7" id="{{ col }}_button_id" role="button" tabindex="0" data-action="show-filter-window" data-col="{{ col }}" aria-label="{% translate 'Filtruoti' %}" title="{% translate 'Filtruoti' %}">▼</a>
                             </div>
                             <div class="has-text-centered">
                                 <small class="has-text-weight-normal is-italic">
@@ -168,7 +168,7 @@
                                             <span style="flex: auto; margin-bottom: 0.5em;">{% translate "Rūšiuoti" %}</span>
                                             <button id="{{ col }}_order_asc_id"
                                                     class="button is-primary is-small"
-                                                    onclick="orderBy('{{ col }}', false)"
+                                                    data-action="order-by" data-col="{{ col }}" data-order="false"
                                                     title="{% translate 'Rūšiuoti mažėjimo tvarka' %}"
                                                     aria-label="{% translate 'Rūšiuoti mažėjimo tvarka' %}"
                                             >
@@ -176,7 +176,7 @@
                                             </button>
                                             <button id="{{ col }}_order_desc_id"
                                                     class="button is-primary is-small"
-                                                    onclick="orderBy('{{ col }}')"
+                                                    data-action="order-by" data-col="{{ col }}"
                                                     title="{% translate 'Rūšiuoti didėjimo tvarka' %}"
                                                     aria-label="{% translate 'Rūšiuoti didėjimo tvarka' %}"
                                             >
@@ -185,13 +185,13 @@
                                         </div>
                                     </div>
                                     <div class="no-margin-bottom buttons is-right">
-                                        <button id="{{ col }}_hide_id" class="button is-primary is-small is-fixed-length" onclick="hide('{{ col }}')">
+                                        <button id="{{ col }}_hide_id" class="button is-primary is-small is-fixed-length" data-action="hide-col" data-col="{{ col }}">
                                             {% translate "Slėpti" %}
                                         </button>
                                     </div>
                                     {% if prop %}
                                         <div class="buttons is-right">
-                                            <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" onclick="filter('{{ col }}', '{{ prop.metadata.first.type }}')">
+                                            <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" data-action="filter-col" data-col="{{ col }}" data-type="{{ prop.metadata.first.type }}">
                                                 {% translate "Filtruoti" %}
                                             </button>
                                         </div>

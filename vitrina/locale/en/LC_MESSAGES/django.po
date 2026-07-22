@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-21 12:37+0300\n"
+"POT-Creation-Date: 2026-07-21 15:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3614,9 +3614,6 @@ msgstr "The unique codename, which can be used while creating data resources."
 msgid "Redaguokite organizacijos informaciją"
 msgstr "Edit organization information"
 
-msgid "Gali turėti"
-msgstr "Can contain"
-
 msgid "Šioje organizacijoje dar nėra turinio."
 msgstr "This organisation has no content yet."
 
@@ -3922,9 +3919,6 @@ msgid ""
 msgstr ""
 "Entry of the organization's information system metadata according to DCAT-AP-"
 "LT"
-
-msgid "Kūrimo tvarka"
-msgstr "Creation order"
 
 msgid "Suskleisti viską"
 msgstr "Collapse all"

@@ -142,6 +142,17 @@ class OrganizationBaseViewMixin:
         context_data["can_update_organization"] = has_perm(
             self.request.user, Action.UPDATE, Representative, self.organization
         )
+        context_data["is_information_system_administrator"] = (
+            self.request.user.is_authenticated
+            and Representative.objects.filter(
+                user=self.request.user,
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id=self.organization.pk,
+                role=Representative.RESOURCE_MANAGER,
+            )
+            .exclude(deleted=True)
+            .exists()
+        )
         context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         context_data["organization"] = self.organization

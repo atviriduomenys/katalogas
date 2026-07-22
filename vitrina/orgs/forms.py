@@ -267,6 +267,11 @@ class OrganizationUpdateForm(OrganizationBaseForm):
             field.widget.attrs["disabled"] = True
             self.initial["name"] = self.instance.name
 
+            kind_field = self.fields["kind"]
+            kind_field.disabled = True
+            kind_field.widget.attrs["disabled"] = True
+            self.initial["kind"] = self.instance.kind
+
 
 class OrganizationCreateForm(OrganizationBaseForm):
     submit_label = _("Sukurti")

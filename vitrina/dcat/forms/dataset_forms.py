@@ -491,8 +491,8 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
         )
         widgets = {
             "organization": OrganizationSingleWidget,
-            "temporal_start": forms.TextInput(attrs={"type": "date"}),
-            "temporal_end": forms.TextInput(attrs={"type": "date"}),
+            "temporal_start": forms.DateInput(format="%Y-%m-%d", attrs={"placeholder": "yyyy-mm-dd"}),
+            "temporal_end": forms.DateInput(format="%Y-%m-%d", attrs={"placeholder": "yyyy-mm-dd"}),
             "access_rights": Select2Widget,
             "frequency": Select2Widget,
             "languages": Select2MultipleWidget,
@@ -517,6 +517,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
 
         self.fields["tags"].label = _("Raktažodis")
         self.fields["frequency"].label = _("Kaupimo periodiškumas")
+
+        self.fields["temporal_start"].input_formats = ["%Y-%m-%d"]
+        self.fields["temporal_end"].input_formats = ["%Y-%m-%d"]
 
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų skelbėjas")

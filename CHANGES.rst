@@ -63,6 +63,13 @@ https://github.com/atviriduomenys/katalogas/issues/2713
 - Add a "publish" flag to deployment messages: mark which single message is shown on the portal without deleting the older ones, so a message can be kept as a template.
 - Add a deployment message type (informational, warning, critical); each is shown with its own colour, icon and left-border accent.
 
+https://github.com/atviriduomenys/katalogas/issues/2736
+
+- ``Dataset.is_public`` now defaults to ``False``, so the "Duomenų išteklius viešinamas" checkbox is
+  unchecked in all resource creation forms.
+- Access rights default to "CONFIDENTIAL" instead of "PUBLIC" when creating a dataset or a data
+  service.
+
 
 v 1.22.0 (2026-06-30)
 ==================

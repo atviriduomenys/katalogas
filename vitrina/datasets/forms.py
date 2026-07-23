@@ -246,6 +246,12 @@ class BaseResourceForm(TranslatableModelForm):
 
         self._populate_contact_choices()
 
+    def _set_default_access_rights(self) -> None:
+        if self.instance.pk:
+            return
+        if Dataset.CONFIDENTIAL in dict(self.fields["access_rights"].choices):
+            self.fields["access_rights"].initial = Dataset.CONFIDENTIAL
+
     def _populate_contact_choices(self) -> None:
         """Populate contact choices grouped by organization."""
         organization = self.instance.organization or self.organization
@@ -349,8 +355,7 @@ class ServiceResourceForm(BaseResourceForm):
         organization = self.organization if self.organization else self.instance.organization
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=organization)
 
-        if not self.instance.pk:
-            self.fields["access_rights"].initial = Dataset.PUBLIC
+        self._set_default_access_rights()
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
@@ -579,6 +584,8 @@ class DatasetResourceForm(BaseResourceForm):
 
     def __init__(self, request=None, organization=None, *args, **kwargs) -> None:
         super().__init__(request, organization, *args, **kwargs)
+
+        self._set_default_access_rights()
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši")),

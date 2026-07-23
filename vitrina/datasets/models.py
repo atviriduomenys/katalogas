@@ -310,7 +310,7 @@ class Dataset(Resource):
         null=True,
     )
     is_public = models.BooleanField(
-        default=True,
+        default=False,
         verbose_name=_("Duomenų išteklius viešinamas"),
     )
 

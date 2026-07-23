@@ -388,6 +388,9 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         self.fields["landing_page"].label = _("Nukreipimo puslapis")
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
+        if not self.instance.pk:
+            self.fields["access_rights"].initial = Dataset.CONFIDENTIAL
+
         self.helper.layout = Layout(
             Field("codename_preview"),
             Field("name"),
@@ -541,6 +544,8 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
 
         if self.instance.pk:
             self.initial["was_generated_by"] = list(self.instance.was_generated_by.values_list("title", flat=True))
+        else:
+            self.fields["access_rights"].initial = Dataset.CONFIDENTIAL
 
         self.fields["has_quality_annotation"].label = _("Turi kokybės anotaciją")
         self.fields["has_quality_annotation"].help_text = _(

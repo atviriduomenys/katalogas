@@ -342,13 +342,19 @@ _seen_csp_violations: set[tuple[str, str, str]] = set()
 MAX_LOGGED_CSP_VIOLATIONS = 500
 
 
+def _clean_csp_field(value: Any, limit: int = 200) -> str:
+    """Make a browser-supplied report field safe to log: no CR/LF (log-forging) and bounded."""
+    return str(value).replace("\r", " ").replace("\n", " ")[:limit]
+
+
 @csrf_exempt
 @require_POST
 def csp_report_view(request: HttpRequest) -> HttpResponse:
     """Collect Content-Security-Policy violation reports sent by browsers (report-uri).
 
-    Browsers post these without a CSRF token, hence the exemption. The view never raises
-    and always answers 204: a malformed, oversized or unexpected body is simply ignored.
+    Browsers post these without a CSRF token, hence the exemption. For a POST the view
+    never raises and answers 204 — a malformed, oversized or unexpected body is simply
+    ignored. (Non-POST requests get 405 from @require_POST.)
     """
     try:
         payload = json.loads(request.body[:10000].decode("utf-8"))
@@ -359,9 +365,9 @@ def csp_report_view(request: HttpRequest) -> HttpResponse:
     if not isinstance(report, dict):
         return HttpResponse(status=204)
 
-    directive = str(report.get("effective-directive") or report.get("violated-directive") or "?")
-    blocked = str(report.get("blocked-uri") or "?")
-    page = urlsplit(str(report.get("document-uri") or "")).path
+    directive = _clean_csp_field(report.get("effective-directive") or report.get("violated-directive") or "?")
+    blocked = _clean_csp_field(report.get("blocked-uri") or "?")
+    page = _clean_csp_field(urlsplit(str(report.get("document-uri") or "")).path)
 
     key = (directive, blocked, page)
     if key in _seen_csp_violations or len(_seen_csp_violations) >= MAX_LOGGED_CSP_VIOLATIONS:

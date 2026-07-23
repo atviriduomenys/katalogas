@@ -11,9 +11,10 @@
  * .show()) can still reveal elements that start hidden — matching the previous behaviour.
  */
 
-/* Disabled look — applied wherever the .is-disabled marker class is used
-   (previously each such element also carried an inline pointer-events/opacity style). */
-.is-disabled { pointer-events: none; opacity: 0.5; }
+/* Disabled look for buttons/links — replaces the inline pointer-events/opacity style
+   the disabled .button elements used to carry. Scoped to .button so it does not affect
+   other components that use .is-disabled with their own styling (e.g. wizard-picker-card). */
+.button.is-disabled { pointer-events: none; opacity: 0.5; }
 
 /* Display */
 .u-hidden { display: none; }
@@ -37,7 +38,7 @@
 .u-w-10 { width: 10%; }
 .u-w-20 { width: 20%; }
 .u-w-30 { width: 30%; }
-.u-uml-canvas { width: 800px; height: 640px; }
+.u-w-800-h-640 { width: 800px; height: 640px; }
 .u-h-300 { height: 300px; }
 .u-h-400 { height: 400px; }
 .u-maxw-200 { max-width: 200px; }
@@ -66,7 +67,9 @@
 .u-color-dc3545 { color: #dc3545; }
 .u-color-fd7e14 { color: #fd7e14; }
 .u-fs-68 { font-size: 68px; }
+.u-fs-09rem { font-size: 0.9rem; }
 .u-fw-bold { font-weight: bold; }
+.u-fw-500 { font-weight: 500; }
 .u-monospace { font-family: monospace; }
 .u-underline { text-decoration: underline; }
 .u-lh-1 { line-height: 1; }

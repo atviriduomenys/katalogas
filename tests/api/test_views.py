@@ -3033,6 +3033,7 @@ class EdpDcatApRestrictedRdfTests(TestCase):
             title="Restricted Dataset",
             access_rights=Dataset.RESTRICTED,
             status=Dataset.HAS_DATA,
+            is_public=True,
             deleted=None,
             deleted_on=None,
             organization_id=organization.pk,
@@ -3054,7 +3055,9 @@ class EdpDcatApRestrictedRdfTests(TestCase):
         organization = OrganizationFactory()
         Dataset.objects.create(
             title="Public Dataset",
-            access_rights="public",  # Not Dataset.RESTRICTED
+            access_rights=Dataset.PUBLIC,  # Not Dataset.RESTRICTED
+            status=Dataset.HAS_DATA,
+            is_public=True,
             deleted=None,
             deleted_on=None,
             organization_id=organization.pk,
@@ -3070,6 +3073,7 @@ class EdpDcatApPublicRdfTests(TestCase):
             title="Public Dataset",
             access_rights=Dataset.PUBLIC,
             status=Dataset.HAS_DATA,
+            is_public=True,
             deleted=None,
             deleted_on=None,
             organization_id=organization.pk,
@@ -3092,6 +3096,8 @@ class EdpDcatApPublicRdfTests(TestCase):
         Dataset.objects.create(
             title="Restricted Dataset",
             access_rights=Dataset.RESTRICTED,  # Not Dataset.PUBLIC
+            status=Dataset.HAS_DATA,
+            is_public=True,
             deleted=None,
             deleted_on=None,
             organization_id=organization.pk,
@@ -3280,6 +3286,7 @@ def test_edp_dcat_ap_rdf_encodes_tabs_in_rights_statement(app: DjangoTestApp, ac
         title="Dataset with tabs",
         access_rights=access_rights,
         status=Dataset.HAS_DATA,
+        is_public=True,
         deleted=None,
         deleted_on=None,
         organization_id=organization.pk,

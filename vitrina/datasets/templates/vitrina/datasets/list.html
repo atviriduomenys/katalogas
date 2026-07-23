@@ -238,8 +238,7 @@
                                         <span class="tag is-white has-text-dark">
                                             {% translate "Brandos lygis" %}:
                                             {% with level=i.object.get_level|add:"0" %}
-                                                <span class="u-ml-half"
-                                                      class="{% if level and level > 0 %}has-text-warning{% endif %}">
+                                                <span class="u-ml-half{% if level and level > 0 %} has-text-warning{% endif %}">
                                                     {% for i in "12345" %}
                                                         {% if level > 0 and forloop.counter <= level %}
                                                             <i class="fas fa-star"></i>

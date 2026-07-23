@@ -23,7 +23,7 @@ from django.contrib.sitemaps import views
 
 
 from vitrina import settings
-from vitrina.views import home, version_view
+from vitrina.views import home, version_view, csp_report_view
 from vitrina.orgs.admin import site
 from django.views.generic import TemplateView
 from vitrina.sitemaps import DatasetSitemap, RootSitemap, MoreViewSitemap
@@ -65,6 +65,7 @@ urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
     path("accounts/", include("vitrina.viisp.urls")),
     path("_version/", version_view, name="version"),
+    path("csp-report/", csp_report_view, name="csp-report"),
     path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
     path(
         "robots.txt",

@@ -235,3 +235,30 @@ class TestCspScopeMiddleware:
     def test_coordinator_admin_relaxed_to_permissive(self):
         script_src = self._report_only_script_src("/coordinator-admin/foo/")
         assert "'unsafe-inline'" in script_src
+
+
+class TestCspReportEndpoint:
+    """Endpoint that collects browser violation reports while the strict policy is report-only."""
+
+    def test_report_uri_is_configured(self):
+        directives = settings.CONTENT_SECURITY_POLICY_REPORT_ONLY["DIRECTIVES"]
+        assert directives["report-uri"] == ["/csp-report/"]
+
+    @staticmethod
+    def _post(body):
+        from django.test import RequestFactory
+        from vitrina.views import csp_report_view
+
+        request = RequestFactory().post("/csp-report/", data=body, content_type="application/csp-report")
+        return csp_report_view(request)
+
+    def test_accepts_a_violation_report(self):
+        body = (
+            '{"csp-report": {"effective-directive": "script-src", "blocked-uri": "inline",'
+            ' "document-uri": "https://example.lt/page/"}}'
+        )
+        assert self._post(body).status_code == 204
+
+    def test_ignores_a_malformed_body(self):
+        """A public endpoint must never raise on junk input."""
+        assert self._post(b"not json").status_code == 204

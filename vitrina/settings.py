@@ -714,6 +714,10 @@ def _csp_strict_sources(sources, *, keep_unsafe_eval):
 _csp_strict = deepcopy(_csp_enforced)
 _csp_strict["script-src"] = _csp_strict_sources(_csp_enforced["script-src"], keep_unsafe_eval=True)
 _csp_strict["style-src"] = _csp_strict_sources(_csp_enforced["style-src"], keep_unsafe_eval=True)
+# Browsers POST violation reports here so they are collected in the application log
+# instead of only appearing in each visitor's devtools console. `report-uri` is
+# deprecated in favour of `report-to`, but it is what browsers still implement widely.
+_csp_strict["report-uri"] = ["/csp-report/"]
 
 CONTENT_SECURITY_POLICY_REPORT_ONLY = {"DIRECTIVES": _csp_strict}
 # -----------------------------------------------------------------------------------------------

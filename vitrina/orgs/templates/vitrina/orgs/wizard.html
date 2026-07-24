@@ -39,7 +39,7 @@
                             <img src="{{ organization.image.url }}"
                                  alt="{{ organization.title }}"
                                  data-avatar-fallback>
-                            <span class="wizard-org-avatar-letter" style="display:none;">{{ organization.title|first|upper }}</span>
+                            <span class="wizard-org-avatar-letter u-hidden">{{ organization.title|first|upper }}</span>
                         {% else %}
                             <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
                         {% endif %}

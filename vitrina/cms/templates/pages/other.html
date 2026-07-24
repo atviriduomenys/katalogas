@@ -1,12 +1,12 @@
 <h2>{{ title }}</h2>
 {% if items|length > 0 %}
-    <div style="padding-bottom: 30px">
+    <div class="u-pb-30">
         {% for site in items %}
             <div class="row">
                 <div class="cell">
                     {% if site.image %}
                     <a href="{{ site.url }}" target="_blank">
-                        <img style="max-height: 96px;" src="{{ site.image.url }}" alt="{{ site.title }}">
+                        <img class="u-maxh-96" src="{{ site.image.url }}" alt="{{ site.title }}">
                     </a>
                     {% endif %}
                 </div>

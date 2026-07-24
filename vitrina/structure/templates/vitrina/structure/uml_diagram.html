@@ -3,7 +3,7 @@
 {% load comment_tags util_tags %}
 
 {% block current_title %}
-    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <div class="u-flex-between-center-full">
         <span>{% translate "Duomenų ištekliaus struktūros UML diagrama" %}</span>
         {% if versions %}
             {% include "version_picker.html" with url_name="dataset-structure" dataset=dataset versions=versions selected_version=selected_version %}

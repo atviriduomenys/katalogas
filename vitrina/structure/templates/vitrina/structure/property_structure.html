@@ -96,7 +96,7 @@
 
             {% if metadata.status.codename %}
                 {% if metadata.status.codename == "develop" %}
-                    <span class="ml-3 tag" style="background-color: #eaedfa; color: #304cd3;">
+                    <span class="ml-3 tag u-status-develop">
                         {{ metadata.status.name }}
                     </span>
                 {% elif metadata.status.codename == "completed" %}
@@ -104,7 +104,7 @@
                         {{ metadata.status.name }}
                     </span>
                 {% elif metadata.status.codename == "discont" %}
-                   <span class="ml-3 tag" style="background-color: #fff5e5; color: #ffa525;">
+                   <span class="ml-3 tag u-status-discont">
                         {{ metadata.status.name }}
                    </span>
                 {% elif metadata.status.codename == "deprecated" %}
@@ -181,7 +181,6 @@
                     </a>
                 {% else %}
                     <a class="button is-primary is-disabled"
-                       style="pointer-events: none; opacity: 0.5;"
                        aria-disabled="true">
                         {% translate "Redaguoti" %}
                     </a>
@@ -257,8 +256,8 @@
                             <div class="column is-2">
                                 {% if enum_meta.status.codename %}
                                     {% if enum_meta.status.codename == "develop" %}
-                                        <span class="tag has-tooltip"
-                                              data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
+                                        <span class="tag has-tooltip u-status-develop"
+                                              data-tooltip="{% translate 'Būsena' %}">
                                             {{ enum_meta.status.name }}
                                         </span>
                                     {% elif enum_meta.status.codename == "completed" %}
@@ -267,8 +266,8 @@
                                             {{ enum_meta.status.name }}
                                         </span>
                                     {% elif enum_meta.status.codename == "discont" %}
-                                        <span class="tag has-tooltip"
-                                              data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
+                                        <span class="tag has-tooltip u-status-discont"
+                                              data-tooltip="{% translate 'Būsena' %}">
                                             {{ enum_meta.status.name }}
                                         </span>
                                     {% elif enum_meta.status.codename == "deprecated" %}
@@ -323,12 +322,10 @@
                                         </a>
                                     {% else %}
                                         <a class="button is-primary is-small is-disabled"
-                                           style="pointer-events: none; opacity: 0.5;"
                                            aria-disabled="true">
                                             {% translate "Keisti" %}
                                         </a>
                                         <a class="button is-link is-small is-disabled"
-                                           style="pointer-events: none; opacity: 0.5;"
                                            aria-disabled="true">
                                             {% translate "Ištrinti" %}
                                         </a>
@@ -349,7 +346,6 @@
                             </a>
                         {% else %}
                             <a class="button is-primary is-disabled"
-                               style="pointer-events: none; opacity: 0.5;"
                                aria-disabled="true">
                                 {% translate "Nauja reikšmė" %}
                             </a>

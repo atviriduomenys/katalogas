@@ -5,7 +5,7 @@
 <div class="message is-warning">
     <div class="message-body">
         <span>{% translate "Įvyko klaida generuojant diagramą. Susisiekite su administracija." %}</span></br></br>
-        <pre style="border: 1px solid #d0d0d0; border-radius: 4px;"><code>{{ uml_diagram.error_message }}</code></pre>
+        <pre class="u-border-gray"><code>{{ uml_diagram.error_message }}</code></pre>
     </div>
 </div>
 
@@ -90,7 +90,7 @@
 <div id="viewport"{% if expanded %} class="is-expanded"{% endif %} data-expanded="{{ expanded|yesno:'true,false' }}">
     {% if uml_diagram.status != "UP_TO_DATE" %}
         <div class="uml-loader">
-            <progress class="progress is-info is-small" max="100" style="max-width: 200px;"></progress>
+            <progress class="progress is-info is-small u-maxw-200" max="100"></progress>
             <p class="m-t-md">{% translate "Generuojama diagrama..." %}</p>
         </div>
     {% else %}

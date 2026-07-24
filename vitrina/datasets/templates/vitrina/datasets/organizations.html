@@ -28,7 +28,7 @@
             {% for org in organization_data %}
                 <div class="is-flex">
                     <a href="/datasets/?selected_facets=organization_exact%3A{{ org.filter_value }}" id="{{ org.id }}_id">
-                        <strong style="color: black;">{{ org.display_value }}</strong>
+                        <strong class="u-color-black">{{ org.display_value }}</strong>
                     </a>
                     <div class="stays-right">
                         <a href="/datasets/?selected_facets=organization_exact%3A{{ org.filter_value }}">{{ org.count }}</a>

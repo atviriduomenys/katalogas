@@ -1,6 +1,8 @@
 from typing import Type, Any
 from importlib.metadata import version, PackageNotFoundError
 import json
+import logging
+from urllib.parse import urlsplit
 
 from django.core.exceptions import ImproperlyConfigured
 from django.core.paginator import Paginator
@@ -14,6 +16,8 @@ from django.views.generic import TemplateView
 from django.db.models import Count
 from django.views.generic.base import TemplateResponseMixin, ContextMixin
 from django.views.generic.edit import ProcessFormView
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from reversion.models import Version, Revision
 
@@ -327,3 +331,48 @@ def version_view(request):
         app_version = "unknown"
 
     return JsonResponse({"version": app_version})
+
+
+csp_logger = logging.getLogger("vitrina.csp")
+
+# Each unique finding is logged once per process. A report-only rollout on a public site
+# would otherwise repeat the same violation on every page view; the cap also bounds both
+# log volume and memory while the policy runs unattended.
+_seen_csp_violations: set[tuple[str, str, str]] = set()
+MAX_LOGGED_CSP_VIOLATIONS = 500
+
+
+def _clean_csp_field(value: Any, limit: int = 200) -> str:
+    """Make a browser-supplied report field safe to log: no CR/LF (log-forging) and bounded."""
+    return str(value).replace("\r", " ").replace("\n", " ")[:limit]
+
+
+@csrf_exempt
+@require_POST
+def csp_report_view(request: HttpRequest) -> HttpResponse:
+    """Collect Content-Security-Policy violation reports sent by browsers (report-uri).
+
+    Browsers post these without a CSRF token, hence the exemption. For a POST the view
+    never raises and answers 204 — a malformed, oversized or unexpected body is simply
+    ignored. (Non-POST requests get 405 from @require_POST.)
+    """
+    try:
+        payload = json.loads(request.body[:10000].decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return HttpResponse(status=204)
+
+    report = payload.get("csp-report", payload) if isinstance(payload, dict) else None
+    if not isinstance(report, dict):
+        return HttpResponse(status=204)
+
+    directive = _clean_csp_field(report.get("effective-directive") or report.get("violated-directive") or "?")
+    blocked = _clean_csp_field(report.get("blocked-uri") or "?")
+    page = _clean_csp_field(urlsplit(str(report.get("document-uri") or "")).path)
+
+    key = (directive, blocked, page)
+    if key in _seen_csp_violations or len(_seen_csp_violations) >= MAX_LOGGED_CSP_VIOLATIONS:
+        return HttpResponse(status=204)
+
+    _seen_csp_violations.add(key)
+    csp_logger.warning("CSP violation: directive=%s blocked=%s page=%s", directive, blocked, page)
+    return HttpResponse(status=204)

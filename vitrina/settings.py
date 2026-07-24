@@ -186,6 +186,9 @@ SERIALIZATION_MODULES = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "csp.middleware.CSPMiddleware",
+    # Relaxes CSP to permissive for admin / CMS-toolbar surfaces. Must stay right after
+    # CSPMiddleware so its response phase runs before the CSP header is written.
+    "vitrina.middleware.CSPScopeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -670,6 +673,54 @@ CONTENT_SECURITY_POLICY = {
         "form-action": ["'self'"],
     },
 }
+
+# --- Strict (nonce-based) CSP, currently shipped REPORT-ONLY ------------------------------------
+# The block above is the ENFORCED policy and still allows 'unsafe-inline'. Below we derive the
+# target strict policy from it (single source of truth for the host allow-lists) and ship it as
+# Content-Security-Policy-Report-Only: browsers report violations without blocking anything, so we
+# can validate the allow-list in a real environment (the register/reCAPTCHA page, maps, charts,
+# UML/mermaid, CMS, admin, ...) before enforcing.
+#
+# TODO(after report-only validation): promote to enforcement by making the strict directives the
+# value of CONTENT_SECURITY_POLICY and dropping CONTENT_SECURITY_POLICY_REPORT_ONLY. The admin/CMS
+# CSPScopeMiddleware already targets both variants, so no middleware change is needed for the switch.
+from copy import deepcopy  # noqa: E402
+
+from csp.constants import NONCE  # noqa: E402
+
+_csp_enforced = CONTENT_SECURITY_POLICY["DIRECTIVES"]
+
+# Permissive script/style sources (still allow inline) — reused by CSPScopeMiddleware to relax
+# CSP on admin / CMS-toolbar responses.
+CSP_PERMISSIVE_SCRIPT_SRC = list(_csp_enforced["script-src"])
+CSP_PERMISSIVE_STYLE_SRC = list(_csp_enforced["style-src"])
+
+
+def _csp_strict_sources(sources, *, keep_unsafe_eval):
+    # Prepend the nonce sentinel and drop 'unsafe-inline'. Once a nonce is present browsers ignore
+    # 'unsafe-inline' anyway, but we remove it to make the intent explicit. 'unsafe-eval' is kept
+    # for Alpine.js (the org wizard compiles expressions with new Function()); removing it needs
+    # the Alpine CSP build and a mermaid/UML check — deferred.
+    strict = [NONCE]
+    for source in sources:
+        if source == "'unsafe-inline'":
+            continue
+        if source == "'unsafe-eval'" and not keep_unsafe_eval:
+            continue
+        strict.append(source)
+    return strict
+
+
+_csp_strict = deepcopy(_csp_enforced)
+_csp_strict["script-src"] = _csp_strict_sources(_csp_enforced["script-src"], keep_unsafe_eval=True)
+_csp_strict["style-src"] = _csp_strict_sources(_csp_enforced["style-src"], keep_unsafe_eval=True)
+# Browsers POST violation reports here so they are collected in the application log
+# instead of only appearing in each visitor's devtools console. `report-uri` is
+# deprecated in favour of `report-to`, but it is what browsers still implement widely.
+_csp_strict["report-uri"] = ["/csp-report/"]
+
+CONTENT_SECURITY_POLICY_REPORT_ONLY = {"DIRECTIVES": _csp_strict}
+# -----------------------------------------------------------------------------------------------
 
 if env("RECAPTCHA_SILENCE_KEY_ERROR", default=False):
     SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]

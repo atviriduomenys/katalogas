@@ -98,7 +98,7 @@
                                     {% get_geometry_srid prop.metadata.first.type_args as srid %}
                                     {% if srid %}
                                         {% convert_coordinates value srid as value %}
-                                        <div id="map_{{ prop.name }}" style="height: 300px;" data-geometry="{{ value }}"></div>
+                                        <div class="u-h-300" id="map_{{ prop.name }}" data-geometry="{{ value }}"></div>
                                     {% endif %}
                                 </td>
                             {% else %}

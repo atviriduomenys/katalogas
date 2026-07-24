@@ -536,7 +536,7 @@ def get_document_field_title():
     if template:
         return mark_safe(
             f"<span>{_('Prašymas')} *</span>&nbsp;&nbsp;&nbsp;"
-            f"<span style='font-size: 0.9rem; font-weight: 500'>"
+            f"<span class='u-fs-09rem u-fw-500'>"
             f"<a href={template.document.url} download><i class='fa fa-file'></i> {template.text}</a>"
             f"</span>"
         )

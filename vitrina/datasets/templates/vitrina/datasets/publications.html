@@ -28,7 +28,7 @@
                         <div class="is-flex">
                             <a href="/datasets/stats/publication/quarter/{{ y }}?{{ request.GET.urlencode }}"
                                 id="{{ y }}_id">
-                                <strong style="color: black;">
+                                <strong class="u-color-black">
                                     {% if 'Q1' in y %}
                                         I
                                     {% elif 'Q2' in y %}
@@ -63,7 +63,7 @@
                 {% for y, yv in year_stats.items reversed %}
 {#                    {% for m, mv in yv.items reversed %}#}
                         <div class="is-flex">
-                            <strong style="color: black;">
+                            <strong class="u-color-black">
                                 {% if '01' in y|slice:"5:" %}
                                     <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-01-01&date_to={{ y|slice:":4" }}-01-31">
                                         {% translate "Sausis" %}
@@ -156,7 +156,7 @@
                     <div class="is-flex">
                         <a href="/datasets/stats/publication/year/{{ y }}?{{ request.GET.urlencode }}"
                             id="{{ y }}_id">
-                            <strong style="color: black;">{{ y }}</strong>
+                            <strong class="u-color-black">{{ y }}</strong>
                         </a>
                         <div class="stays-right"><a href="/datasets/?date_from={{ y }}-01-01&date_to={{ y }}-12-31">{{ yv }}</a></div>
                     </div>

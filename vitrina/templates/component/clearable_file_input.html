@@ -10,7 +10,7 @@
 {% endif %}
 <button type="button" id="{{ widget.name }}_button" data-action="open-file-select" data-field="{{widget.name}}">{{ widget.file_input_text }}</button>
 <span id="{{ widget.name }}_span"></span>
-<input type="file" name="{{ widget.name }}" data-action-change="file-selected" data-field="{{widget.name}}" style="display: none;" {% include "django/forms/widgets/attrs.html" %}>
+<input class="u-hidden" type="file" name="{{ widget.name }}" data-action-change="file-selected" data-field="{{widget.name}}" {% include "django/forms/widgets/attrs.html" %}>
 
 {% block form_scripts %}
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">

@@ -195,7 +195,7 @@ def main():
                 if not dataset:
                     created = True
                     dataset = Dataset.objects.create(
-                        geoportal_id=dataset_id, published=timezone.now()
+                        geoportal_id=dataset_id, published=timezone.now(), is_public=True
                     )
                 geoportal_dataset_ids.append(dataset.pk)
 

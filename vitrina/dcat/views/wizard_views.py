@@ -19,7 +19,7 @@ from vitrina.dcat.wizard import (
     _build_wizard_tree,
 )
 from vitrina.orgs.models import Organization
-from vitrina.orgs.services import Action, has_perm
+from vitrina.orgs.services import is_organization_resource_manager
 from vitrina.orgs.views import OrganizationBaseViewMixin
 
 
@@ -34,7 +34,7 @@ class OrganizationWizardView(
     organization: Organization
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)
@@ -70,7 +70,7 @@ class OrganizationWizardTreeView(
     template_name = "vitrina/orgs/_wizard_tree_children_fragment.html"
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)
@@ -89,7 +89,7 @@ class OrganizationWizardNodesView(
     View,
 ):
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)
@@ -106,7 +106,7 @@ class OrganizationWizardCreateRedirectView(
     View,
 ):
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)

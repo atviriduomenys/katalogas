@@ -1,13 +1,18 @@
 import pytest
+from django.contrib.admin import AdminSite
 from django.urls import reverse
+from django.utils.html import escape
 from django_webtest import DjangoTestApp
 
+from vitrina.classifiers.admin import GeoportalCategoryAdmin
 from vitrina.classifiers.factories import (
     LicenceFactory,
     FrequencyFactory,
     StatusFactory,
+    CategoryFactory,
+    GeoportalCategoryFactory,
 )
-from vitrina.classifiers.models import Licence, Frequency, Status
+from vitrina.classifiers.models import Licence, Frequency, Status, GeoportalCategory
 from vitrina.users.models import User
 
 
@@ -69,3 +74,17 @@ def test_change_default_status(app: DjangoTestApp):
 
     assert Status.objects.filter(id=default_status.id).values_list("is_default", flat=True)[0] is False
     assert Status.objects.filter(id=another_status.id).values_list("is_default", flat=True)[0] is True
+
+
+@pytest.mark.django_db
+def test_categories_display_escapes_title():
+    xss_payload = "<script>alert('xss')</script>"
+
+    category = CategoryFactory(title=xss_payload)
+    geo = GeoportalCategoryFactory()
+    geo.categories.add(category)
+
+    result = GeoportalCategoryAdmin(GeoportalCategory, AdminSite()).categories_display(geo)
+
+    assert xss_payload not in str(result)
+    assert escape(xss_payload) in str(result)

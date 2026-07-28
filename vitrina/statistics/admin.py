@@ -1,5 +1,7 @@
+from urllib.parse import urlparse
+
 from django.contrib import admin
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html, escape
 from django.utils.translation import gettext_lazy as _
 from parler.admin import TranslatableAdmin
 
@@ -25,11 +27,11 @@ class StatRouteAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
 
     @admin.display(description=_("Nuoroda"))
     def formatted_url(self, obj):
-        if len(obj.url) > 50:
-            url = f"{obj.url[:50]}..."
-        else:
-            url = obj.url
-        return mark_safe(f'<a href="{obj.url}">{url}</a>')
+        parsed = urlparse(obj.url)
+        if parsed.scheme not in ("http", "https"):
+            return escape(obj.url)
+        url = f"{obj.url[:50]}..." if len(obj.url) > 50 else obj.url
+        return format_html('<a href="{}">{}</a>', obj.url, url)
 
 
 admin.site.register(StatRoute, StatRouteAdmin)

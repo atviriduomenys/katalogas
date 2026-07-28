@@ -4,7 +4,7 @@ from django.contrib import admin, messages
 from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import QuerySet
 from django.http import HttpRequest
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from parler.admin import TranslatableAdmin
@@ -31,6 +31,7 @@ from vitrina.classifiers.models import (
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.models import DatasetGroupCategoryUri
+from vitrina.helpers import join_br
 from vitrina.orgs.helpers import get_or_create_parent_org
 from vitrina.orgs.models import Organization
 from vitrina.admin import RevisionCommentVersionAdmin
@@ -215,7 +216,7 @@ class GeoportalCategoryAdmin(RevisionCommentVersionAdmin):
     autocomplete_fields = ["categories"]
 
     def categories_display(self, obj):
-        return mark_safe("<br/>".join([cat.title for cat in obj.categories.all()]))
+        return join_br("{}", ([cat.title] for cat in obj.categories.all()))
 
     categories_display.short_description = _("Kategorijos")
 
@@ -250,19 +251,20 @@ class ConceptSchemaAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
         if processed_concept_uris:
             messages.success(
                 request,
-                mark_safe(
-                    _(
-                        "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}".format(
-                            len(processed_concept_uris), "<br>".join(processed_concept_uris)
-                        )
-                    )
+                format_html(
+                    _("Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"),
+                    len(processed_concept_uris),
+                    join_br("{}", ([uri] for uri in processed_concept_uris)),
                 ),
             )
 
         if errors:
             messages.error(
                 request,
-                mark_safe(_("Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}".format("<br>".join(errors)))),
+                format_html(
+                    _("Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"),
+                    join_br("{}", ([e] for e in errors)),
+                ),
             )
 
 

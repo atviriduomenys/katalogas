@@ -1,5 +1,3 @@
-import json
-
 import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
@@ -70,7 +68,7 @@ def test_dataset_count_bar_chart_includes_future_dated_datasets(app: DjangoTestA
 def test_dataset_count_time_chart_counts_datasets_per_year(app: DjangoTestApp, org_datasets_across_years):
     with freeze_time(FROZEN_NOW):
         resp = app.get(reverse("dataset-stats-organization"), params={"duration": "duration-yearly"})
-    series = json.loads(resp.context["time_chart_data"])
+    series = resp.context["time_chart_data"]
     assert len(series) == 1
     assert {point["x"]: point["y"] for point in series[0]["data"]} == {
         "2019": 0,

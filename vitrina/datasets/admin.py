@@ -37,7 +37,7 @@ from vitrina.datasets.models import (
     MeasurementTitle,
 )
 from vitrina.filters import FormatFilter
-from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_current_domain, join_br
 from vitrina.orgs.models import Representative
 from vitrina.resources.models import FormatName
 from vitrina.structure.services import get_data_from_spinta, to_row
@@ -252,7 +252,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
             "email", flat=True
         )
         if coordinators:
-            return mark_safe("<br/>".join(coordinators))
+            return join_br("{}", ([c] for c in coordinators))
         return "-"
 
     coordinators_display.short_description = _("Koordinatoriai")
@@ -261,7 +261,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
     def managers_display(self, obj: Dataset) -> SafeString | str:
         managers = obj.representatives.filter(role__in=Representative.MANAGER_ROLES).values_list("email", flat=True)
         if managers:
-            return mark_safe("<br/>".join(managers))
+            return join_br("{}", ([m] for m in managers))
         return "-"
 
     managers_display.short_description = _("Tvarkytojai")
@@ -273,7 +273,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
                 "email", flat=True
             )
             if representatives:
-                return mark_safe("<br/>".join(representatives))
+                return join_br("{}", ([r] for r in representatives))
         return "-"
 
     vda_display.short_description = _("VDA tvarkytojai")

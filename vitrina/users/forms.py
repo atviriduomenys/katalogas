@@ -28,7 +28,6 @@ from django.forms import (
     TextInput,
 )
 from django.urls import reverse
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 from django_otp.forms import OTPAuthenticationForm
@@ -39,7 +38,7 @@ from ipware import get_client_ip
 from vitrina import settings
 from vitrina.datasets.models import Dataset
 from vitrina.fields import DisabledCharField
-from vitrina.helpers import email
+from vitrina.helpers import email, join_br
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User, UserEmailDevice
 
@@ -459,15 +458,17 @@ class UserChangeAdminForm(UserChangeForm):
                 self.initial["email_confirmed"] = True
 
             if reps := instance.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization)):
-                organizations_and_roles = []
-                for rep in reps:
-                    organizations_and_roles.append(
-                        f"<a href={reverse('admin:vitrina_orgs_representative_change', args=[rep.pk])}>"
-                        f"{rep.content_object}, {rep.get_role_display().lower()}"
-                        f"</a>"
-                    )
-                organizations_and_roles = "<br/>".join(organizations_and_roles)
-                self.initial["organizations_and_roles"] = mark_safe(organizations_and_roles)
+                self.initial["organizations_and_roles"] = join_br(
+                    '<a href="{}">{}, {}</a>',
+                    (
+                        (
+                            reverse("admin:vitrina_orgs_representative_change", args=[rep.pk]),
+                            rep.content_object,
+                            rep.get_role_display().lower(),
+                        )
+                        for rep in reps
+                    ),
+                )
 
     def clean(self):
         cleaned_data = super().clean()

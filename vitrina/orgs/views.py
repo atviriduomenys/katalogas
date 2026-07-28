@@ -1,4 +1,3 @@
-import json
 import logging
 import secrets
 from datetime import datetime
@@ -472,7 +471,7 @@ class OrganizationManagementsView(OrganizationListView):
 
         context["title"] = self.title
         context["parameter_select_template_name"] = self.parameter_select_template_name
-        context["time_chart_data"] = json.dumps(time_chart_data)
+        context["time_chart_data"] = time_chart_data
         context["bar_chart_data"] = jurisdictions
         context["max_count"] = max_count
 

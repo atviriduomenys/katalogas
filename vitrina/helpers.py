@@ -4,6 +4,7 @@ import datetime
 import calendar
 import logging
 import mimetypes
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Optional, List, Any
 from typing import Type
@@ -25,6 +26,8 @@ from django.core.files import File
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.wsgi import HttpRequest
 from django.core.mail import send_mail
+from django.utils.html import format_html_join
+from django.utils.safestring import mark_safe, SafeString
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
@@ -929,3 +932,7 @@ def _find_information_system_title(dataset: Dataset, language_code: str) -> str 
 def _get_parent_dataset(dataset: Dataset) -> Dataset:
     ancestor = dataset.get_ancestors().select_related("organization").first()
     return ancestor or dataset
+
+
+def join_br(fmt: str, values: Iterable[Sequence[Any]]) -> SafeString:
+    return format_html_join(mark_safe("<br/>"), fmt, values)

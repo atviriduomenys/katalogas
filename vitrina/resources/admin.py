@@ -1,7 +1,7 @@
 from django.contrib import admin
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.helpers import join_br
 from vitrina.resources.forms import FormatAdminForm
 from vitrina.resources.models import (
     DatasetDistribution,
@@ -32,7 +32,7 @@ class GeoportalFormatAdmin(RevisionCommentVersionAdmin):
     )
 
     def values_display(self, obj):
-        return mark_safe("<br/>".join([item.value for item in obj.geoportalformatvalue_set.all()]))
+        return join_br("{}", ([item.value] for item in obj.geoportalformatvalue_set.all()))
 
     values_display.short_description = _("Geoportalo reikšmės")
 

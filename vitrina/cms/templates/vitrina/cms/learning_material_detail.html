@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n util_tags %}
 
 {% block current_title %}{{ object.topic }}{% endblock %}
 
@@ -79,7 +79,7 @@
                             <img src="{{ object.image.url }}" class="image-left newsitem-thumb-image">
                         {% endif %}
                         <br/>
-                        {{ object.description|safe }}
+                        {{ object.description|sanitize }}
                     </div>
 
                     <!-- File Downloads Section -->

@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 import re
 
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.utils.html import format_html
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.helper import FormHelper
@@ -31,7 +32,6 @@ from django.forms import (
 )
 from django.forms.models import ModelChoiceIterator
 from django.urls import resolve, Resolver404
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget, Select2Widget
 
@@ -534,11 +534,14 @@ class RepresentativeCreateForm(ModelForm):
 def get_document_field_title():
     template = Template.objects.filter(identifier=Template.REPRESENTATIVE_REQUEST_ID).first()
     if template:
-        return mark_safe(
-            f"<span>{_('Prašymas')} *</span>&nbsp;&nbsp;&nbsp;"
-            f"<span class='u-fs-09rem u-fw-500'>"
-            f"<a href={template.document.url} download><i class='fa fa-file'></i> {template.text}</a>"
-            f"</span>"
+        return format_html(
+            "<span>{label} *</span>&nbsp;&nbsp;&nbsp;"
+            "<span class='u-fs-09rem u-fw-500'>"
+            "<a href='{url}' download><i class='fa fa-file'></i> {text}</a>"
+            "</span>",
+            label=_("Prašymas"),
+            url=template.document.url,
+            text=template.text,
         )
     else:
         return _("Prašymas") + " *"

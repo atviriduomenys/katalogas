@@ -18,7 +18,6 @@ from django.forms import (
     RadioSelect,
     Textarea,
 )
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from haystack.forms import FacetedSearchForm, SearchForm
 
@@ -233,9 +232,9 @@ class RequestSearchForm(FacetedSearchForm):
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.deadline:
-            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+            return format_html('<a href="{}">{} ({})</a>', obj.get_absolute_url(), obj.title, obj.deadline)
         else:
-            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
+            return format_html('<a href="{}">{}</a>', obj.get_absolute_url(), obj.title)
 
 
 class RequestIncludePlanForm(ModelForm):

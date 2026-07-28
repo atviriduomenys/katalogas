@@ -11,6 +11,7 @@ from django.db.models import Case, When, Q, Count
 from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
 from django.utils.functional import lazy
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _, gettext
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
@@ -38,7 +39,7 @@ from vitrina.users.models import User
 class ModelChoiceTypeField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.description:
-            return mark_safe(f'{obj.name}<br/><p class="help">{obj.description}</p>')
+            return format_html('{}<br/><p class="help">{}</p>', obj.name, obj.description)
         else:
             return obj.name
 

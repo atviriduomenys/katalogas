@@ -168,7 +168,7 @@ def test_publication_stats_snapshot(app: DjangoTestApp, publication_stats_data, 
     key = (indicator, duration)
     assert key in EXPECTED, f"No snapshot for key {key!r}"
     expected = EXPECTED[key]
-    assert json.loads(snapshot["data"]) == json.loads(expected["data"]), f"data mismatch for {key!r}"
+    assert snapshot["data"] == json.loads(expected["data"]), f"data mismatch for {key!r}"
     assert snapshot["year_stats"] == expected["year_stats"], f"year_stats mismatch for {key!r}"
     assert snapshot["max_count"] == expected["max_count"], f"max_count mismatch for {key!r}"
 

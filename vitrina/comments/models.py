@@ -2,8 +2,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
-from django.utils.safestring import mark_safe
-from django.utils.html import escape
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
@@ -134,21 +133,24 @@ class Comment(models.Model):
         elif self.type == self.PROJECT and self.rel_content_object:
             body_text = _(f"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title()} projektą.")
         elif self.type == self.PLAN and self.rel_content_object:
-            body_text = mark_safe(
-                f'Įtraukta į planą <a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'
+            body_text = format_html(
+                'Įtraukta į planą <a href="{url}">{obj}</a>',
+                url=self.rel_content_object.get_absolute_url(),
+                obj=self.rel_content_object,
             )
         elif self.type == self.STRUCTURE:
-            body_text = _("""Struktūros importavimo metu sukurtas sisteminis komentaras.<br>
+            body_text = format_html(
+                _("""Struktūros importavimo metu sukurtas sisteminis komentaras.<br>
                 <b>Objektas:</b> {content_type} | {content_object}<br>
                 <b>Parengimas:</b> <pre><code>{prepare}</code></pre><br>
                 <b>Nuoroda:</b> <a href="{uri}">{uri}</a>
-            """).format(
+            """),
                 content_type=str(self.content_type).split("|")[-1] if self.content_type else None,
                 content_object=self.content_object,
-                prepare=escape(self.prepare),
-                uri=escape(self.uri),
+                prepare=self.prepare,
+                uri=self.uri,
             )
-            return mark_safe(body_text)
+            return body_text
         else:
             body_text = self.body
         return body_text

@@ -33,7 +33,6 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
@@ -402,12 +401,10 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
         return super().change_view(request, object_id, form_url, extra_context)
 
     def response_change(self, request, obj):
-        msg = mark_safe(
-            _(
-                f'Naudotojas "'
-                f'<a href="{reverse("admin:vitrina_users_user_change", args=[obj.pk])}">'
-                f'{str(obj)}</a>" pakeistas sėkmingai.'
-            )
+        msg = format_html(
+            _('Naudotojas "<a href="{url}">{obj}</a>" pakeistas sėkmingai.'),
+            url=reverse("admin:vitrina_users_user_change", args=[obj.pk]),
+            obj=str(obj),
         )
         self.message_user(request, msg, messages.SUCCESS)
         return self.response_post_save_change(request, obj)
@@ -469,20 +466,24 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
         reps = []
         for rep in obj.representative_set.all():
             if isinstance(rep.content_object, Organization):
-                rep_display = _(
-                    f'Organizacijos "{rep.content_object}" {rep.get_role_display().lower()}: '
-                    f'<a href="{reverse("admin:vitrina_orgs_representative_change", args=[rep.pk])}">'
-                    f"{rep.email}</a>"
+                rep_display = format_html(
+                    _('Organizacijos "{obj}" {role}: <a href="{url}">{email}</a>'),
+                    obj=rep.content_object,
+                    role=rep.get_role_display().lower(),
+                    url=reverse("admin:vitrina_orgs_representative_change", args=[rep.pk]),
+                    email=rep.email,
                 )
             else:
-                rep_display = _(
-                    f'Duomenų ištekliaus "{rep.content_object}" {rep.get_role_display().lower()}: '
-                    f'<a href="{reverse("admin:vitrina_orgs_representative_change", args=[rep.pk])}">'
-                    f"{rep.email}</a>"
+                rep_display = format_html(
+                    _('Duomenų ištekliaus "{obj}" {role}: <a href="{url}">{email}</a>'),
+                    obj=rep.content_object,
+                    role=rep.get_role_display().lower(),
+                    url=reverse("admin:vitrina_orgs_representative_change", args=[rep.pk]),
+                    email=rep.email,
                 )
             reps.append(rep_display)
 
-        extra_context = {"protected": [mark_safe(rep) for rep in reps]}
+        extra_context = {"protected": reps}
         return super().delete_view(request, object_id, extra_context)
 
     def delete_model(self, request, obj):
@@ -498,12 +499,10 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
         obj.save()
 
     def response_delete(self, request, obj_display, obj_id):
-        msg = mark_safe(
-            _(
-                f'Naudotojas "'
-                f'<a href="{reverse("admin:vitrina_users_user_change", args=[obj_id])}">'
-                f'{str(obj_display)}</a>" pašalintas sėkmingai.'
-            )
+        msg = format_html(
+            _('Naudotojas "<a href="{url}">{obj}</a>" pašalintas sėkmingai.'),
+            url=reverse("admin:vitrina_users_user_change", args=[obj_id]),
+            obj=str(obj_display),
         )
         self.message_user(request, msg, messages.SUCCESS)
         return redirect(reverse("admin:vitrina_users_user_changelist"))

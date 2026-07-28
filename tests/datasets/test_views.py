@@ -3200,9 +3200,9 @@ class TestDatasetPlans:
         app.set_user(user)
         dataset = DatasetFactory(organization=organization, status=Dataset.PLANNED)
         plan = PlanFactory()
-        PlanDataset.objects.create(dataset=dataset, plan=plan)
+        plan_dataset = PlanDataset.objects.create(dataset=dataset, plan=plan)
 
-        form = app.get(reverse("dataset-plans-delete", args=[plan.pk])).forms["delete-form"]
+        form = app.get(reverse("dataset-plans-delete", args=[plan_dataset.pk])).forms["delete-form"]
         form.submit()
 
         dataset.refresh_from_db()
@@ -3219,9 +3219,9 @@ class TestDatasetPlans:
         plan1 = PlanFactory()
         PlanDataset.objects.create(dataset=dataset, plan=plan1)
         plan2 = PlanFactory()
-        PlanDataset.objects.create(dataset=dataset, plan=plan2)
+        plan_dataset2 = PlanDataset.objects.create(dataset=dataset, plan=plan2)
 
-        form = app.get(reverse("dataset-plans-delete", args=[plan2.pk])).forms["delete-form"]
+        form = app.get(reverse("dataset-plans-delete", args=[plan_dataset2.pk])).forms["delete-form"]
         form.submit()
 
         dataset.refresh_from_db()
@@ -3236,9 +3236,9 @@ class TestDatasetPlans:
         app.set_user(user)
         dataset = DatasetFactory(organization=organization, is_public=False, status=Dataset.UNASSIGNED)
         plan = PlanFactory()
-        PlanDataset.objects.create(dataset=dataset, plan=plan)
+        plan_dataset = PlanDataset.objects.create(dataset=dataset, plan=plan)
 
-        form = app.get(reverse("dataset-plans-delete", args=[plan.pk])).forms["delete-form"]
+        form = app.get(reverse("dataset-plans-delete", args=[plan_dataset.pk])).forms["delete-form"]
         form.submit()
 
         dataset.refresh_from_db()
@@ -3254,9 +3254,9 @@ class TestDatasetPlans:
         dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
         DatasetDistributionFactory(dataset=dataset)
         plan = PlanFactory()
-        PlanDataset.objects.create(dataset=dataset, plan=plan)
+        plan_dataset = PlanDataset.objects.create(dataset=dataset, plan=plan)
 
-        form = app.get(reverse("dataset-plans-delete", args=[plan.pk])).forms["delete-form"]
+        form = app.get(reverse("dataset-plans-delete", args=[plan_dataset.pk])).forms["delete-form"]
         form.submit()
 
         dataset.refresh_from_db()

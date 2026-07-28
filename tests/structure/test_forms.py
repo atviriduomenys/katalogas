@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+from django.utils.html import escape
 from django_webtest import DjangoTestApp
 
 from vitrina.structure.factories import (
@@ -11,6 +12,7 @@ from vitrina.structure.factories import (
     EnumFactory,
     EnumItemFactory,
 )
+from vitrina.structure.forms import ModelChoiceTypeField
 from vitrina.structure.models import Property, Metadata, Model
 from vitrina.users.factories import UserFactory
 
@@ -285,3 +287,26 @@ class TestEnumForm:
         resp = form.submit()
 
         assert resp.url == string_property.get_absolute_url()
+
+
+@pytest.mark.django_db
+class TestModelChoiceTypeFieldXSS:
+    def test_label_from_instance_escapes_name_and_description(self):
+        xss_payload = "<script>alert('xss')</script>"
+
+        version = VersionFactory()
+        model = ModelFactory(dataset=version.dataset, metadata_version=version)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(model),
+            object_id=model.pk,
+            dataset=version.dataset,
+            name=xss_payload,
+            description=xss_payload,
+            metadata_version=version,
+        )
+
+        field = ModelChoiceTypeField(queryset=Model.objects.all())
+        result = field.label_from_instance(model)
+
+        assert xss_payload not in str(result)
+        assert escape(xss_payload) in str(result)

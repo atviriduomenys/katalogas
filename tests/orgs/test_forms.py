@@ -4,6 +4,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils.html import escape
 
 from tests.smart_contracts.conftest import AGREEMENT_ONE_SIGNER
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
@@ -13,10 +14,11 @@ from vitrina.orgs.forms import (
     PartnerRegisterForm,
     RepresentativeUpdateForm,
     RepresentativeCreateForm,
+    get_document_field_title,
 )
 from django_webtest import DjangoTestApp
 
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization, Representative, Template
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -315,3 +317,20 @@ class TestPartnerRegisterForm:
         )
 
         assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+class TestGetDocumentFieldTitleXSS:
+    def test_escapes_template_text(self):
+        xss_payload = "<script>alert('xss')</script>"
+
+        Template.objects.create(
+            identifier=Template.REPRESENTATIVE_REQUEST_ID,
+            text=xss_payload,
+            document=SimpleUploadedFile("test.pdf", b"content"),
+        )
+
+        result = get_document_field_title()
+
+        assert xss_payload not in str(result)
+        assert escape(xss_payload) in str(result)

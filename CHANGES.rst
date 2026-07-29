@@ -16,6 +16,12 @@ https://github.com/atviriduomenys/katalogas/issues/2755
 - Update the webpack build dependencies to clear 11 npm alerts: ``fast-uri``, ``immutable``,
   ``@babel/core``, ``@babel/plugin-transform-modules-systemjs``, ``postcss``, ``picomatch``,
   ``serialize-javascript`` and ``terser-webpack-plugin``. All of them are build-time only.
+- Remove 9 unused Python dependencies: ``c3pyo``, ``django-braces``, ``django-chartjs``,
+  ``django-formtools``, ``asciidoc``, ``pgpy``, ``docx``, ``python-docx`` and ``resource``.
+  The ``resource`` package installs no module at all. The ``docx`` package is abandoned and
+  collides with ``python-docx`` on the ``docx`` module name. ``django-formtools`` stays in the
+  lock file because ``django-cms`` needs it. With their own dependencies, this drops 16 packages.
+- Move ``freezegun`` and ``requests-mock`` to the dev group. The tests are their only user.
 
 https://github.com/atviriduomenys/dvms/issues/515
 

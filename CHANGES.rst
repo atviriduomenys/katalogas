@@ -4,6 +4,16 @@ Changes
 v 1.23.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2755
+
+- Update ``cryptography`` to 48.0.1. The wheels before this version bundle a vulnerable OpenSSL
+  (GHSA-537c-gmf6-5ccf).
+- Update ``setuptools`` to 83.0.0 (GHSA-h35f-9h28-mq5c).
+- Update ``weasyprint`` to 69.0. Version 68.1 and earlier build CSS from an unescaped ``background``
+  attribute (GHSA-jhhc-3hcp-qhm5). The application never turns on ``presentational_hints``, so the
+  defect was not reachable.
+- Update ``pytest`` to 9 and ``pytest-cov`` to 7 (GHSA-6w46-j5rx-g56g).
+
 https://github.com/atviriduomenys/dvms/issues/515
 
 - Replace unsanitized ``mark_safe`` with ``format_html`` in admin display methods and form labels

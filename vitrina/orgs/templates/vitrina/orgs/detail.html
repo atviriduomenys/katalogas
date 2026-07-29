@@ -31,16 +31,19 @@
                 </div>
 				{% if can_update_organization %}
 					<div class="column buttons is-one-third">
-						<a href="{% url 'organization-wizard' pk=organization.id %}"
-						   class="button is-primary is-normal is-fullwidth m-t-md is-size-6-mobile"
-						   id="open_organization_wizard">
-							{% translate "Tvarkyti IS metaduomenis" %}
-						</a>
-						<a href="{%url 'organization-change' pk=organization.id %}"
-						   class="button is-primary is-normal is-fullwidth m-t-md is-size-6-mobile"
-						   id="change_organization">
-							{% translate "Redaguoti organizaciją" %}
-						</a>
+						{% if is_information_system_administrator %}
+							<a href="{% url 'organization-wizard' pk=organization.id %}"
+							   class="button is-primary is-normal is-fullwidth m-t-md is-size-6-mobile"
+							   id="open_organization_wizard">
+								{% translate "Tvarkyti IS metaduomenis" %}
+							</a>
+						{% else %}
+                            <a href="{%url 'organization-change' pk=organization.id %}"
+                               class="button is-primary is-normal is-fullwidth m-t-md is-size-6-mobile"
+                               id="change_organization">
+                                {% translate "Redaguoti organizaciją" %}
+                            </a>
+						{% endif %}
 					</div>
             	{% endif %}
             </div>

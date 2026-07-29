@@ -39,13 +39,13 @@
                             <img src="{{ organization.image.url }}"
                                  alt="{{ organization.title }}"
                                  data-avatar-fallback>
-                            <span class="wizard-org-avatar-letter u-hidden">{{ organization.title|first|upper }}</span>
+                            <span id="wizard-org-avatar-letter" class="wizard-org-avatar-letter u-hidden">{{ organization.title|first|upper }}</span>
                         {% else %}
-                            <span class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
+                            <span id="wizard-org-avatar-letter" class="wizard-org-avatar-letter">{{ organization.title|first|upper }}</span>
                         {% endif %}
                     </div>
                     <div class="wizard-org-info">
-                        <p class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
+                        <p id="wizard-org-name" class="wizard-org-name" title="{{ organization.title }}">{{ organization.title }}</p>
                         <p class="wizard-org-type">{% translate "Organizacija" %}</p>
                     </div>
                 </div>
@@ -68,7 +68,6 @@
                  mode: 'detail',
                  createAttempt: null,
                  treeExpanded: false,
-                 schemaOpen: true,
                  canCreate(type) {
                      return !!(this.selected && this.selected.create_urls && this.selected.create_urls[type]);
                  },
@@ -97,19 +96,6 @@
 
                 {# Left sidebar — tree navigation #}
                 <aside class="column is-one-quarter wizard-sidebar p-4">
-                    <section class="wizard-schema-block">
-                        <button type="button" class="wizard-schema-header"
-                                :aria-expanded="schemaOpen ? 'true' : 'false'"
-                                @click="schemaOpen = !schemaOpen">
-                            <span>{% translate "Kūrimo tvarka" %}</span>
-                            <span class="wizard-tree-expand-icon" :class="schemaOpen ? 'is-open' : ''">
-                                <i class="fas fa-chevron-down fa-xs"></i>
-                            </span>
-                        </button>
-                        <div class="wizard-schema-body" x-show="schemaOpen" x-cloak>
-                            {% include "vitrina/orgs/_wizard_schema_matrix.html" %}
-                        </div>
-                    </section>
                     <ul class="wizard-tree">
                         <li class="wizard-tree-group wizard-tree-group-root">
                             <span aria-hidden="true">{% translate "Organizacija" %}</span>
@@ -142,7 +128,7 @@
                                         <i class="fas fa-chevron-right fa-xs"></i>
                                     {% endif %}
                                 </span>
-                                <span class="wizard-tree-label has-text-dark" title="{{ organization.title }}">
+                                <span id="wizard-tree-root-label" class="wizard-tree-label has-text-dark" title="{{ organization.title }}">
                                     {{ organization.title }}
                                 </span>
                                 <div class="wizard-tree-actions is-flex is-align-items-center">
@@ -275,7 +261,7 @@
                    data-action="wizard-navigate">
                     {% translate "Uždaryti" %}
                 </a>
-                <div class="buttons">
+                <div class="buttons" x-show="mode !== 'create'">
                     <div id="wizard-footer-extra"></div>
                     <button type="button" class="button is-light"
                             id="wizard-cancel-btn"

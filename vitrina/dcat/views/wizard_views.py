@@ -15,12 +15,11 @@ from vitrina.dcat.wizard import (
     WIZARD_NODE_LABELS,
     WIZARD_NODE_ORGANIZATION,
     WIZARD_NODE_DISTRIBUTION,
-    WIZARD_SCHEMA_MATRIX,
     WIZARD_TYPE_TO_SUBCLASS_NAME,
     _build_wizard_tree,
 )
 from vitrina.orgs.models import Organization
-from vitrina.orgs.services import Action, has_perm
+from vitrina.orgs.services import is_organization_resource_manager
 from vitrina.orgs.views import OrganizationBaseViewMixin
 
 
@@ -35,7 +34,7 @@ class OrganizationWizardView(
     organization: Organization
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)
@@ -58,7 +57,6 @@ class OrganizationWizardView(
             for node_type in WIZARD_CREATABLE_TYPES
         }
         context["wizard_creatable_types_json"] = WIZARD_CREATABLE_TYPES
-        context["wizard_schema_matrix"] = WIZARD_SCHEMA_MATRIX
         context["parent_links"].update({None: _("IS metaduomenys")})
         return context
 
@@ -72,7 +70,7 @@ class OrganizationWizardTreeView(
     template_name = "vitrina/orgs/_wizard_tree_children_fragment.html"
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)
@@ -91,7 +89,7 @@ class OrganizationWizardNodesView(
     View,
 ):
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)
@@ -108,7 +106,7 @@ class OrganizationWizardCreateRedirectView(
     View,
 ):
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.organization)
+        return is_organization_resource_manager(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
         return redirect("organization-detail", pk=self.organization.pk)

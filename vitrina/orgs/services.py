@@ -523,6 +523,21 @@ def is_supervisor(user: User, node: Model) -> bool:
     return False
 
 
+def is_organization_resource_manager(user: User, organization: Organization) -> bool:
+    if not user.is_authenticated:
+        return False
+    return (
+        Representative.objects.filter(
+            user=user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization.pk,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        .exclude(deleted=True)
+        .exists()
+    )
+
+
 def is_manager(user: User, node: Model) -> bool:
     if isinstance(node, Organization):
         for rep in user.representative_set.all():

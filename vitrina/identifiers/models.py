@@ -3,11 +3,13 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
+from parler.models import TranslatableModel, TranslatedFields
+
 from vitrina.datasets.models import Dataset
 from vitrina.models import UUIDBaseModel
 
 
-class Agency(UUIDBaseModel):
+class Agency(TranslatableModel, UUIDBaseModel):
     RISR_CODE = "risr"
     PASIS_CODE = "pasis"
 
@@ -38,6 +40,17 @@ class Agency(UUIDBaseModel):
         blank=True,
         help_text=_("Tikrinimo parametrai pagal pasirinktą tipą. Reguliariajai išraiškai - įveskite regex šabloną "),
     )
+    translations = TranslatedFields(
+        identifier_validation_error_message=models.TextField(
+            _("Identifikatoriaus tikrinimo klaidos pranešimas"),
+            null=True,
+            blank=True,
+            help_text=_(
+                "Pranešimas, rodomas naudotojui, kai identifikatorius neatitinka nustatyto šablono. "
+                "Privalomas, kai pasirinkta reguliarioji išraiška."
+            ),
+        ),
+    )
 
     class Meta:
         verbose_name = _("Atstovybė")
@@ -53,6 +66,18 @@ class Agency(UUIDBaseModel):
                     "Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba „parinktys“, "
                     "abu turi būti užpildyti."
                 )
+            )
+
+        if self.identifier_validation_type == self.IdentifierValidationType.REGEXP and not self.safe_translation_getter(
+            "identifier_validation_error_message", any_language=True
+        ):
+            raise ValidationError(
+                {
+                    "identifier_validation_error_message": _(
+                        "Identifikatoriaus tikrinimo klaidos pranešimas privalomas, "
+                        "kai pasirinkta reguliarioji išraiška."
+                    )
+                }
             )
 
 
@@ -102,9 +127,8 @@ class Identifier(UUIDBaseModel):
             return
         is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
         if is_regexp and (pattern := agency.identifier_validation_options) and not re.fullmatch(pattern, self.notation):
-            raise ValidationError(
-                {"notation": _("Žymėjimas turi atitikti šabloną: %(pattern)s") % {"pattern": pattern}}
-            )
+            message = agency.safe_translation_getter("identifier_validation_error_message", any_language=True)
+            raise ValidationError({"notation": message})
 
     def save(self, *args, **kwargs):
         self.full_clean()  # ensures clean() is called

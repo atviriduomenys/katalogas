@@ -28,6 +28,12 @@ https://github.com/atviriduomenys/dvms/issues/515
 - Clean up README.rst
 - Fix webpack bundle output path to ``vitrina/static`` (was writing to an unserved root ``static/``).
 
+<No ticket>
+Adjustments to the DCAT forms (through the wizard);
+- New DCAT form button and access forbidden, depending on the role;
+- Adjustments to DCAT displays (separation of read-only fields, hidden elements, adjustments, etc.);
+- Bug fixes;
+
 
 https://github.com/atviriduomenys/katalogas/issues/2716
 

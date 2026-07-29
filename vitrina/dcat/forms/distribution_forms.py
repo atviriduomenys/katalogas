@@ -73,9 +73,12 @@ class DatasetDistributionForm(TranslatableModelForm):
             "packaging_format": Select2Widget,
             "checksum_algorithm": Select2Widget,
             "download_url": URLInput,
+            # Change input type to text because browsers silently clear unparseable <input type="number">
+            # values to "" before submit, so IntegerField's server-side validation never sees the bad input.
+            "size": forms.TextInput,
             "status": Select2Widget,
-            "issued": forms.TextInput(attrs={"type": "date"}),
-            "date_modified": forms.TextInput(attrs={"type": "date"}),
+            "issued": forms.DateInput(format="%Y-%m-%d", attrs={"placeholder": "yyyy-mm-dd"}),
+            "date_modified": forms.DateInput(format="%Y-%m-%d", attrs={"placeholder": "yyyy-mm-dd"}),
             "languages": Select2MultipleWidget,
             "conforms_to": Select2MultipleWidget,
         }
@@ -119,6 +122,9 @@ class DatasetDistributionForm(TranslatableModelForm):
             Field("status"),
             Field("temporal_resolution"),
         )
+
+        self.fields["issued"].input_formats = ["%Y-%m-%d"]
+        self.fields["date_modified"].input_formats = ["%Y-%m-%d"]
 
         self.fields["access_url"].required = True
         self.fields["access_url"].label = _("Prieigos URL")

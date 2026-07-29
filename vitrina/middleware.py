@@ -95,7 +95,7 @@ class NoCacheMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
-        if getattr(request, 'user', None) and request.user.is_authenticated:
+        if getattr(request, "user", None) and request.user.is_authenticated:
             response["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response["Pragma"] = "no-cache"
         return response

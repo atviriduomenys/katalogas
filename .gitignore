@@ -31,3 +31,9 @@
 # Directories needed to run scripts
 /scripts/files_to_replace/
 /scripts/replaced_files/
+
+# pytest-profiling
+/prof/
+pytest.prof
+/.coverage
+/dump.rdb

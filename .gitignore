@@ -31,3 +31,8 @@
 # Directories needed to run scripts
 /scripts/files_to_replace/
 /scripts/replaced_files/
+
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/

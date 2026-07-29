@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "overrides": {
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",

@@ -13,6 +13,9 @@ https://github.com/atviriduomenys/katalogas/issues/2755
   attribute (GHSA-jhhc-3hcp-qhm5). The application never turns on ``presentational_hints``, so the
   defect was not reachable.
 - Update ``pytest`` to 9 and ``pytest-cov`` to 7 (GHSA-6w46-j5rx-g56g).
+- Update the webpack build dependencies to clear 11 npm alerts: ``fast-uri``, ``immutable``,
+  ``@babel/core``, ``@babel/plugin-transform-modules-systemjs``, ``postcss``, ``picomatch``,
+  ``serialize-javascript`` and ``terser-webpack-plugin``. All of them are build-time only.
 
 https://github.com/atviriduomenys/dvms/issues/515
 

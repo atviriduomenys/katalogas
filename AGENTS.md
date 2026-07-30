@@ -94,9 +94,22 @@ Nix dev shell available (`nix develop`) — provides Python, Poetry, Node, and a
 
 ## Code quality
 
-- `poetry run ruff check .` — lint
-- `poetry run ruff format --diff --check .` — format check
-- `poetry run ruff format .` — auto-format
+- Always run both checks before committing:
+
+### Check (must pass)
+
+```sh
+poetry run ruff check .
+poetry run ruff format --diff --check .
+```
+
+### Auto-fix
+
+```sh
+poetry run ruff check . --fix
+poetry run ruff format .
+```
+
 - No typechecker configured
 
 ## GitHub

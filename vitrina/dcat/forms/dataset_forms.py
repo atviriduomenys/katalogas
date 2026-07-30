@@ -28,6 +28,7 @@ from vitrina.identifiers.models import Agency
 from vitrina.classifiers.models import FormFieldText
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.dcat.widgets import (
+    AccessRightsSelectWidget,
     CategoryMultipleWidget,
     DatasetMultipleWidget,
     OrganizationMultipleWidget,
@@ -176,6 +177,11 @@ class BaseResourceForm(TranslatableModelForm):
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
         self.helper.form_tag = False
+        # Select2 is loaded once, upfront, in the wizard shell (wizard.html) — this form is
+        # only ever rendered inside its HTMX-swapped fragments, so re-including form.media
+        # on every swap is both redundant and, since HTMX re-executes it asynchronously,
+        # prone to silently resetting Select2 widgets configured with custom JS options.
+        self.helper.include_media = False
         self.organization = organization
         self.codename_prefix = ""
 
@@ -341,7 +347,7 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             "endpoint_type": Select2Widget,
             "endpoint_description_type": Select2Widget,
             "organization": OrganizationSingleWidget,
-            "access_rights": Select2Widget,
+            "access_rights": AccessRightsSelectWidget,
             "follows": Select2MultipleWidget,
             "license": Select2Widget,
             "service_type": Select2MultipleWidget,
@@ -493,7 +499,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
             "organization": OrganizationSingleWidget,
             "temporal_start": forms.DateInput(format="%Y-%m-%d", attrs={"placeholder": "yyyy-mm-dd"}),
             "temporal_end": forms.DateInput(format="%Y-%m-%d", attrs={"placeholder": "yyyy-mm-dd"}),
-            "access_rights": Select2Widget,
+            "access_rights": AccessRightsSelectWidget,
             "frequency": Select2Widget,
             "languages": Select2MultipleWidget,
             "provenance": Select2MultipleWidget,
@@ -819,6 +825,7 @@ class InformationSystemRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
+        self.helper.include_media = False
         apply_dynamic_help_texts(self, FormFieldText.DCAT_IS_RELATIONSHIPS)
 
 
@@ -840,6 +847,7 @@ class ServiceRelationshipForm(forms.Form):
             )
         self.helper = FormHelper()
         self.helper.form_tag = False
+        self.helper.include_media = False
         apply_dynamic_help_texts(self, FormFieldText.DCAT_SERVICE_RELATIONSHIPS)
 
 
@@ -860,6 +868,7 @@ class DatasetRelationshipForm(forms.Form):
             ).values_list("organization_id", flat=True)
         self.helper = FormHelper()
         self.helper.form_tag = False
+        self.helper.include_media = False
         apply_dynamic_help_texts(self, FormFieldText.DCAT_DATASET_RELATIONSHIPS)
 
 
@@ -898,3 +907,4 @@ class ISPublicServiceRelationshipForm(forms.Form):
             self.initial["produces_catalogs"] = produced.filter(subclass__name=DCATResourceSubclass.CATALOG)
         self.helper = FormHelper()
         self.helper.form_tag = False
+        self.helper.include_media = False

@@ -365,6 +365,72 @@
     margin-top: 0.25rem;
     line-height: 1.4;
 }
+
+/* ── Prieigos teisės (access_rights): icon + title + description per option ── */
+.access-rights-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.access-rights-option__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 10px;
+    background: #eaf1f7;
+    flex: 0 0 auto;
+}
+.access-rights-option__icon img {
+    width: 1.375rem;
+    height: 1.375rem;
+    object-fit: contain;
+}
+/* Per-value icon background tints, matching each icon's own color. */
+.access-rights-option--public .access-rights-option__icon { background: #dcf1da; }
+.access-rights-option--restricted .access-rights-option__icon { background: #fcecc0; }
+.access-rights-option--non_public .access-rights-option__icon { background: #e1eaf7; }
+.access-rights-option--confidential .access-rights-option__icon { background: #fbe0dd; }
+/* Closed selection box only: reserve room so longer descriptions wrap before
+   reaching the clear (x) button (right: 80px) and chevron (right: 0.25rem). */
+#id_access_rights + .select2-container .select2-selection--single .access-rights-option {
+    padding-right: 6rem;
+}
+.access-rights-option__title {
+    font-weight: 600;
+    color: #375677;
+}
+.access-rights-option__description {
+    font-size: 0.8125rem;
+    color: #9aabb4;
+    line-height: 1.3;
+}
+.select2-results__option .access-rights-option {
+    padding: 0.4rem 0.25rem;
+}
+/* Closed selection box: its own bordered card, unlike the flush style other
+   Select2 fields use, to fit the two-line icon/title/description layout. Also
+   grow the outer bulma .select wrapper itself — otherwise it keeps its default
+   single-line height and the chevron (::after, positioned via top: 50% against
+   this wrapper) ends up centered against the wrong, shorter box. */
+.select:has(#id_access_rights) {
+    height: auto;
+}
+#id_access_rights + .select2-container .select2-selection--single {
+    height: auto;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ccdae4;
+    border-radius: 12px;
+    background: #fff;
+}
+#id_access_rights + .select2-container .select2-selection--single .select2-selection__rendered {
+    padding-left: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
 .wizard-help-popup {
     position: relative;
     display: inline-flex;
@@ -764,9 +830,6 @@ div.select, div.select select, .select2.select2-container {
 .select2-dropdown {
     border-color: #ccdae4;
     z-index: 10000 !important;
-}
-.select2-dropdown--below {
-    margin-top: 14px;
 }
 .select2-dropdown--above {
     margin-bottom: 14px;

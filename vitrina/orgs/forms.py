@@ -212,6 +212,11 @@ class OrganizationBaseForm(ModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "organization-form"
+        # Outside the wizard this form renders via base_form.html, which already includes
+        # form.media explicitly; inside the wizard it's swapped in via HTMX, where Select2 is
+        # loaded once upfront (see wizard.html) — re-including form.media per swap there is
+        # redundant and, since HTMX re-executes it asynchronously, unsafe.
+        self.helper.include_media = False
         self.fields["kind"].choices = get_kind_choices(
             user=user, organization=self.instance if getattr(self.instance, "pk", None) else None
         )

@@ -5,6 +5,12 @@
 {% block current_title %}{% translate "IS metaduomenys" %}{% endblock %}
 
 {% block scripts %}
+    {# Loads Select2 and Tagulous once here, rather than relying on {% crispy form %}'s form.media injection (see BaseResourceForm.include_media). #}
+    <script src="{% static 'admin/js/vendor/select2/select2.full.min.js' %}" defer></script>
+    <script src="{% static 'admin/js/vendor/select2/i18n/lt.js' %}" defer></script>
+    <script src="{% static 'django_select2/django_select2.js' %}" defer></script>
+    <script src="{% static 'tagulous/tagulous.js' %}" defer></script>
+    <script src="{% static 'tagulous/adaptor/select2-4.js' %}" defer></script>
     <script src="{% static 'js/wizard.js' %}" defer></script>
 {% endblock %}
 
@@ -294,6 +300,18 @@
         }
         window.addEventListener('load', applyToolbarOffset);
 
+        // Select2 dropdowns are reparented here (a direct child of body, escaping the
+        // wizard's own overflow:hidden ancestors) rather than to body itself. Select2's own
+        // positioning math subtracts the dropdown parent's page offset assuming that parent
+        // is a CSS positioning context — body is position:static, so when the CMS toolbar
+        // pushes body down via margin-top, that subtraction goes wrong and every dropdown on
+        // this page opens with a gap equal to the toolbar's height. position:relative here
+        // fixes the math without touching body's positioning sitewide.
+        var wizardSelect2Anchor = document.createElement('div');
+        wizardSelect2Anchor.id = 'wizard-select2-anchor';
+        wizardSelect2Anchor.style.cssText = 'position: relative; height: 0;';
+        document.body.appendChild(wizardSelect2Anchor);
+
         // Org avatar image fallback (former inline onerror): on load failure hide the
         // image and reveal the letter placeholder. Also covers images that already failed
         // before this script ran (error event does not bubble, so it can't be delegated).
@@ -321,6 +339,22 @@
         function _setDirty() {
             if (_wizardInitializing) return;
             window.wizardFormDirty = true;
+        }
+
+        // Renders icon + title + description for Select2 options carrying a data-icon
+        // attribute; every other Select2 field falls back to the default plain-text rendering.
+        function formatSelect2Option(state) {
+            var icon = state.element && $(state.element).data('icon');
+            if (!icon) return state.text;
+            var description = $(state.element).data('description');
+            var modifier = 'access-rights-option--' + String(state.id).toLowerCase();
+            return $('<div class="access-rights-option">').addClass(modifier).append(
+                $('<span class="access-rights-option__icon">').append($('<img>').attr({src: icon, alt: ''})),
+                $('<div class="access-rights-option__body">').append(
+                    $('<div class="access-rights-option__title">').text(state.text),
+                    $('<div class="access-rights-option__description">').text(description || '')
+                )
+            );
         }
 
         function wizardNavigateTo(url) {
@@ -420,7 +454,15 @@
             }
         }, true);
 
-        document.body.addEventListener('htmx:afterSwap', function(e) {
+        // Bound to htmx:afterSettle (not afterSwap): every field on this page keeps the
+        // same id across swaps (Django renders the same field ids each time), so htmx's
+        // built-in CSS-transition support treats the old and new content as "the same"
+        // element and defers applying its class attribute until settling finishes — to
+        // let a CSS transition play between the old and new class state. If we ran this
+        // on afterSwap, that deferred class assignment would fire after us and silently
+        // wipe out the select2-hidden-accessible class Select2 just added, undoing our
+        // init a few hundred ms later. Waiting for afterSettle lets our init run last.
+        document.body.addEventListener('htmx:afterSettle', function(e) {
             // Tree refresh: re-expand the ancestor chain + refresh Alpine nodes dict
             if (e.detail.target.classList && e.detail.target.classList.contains('wizard-tree-children')) {
                 fetch('{% url "organization-wizard-nodes" pk=organization.pk %}')
@@ -457,8 +499,33 @@
                 var target = e.detail.target;
                 $(target).find('.django-select2').not('[name*=__prefix__]').each(function() {
                     if ($(this).data('select2')) { $(this).select2('destroy'); }
-                    $(this).djangoSelect2({ width: '100%', dropdownParent: $('body') });
+                    $(this).djangoSelect2({
+                        width: '100%',
+                        dropdownParent: $('#wizard-select2-anchor'),
+                        templateResult: formatSelect2Option,
+                        templateSelection: formatSelect2Option
+                    });
                 });
+                // Tagulous's own adapter has no separate reinit hook of its own — it relies
+                // on its script re-executing on every swap to pick up new tag fields, which
+                // no longer happens now that form.media isn't re-embedded. Call it directly,
+                // matching the selector its own adapter uses (see tagulous/adaptor/select2-4.js).
+                if (window.Tagulous) {
+                    var $tagInputs = $(target).find('input[data-tagulous]').not('[id*=-__prefix__-]');
+                    Tagulous.select2($tagInputs, true);
+                    // Tagulous's apply_select2() never sets dropdownParent, so each tag field
+                    // it creates falls back to Select2's own default (document.body) — the same
+                    // body-offset bug fixed above for regular Select2 fields, just hit through a
+                    // separate init path. Re-init with the same options, adding our anchor.
+                    $tagInputs.each(function() {
+                        var $tagSelect = $(this).next('select');
+                        if ($tagSelect.length && $tagSelect.data('select2')) {
+                            var tagOptions = $tagSelect.data('select2').options.options;
+                            $tagSelect.select2('destroy');
+                            $tagSelect.select2($.extend({}, tagOptions, { dropdownParent: $('#wizard-select2-anchor') }));
+                        }
+                    });
+                }
                 // Hold the initializing flag for 200 ms to cover any async events fired
                 // during Select2 setup (AJAX label fetching, search-input focus, etc.).
                 setTimeout(function() {

@@ -91,6 +91,10 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
+        # Only ever rendered inside the wizard's HTMX-swapped fragments, which already load
+        # Select2 once upfront (see wizard.html) — see BaseResourceForm in dataset_forms.py
+        # for why re-including form.media per swap is both redundant and unsafe here.
+        self.helper.include_media = False
         self.helper.layout = Layout(
             Field("name"),
             Field("access_url"),

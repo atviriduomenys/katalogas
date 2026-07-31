@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from crispy_forms.helper import FormHelper
@@ -36,6 +37,14 @@ from vitrina.dcat.widgets import (
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
+
+
+def access_rights_field_layout(form: forms.Form) -> Field:
+    current_value = form["access_rights"].value() or ""
+    descriptions = {key: str(value) for key, value in Dataset.ACCESS_RIGHTS_DESCRIPTIONS.items()}
+    form.access_rights_description_text = descriptions.get(current_value, "")
+    form.access_rights_descriptions_json = json.dumps(descriptions)
+    return Field("access_rights", template="vitrina/dcat/_access_rights_field.html")
 
 
 class ApplicableLegislationFormMixin(forms.Form):
@@ -406,7 +415,7 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             Field("tags"),
             Field("organization"),
             Field("category"),
-            Field("access_rights"),
+            access_rights_field_layout(self),
             Field("conforms_to"),
             Field("description"),
             Field("follows"),
@@ -571,7 +580,7 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Data
                 Field("temporal_end"),
             ),
             Field("category"),
-            Field("access_rights"),
+            access_rights_field_layout(self),
             Field("conforms_to"),
             Field("creator"),
             Field("documentation"),

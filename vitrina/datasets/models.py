@@ -218,6 +218,12 @@ class Dataset(Resource):
         NON_PUBLIC: _("Nevieši"),
         CONFIDENTIAL: _("Konfidencialūs"),
     }
+    ACCESS_RIGHTS_DESCRIPTIONS = {
+        PUBLIC: _("Metaduomenys publikuojami viešai visiems vartotojams."),
+        RESTRICTED: _("Metaduomenys publikuojami viešai visiems vartotojams."),
+        NON_PUBLIC: _("Metaduomenys publikuojami tik visiems registruotiems viešojo sektoriaus duomenų tvarkytojams."),
+        CONFIDENTIAL: _("Metaduomenys publikuojami tik institucijos metaduomenų tvarkytojui."),
+    }
 
     API_ORIGIN = "api"
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-21 15:50+0300\n"
+"POT-Creation-Date: 2026-07-31 09:57+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +58,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -111,11 +114,9 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -344,27 +345,21 @@ msgstr "Spatial coverage"
 msgid "Teritorinės aprėptys"
 msgstr "Spatial coverages"
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -1189,6 +1184,17 @@ msgstr "Non Public"
 msgid "Konfidencialūs"
 msgstr "Confidential"
 
+msgid "Metaduomenys publikuojami viešai visiems vartotojams."
+msgstr "Metadata is published publicly for all users."
+
+msgid ""
+"Metaduomenys publikuojami tik visiems registruotiems viešojo sektoriaus "
+"duomenų tvarkytojams."
+msgstr "Metadata is published only for all registered public sector data publishers."
+
+msgid "Metaduomenys publikuojami tik institucijos metaduomenų tvarkytojui."
+msgstr "Metadata is published only to the institution's metadata publisher."
+
 msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
 msgstr "A name given to the record. Corresponds to dct:title."
 
@@ -2003,9 +2009,6 @@ msgstr "Delete"
 
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
-
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
 
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
@@ -3324,8 +3327,10 @@ msgstr "Reject"
 msgid "Veiksmai"
 msgstr "Action"
 
-msgid "Duomenų teikėjo \""
-msgstr "Data providers"
+#, python-brace-format
+msgid ""
+"Duomenų teikėjo \"<a href=\"{url}\">{obj}</a>\" prašymas pakeistas sėkmingai."
+msgstr "Data provider's \"<a href=\"{url}\">{obj}</a>\" request has been changed successfully."
 
 msgid "Šablonas pakeistas sėkmingai."
 msgstr "Password was changed successfully"
@@ -6131,6 +6136,9 @@ msgstr "Show"
 msgid "Pašalinti filtrą"
 msgstr "Delete filter"
 
+msgid "Filtruoti"
+msgstr "Filter"
+
 msgid "Rūšiavimo veiksmas"
 msgstr "Sort action"
 
@@ -6148,9 +6156,6 @@ msgstr "Sort ascending"
 
 msgid "Slėpti"
 msgstr "Hide"
-
-msgid "Filtruoti"
-msgstr "Filter"
 
 msgid "Duomenų laukai"
 msgstr "Properties"
@@ -7191,8 +7196,21 @@ msgstr "Members"
 msgid "Redaguoti naudotoją"
 msgstr "Edit user"
 
-msgid "Naudotojas \""
-msgstr "User"
+#, python-brace-format
+msgid "Naudotojas \"<a href=\"{url}\">{obj}</a>\" pakeistas sėkmingai."
+msgstr "User \"<a href=\"{url}\">{obj}</a>\" changed successfully."
+
+#, python-brace-format
+msgid "Organizacijos \"{obj}\" {role}: <a href=\"{url}\">{email}</a>"
+msgstr "Organization's \"{obj}\" {role}: <a href=\"{url}\">{email}</a>"
+
+#, python-brace-format
+msgid "Duomenų ištekliaus \"{obj}\" {role}: <a href=\"{url}\">{email}</a>"
+msgstr "Resource \"{obj}\" {role}: <a href=\"{url}\">{email}</a>"
+
+#, python-brace-format
+msgid "Naudotojas \"<a href=\"{url}\">{obj}</a>\" pašalintas sėkmingai."
+msgstr "User \"<a href=\"{url}\">{obj}</a>\" deleted successfully."
 
 msgid "Vienkartinis prisijungimo kodas"
 msgstr "Single use login code"

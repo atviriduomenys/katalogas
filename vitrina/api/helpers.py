@@ -40,7 +40,8 @@ def _get_org_for_rdf(org: Organization | None) -> dict | None:
     }
 
 
-def get_datasets_for_rdf(qs):
+def get_datasets_for_rdf(qs, only_link_rendered_datasets: bool = False):
+    rendered_dataset_ids = set(qs.values_list("pk", flat=True)) if only_link_rendered_datasets else None
     datasets = (
         qs.select_related("organization")
         .prefetch_related("category")
@@ -50,6 +51,7 @@ def get_datasets_for_rdf(qs):
         .order_by("published")
     )
     for dataset in datasets:
+        service_relations = dataset.related_datasets.filter(relation__name=Relation.SERVICE).select_related("dataset")
         distributions = []
         if not dataset.service:
             distributions = [
@@ -96,7 +98,8 @@ def get_datasets_for_rdf(qs):
             "endpoint_description_type": dataset.endpoint_description_type,
             "related_datasets": (
                 _get_rel_dataset(relation)
-                for relation in dataset.related_datasets.filter(relation__name=Relation.SERVICE)
+                for relation in service_relations
+                if rendered_dataset_ids is None or relation.dataset_id in rendered_dataset_ids
             ),
             "access_rights": dataset.access_rights,
             "subclass": dataset.subclass,
@@ -108,10 +111,12 @@ def _encode_xml_control_chars(content: str) -> str:
     return content.replace("\t", "&#x9;")
 
 
-def render_rdf_response(request: HttpRequest, datasets: QuerySet[Dataset]) -> HttpResponse:
+def render_rdf_response(
+    request: HttpRequest, datasets: QuerySet[Dataset], only_link_rendered_datasets: bool = False
+) -> HttpResponse:
     content = render_to_string(
         DCAT_AP_RDF_TEMPLATE_NAME,
-        {"datasets": get_datasets_for_rdf(datasets)},
+        {"datasets": get_datasets_for_rdf(datasets, only_link_rendered_datasets=only_link_rendered_datasets)},
         request=request,
     )
     content = _encode_xml_control_chars(content).lstrip()

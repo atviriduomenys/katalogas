@@ -4843,6 +4843,18 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     )
 
 
+def test_dataset_rdf_download__data_service_links_non_public_served_dataset(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    service = DatasetServiceFactory(organization=organization)
+    non_public = DatasetFactory(organization=organization, is_public=False)
+    DatasetRelationFactory(relation=RelationFactory(name=Relation.SERVICE), part_of=service, dataset=non_public)
+
+    res = app.get(reverse("dataset-rdf-download", args=[service.pk]))
+
+    assert res.status_code == 200
+    assert f'<dcat:Dataset rdf:about="http://localhost/datasets/{non_public.pk}/" />' in res.text
+
+
 class TestRemoveRequestView:
     def test_delete_dataset_comments_and_related_request_object(self, app: DjangoTestApp) -> None:
         user = UserFactory(is_staff=True)

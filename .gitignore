@@ -37,3 +37,8 @@
 pytest.prof
 /.coverage
 /dump.rdb
+
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/

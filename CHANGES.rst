@@ -1,8 +1,31 @@
 Changes
 #######
 
-v 1.23.0 (current)
+v 1.24.0 (current)
 ==================
+
+
+v 1.23.0 (2026-08-03)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2755
+
+- Update ``cryptography`` to 48.0.1. The wheels before this version bundle a vulnerable OpenSSL
+  (GHSA-537c-gmf6-5ccf).
+- Update ``setuptools`` to 83.0.0 (GHSA-h35f-9h28-mq5c).
+- Update ``weasyprint`` to 69.0. Version 68.1 and earlier build CSS from an unescaped ``background``
+  attribute (GHSA-jhhc-3hcp-qhm5). The application never turns on ``presentational_hints``, so the
+  defect was not reachable.
+- Update ``pytest`` to 9 and ``pytest-cov`` to 7 (GHSA-6w46-j5rx-g56g).
+- Update the webpack build dependencies to clear 11 npm alerts: ``fast-uri``, ``immutable``,
+  ``@babel/core``, ``@babel/plugin-transform-modules-systemjs``, ``postcss``, ``picomatch``,
+  ``serialize-javascript`` and ``terser-webpack-plugin``. All of them are build-time only.
+- Remove 9 unused Python dependencies: ``c3pyo``, ``django-braces``, ``django-chartjs``,
+  ``django-formtools``, ``asciidoc``, ``pgpy``, ``docx``, ``python-docx`` and ``resource``.
+  The ``resource`` package installs no module at all. The ``docx`` package is abandoned and
+  collides with ``python-docx`` on the ``docx`` module name. ``django-formtools`` stays in the
+  lock file because ``django-cms`` needs it. With their own dependencies, this drops 16 packages.
+- Move ``freezegun`` and ``requests-mock`` to the dev group. The tests are their only user.
 
 https://github.com/atviriduomenys/dvms/issues/515
 

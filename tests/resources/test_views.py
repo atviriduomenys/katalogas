@@ -133,7 +133,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form["title"] = "Added title"
     form["description"] = "Added new resource description"
     form["format"] = file_format.id
-    form["download_url"] = "www.google.lt"
+    form["download_url"] = "http://www.google.lt"
     form["level"] = 1
     resp = form.submit()
     assert resp.status_code == 302
@@ -154,7 +154,7 @@ def test_create_dataset_distribution_with_applicable_legislation(app: DjangoTest
     app.set_user(user)
     form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
     form["format"] = file_format.id
-    form["download_url"] = "www.google.lt"
+    form["download_url"] = "http://www.google.lt"
     form["applicable_legislation"] = applicable_legislation_urls
     with patch("vitrina.datasets.tasks.update_applicable_legislation_description.delay") as mocked_task:
         resp = form.submit()
@@ -216,7 +216,7 @@ def test_change_form_data_gov_url_upload_checked(app: DjangoTestApp, is_versione
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(resource_change_url).forms["resource-form"]
-    form["download_url"] = "get.data.gov.lt"
+    form["download_url"] = "http://get.data.gov.lt"
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
@@ -396,7 +396,7 @@ def test_create_resource_without_name(app: DjangoTestApp):
     form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
     form["title"] = "New resource"
     form["format"] = format.pk
-    form["download_url"] = "www.test.com"
+    form["download_url"] = "http://www.test.com"
     resp = form.submit()
     new_resource = DatasetDistribution.objects.exclude(pk=resource.pk)
     assert resp.url == new_resource.first().get_absolute_url()
@@ -737,7 +737,7 @@ def test_create_distribution__translation(app: DjangoTestApp):
     form["title"] = "Pavadinimas"
     form["description"] = "Aprašymas"
     form["format"] = file_format.id
-    form["download_url"] = "www.google.lt"
+    form["download_url"] = "http://www.google.lt"
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.count() == 1
@@ -853,6 +853,40 @@ def test_create_distribution_without_access_download_urls_and_file(app: DjangoTe
     assert resp.context["form"].errors["access_url"] == ["Pateikite duomenų prieigos nuorodą."]
     assert resp.context["form"].errors["download_url"] == ["Arba pateikite duomenų atsisiuntimo nuorodą."]
     assert resp.context["form"].errors["file"] == ["Arba įkelkite duomenų failą."]
+
+
+@pytest.mark.django_db
+def test_create_distribution_with_internal_access_url(app: DjangoTestApp):
+    internal_url = "http://localhost:8000"
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension="URL")
+
+    form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
+    form["title"] = "New resource"
+    form["format"] = file_format.pk
+    form["access_url"] = internal_url
+    resp = form.submit()
+
+    assert resp.status_code == 302
+    assert DatasetDistribution.objects.get().access_url == internal_url
+
+
+@pytest.mark.django_db
+def test_create_distribution_with_free_text_access_url(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension="URL")
+
+    form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
+    form["title"] = "New resource"
+    form["format"] = file_format.pk
+    form["access_url"] = "N/A"
+    resp = form.submit()
+
+    assert "Įveskite tinkamą URL adresą." in resp.context["form"].errors["access_url"]
 
 
 @pytest.mark.django_db

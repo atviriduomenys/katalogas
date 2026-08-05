@@ -14,6 +14,24 @@ https://github.com/atviriduomenys/katalogas/issues/2722
   form. DCAT-AP and DCAT-AP-LT mark this property as recommended, not mandatory, so the form no
   longer demands an agent or an API specification. The mandatory ``dcat:endpointURL`` rule stays.
 
+https://github.com/atviriduomenys/katalogas/issues/2723
+
+- Accept links that point to an internal host. Django's ``URLValidator`` demands a public DNS
+  name, so it refused ``http://ext-db:8888/orawsv/...``. A new ``validate_absolute_uri``
+  validator asks only for an ``http``, ``https``, ``ftp`` or ``ftps`` scheme and a host, so a
+  host name without a dot, a port and an IP address are all permitted. Free text, a missing
+  scheme and ``javascript:`` stay refused, so the RDF ``rdf:resource`` output stays well formed.
+- Apply the new validator to every link field a user fills in: ``access_url`` and
+  ``download_url`` on a distribution, ``endpoint_url``, ``endpoint_description``,
+  ``landing_page``, ``information_system_assessment_url`` and ``rights_relation`` on a data
+  resource, and the link list fields (documentation, legal basis, service quality, qualified
+  relation). This covers the old forms and the new DCAT forms.
+- Raise ``endpoint_description`` from 200 to 512 characters, the same limit as ``endpoint_url``.
+- The required fields do not change. DCAT-AP marks ``dcat:accessURL`` and ``dcat:endpointURL``
+  as mandatory.
+- A link with no scheme is now refused. Before this change ``forms.URLField`` silently made
+  ``www.example.com`` into ``http://www.example.com``. Give the full link.
+
 v 1.23.0 (2026-08-03)
 ==================
 

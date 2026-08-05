@@ -20,6 +20,7 @@ from vitrina.structure.models import Metadata, Version
 from vitrina.helpers import get_file_extension
 from vitrina.utils import translate_text
 from vitrina.datasets.tasks import update_applicable_legislation_description
+from vitrina.validators import validate_absolute_uri
 
 logger = logging.getLogger()
 
@@ -363,11 +364,12 @@ class DatasetDistribution(TranslatableModel):
         default=get_default_status,
     )
 
-    rights_relation = models.URLField(
+    rights_relation = models.CharField(
         verbose_name=_("Teisės - Susijęs dokumentas"),
         max_length=1024,
         null=True,
         blank=True,
+        validators=[validate_absolute_uri],
         help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
     is_hvd = models.BooleanField(_("Ar pateiktis yra didelės vertės"), default=False)

@@ -3,7 +3,6 @@ from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 
@@ -16,6 +15,7 @@ from vitrina.resources.models import Format
 from vitrina.structure.models import Metadata
 from vitrina.uapi.models import Agent
 from vitrina.users.models import User
+from vitrina.validators import validate_absolute_uri
 
 
 DATA_SERVICE_STANDARD_URI = "https://data.gov.lt/id/non-standard/DataServiceStandard"
@@ -71,7 +71,6 @@ def validate_dataset_name(name: str | None, dataset: Dataset | None, organizatio
 
 
 def validate_urls(urls: list[str]) -> list[str | None]:
-    validator = URLValidator()
     item_errors = []
 
     for url in urls:
@@ -80,7 +79,7 @@ def validate_urls(urls: list[str]) -> list[str | None]:
             continue
 
         try:
-            validator(url)
+            validate_absolute_uri(url)
             item_errors.append(None)
         except ValidationError as e:
             item_errors.append(f"{url}: {e.message}")

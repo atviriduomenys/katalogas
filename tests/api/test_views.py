@@ -1,5 +1,6 @@
 import secrets
 from datetime import datetime
+from xml.etree import ElementTree
 
 import pytest
 from django.test import TestCase
@@ -3162,6 +3163,25 @@ def test_edp_dcat_ap_rdf_drops_whitespace_uris(app: DjangoTestApp):
             assert value_end != -1
             value = line[value_start:value_end]
             assert not any(c.isspace() for c in value), f"whitespace in {attr}: {value!r}"
+
+
+@pytest.mark.django_db
+def test_edp_dcat_ap_rdf_keeps_internal_endpoint_urls(app: DjangoTestApp):
+    Dataset.objects.all().delete()
+    internal_url = "http://ext-db:8888/orawsv/SISTEMA_WS/WS_ESERVICES_PROVIDER?WSDL"
+    DatasetFactory(
+        access_rights=Dataset.PUBLIC,
+        service=True,
+        endpoint_url=internal_url,
+        endpoint_description=internal_url,
+    )
+
+    res = app.get("/edp/dcat-ap.rdf")
+
+    assert res.status_code == 200
+    assert f'<dcat:endpointURL rdf:resource="{internal_url}"/>' in res.text
+    assert f'<dcat:endpointDescription rdf:resource="{internal_url}"/>' in res.text
+    ElementTree.fromstring(res.text)
 
 
 @pytest.mark.django_db

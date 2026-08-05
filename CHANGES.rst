@@ -4,6 +4,9 @@ Changes
 v 1.24.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2762
+
+- Bump gunicorn 20.1.0 -> 23.0.0: setuptools 83 removed pkg_resources
 
 v 1.23.0 (2026-08-03)
 ==================

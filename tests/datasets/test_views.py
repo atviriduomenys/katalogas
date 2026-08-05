@@ -2275,6 +2275,31 @@ class TestDatasetCreateView:
         assert dataset.endpoint_url == "https://data.gov.lt"
         assert dataset.endpoint_description == "http://api.data.gov.lt"
 
+    def test_create_service_without_endpoint_description(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        contact = ContactFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["endpoint_url"] = "https://data.gov.lt"
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent is None
+        assert dataset.endpoint_url == "https://data.gov.lt"
+        assert not dataset.endpoint_description
+
     def test_create_without_name(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
         subclass = DCATResourceSubclassFactory()

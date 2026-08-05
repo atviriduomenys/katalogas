@@ -160,9 +160,6 @@ def validate_agent_endpoint_fields(
             errors.append(("agent", _("Pasirinkite agentą, arba nurodykite API adresą.")))
             errors.append(("endpoint_url", _("Pasirinkite agentą, arba nurodykite API adresą.")))
 
-        if not endpoint_description:
-            errors.append(("endpoint_description", _("Pasirinkite agentą, arba nurodykite API specifikaciją.")))
-
         if conforms_to and conforms_to.code == UAPI_CONCEPT_CODE:
             error_message = _(
                 "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "

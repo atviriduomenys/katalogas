@@ -859,9 +859,6 @@ msgstr "Services associated with an agent must comply with the UAPI standard."
 msgid "Pasirinkite agentą, arba nurodykite API adresą."
 msgstr "Select an agent or specify an API address."
 
-msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
-msgstr "Select an agent or specify an API specification."
-
 msgid ""
 "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
 "Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."

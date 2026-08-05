@@ -807,9 +807,6 @@ msgstr ""
 msgid "Pasirinkite agentą, arba nurodykite API adresą."
 msgstr ""
 
-msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
-msgstr ""
-
 msgid ""
 "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
 "Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."

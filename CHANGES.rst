@@ -8,6 +8,12 @@ https://github.com/atviriduomenys/katalogas/issues/2762
 
 - Bump gunicorn 20.1.0 -> 23.0.0: setuptools 83 removed pkg_resources
 
+https://github.com/atviriduomenys/katalogas/issues/2722
+
+- Make the "API specifikacija" (``dcat:endpointDescription``) field optional in the data service
+  form. DCAT-AP and DCAT-AP-LT mark this property as recommended, not mandatory, so the form no
+  longer demands an agent or an API specification. The mandatory ``dcat:endpointURL`` rule stays.
+
 v 1.23.0 (2026-08-03)
 ==================
 

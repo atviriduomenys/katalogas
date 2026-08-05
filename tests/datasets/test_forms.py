@@ -255,6 +255,23 @@ class TestServiceResourceForm:
             in form.errors["agent"]
         )
 
+    def test_endpoint_description_is_not_required_without_agent(
+        self, organization: Organization, user: User, rf: RequestFactory
+    ):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+
+        data = {
+            "endpoint_url": "https://data.gov.lt",
+            "access_rights": Dataset.PUBLIC,
+        }
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        assert "endpoint_description" not in form.errors
+        assert "agent" not in form.errors
+
     def test_related_fields_auto_filled_if_agent_selected(
         self, organization: Organization, user: User, rf: RequestFactory
     ):

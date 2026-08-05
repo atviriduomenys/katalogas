@@ -1,0 +1,13 @@
+{% if form.access_rights %}
+    <script nonce="{{ request.csp_nonce }}">
+        (function() {
+            var descriptions = {{ form.access_rights_descriptions_json|safe }};
+            var $select = $("#id_access_rights");
+            var $description = $("#access_rights_description");
+            $select.on("change select2:select select2:unselect", function() {
+                var text = descriptions[$select.val()] || "";
+                $description.text(text).toggle(!!text);
+            });
+        })();
+    </script>
+{% endif %}

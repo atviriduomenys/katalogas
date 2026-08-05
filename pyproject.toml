@@ -69,7 +69,7 @@ bleach = "^6.2.0"
 celery = "^5.5.3"
 workalendar = "^17.0.0"
 django-flags = "^5.1.0"
-spinta = {version = "^0.2.dev18", allow-prereleases = true}
+spinta = "^1.0.0"
 djangocms-file = "^3.0.1"
 djangocms-picture = "^4.1.1"
 djangocms-link = "^5.1.1"

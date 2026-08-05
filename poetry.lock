@@ -6287,14 +6287,14 @@ files = [
 
 [[package]]
 name = "spinta"
-version = "0.2.dev29"
+version = "1.0.0"
 description = "A platform for describing, extracting, transforming, loading and serving open data."
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "spinta-0.2.dev29-py3-none-any.whl", hash = "sha256:a75c7714414f95de74dac2ae21fa82923215c1d0d0ee7ddcc5a7026966b97060"},
-    {file = "spinta-0.2.dev29.tar.gz", hash = "sha256:fde3b307966ceb8e26786efddbecfafcdf1eff9d68254005cad39b9e7e210767"},
+    {file = "spinta-1.0.0-py3-none-any.whl", hash = "sha256:a8a1b4c4cebe418ebd8835d6267ed065b5a49d7d67dad142b42257871b92eea7"},
+    {file = "spinta-1.0.0.tar.gz", hash = "sha256:89b3f5ec91484c5e5d829ae0b15eced5a4545bd63968db5a461658d9b4af3f8a"},
 ]
 
 [package.dependencies]
@@ -7410,4 +7410,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "e6242e8b75f8e1129511fc8750ad708439b967afa6015b5632f559e264b2f065"
+content-hash = "b44ff22ba2e751d4aeb9a8d69493b88a8ed4987672d1ea96961648440ce3aa30"

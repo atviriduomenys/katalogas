@@ -32,6 +32,12 @@
 /scripts/files_to_replace/
 /scripts/replaced_files/
 
+# pytest-profiling
+/prof/
+pytest.prof
+/.coverage
+/dump.rdb
+
 # Coverage reports
 .coverage
 .coverage.*

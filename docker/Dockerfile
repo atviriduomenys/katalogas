@@ -41,7 +41,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip wheel --no-cache-dir
-RUN pip install gunicorn==23.0.0 poetry --no-cache-dir
+RUN pip install gunicorn==23.0.0 poetry==2.4.1 --no-cache-dir
+
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --only main
 

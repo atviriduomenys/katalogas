@@ -3,6 +3,9 @@ name = "vitrina"
 version = "1.23.0"
 description = ""
 authors = ["IVPK <atviriduomenys@ivpk.lt>"]
+packages = [
+    { include = "vitrina" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"

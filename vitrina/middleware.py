@@ -84,6 +84,23 @@ class LogoutMiddleware:
         return response
 
 
+class NoCacheMiddleware:
+    """Prevent browser from caching responses served to authenticated users.
+
+    Must be placed after AuthenticationMiddleware so request.user is available.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if getattr(request, "user", None) and request.user.is_authenticated:
+            response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response["Pragma"] = "no-cache"
+        return response
+
+
 class AutoRevisionCommentMiddleware(MiddlewareMixin):
     """
     Automatically sets a default reversion comment for CUD operations based on the view

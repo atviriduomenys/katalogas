@@ -10,9 +10,22 @@ from tqdm import tqdm
 from typer import Argument, Option, confirm, run
 
 
+_KEEP_PUBLIC_CONTENT = False
+
+
 def main(
     uri: str = Argument(..., help=("Database URI (postgresql://user:pass@host:port/db)")),
     yes: bool = Option(False, help="Do not ask anything, just do it"),
+    keep_public_content: bool = Option(
+        False,
+        help=(
+            "Keep already published editorial content readable: news and CMS page texts, "
+            "titles and slugs. Personal data is still anonymized everywhere, including the "
+            "news byline (news_item.author_name). Use this when someone has to REVIEW the "
+            "content, e.g. after a CMS migration - with everything replaced by 'example' "
+            "such a review proves nothing."
+        ),
+    ),
 ):
     """
     Anonymize database.
@@ -21,13 +34,16 @@ def main(
     restore it. So before using this command, make sure to pass correct database
     connection string.
     """
+    global _KEEP_PUBLIC_CONTENT
+    _KEEP_PUBLIC_CONTENT = keep_public_content
+
     db = dataset.connect(uri)
 
     tables = (
         "organization",
         "adp_cms_page",
         "news_item",
-        "djangocms_blog_post_translation",
+        "post_content",
         "reversion_version",
         "api_description",
         "vitrina_datasets_contact",
@@ -67,7 +83,7 @@ def main(
         "request_event",
     )
 
-    total = sum([db[t].count() for t in tables])
+    total = sum([db[_table_for(db, t)].count() for t in tables])
 
     if not yes:
         confirm(
@@ -85,8 +101,23 @@ def main(
             func(db, fake, pbar, users)
 
 
+def _table_for(db: Database, name: str) -> str:
+    """Loginį vardą paverčia realiu lentelės vardu.
+
+    Po django-cms 5 atnaujinimo `djangocms_blog_*` lentelių nebelieka — turinys
+    persikelia į `djangocms_stories_*`. Laukų vardai sutampa, tad skiriasi tik lentelė.
+    Skriptas turi veikti IR prieš atnaujinimą, IR po jo: kitaip pirmas dump'as po
+    atnaujinimo liktų be veikiančio anonimizavimo.
+    """
+    if name == "post_content":
+        if "djangocms_stories_postcontent" in db.tables:
+            return "djangocms_stories_postcontent"
+        return "djangocms_blog_post_translation"
+    return name
+
+
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["djangocms_blog_post_translation"]
+    objects: Table = db["organization"]
     pk_name = "id"
     for record in objects.all():
         data = {
@@ -99,11 +130,16 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
         pbar.update(1)
 
 
-def _anonymize_djangocms_blog_post_translation(
+def _anonymize_post_content(
     db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
 ) -> None:
-    objects: Table = db["djangocms_blog_post_translation"]
+    objects: Table = db[_table_for(db, "post_content")]
     pk_name = "id"
+    if _KEEP_PUBLIC_CONTENT:
+        # Naujienų tekstai jau publikuoti viešai; asmens duomenų šioje lentelėje nėra
+        # (autorius - FK į naudotoją, o naudotojai anonimizuojami atskirai).
+        pbar.update(objects.count())
+        return
     for record in objects.all():
         data = {
             pk_name: record[pk_name],
@@ -124,21 +160,30 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
     objects: Table = db["news_item"]
     pk_name = "id"
     for record in objects.all():
-        data = {
-            pk_name: record[pk_name],
-            "body": "<p>example</p>",
-            "title": "example",
-            "slug": f"example-{uuid.uuid4()}",
-            "summary": "example",
-            "author_name": "example, example",
-        }
+        if _KEEP_PUBLIC_CONTENT:
+            # Tekstas paliekamas, bet autoriaus vardas - ne: tai asmens duomuo,
+            # nors pati naujiena ir vieša.
+            data = {pk_name: record[pk_name], "author_name": "example, example"}
+        else:
+            data = {
+                pk_name: record[pk_name],
+                "body": "<p>example</p>",
+                "title": "example",
+                "slug": f"example-{uuid.uuid4()}",
+                "summary": "example",
+                "author_name": "example, example",
+            }
         objects.update(data, [pk_name])
         pbar.update(1)
 
 
 def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["news_item"]
+    objects: Table = db["adp_cms_page"]
     pk_name = "id"
+    if _KEEP_PUBLIC_CONTENT:
+        # Senų CMS puslapių tekstai - vieši; asmens duomenų lentelėje nėra.
+        pbar.update(objects.count())
+        return
     for record in objects.all():
         data = {
             pk_name: record[pk_name],

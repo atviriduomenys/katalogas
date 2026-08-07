@@ -4,6 +4,22 @@ Changes
 v 1.24.0 (current)
 ==================
 
+DAS-643
+
+- Fix ``scripts/anonymize.py`` writing to the wrong tables. ``_anonymize_organization`` operated on
+  ``djangocms_blog_post_translation`` instead of ``organization``, so organisation e-mails, phone
+  numbers and addresses were never anonymized. ``_anonymize_adp_cms_page`` operated on ``news_item``,
+  so ``adp_cms_page`` was left untouched and ``news_item`` was anonymized twice.
+- Declare ``faker`` as a dev dependency. The script imports it, but only ``dataset`` was declared, so
+  it failed with ``ModuleNotFoundError`` on a clean install.
+- Resolve the post content table at run time. After the django-cms 5 upgrade the content moves from
+  ``djangocms_blog_post_translation`` to ``djangocms_stories_postcontent``; the field names are the
+  same. The script now works both before and after the upgrade, so no separate version is needed.
+- Add ``--keep-public-content``. It keeps already published news and CMS page texts, titles and slugs
+  readable while still anonymizing personal data everywhere, including the news byline
+  (``news_item.author_name``). Without it every article becomes ``example``, which makes a post
+  migration content review impossible. Default behaviour is unchanged.
+
 
 v 1.23.0 (2026-08-03)
 ==================

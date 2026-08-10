@@ -43,7 +43,7 @@ def main(
         "organization",
         "adp_cms_page",
         "news_item",
-        "post_content",
+        "djangocms_blog_post_translation",
         "reversion_version",
         "api_description",
         "vitrina_datasets_contact",
@@ -83,7 +83,7 @@ def main(
         "request_event",
     )
 
-    total = sum([db[_table_for(db, t)].count() for t in tables])
+    total = sum([db[t].count() for t in tables])
 
     if not yes:
         confirm(
@@ -101,22 +101,6 @@ def main(
             func(db, fake, pbar, users)
 
 
-def _table_for(db: Database, name: str) -> str:
-    """Map a logical name to the table that actually holds the data.
-
-    After the django-cms 5 upgrade the `djangocms_blog_*` tables are gone and the
-    content lives in `djangocms_stories_*`. The field names are identical, only the
-    table differs. The script has to work both before and after the upgrade,
-    otherwise the first dump taken after the upgrade would have no working
-    anonymization.
-    """
-    if name == "post_content":
-        if "djangocms_stories_postcontent" in db.tables:
-            return "djangocms_stories_postcontent"
-        return "djangocms_blog_post_translation"
-    return name
-
-
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["organization"]
     pk_name = "id"
@@ -131,10 +115,10 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
         pbar.update(1)
 
 
-def _anonymize_post_content(
+def _anonymize_djangocms_blog_post_translation(
     db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
 ) -> None:
-    objects: Table = db[_table_for(db, "post_content")]
+    objects: Table = db["djangocms_blog_post_translation"]
     pk_name = "id"
     if _KEEP_PUBLIC_CONTENT:
         # The news texts are already published publicly, and this table holds no

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-21 12:37+0300\n"
+"POT-Creation-Date: 2026-07-31 09:57+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,12 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < "
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
+
+msgid "Organizacija"
+msgstr ""
+
+msgid "Duomenų skelbėjas"
+msgstr ""
 
 msgid "Versijos duomenys"
 msgstr ""
@@ -51,9 +57,6 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
-msgstr ""
-
-msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -110,11 +113,9 @@ msgstr ""
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr ""
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
@@ -330,27 +331,21 @@ msgstr ""
 msgid "Teritorinės aprėptys"
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr ""
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr ""
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr ""
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
@@ -1107,6 +1102,17 @@ msgstr ""
 msgid "Konfidencialūs"
 msgstr ""
 
+msgid "Metaduomenys publikuojami viešai visiems vartotojams."
+msgstr ""
+
+msgid ""
+"Metaduomenys publikuojami tik visiems registruotiems viešojo sektoriaus "
+"duomenų tvarkytojams."
+msgstr ""
+
+msgid "Metaduomenys publikuojami tik institucijos metaduomenų tvarkytojui."
+msgstr ""
+
 msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
 msgstr ""
 
@@ -1825,9 +1831,6 @@ msgid "Pašalinti"
 msgstr ""
 
 msgid "Atsisiuntimo formatas"
-msgstr ""
-
-msgid "Duomenų skelbėjas"
 msgstr ""
 
 msgid "Kontaktinė informacija"
@@ -3052,7 +3055,9 @@ msgstr ""
 msgid "Veiksmai"
 msgstr ""
 
-msgid "Duomenų teikėjo \""
+#, python-brace-format
+msgid ""
+"Duomenų teikėjo \"<a href=\"{url}\">{obj}</a>\" prašymas pakeistas sėkmingai."
 msgstr ""
 
 msgid "Šablonas pakeistas sėkmingai."
@@ -3320,9 +3325,6 @@ msgid ""
 msgstr ""
 
 msgid "Redaguokite organizacijos informaciją"
-msgstr ""
-
-msgid "Gali turėti"
 msgstr ""
 
 msgid "Šioje organizacijoje dar nėra turinio."
@@ -3611,9 +3613,6 @@ msgstr ""
 
 msgid ""
 "Organizacijos informacinių sistemų metaduomenų pildymas pagal DCAT-AP-LT"
-msgstr ""
-
-msgid "Kūrimo tvarka"
 msgstr ""
 
 msgid "Suskleisti viską"
@@ -5639,6 +5638,9 @@ msgstr ""
 msgid "Pašalinti filtrą"
 msgstr ""
 
+msgid "Filtruoti"
+msgstr ""
+
 msgid "Rūšiavimo veiksmas"
 msgstr ""
 
@@ -5655,9 +5657,6 @@ msgid "Rūšiuoti didėjimo tvarka"
 msgstr ""
 
 msgid "Slėpti"
-msgstr ""
-
-msgid "Filtruoti"
 msgstr ""
 
 msgid "Duomenų laukai"
@@ -6649,7 +6648,20 @@ msgstr ""
 msgid "Redaguoti naudotoją"
 msgstr ""
 
-msgid "Naudotojas \""
+#, python-brace-format
+msgid "Naudotojas \"<a href=\"{url}\">{obj}</a>\" pakeistas sėkmingai."
+msgstr ""
+
+#, python-brace-format
+msgid "Organizacijos \"{obj}\" {role}: <a href=\"{url}\">{email}</a>"
+msgstr ""
+
+#, python-brace-format
+msgid "Duomenų ištekliaus \"{obj}\" {role}: <a href=\"{url}\">{email}</a>"
+msgstr ""
+
+#, python-brace-format
+msgid "Naudotojas \"<a href=\"{url}\">{obj}</a>\" pašalintas sėkmingai."
 msgstr ""
 
 msgid "Vienkartinis prisijungimo kodas"

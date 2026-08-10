@@ -312,6 +312,11 @@
     letter-spacing: 0.6px;
 }
 
+.wizard-form-body .help.access-rights-description {
+    color: #375677;
+    font-weight: 600;
+}
+
 /* Remove native borders — the .field card is the visible border */
 .wizard-form-body .input,
 .wizard-form-body .textarea {

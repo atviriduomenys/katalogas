@@ -4,6 +4,10 @@ Changes
 v 1.24.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2762
+
+- Bump gunicorn 20.1.0 -> 23.0.0: setuptools 83 removed pkg_resources
+
 DAS-643
 
 - Fix ``scripts/anonymize.py`` writing to the wrong tables. ``_anonymize_organization`` operated on
@@ -19,7 +23,6 @@ DAS-643
   readable while still anonymizing personal data everywhere, including the news byline
   (``news_item.author_name``). Without it every article becomes ``example``, which makes a post
   migration content review impossible. Default behaviour is unchanged.
-
 
 v 1.23.0 (2026-08-03)
 ==================

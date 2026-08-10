@@ -194,6 +194,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "vitrina.middleware.LogContextMiddleware",
+    "vitrina.middleware.NoCacheMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_otp.middleware.OTPMiddleware",
     "reversion.middleware.RevisionMiddleware",

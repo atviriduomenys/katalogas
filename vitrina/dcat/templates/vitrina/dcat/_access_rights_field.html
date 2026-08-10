@@ -1,0 +1,33 @@
+{% load crispy_forms_bulma_field %}
+
+<div
+  id="div_{{ field.auto_id }}"
+  class="field{% if wrapper_class %} {{ wrapper_class }}{% endif %}"
+>
+  {% if field.label %}
+    <label for="{{ field.id_for_label }}" class="label{% if label_class %} {{ label_class }}{% endif %}">
+      {{ field.label }}
+      {% if field.field.required %}
+        <span class="asterisk">*</span>
+      {% endif %}
+    </label>
+  {% endif %}
+
+  {% include 'bulma/layout/select.html' %}
+
+  {% if form_show_errors %}
+    {% for error in field.errors %}
+      <p id="error_{{ forloop.counter }}_{{ field.auto_id }}" class="help is-danger">
+        {{ error }}
+      </p>
+    {% endfor %}
+  {% endif %}
+
+  <p
+    id="access_rights_description"
+    class="help access-rights-description"
+    {% if not form.access_rights_description_text %}style="display: none;"{% endif %}
+  >{{ form.access_rights_description_text }}</p>
+
+  {% include 'bulma/layout/help_text.html' %}
+</div>

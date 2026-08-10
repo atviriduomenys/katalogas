@@ -64,17 +64,6 @@ logger = logging.getLogger(__name__)
 
 MetadataCache = Dict[str, Metadata]
 
-_MERMAID_UNSAFE_CHARS = str.maketrans(
-    {
-        "`": "#96;",
-        '"': "#34;",
-        "{": "#123;",
-        "}": "#125;",
-        "<": "#60;",
-        ">": "#62;",
-    }
-)
-
 
 def _metadata_uuid_key(value) -> str:
     """Normalize manifest vs DB metadata ids for dict lookups and uuid__in (CharField vs uuid.UUID)."""
@@ -2599,10 +2588,27 @@ def get_allowed_visibilities(
     return allowed_visibilities
 
 
-def _escape_mermaid(value: str) -> str:
+# _MMD_ENCODE and _mermaid_safe are duplicates from Spinta
+# If a problem is found with this escaping, it has to be fixed in both places.
+_MMD_ENCODE = str.maketrans(
+    {
+        "#": "#35;",
+        "`": "#96;",
+        '"': "#34;",
+        "{": "#123;",
+        "}": "#125;",
+        "<": "#60;",
+        ">": "#62;",
+        "\n": " ",
+        "\r": " ",
+    }
+)
+
+
+def _mermaid_safe(value: str | None) -> str | None:
     if not value:
         return value
-    return value.replace("\r", " ").replace("\n", " ").translate(_MERMAID_UNSAFE_CHARS)
+    return value.translate(_MMD_ENCODE)
 
 
 def generate_mermaid_diagram(dataset: Dataset, version: Version) -> str:
@@ -2657,6 +2663,6 @@ def _generate_mermaid_model_click_links(dataset: Dataset, version: Version) -> s
                 "model": basename,
             },
         )
-        click_lines.append(f'click `{_escape_mermaid(full_name)}` href "{base_url}{path}"')
+        click_lines.append(f'click `{_mermaid_safe(full_name)}` href "{base_url}{path}"')
 
     return "\n".join(click_lines)

@@ -134,9 +134,9 @@
             ({ svg } = await mermaid.render('diagram-1', mermaidCode));
             sceneElement.innerHTML = svg;
         } catch (error) {
-            console.error('Nepavyko atvaizduoti UML diagramos:', error);
+            console.error('Failed to render the UML diagram:', error);
             sceneElement.innerHTML =
-                '<div class="uml-loader"><p>{% translate "Įvyko klaida atvaizduojant diagramą." %}</p></div>';
+                '<div class="uml-loader"><p>{% translate "Įvyko klaida atvaizduojant diagramą." as uml_error %}{{ uml_error|escapejs }}</p></div>';
         }
 
         const downloadButton = document.getElementById('uml-download-button');

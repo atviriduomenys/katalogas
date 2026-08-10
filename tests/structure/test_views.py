@@ -8695,6 +8695,8 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params)
 
         assert response.status_code == 200
+        assert "securityLevel: 'antiscript'" in response.text
+        assert "securityLevel: 'loose'" not in response.text
         block = re.search(
             r'<script id="mermaid-source" type="application/json">(.*?)</script>',
             response.text,

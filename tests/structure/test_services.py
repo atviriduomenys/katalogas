@@ -36,7 +36,7 @@ from vitrina.structure.services import (
     create_structure_objects,
     generate_mermaid_diagram,
     _generate_mermaid_model_click_links,
-    _escape_mermaid,
+    _mermaid_safe,
 )
 from vitrina.users.factories import UserFactory
 from django.http import QueryDict
@@ -3649,11 +3649,12 @@ def test_structure_export__scopes(app: DjangoTestApp, use_version):
     assert resp.text == expected_output
 
 
-def test_escape_mermaid():
-    assert _escape_mermaid('a}b`"<img>c') == "a#125;b#96;#34;#60;img#62;c"
-    assert _escape_mermaid("line1\r\nline2") == "line1  line2"
-    assert _escape_mermaid("datasets/gov/ivpk/adp/Clean") == "datasets/gov/ivpk/adp/Clean"
-    assert _escape_mermaid("") == ""
+def test_mermaid_safe():
+    assert _mermaid_safe('a#}b`"<img>c') == "a#35;#125;b#96;#34;#60;img#62;c"
+    assert _mermaid_safe("line1\r\nline2") == "line1  line2"
+    assert _mermaid_safe("datasets/gov/ivpk/adp/Clean") == "datasets/gov/ivpk/adp/Clean"
+    assert _mermaid_safe("") == ""
+    assert _mermaid_safe(None) is None
 
 
 @pytest.mark.django_db

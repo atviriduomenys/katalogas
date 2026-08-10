@@ -15,7 +15,7 @@ https://github.com/atviriduomenys/dvms/issues/513
 - Wrap ``mermaid.render`` in a try/catch on the UML canvas so a malformed stored diagram no longer aborts
   the whole load handler — the download button and pan/zoom stay functional and an error message is shown
   instead of a dead viewport.
-- Add tests for the Mermaid click-link escaping (``_escape_mermaid`` and the malicious-namespace case).
+- Add tests for the Mermaid click-link escaping (``_mermaid_safe`` and the malicious-namespace case).
 
 https://github.com/atviriduomenys/katalogas/issues/2762
 

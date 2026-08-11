@@ -180,7 +180,7 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
             data = {
                 pk_name: record[pk_name],
                 "author_name": "example, example",
-                "author": "example, example",
+                "author": b"example, example",  # legacy bytea column, not text
                 "body": _scrub_byline(record.get("body")),
                 "summary": _scrub_byline(record.get("summary")),
             }
@@ -192,7 +192,7 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
                 "slug": f"example-{uuid.uuid4()}",
                 "summary": "example",
                 "author_name": "example, example",
-                "author": "example, example",
+                "author": b"example, example",  # legacy bytea column, not text
             }
         objects.update(data, [pk_name])
         pbar.update(1)

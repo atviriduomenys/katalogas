@@ -79,7 +79,6 @@ python-magic = "^0.4.27"
 django-csp = "^4.0"
 
 [tool.poetry.group.dev.dependencies]
-faker = "*"
 freezegun = "^1.2.2"
 pytest = "^9.0.3"
 pytest-cov = "^7.1.0"

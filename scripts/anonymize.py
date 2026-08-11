@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 import uuid
 from typing import Set
@@ -19,11 +20,14 @@ def main(
     keep_public_content: bool = Option(
         False,
         help=(
-            "Keep already published editorial content readable: news and CMS page texts, "
-            "titles and slugs. Personal data is still anonymized everywhere, including the "
-            "news byline (news_item.author_name). Use this when someone has to REVIEW the "
-            "content, e.g. after a CMS migration - with everything replaced by 'example' "
-            "such a review proves nothing."
+            "Keep PUBLISHED editorial content readable: news and CMS page texts, titles "
+            "and slugs. Drafts, non-public and deleted rows are anonymized as usual - only "
+            "what the site already shows to everyone is spared. Personal data is still "
+            "anonymized everywhere, including the byline, both in its own columns "
+            "(news_item.author, news_item.author_name) and inside the article text, where "
+            "scripts/migrate_news.py wrote it as '<p>Autorius: NAME</p>'. Use this when "
+            "someone has to REVIEW the content, e.g. after a CMS migration - with every "
+            "article replaced by 'example' such a review proves nothing."
         ),
     ),
 ):
@@ -101,6 +105,23 @@ def main(
             func(db, fake, pbar, users)
 
 
+# scripts/migrate_news.py prepends "<p>Autorius: NAME</p>" to the body and the summary, so the
+# byline ends up inside post_text / abstract, not only in a column of its own. Keeping the article
+# text therefore means keeping that name unless it is scrubbed out explicitly.
+_BYLINE_RE = re.compile(r"<p>Autorius:.*?</p>", re.S)
+
+
+def _scrub_byline(text: str | None) -> str | None:
+    if not text:
+        return text
+    return _BYLINE_RE.sub("<p>Autorius: example, example</p>", text)
+
+
+def _published_ids(db: Database, table: str, flag: str) -> Set[int]:
+    """Ids of rows the site actually shows. --keep-public-content only spares those."""
+    return {row["id"] for row in db[table].all() if row.get(flag)}
+
+
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["organization"]
     pk_name = "id"
@@ -120,13 +141,20 @@ def _anonymize_djangocms_blog_post_translation(
 ) -> None:
     objects: Table = db["djangocms_blog_post_translation"]
     pk_name = "id"
-    if _KEEP_PUBLIC_CONTENT:
-        # The news texts are already published publicly, and this table holds no
-        # personal data: the author is a foreign key to a user, and users are
-        # anonymized separately.
-        pbar.update(objects.count())
-        return
+    published = _published_ids(db, "djangocms_blog_post", "publish") if _KEEP_PUBLIC_CONTENT else set()
     for record in objects.all():
+        if _KEEP_PUBLIC_CONTENT and record.get("master_id") in published:
+            # Published article: keep the text, but strip the byline embedded in it.
+            objects.update(
+                {
+                    pk_name: record[pk_name],
+                    "post_text": _scrub_byline(record.get("post_text")),
+                    "abstract": _scrub_byline(record.get("abstract")),
+                },
+                [pk_name],
+            )
+            pbar.update(1)
+            continue
         data = {
             pk_name: record[pk_name],
             "title": "example",
@@ -146,10 +174,16 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
     objects: Table = db["news_item"]
     pk_name = "id"
     for record in objects.all():
-        if _KEEP_PUBLIC_CONTENT:
-            # Keep the text, but not the byline: the article is public, the
-            # person's name is still personal data.
-            data = {pk_name: record[pk_name], "author_name": "example, example"}
+        if _KEEP_PUBLIC_CONTENT and record.get("is_public") and not record.get("deleted"):
+            # Published item: keep the text, drop both byline columns and the byline
+            # that migrate_news.py wrote into the text itself.
+            data = {
+                pk_name: record[pk_name],
+                "author_name": "example, example",
+                "author": "example, example",
+                "body": _scrub_byline(record.get("body")),
+                "summary": _scrub_byline(record.get("summary")),
+            }
         else:
             data = {
                 pk_name: record[pk_name],
@@ -158,6 +192,7 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
                 "slug": f"example-{uuid.uuid4()}",
                 "summary": "example",
                 "author_name": "example, example",
+                "author": "example, example",
             }
         objects.update(data, [pk_name])
         pbar.update(1)
@@ -166,11 +201,10 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
 def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["adp_cms_page"]
     pk_name = "id"
-    if _KEEP_PUBLIC_CONTENT:
-        # The legacy CMS page texts are public and the table holds no personal data.
-        pbar.update(objects.count())
-        return
     for record in objects.all():
+        if _KEEP_PUBLIC_CONTENT and record.get("published"):
+            pbar.update(1)
+            continue
         data = {
             pk_name: record[pk_name],
             "body": "<p>example</p>",

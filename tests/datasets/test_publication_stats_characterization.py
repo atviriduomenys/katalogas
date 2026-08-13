@@ -146,7 +146,6 @@ def publication_stats_data(db):
     return [ds_a, ds_b, ds_c]
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("duration", DURATIONS)
 @pytest.mark.parametrize("indicator", INDICATORS)
@@ -173,7 +172,6 @@ def test_publication_stats_snapshot(app: DjangoTestApp, publication_stats_data, 
     assert snapshot["max_count"] == expected["max_count"], f"max_count mismatch for {key!r}"
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_publication_stats_query_count(app: DjangoTestApp, publication_stats_data):
     with freeze_time(FROZEN_NOW):

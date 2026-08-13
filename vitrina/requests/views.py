@@ -4,7 +4,7 @@ import operator
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
-from datetime import date, datetime
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -15,11 +15,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic.base import View
 
 from vitrina.classifiers.models import AreaOfManagement
-from vitrina.settings import ELASTIC_FACET_SIZE, ELASTIC_TAGS_FACET_SIZE
 from vitrina.requests.forms import RequestDatasetsEditForm
-from django.db.models import Count, Q, Case, When
+from django.db.models import Count, Q, Case, When, F
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
@@ -29,7 +29,8 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
-from haystack.generic_views import FacetedSearchView
+from vitrina.search.models import RequestSearchFacet
+from vitrina.search.views import FacetedListView
 from reversion.models import Version
 from typing import List, Any
 from urllib.parse import urlencode
@@ -81,7 +82,7 @@ from vitrina.requests.forms import RequestPlanForm
 from vitrina.plans.models import PlanDataset
 
 
-class RequestListView(FacetedSearchView):
+class RequestListView(FacetedListView):
     template_name = "vitrina/requests/list.html"
     facet_fields = [
         "status",
@@ -94,17 +95,13 @@ class RequestListView(FacetedSearchView):
         "tags",
         "created",
     ]
-    max_num_facets = 20
     paginate_by = 20
     form_class = RequestSearchForm
-    date_facet_fields = [
-        {
-            "field": "created",
-            "start_date": date(2019, 1, 1),
-            "end_date": date.today(),
-            "gap_by": "month",
-        },
-    ]
+    facet_model = RequestSearchFacet
+    facet_fk = "request_id"
+    date_facet_field = "created"
+    queryset = Request.objects.filter(search_doc__isnull=False)
+    row_prefetch_related = ("translations", "requestassignment_set__organization")
 
     def get(self, request, **kwargs):
         legacy_org_redirect = self.request.GET.get("organization_id")
@@ -116,18 +113,15 @@ class RequestListView(FacetedSearchView):
     def get_queryset(self):
         requests = super().get_queryset()
         sorting = self.request.GET.get("sort", None)
-        for field in self.facet_fields:
-            size = ELASTIC_TAGS_FACET_SIZE if field == "tags" else ELASTIC_FACET_SIZE
-            requests = requests.facet(field, size=size)
-        if sorting is None or sorting == "sort-by-date-newest":
-            requests = requests.order_by("-type_order", "-created")
+        if not sorting or sorting == "sort-by-date-newest":
+            requests = requests.order_by(F("created").desc(nulls_last=True), "pk")
         elif sorting == "sort-by-date-oldest":
-            requests = requests.order_by("-type_order", "created")
+            requests = requests.order_by("created", "pk")
         elif sorting == "sort-by-title":
             if self.request.LANGUAGE_CODE == "lt":
-                requests = requests.order_by("-type_order", "lt_title_s")
+                requests = requests.order_by("search_doc__title_lt", "pk")
             else:
-                requests = requests.order_by("-type_order", "en_title_s")
+                requests = requests.order_by("search_doc__title_en", "pk")
         return requests
 
     def get_context_data(self, **kwargs):
@@ -401,7 +395,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
-        requests = self.get_queryset()
+        requests = self.object_list
         indicator = self.request.GET.get("indicator", None) or "request-count"
         sorting = self.request.GET.get("sort", None) or "sort-desc"
         duration = self.request.GET.get("duration", None) or "duration-yearly"
@@ -419,7 +413,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
             labels = pd.period_range(start=start_date, end=datetime.now(), freq=frequency).tolist()
 
         for request in requests:
-            created = request.created
+            created = timezone.localtime(request.created) if request.created else None
             if created is not None:
                 year_published = created.year
                 year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
@@ -523,13 +517,13 @@ class RequestYearStatsView(RequestListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        requests = self.get_queryset()
+        requests = self.object_list
         sorting = self.request.GET.get("sort", None)
         year_stats = {}
         quarter_stats = {}
         selected_year = str(self.kwargs["year"])
         for req in requests:
-            created = req.created
+            created = timezone.localtime(req.created) if req.created else None
             if created is not None:
                 year_created = created.year
                 year_stats[year_created] = year_stats.get(year_created, 0) + 1
@@ -565,12 +559,12 @@ class RequestQuarterStatsView(RequestListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        requests = self.get_queryset()
+        requests = self.object_list
         sorting = self.request.GET.get("sort", None)
         monthly_stats = {}
         selected_quarter = str(self.kwargs["quarter"])
         for req in requests:
-            created = req.created
+            created = timezone.localtime(req.created) if req.created else None
             if created is not None:
                 year_created = created.year
                 if str(year_created) in selected_quarter:
@@ -1399,10 +1393,17 @@ class RequestDatasetsEditUpdateView(RequestDatasetsEditView):
         return kwargs
 
 
-class RequestOrgFiltersUpdate(FacetedSearchView):
-    template_name = "vitrina/datasets/organization_filter_items.html"
+class RequestFilterItemsView(FacetedListView):
     form_class = RequestSearchForm
     facet_fields = RequestListView.facet_fields
+    facet_model = RequestSearchFacet
+    facet_fk = "request_id"
+    queryset = Request.objects.filter(search_doc__isnull=False)
+    paginate_by = 0
+
+
+class RequestOrgFiltersUpdate(RequestFilterItemsView):
+    template_name = "vitrina/datasets/organization_filter_items.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1431,10 +1432,8 @@ class RequestOrgFiltersUpdate(FacetedSearchView):
             return context
 
 
-class RequestJurisdictionFiltersUpdate(FacetedSearchView):
+class RequestJurisdictionFiltersUpdate(RequestFilterItemsView):
     template_name = "vitrina/datasets/jurisdiction_filter_items.html"
-    form_class = RequestSearchForm
-    facet_fields = RequestListView.facet_fields
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

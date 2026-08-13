@@ -144,7 +144,6 @@ INSTALLED_APPS = [
     "hitcount",
     "crispy_forms",
     "tagulous",
-    "haystack",
     "crispy_bulma",
     "django_select2",
     "django_recaptcha",
@@ -174,6 +173,7 @@ INSTALLED_APPS = [
     "vitrina.smart_contracts",
     "vitrina.identifiers",
     "vitrina.dcat",
+    "vitrina.search",
 ]
 
 SERIALIZATION_MODULES = {
@@ -527,27 +527,6 @@ PASSWORD_HASHERS = [
 ]
 
 HASHER_SALT = "2LxpaW5qOe80xZjTPyzpgi"
-
-_search_url = env.search_url()
-_search_url["ENGINE"] = "vitrina.datasets.search_backends.ElasticSearchEngine"
-_search_url_test = env.str(var="SEARCH_URL_TEST", default="")
-if _search_url_test:
-    _search_url_test = env.search_url(var="SEARCH_URL_TEST")
-else:
-    _search_url_test = {**_search_url, "INDEX_NAME": "test"}
-HAYSTACK_CONNECTIONS = {
-    "default": _search_url,
-    "test": _search_url_test,
-}
-
-ELASTIC_FACET_SIZE_MAX = 10_000
-ELASTIC_FACET_SIZE = min(env.int("ELASTIC_FACET_SIZE", default=1000), ELASTIC_FACET_SIZE_MAX)
-ELASTIC_TAGS_FACET_SIZE = 50
-
-HAYSTACK_SIGNAL_PROCESSOR = "vitrina.datasets.search_indexes.CustomSignalProcessor"
-
-# Number of hits Haystack pulls per Elasticsearch request when iterating a SearchQuerySet.
-HAYSTACK_ITERATOR_LOAD_PER_QUERY = env.int("HAYSTACK_ITERATOR_LOAD_PER_QUERY", default=5000)
 
 BLOG_USE_PLACEHOLDER = False
 META_USE_SITES = True

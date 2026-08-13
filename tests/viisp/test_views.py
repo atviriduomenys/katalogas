@@ -285,13 +285,11 @@ def test_viisp_complete_login_token_email_case_insensitive(app: DjangoTestApp):
     assert resp.url != reverse("change-email")
 
 
-@pytest.mark.haystack
 def test_anonymous_user_accesses_data_provider_form(app: DjangoTestApp):
     resp = app.get(reverse("partner-register"))
     assert resp.url == "/accounts/viisp/login"
 
 
-@pytest.mark.haystack
 def test_logged_in_not_unverified_user_accesses_data_provider_form(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
@@ -299,7 +297,6 @@ def test_logged_in_not_unverified_user_accesses_data_provider_form(app: DjangoTe
     assert resp.url == "/accounts/viisp/login"
 
 
-@pytest.mark.haystack
 def test_logged_in_verified_user_accesses_data_provider_form(app: DjangoTestApp):
     user = UserFactory(email="test@test.lt", password="123", is_viisp_login=True)
     app.set_user(user)
@@ -307,7 +304,6 @@ def test_logged_in_verified_user_accesses_data_provider_form(app: DjangoTestApp)
     assert resp.html.find(id="partner-register-form")
 
 
-@pytest.mark.haystack
 def test_form_submit_with_correct_data(app: DjangoTestApp):
     user = UserFactory(email="test@testesttesttest.lt", password=make_password("123"), is_viisp_login=True)
     org = OrganizationFactory()

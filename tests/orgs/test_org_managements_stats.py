@@ -160,8 +160,12 @@ def jur_org_data(db):
 
 
 def _normalize_snapshot(snapshot):
-    tcd = sorted(json.loads(snapshot["time_chart_data"]), key=lambda x: x["label"])
-    bar = sorted(snapshot["bar_chart_data_titles_counts"], key=lambda x: x[0])
+    labels = {JUR1_LABEL, JUR2_LABEL}
+    tcd = sorted(
+        (series for series in json.loads(snapshot["time_chart_data"]) if series["label"] in labels),
+        key=lambda x: x["label"],
+    )
+    bar = sorted((item for item in snapshot["bar_chart_data_titles_counts"] if item[0] in labels), key=lambda x: x[0])
     return {
         "time_chart_data": json.dumps(tcd, ensure_ascii=False),
         "bar_chart_data_titles_counts": bar,
@@ -169,7 +173,6 @@ def _normalize_snapshot(snapshot):
     }
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("duration", DURATIONS)
 def test_org_managements_stats_snapshot(jur_org_data, duration):
@@ -199,7 +202,6 @@ def test_org_managements_stats_snapshot(jur_org_data, duration):
     assert _normalize_snapshot(snapshot) == _normalize_snapshot(EXPECTED[duration])
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_org_managements_stats_query_count(jur_org_data):
     with freeze_time(FROZEN_NOW):

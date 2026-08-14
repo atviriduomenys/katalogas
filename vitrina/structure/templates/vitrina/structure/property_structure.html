@@ -250,7 +250,7 @@
                                     {% endif %}
                                 </div>
                                 {% if enum_meta.description %}
-                                    <div class="ml-4"><p>{{ enum_meta.description | markdown | safe }}</p></div>
+                                    <div class="ml-4">{{ enum_meta.description | markdown | safe }}</div>
                                 {% endif %}
                             </div>
                             <div class="column is-2">
@@ -356,7 +356,7 @@
         {% endif %}
 
         {% if metadata.description %}
-        <div><p>{{ metadata.description | markdown | safe }}</p></div>
+        <div>{{ metadata.description | markdown | safe }}</div>
         {% endif %}
 
         <div class="mt-6">

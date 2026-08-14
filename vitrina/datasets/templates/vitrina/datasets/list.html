@@ -249,7 +249,7 @@
                                             {% endwith %}
                                         </span>
                                     </div>
-                                    <p class="dataset-list-description my-1">
+                                    <div class="dataset-list-description my-1">
                                         {% if i %}
                                             {% objectlanguage i LANGUAGE_CODE %}
                                             {{ i.description|markdown|safe }}
@@ -258,7 +258,7 @@
                                         {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
                                         -
                                     {% endif %}
-                                </p>
+                                </div>
                                 <div class="tags mt-3 mb-1">
                                     {% for group in i.display_groups %}
                                         <p class="tag is-info is-light dataset-list-group-tag">{{ group }}</p>

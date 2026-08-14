@@ -19,11 +19,11 @@
                         <div class="columns">
                             <div class="column">
                                 <p class="dataset-list-title">{{ task.created }}</p>
-                                <p class="dataset-list-description">
+                                <div class="dataset-list-description">
                                     {% if task.description is not None %}
                                         {{ task.description | markdown | safe }}
                                     {% endif %}
-                                </p>
+                                </div>
                                 {% if task.content_object is not None %}
                                     <a href="{{ object_url }}">Peržiūrėti objektą, kuriam priskirta užduotis.</a>
                                 {% endif %}

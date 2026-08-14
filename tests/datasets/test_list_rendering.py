@@ -7,6 +7,8 @@ from hitcount.models import HitCount
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.likes.models import Like
+from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, UapiFormat
+from vitrina.structure.factories import ModelFactory
 from vitrina.users.factories import UserFactory
 
 
@@ -35,3 +37,18 @@ def test_dataset_list_shows_the_real_like_count(app: DjangoTestApp):
     response = app.get(reverse("dataset-list"))
 
     assert response.context["object_list"][0].like_count == 3
+
+
+@pytest.mark.django_db
+def test_dataset_list_shows_the_dataservice_formats(app: DjangoTestApp):
+    for title in ["CSV", "JSON", "JSONL"]:
+        FileFormat(title=title, extension=title)
+    dataset = DatasetFactory()
+    DatasetDistributionFactory(dataset=dataset, format=UapiFormat())
+    ModelFactory(metadata_version__dataset=dataset)
+
+    response = app.get(reverse("dataset-list"))
+
+    shown = [str(fmt) for fmt in response.context["object_list"][0].display_formats]
+    assert shown == [str(fmt) for fmt in dataset.distinct_formats]
+    assert {"CSV", "JSON", "JSONL"}.issubset(set(shown))

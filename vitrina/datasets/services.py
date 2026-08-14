@@ -18,7 +18,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from itsdangerous import URLSafeSerializer
 
-from vitrina.datasets.models import Dataset, DatasetGroup, DCATResourceSubclass
+from vitrina.datasets.models import DATASERVICE_FORMAT_TITLES, Dataset, DatasetGroup, DCATResourceSubclass
 from vitrina.helpers import get_filter_url, get_current_domain
 from vitrina.api.models import ApiKey
 from vitrina.helpers import email
@@ -802,8 +802,17 @@ def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
         .order_by("created")
     }
 
+    dataservice_formats = None
+
     for dataset in datasets:
         selected = group_pks_by_dataset[dataset.pk]
         dataset.like_count = likes.get(dataset.pk, 0)
         dataset.hit_count = hits.get(dataset.pk, 0)
         dataset.display_groups = [group for pk, group in groups.items() if pk in selected]
+
+        formats = dataset.formats
+        if dataset.serves_dataservice_formats():
+            if dataservice_formats is None:
+                dataservice_formats = list(Format.objects.filter(title__in=DATASERVICE_FORMAT_TITLES))
+            formats = formats + dataservice_formats
+        dataset.display_formats = sorted(set(formats), key=lambda fmt: fmt.title)

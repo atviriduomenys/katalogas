@@ -263,7 +263,7 @@
                                     {% for group in i.display_groups %}
                                         <p class="tag is-info is-light dataset-list-group-tag">{{ group }}</p>
                                     {% endfor %}
-                                    {% for t in i.distinct_formats %}
+                                    {% for t in i.display_formats %}
                                         <a href="?selected_facets=formats_exact:{{ t.pk }}"
                                            class="tag is-info is-light">{{ t }}</a>
                                     {% endfor %}

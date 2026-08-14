@@ -5,6 +5,16 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.resources.factories import DatasetDistributionFactory, UapiFormat
+from vitrina.structure.factories import ModelFactory
+
+
+def _dataservice_dataset():
+    """A dataset shaped like a Spinta/DSA one: a UAPI distribution and a structure model."""
+    dataset = DatasetFactory()
+    DatasetDistributionFactory(dataset=dataset, format=UapiFormat())
+    ModelFactory(metadata_version__dataset=dataset)
+    return dataset
 
 
 @pytest.mark.django_db
@@ -23,6 +33,24 @@ def test_dataset_list_query_count_does_not_grow_with_result_count(app: DjangoTes
 
     growth = len(many) - len(few)
     assert growth <= 2, f"{growth} extra queries for 12 extra results ({len(few)} -> {len(many)})"
+
+
+@pytest.mark.django_db
+def test_dataset_list_query_count_does_not_grow_with_dataservice_rows(app: DjangoTestApp):
+    for _ in range(3):
+        _dataservice_dataset()
+    app.get(reverse("dataset-list"))
+
+    with CaptureQueriesContext(connection) as few:
+        app.get(reverse("dataset-list"))
+
+    for _ in range(12):
+        _dataservice_dataset()
+    with CaptureQueriesContext(connection) as many:
+        app.get(reverse("dataset-list"))
+
+    growth = len(many) - len(few)
+    assert growth <= 2, f"{growth} extra queries for 12 extra dataservice results ({len(few)} -> {len(many)})"
 
 
 @pytest.mark.django_db

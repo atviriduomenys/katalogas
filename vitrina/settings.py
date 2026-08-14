@@ -809,19 +809,10 @@ TAGULOUS_AUTOCOMPLETE_JS = (
     "tagulous/adaptor/select2-4.js",
 )
 TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}
-INSTALLED_APPS += [
-    "djangocms_versioning",
-    "djangocms_alias",
-]
+
+# djangocms_versioning, djangocms_alias and djangocms_stories are already listed
+# in INSTALLED_APPS above, in an order that satisfies both constraints:
+# vitrina.users before cms, and vitrina.cms after djangocms_stories.
 CMS_CONFIRM_VERSION4 = True
 CMS_MIGRATION_USER_ID = 1
-
-
-CMS_CONFIRM_VERSION4 = True
-CMS_MIGRATION_USER_ID = 1
-DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"
-
-INSTALLED_APPS += [
-    "djangocms_stories",
-]
 DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"

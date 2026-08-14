@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
+from djangocms_stories.admin import PostAdmin as OriginalPostAdmin
+from djangocms_stories.models import Post
 
 from vitrina.cms.forms import (
     LearningMaterialAdminForm,
@@ -120,3 +122,28 @@ admin.site.register(Faq, FaqAdmin)
 admin.site.register(ExternalSite, ExternalSiteAdmin)
 admin.site.register(PublishedReport, PublishedReportAdmin)
 admin.site.register(Deployment, DeploymentAdmin)
+
+
+# The story post admin lives here, not in `vitrina.users`: `vitrina.users` has to be
+# loaded before `cms`, but this admin has to be loaded after `djangocms_stories.admin`.
+# `vitrina.cms` is listed after `djangocms_stories` in INSTALLED_APPS, so both hold.
+admin.site.unregister(Post)
+
+
+@admin.register(Post)
+class CustomPostAdmin(OriginalPostAdmin):
+    def has_module_permission(self, request):
+        """Only Blog Administrators can see the blog section"""
+        return request.user.has_perm("djangocms_stories.view_post")
+
+    def has_add_permission(self, request):
+        return request.user.has_perm("djangocms_stories.add_post")
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.has_perm("djangocms_stories.change_post")
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.has_perm("djangocms_stories.delete_post")
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.has_perm("djangocms_stories.view_post")

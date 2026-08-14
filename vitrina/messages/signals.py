@@ -30,7 +30,9 @@ def send_newsletter_to_subscribers(sender, **kwargs):
         logger.warning("No subscribers found.")
         return
 
-    blog_posts = PostContent.admin_manager.filter(
+    # `objects` is the versioning-aware manager and returns published content
+    # only; `admin_manager` would let unpublished drafts into the newsletter.
+    blog_posts = PostContent.objects.filter(
         post__date_published__gte=last_month_start,
         post__date_published__lte=last_month_end,
         language=settings.LANGUAGE_CODE,

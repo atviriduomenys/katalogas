@@ -24,6 +24,9 @@ bcrypt = "^4.3.0"
 itsdangerous = "^2.2.0"
 django-haystack = {extras = ["elasticsearch"], version = "^3.3.0"}
 django-tagulous = "^1.3.3"
+# Used by settings.INSTALLED_APPS and vitrina/urls.py. Used to arrive
+# transitively through djangocms-blog, which djangocms-stories replaced.
+django-taggit-autosuggest = "^0.4.2"
 elasticsearch = "7.8.1"
 django-reversion = "^5.1.0"
 crispy-bulma = "^0.8.3"

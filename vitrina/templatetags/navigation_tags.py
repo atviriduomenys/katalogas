@@ -1,18 +1,16 @@
 from cms.models import Page, PageContent
 from django import template
-from djangocms_versioning.constants import PUBLISHED
 
 register = template.Library()
 
 
 def _published_nav_page_ids():
-    """Return PKs of Pages that have a published PageContent with in_navigation=True."""
-    return PageContent.objects.filter(in_navigation=True, versions__state=PUBLISHED).values_list("page_id", flat=True)
+    """Return PKs of Pages that have published, in-navigation content.
 
-
-def _published_nav_page_ids():
-    """Return PKs of Pages that have a published PageContent with in_navigation=True."""
-    return PageContent.objects.filter(in_navigation=True, versions__state=PUBLISHED).values_list("page_id", flat=True)
+    djangocms-versioning replaces `PageContent.objects` with a manager that
+    returns published versions only, so drafts are already excluded here.
+    """
+    return PageContent.objects.filter(in_navigation=True).values_list("page_id", flat=True)
 
 
 @register.inclusion_tag("menu.html")

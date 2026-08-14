@@ -2089,6 +2089,21 @@ files = [
 Django = ">=4.1"
 
 [[package]]
+name = "django-taggit-autosuggest"
+version = "0.4.2"
+description = "Autosuggestions for django-taggit"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django_taggit_autosuggest-0.4.2-py3-none-any.whl", hash = "sha256:e7c2d6f51708d947a099104f960771f86da7d224f9e979c7056aa43ff2d9958b"},
+    {file = "django_taggit_autosuggest-0.4.2.tar.gz", hash = "sha256:0a0adb23cead8dfea0cf9e2c268f5ca7079e985d1f6db8c54702e4265ee38616"},
+]
+
+[package.dependencies]
+django-taggit = "*"
+
+[[package]]
 name = "django-taggit-templatetags"
 version = "0.2.5"
 description = "Templatetags for django-taggit."
@@ -7544,4 +7559,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "dbc4e5e9b6858ef34ca2858885e81d4881981bb19dfeff4a7671d20a73e52c52"
+content-hash = "e3ee00d868d801510cd433df6a7513a384df371ec2281a9dcc2776994b71558d"

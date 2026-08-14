@@ -1,10 +1,20 @@
-from cms.models import CMSPlugin
+from cms.models import CMSPlugin, Page, PageContent
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
 from django.utils.translation import gettext as _
 
 from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
 from vitrina.orgs.models import PublishedReport
+
+
+def _published_page_ids():
+    """PKs of pages that have published content.
+
+    djangocms-versioning replaces `PageContent.objects` with a manager that
+    returns published versions only, so pages whose content is still a draft
+    are left out. Without this the menus would leak unpublished pages.
+    """
+    return PageContent.objects.values_list("page_id", flat=True)
 
 
 @plugin_pool.register_plugin
@@ -16,12 +26,18 @@ class SideMenuPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        if instance.page.node.get_children():
-            parent = instance.page.node
-            children = instance.page.node.get_children()
+        page = instance.placeholder.page if instance.placeholder_id else None
+        if page is None:
+            context.update({"children": Page.objects.none(), "parent": None})
+            return context
+
+        published = _published_page_ids()
+        children = page.get_child_pages().filter(pk__in=published)
+        if children:
+            parent = page
         else:
-            parent = instance.page.node.get_parent()
-            children = instance.page.node.get_siblings()
+            parent = page.parent
+            children = page.get_siblings().filter(pk__in=published)
         context.update({"children": children, "parent": parent})
         return context
 

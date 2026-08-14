@@ -7,12 +7,22 @@ from django.utils import timezone
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import NewsletterSubscriber
 from vitrina.messages.signals import send_monthly_newsletter
+from vitrina.users.factories import UserFactory
 from djangocms_stories.models import Post, PostContent
+from djangocms_versioning.constants import DRAFT, PUBLISHED
+from djangocms_versioning.models import Version
 
 
-def make_blog_post(date_published, title="Test Blog", slug="test-blog"):
+def make_blog_post(date_published, title="Test Blog", slug="test-blog", state=PUBLISHED):
+    """Create a story post whose content is in the given versioning state.
+
+    The version has to be created explicitly: `PostContent.objects` returns
+    published content only, so content without a PUBLISHED version is invisible
+    to the newsletter, which is exactly what `state=DRAFT` exercises.
+    """
     post = Post.objects.create(date_published=date_published)
-    PostContent.objects.create(post=post, title=title, slug=slug, language="lt")
+    content = PostContent.admin_manager.create(post=post, title=title, slug=slug, language="lt")
+    Version.objects.create(content=content, created_by=UserFactory(), state=state)
     return post
 
 
@@ -77,10 +87,25 @@ def test_deleted_on_dataset_not_sent(last_month, subscriber):
 
 @pytest.mark.django_db
 @patch("vitrina.messages.signals.email")
-def test_unpublished_blog_post_not_included(mock_email, last_month, subscriber):
+def test_blog_post_without_publish_date_not_included(mock_email, last_month, subscriber):
     # A post with no date_published won't match the last-month date filter
-    post = Post.objects.create(date_published=None)
-    PostContent.objects.create(post=post, title="Hidden Post", slug="hidden-post", language="lt")
+    make_blog_post(None, title="Hidden Post", slug="hidden-post")
+
+    count = send_monthly_newsletter.send(sender=None)[0][1]
+    assert count == 0
+
+
+@pytest.mark.django_db
+@patch("vitrina.messages.signals.email")
+@patch("djangocms_stories.models.PostContent.get_absolute_url")
+def test_draft_blog_post_not_included(mock_get_absolute_url, mock_email, last_month, subscriber):
+    """A post that is still a draft must never reach the newsletter.
+
+    Regression guard: reading through `admin_manager` instead of `objects`
+    bypasses versioning and mails out unpublished stories.
+    """
+    mock_get_absolute_url.return_value = "/blog/draft-post/"
+    make_blog_post(last_month, title="Draft Post", slug="draft-post", state=DRAFT)
 
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 0

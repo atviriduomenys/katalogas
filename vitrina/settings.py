@@ -550,7 +550,7 @@ HAYSTACK_SIGNAL_PROCESSOR = "vitrina.datasets.search_indexes.CustomSignalProcess
 # Number of hits Haystack pulls per Elasticsearch request when iterating a SearchQuerySet.
 HAYSTACK_ITERATOR_LOAD_PER_QUERY = env.int("HAYSTACK_ITERATOR_LOAD_PER_QUERY", default=5000)
 
-BLOG_USE_PLACEHOLDER = False
+STORIES_USE_PLACEHOLDER = False
 
 META_USE_SITES = True
 
@@ -814,5 +814,4 @@ TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]
 # in INSTALLED_APPS above, in an order that satisfies both constraints:
 # vitrina.users before cms, and vitrina.cms after djangocms_stories.
 CMS_CONFIRM_VERSION4 = True
-CMS_MIGRATION_USER_ID = 1
 DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"

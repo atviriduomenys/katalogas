@@ -835,11 +835,6 @@ class Dataset(Resource):
         tags = self._get_tags_from_cache_or_db()
         return [tag.pk for tag in tags]
 
-    def get_tag_title(self, tag_id) -> str:
-        if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
-            return tag.name
-        return ""
-
     def get_resource_titles(self) -> list[str]:
         return [dist.title for dist in self.datasetdistribution_set.all() if dist.title]
 

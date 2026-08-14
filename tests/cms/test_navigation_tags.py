@@ -19,10 +19,11 @@ def test_show_menu_does_not_query_when_cached():
 
 
 @pytest.mark.django_db
-def test_show_menu_cache_clears_when_a_page_changes():
+def test_show_menu_cache_clears_when_a_page_changes(django_capture_on_commit_callbacks):
     show_menu()
     assert cache.get(menu_cache_key(get_language())) is not None
 
-    create_page("Naujas puslapis", "pages/page.html", get_language(), in_navigation=True)
+    with django_capture_on_commit_callbacks(execute=True):
+        create_page("Naujas puslapis", "pages/page.html", get_language(), in_navigation=True)
 
     assert cache.get(menu_cache_key(get_language())) is None

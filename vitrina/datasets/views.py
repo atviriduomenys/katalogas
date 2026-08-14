@@ -252,7 +252,8 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        annotate_dataset_list_rows(context["object_list"])
+        if self.get_paginate_by(self.object_list):
+            annotate_dataset_list_rows(context["object_list"])
         facet_fields = context.get("facets").get("fields")
         date_facets = context.get("facets").get("dates")
         form = context.get("form")

@@ -38,6 +38,17 @@ https://github.com/atviriduomenys/katalogas/issues/2723
 - A link with no scheme is now refused. Before this change ``forms.URLField`` silently made
   ``www.example.com`` into ``http://www.example.com``. Give the full link.
 
+https://github.com/atviriduomenys/katalogas/issues/2746
+
+- Render the dataset list without a query for each row. The view now batches the likes, the hits and
+  the group titles once for each page. A list of 20 datasets made 151 queries and now makes 18.
+- Stop the dataset list writing to the database. The ``get_hit_count`` tag created a row for every
+  dataset that nobody had opened yet, so a GET inserted rows on every render.
+- Read the titles of the tags facet in one query. The sidebar shows up to 50 tags, and the list made
+  one query for each of them.
+- Read the areas of management of the organization list in one query.
+- Cache the navigation menu for each language. A change to a page clears the cache.
+
 https://github.com/atviriduomenys/katalogas/issues/1825
 
 - Remove Elasticsearch and ``django-haystack``. Use PostgreSQL for search.

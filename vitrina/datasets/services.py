@@ -814,4 +814,4 @@ def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
         selected = group_pks_by_dataset[dataset.pk]
         dataset.like_count = likes.get(dataset.pk, 0)
         dataset.hit_count = int(hits.get(str(dataset.pk), 0))
-        dataset.group_titles = [group for pk, group in groups.items() if pk in selected]
+        dataset.display_groups = [group for pk, group in groups.items() if pk in selected]

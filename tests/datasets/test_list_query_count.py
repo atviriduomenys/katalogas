@@ -42,6 +42,22 @@ def test_dataset_list_does_not_write_to_the_database(app: DjangoTestApp):
     assert writes == [], f"the list wrote {len(writes)} rows on a GET: {writes[:2]}"
 
 
+@pytest.mark.django_db
+def test_stats_view_query_count_does_not_grow_with_dataset_count(app: DjangoTestApp):
+    DatasetFactory.create_batch(3)
+    app.get(reverse("dataset-stats-jurisdiction"))
+
+    with CaptureQueriesContext(connection) as few:
+        app.get(reverse("dataset-stats-jurisdiction"))
+
+    DatasetFactory.create_batch(12)
+    with CaptureQueriesContext(connection) as many:
+        app.get(reverse("dataset-stats-jurisdiction"))
+
+    growth = len(many) - len(few)
+    assert growth <= 2, f"{growth} extra queries for 12 extra datasets ({len(few)} -> {len(many)})"
+
+
 def _set_tags(dataset, count, offset=0):
     dataset.tags = ", ".join(f"tag{index}" for index in range(offset, offset + count))
     dataset.save()

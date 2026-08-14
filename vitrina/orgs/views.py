@@ -361,9 +361,9 @@ class OrganizationListView(FacetedListView):
             if row["jurisdiction_id"] is not None and row["count"]
         }
         jurisdictions = Organization.public.values_list("jurisdiction_id", flat=True).distinct()
-        jurisdictions_objects = {
-            jurisdiction: AreaOfManagement.objects.filter(id=jurisdiction).first() for jurisdiction in jurisdictions
-        }
+        jurisdictions_objects = AreaOfManagement.objects.in_bulk(
+            {jurisdiction for jurisdiction in jurisdictions if jurisdiction is not None}
+        )
 
         context["jurisdictions"] = [
             {

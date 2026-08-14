@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import List, Any, Dict, Iterable, Mapping, Type
 
 import numpy as np
+from hitcount.models import HitCount
 from django.db import transaction
 from django.conf import settings
 from django.contrib import messages
@@ -17,10 +18,11 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from itsdangerous import URLSafeSerializer
 
-from vitrina.datasets.models import Dataset, DCATResourceSubclass
+from vitrina.datasets.models import Dataset, DatasetGroup, DCATResourceSubclass
 from vitrina.helpers import get_filter_url, get_current_domain
 from vitrina.api.models import ApiKey
 from vitrina.helpers import email
+from vitrina.likes.models import Like
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -779,11 +781,6 @@ class DatasetRepresentativeService:
 
 
 def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
-    from hitcount.models import HitCount
-
-    from vitrina.datasets.models import DatasetGroup
-    from vitrina.likes.models import Like
-
     datasets = list(datasets)
     pks = [dataset.pk for dataset in datasets]
     if not pks:

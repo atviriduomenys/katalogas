@@ -140,6 +140,9 @@ class Resource(MP_Node, TranslatableModel):
         self.fix_tree(fix_paths=True)
 
 
+DATASERVICE_FORMAT_TITLES = ["CSV", "JSON", "JSONL"]
+
+
 class Dataset(Resource):
     node_order_by = ("subclass",)
 
@@ -951,23 +954,24 @@ class Dataset(Resource):
     def filter_formats(self):
         formats = [obj.get_format().pk for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
-        if list(self.model_set.all()) and any(
-            dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format
-        ):
-            from vitrina.resources.models import Format
-
-            additional_formats = Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]).values_list("pk", flat=True)
-            formats.extend(additional_formats)
+        if self.serves_dataservice_formats():
+            formats.extend(self.dataservice_formats().values_list("pk", flat=True))
         return formats
+
+    def serves_dataservice_formats(self) -> bool:
+        if not self.model_set.all():
+            return False
+        return any(dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format)
+
+    def dataservice_formats(self):
+        from vitrina.resources.models import Format
+
+        return Format.objects.filter(title__in=DATASERVICE_FORMAT_TITLES)
 
     @property
     def distinct_formats(self):
-        uapi = any(dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format)
-        if uapi and self.model_set.all():
-            from vitrina.resources.models import Format
-
-            additional_formats = list(Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]))
-            return sorted(set(self.formats + additional_formats), key=lambda x: x.title)
+        if self.serves_dataservice_formats():
+            return sorted(set(self.formats + list(self.dataservice_formats())), key=lambda x: x.title)
         return sorted(set(self.formats), key=lambda x: x.title)
 
     @cached_property

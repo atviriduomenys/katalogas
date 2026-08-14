@@ -952,16 +952,19 @@ class Dataset(Resource):
         return [obj.get_format() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
     def filter_formats(self):
-        formats = [obj.get_format().pk for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        distributions = list(self.datasetdistribution_set.all())
+        formats = [dist.get_format().pk for dist in distributions if dist.get_format()]
 
-        if self.serves_dataservice_formats():
+        if self.serves_dataservice_formats(distributions):
             formats.extend(self.dataservice_formats().values_list("pk", flat=True))
         return formats
 
-    def serves_dataservice_formats(self) -> bool:
+    def serves_dataservice_formats(self, distributions=None) -> bool:
         if not self.model_set.all():
             return False
-        return any(dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format)
+        if distributions is None:
+            distributions = self.datasetdistribution_set.all()
+        return any(dist.format.extension == "UAPI" for dist in distributions if dist.format)
 
     def dataservice_formats(self):
         from vitrina.resources.models import Format
@@ -970,9 +973,11 @@ class Dataset(Resource):
 
     @property
     def distinct_formats(self):
-        if self.serves_dataservice_formats():
-            return sorted(set(self.formats + list(self.dataservice_formats())), key=lambda x: x.title)
-        return sorted(set(self.formats), key=lambda x: x.title)
+        distributions = list(self.datasetdistribution_set.all())
+        formats = [dist.get_format() for dist in distributions if dist.get_format()]
+        if self.serves_dataservice_formats(distributions):
+            formats = formats + list(self.dataservice_formats())
+        return sorted(set(formats), key=lambda x: x.title)
 
     @cached_property
     def dataset_content_type(self):

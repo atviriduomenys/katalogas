@@ -792,12 +792,7 @@ def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
         .values_list("object_id")
         .annotate(total=Count("id"))
     )
-    hits = dict(
-        HitCount.objects.filter(
-            content_type=content_type,
-            object_pk__in=[str(pk) for pk in pks],
-        ).values_list("object_pk", "hits")
-    )
+    hits = dict(HitCount.objects.filter(content_type=content_type, object_pk__in=pks).values_list("object_pk", "hits"))
 
     group_pks_by_dataset = {dataset.pk: set(dataset.get_group_list()) for dataset in datasets}
     groups = {
@@ -810,5 +805,5 @@ def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
     for dataset in datasets:
         selected = group_pks_by_dataset[dataset.pk]
         dataset.like_count = likes.get(dataset.pk, 0)
-        dataset.hit_count = int(hits.get(str(dataset.pk), 0))
+        dataset.hit_count = hits.get(dataset.pk, 0)
         dataset.display_groups = [group for pk, group in groups.items() if pk in selected]

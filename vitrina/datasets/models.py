@@ -967,14 +967,11 @@ class Dataset(Resource):
 
     @property
     def distinct_formats(self):
-        if self.is_part_of_dataservice() and self.model_set.all():
+        uapi = any(dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format)
+        if uapi and self.model_set.all():
             from vitrina.resources.models import Format
 
-            additional_formats = [
-                Format.objects.get(title="CSV"),
-                Format.objects.get(title="JSON"),
-                Format.objects.get(title="JSONL"),
-            ]
+            additional_formats = list(Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]))
             return sorted(set(self.formats + additional_formats), key=lambda x: x.title)
         return sorted(set(self.formats), key=lambda x: x.title)
 

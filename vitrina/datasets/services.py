@@ -11,7 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
-from django.db.models import Q, QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.forms import Form
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -776,3 +776,42 @@ class DatasetRepresentativeService:
     def _build_registration_url(self, token: str) -> str:
         path = reverse("representative-register", kwargs={"token": token})
         return f"{get_current_domain(self.request)}{path}"
+
+
+def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
+    from hitcount.models import HitCount
+
+    from vitrina.datasets.models import DatasetGroup
+    from vitrina.likes.models import Like
+
+    datasets = list(datasets)
+    pks = [dataset.pk for dataset in datasets]
+    if not pks:
+        return
+
+    content_type = ContentType.objects.get_for_model(Dataset)
+    likes = dict(
+        Like.objects.filter(content_type=content_type, object_id__in=pks)
+        .values_list("object_id")
+        .annotate(total=Count("id"))
+    )
+    hits = dict(
+        HitCount.objects.filter(
+            content_type=content_type,
+            object_pk__in=[str(pk) for pk in pks],
+        ).values_list("object_pk", "hits")
+    )
+
+    group_pks_by_dataset = {dataset.pk: set(dataset.get_group_list()) for dataset in datasets}
+    groups = {
+        group.pk: group
+        for group in DatasetGroup.objects.filter(pk__in=set().union(*group_pks_by_dataset.values()))
+        .prefetch_related("translations")
+        .order_by("created")
+    }
+
+    for dataset in datasets:
+        selected = group_pks_by_dataset[dataset.pk]
+        dataset.like_count = likes.get(dataset.pk, 0)
+        dataset.hit_count = int(hits.get(str(dataset.pk), 0))
+        dataset.group_titles = [group for pk, group in groups.items() if pk in selected]

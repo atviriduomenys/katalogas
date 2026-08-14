@@ -98,6 +98,7 @@ from vitrina.uapi.models import Agent
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
+    annotate_dataset_list_rows,
     update_facet_data,
     get_frequency_and_format,
     get_requests,
@@ -191,6 +192,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
     row_prefetch_related = (
         "translations",
         "category",
+        "category__datasetgroupcategoryuri_set",
         "excluded_groups",
         "metadata",
         "model_set",
@@ -250,6 +252,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        annotate_dataset_list_rows(context["object_list"])
         facet_fields = context.get("facets").get("fields")
         date_facets = context.get("facets").get("dates")
         form = context.get("form")

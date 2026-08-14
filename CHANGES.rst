@@ -43,8 +43,8 @@ https://github.com/atviriduomenys/katalogas/issues/2746
 - Render the dataset list without a query for each row. The view now batches the likes, the hits, the
   group titles and the data service formats once for each page. A list of 20 datasets that serve a
   data service made 172 queries and now makes 20.
-- Stop the dataset list writing to the database. The ``get_hit_count`` tag created a row for every
-  dataset that nobody had opened yet, so a GET inserted rows on every render.
+- Stop the dataset list and the landing page writing to the database. The ``get_hit_count`` tag
+  created a row for every dataset that nobody had opened yet, so a GET inserted rows on every render.
 - Read the titles of the tags facet in one query. The sidebar shows up to 50 tags, and the list made
   one query for each of them.
 - Read the areas of management of the organization list in one query.

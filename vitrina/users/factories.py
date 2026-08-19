@@ -13,7 +13,7 @@ class UserFactory(DjangoModelFactory):
     last_name = factory.Faker("last_name")
     email = factory.LazyAttributeSequence(lambda o, n: "%s.%s%d@example.com" % (o.first_name, o.last_name, n))
     phone = factory.Sequence(lambda n: "+3706%07d" % n)
-    version = 1
+    model_version = 1
     status = User.ACTIVE
     is_viisp_login = False
     viisp_company_code = None

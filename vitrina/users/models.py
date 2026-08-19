@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from django_otp.plugins.otp_email.models import EmailDevice
 
 from vitrina.orgs.models import Organization, Representative
-from vitrina.users.managers import UserManager, DeletedUserManager
+from vitrina.users.managers import DELETED, UserManager, DeletedUserManager
 
 from django.utils.translation import gettext_lazy as _
 
@@ -34,8 +34,8 @@ class User(AbstractUser):
     username = None
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField(default=1)
-    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True)  # TODO should be unique.
+    model_version = models.IntegerField(default=1)
+    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
@@ -84,6 +84,19 @@ class User(AbstractUser):
         db_table = "user"
         verbose_name = _("Naudotojas")
         verbose_name_plural = _("Visi naudotojai")
+        constraints = [
+            # Uniqueness only among the users `UserManager` can see. Deleting a
+            # user is a soft delete, and `UserManager._create_user` checks for
+            # duplicates through that same filtered manager, so an address is
+            # free to be used again once its owner is gone. A plain unique
+            # column would forbid that, and would refuse to apply at all on a
+            # database that already holds such a pair.
+            models.UniqueConstraint(
+                fields=["email"],
+                condition=models.Q(deleted__isnull=True, deleted_on__isnull=True) & ~models.Q(status=DELETED),
+                name="unique_active_user_email",
+            )
+        ]
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)

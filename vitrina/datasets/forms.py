@@ -25,7 +25,9 @@ from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout, HTML
-from haystack.forms import FacetedSearchForm
+from vitrina.search.models import DatasetSearchDoc, DatasetSearchFacet
+from vitrina.search.forms import SearchForm
+from vitrina.search.queries import text_query
 from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.form_helpers import (
@@ -684,41 +686,26 @@ class DatasetAdminForm(forms.ModelForm):
         )
 
 
-class DatasetSearchForm(FacetedSearchForm):
+class DatasetSearchForm(SearchForm):
     date_from = DateField(required=False)
     date_to = DateField(required=False)
 
+    facet_model = DatasetSearchFacet
+    facet_fk = "dataset_id"
+
+    def filter_by_text(self, queryset, keyword):
+        matching = DatasetSearchDoc.objects.filter(text_query(keyword)).values("dataset_id")
+        return queryset.filter(pk__in=matching)
+
     def search(self):
-        sqs = super().search()
-        sqs = sqs.models(Dataset)
+        queryset = super().search()
         if not self.is_valid():
-            return self.no_query_found()
-        if self.cleaned_data.get("q"):
-            keyword = self.cleaned_data.get("q")
-            if len(keyword) < 5:
-                sqs = sqs.autocomplete(text__startswith=keyword)
-            else:
-                sqs = sqs.autocomplete(text__icontains=keyword)
-
-            dataset_with_name_ids = (
-                self.searchqueryset.models(Dataset).filter(name__icontains=keyword).values_list("pk", flat=True)
-            )
-            dataset_with_model_name_ids = (
-                self.searchqueryset.models(Dataset).filter(model_names__icontains=keyword).values_list("pk", flat=True)
-            )
-            sqs_ids = sqs.values_list("pk", flat=True)
-            ids = list(dataset_with_model_name_ids) + list(dataset_with_name_ids) + list(sqs_ids)
-
-            sqs = self.searchqueryset.models(Dataset).filter(id__in=ids)
-
+            return queryset
         if self.cleaned_data.get("date_from"):
-            sqs = sqs.filter(published__gte=self.cleaned_data["date_from"])
+            queryset = queryset.filter(published__gte=self.cleaned_data["date_from"])
         if self.cleaned_data.get("date_to"):
-            sqs = sqs.filter(published__lte=self.cleaned_data["date_to"])
-        return sqs
-
-    def no_query_found(self):
-        return self.searchqueryset.all()
+            queryset = queryset.filter(published__lte=self.cleaned_data["date_to"])
+        return queryset
 
 
 class DatasetStructureImportForm(forms.ModelForm):

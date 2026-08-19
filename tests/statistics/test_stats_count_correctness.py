@@ -21,7 +21,6 @@ def org_datasets_across_years(db):
     return org
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_dataset_count_bar_chart_counts_all_org_datasets(app: DjangoTestApp, org_datasets_across_years):
     with freeze_time(FROZEN_NOW):
@@ -30,7 +29,6 @@ def test_dataset_count_bar_chart_counts_all_org_datasets(app: DjangoTestApp, org
     assert [(str(b["display_value"]), b["count"]) for b in bar] == [("Org Alpha", 5)]
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_dataset_count_bar_chart_includes_datasets_created_before_window(app: DjangoTestApp, db):
     org = OrganizationFactory(title="Org Beta")
@@ -47,7 +45,6 @@ def test_dataset_count_bar_chart_includes_datasets_created_before_window(app: Dj
         assert [(str(b["display_value"]), b["count"]) for b in bar] == [("Org Beta", 2)], duration
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_dataset_count_bar_chart_includes_future_dated_datasets(app: DjangoTestApp, db):
     org = OrganizationFactory(title="Org Gamma")
@@ -63,7 +60,6 @@ def test_dataset_count_bar_chart_includes_future_dated_datasets(app: DjangoTestA
     assert [(str(b["display_value"]), b["count"]) for b in bar] == [("Org Gamma", 2)]
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_dataset_count_time_chart_counts_datasets_per_year(app: DjangoTestApp, org_datasets_across_years):
     with freeze_time(FROZEN_NOW):

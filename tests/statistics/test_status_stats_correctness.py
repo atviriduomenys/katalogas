@@ -46,7 +46,6 @@ def datasets_with_overlapping_comment_times(db):
     return [ds_open, ds_inv]
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_status_chart_counts_each_dataset_once(app: DjangoTestApp, datasets_with_overlapping_comment_times):
     with freeze_time(FROZEN_NOW):
@@ -63,7 +62,6 @@ def _yearly_series(resp):
     }
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_status_chart_counts_commentless_dataset_at_published_date(app: DjangoTestApp, db):
     DatasetFactory(
@@ -78,7 +76,6 @@ def test_status_chart_counts_commentless_dataset_at_published_date(app: DjangoTe
     assert _yearly_series(resp)["Atverti duomenys"]["2022"] == 1
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_status_chart_bar_includes_status_changes_before_window(app: DjangoTestApp, db):
     ct = ContentType.objects.get_for_model(Dataset)
@@ -93,7 +90,6 @@ def test_status_chart_bar_includes_status_changes_before_window(app: DjangoTestA
         assert counts["Atverti duomenys"] == 1, duration
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_status_chart_falls_back_to_created_date_when_never_published(app: DjangoTestApp, db):
     with freeze_time("2021-03-01"):

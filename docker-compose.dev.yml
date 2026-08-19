@@ -8,7 +8,6 @@ services:
     environment:
       - REDIS_URL=redis://katalogas-redis:6379/
       - DATABASE_URL=postgres://admin:admin123@katalogas-database:5432/katalogas
-      - SEARCH_URL=elasticsearch://katalogas-elasticsearch:9200/haystack
       - CELERY_BROKER_URL=redis://katalogas-redis:6379/3
       - DEBUG=true
       - DJANGO_SETTINGS_MODULE=vitrina.settings
@@ -21,17 +20,8 @@ services:
     depends_on:
       - katalogas-database
       - katalogas-redis
-      - katalogas-elasticsearch
     volumes:
       - /tmp/static:/app/static:Z
-
-  katalogas-elasticsearch:
-    image: elasticsearch:7.8.1
-    environment:
-      discovery.type: 'single-node'
-      indices.query.bool.max_clause_count: 8192
-    volumes:
-      - elasticsearch:/usr/share/elasticsearch/data
 
   katalogas-database:
     image: postgres:16
@@ -63,7 +53,6 @@ services:
     environment:
       - REDIS_URL=redis://katalogas-redis:6379/
       - DATABASE_URL=postgres://admin:admin123@katalogas-database:5432/katalogas
-      - SEARCH_URL=elasticsearch://katalogas-elasticsearch:9200/haystack
       - CELERY_BROKER_URL=redis://katalogas-redis:6379/3
       - DEBUG=true
       - DJANGO_SETTINGS_MODULE=vitrina.settings
@@ -80,4 +69,3 @@ services:
 
 volumes:
   postgres:
-  elasticsearch:

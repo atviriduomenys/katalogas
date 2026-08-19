@@ -32,6 +32,20 @@ https://github.com/atviriduomenys/katalogas/issues/2723
 - A link with no scheme is now refused. Before this change ``forms.URLField`` silently made
   ``www.example.com`` into ``http://www.example.com``. Give the full link.
 
+https://github.com/atviriduomenys/katalogas/issues/1825
+
+- Remove Elasticsearch and ``django-haystack``. Use PostgreSQL for search.
+- Add the ``vitrina.search`` app.
+- Replace the ``rebuild_index`` deploy step with ``rebuild_search``.
+- Replace the nightly ``update_index`` job in ``cronjobs/crontab`` with ``rebuild_search``. Install
+  the new crontab on the server together with this release.
+- Drop the ``SEARCH_URL`` and ``ELASTIC_FACET_SIZE`` settings, and the Elasticsearch service from
+  the compose files and from the test workflow.
+- Sort the request list by the title of the request.
+- End every list order with the primary key, so a page cannot repeat or drop a row.
+- Match a search word anywhere in the text, not only at the start of a word. A search now finds
+  more datasets than before.
+
 v 1.23.0 (2026-08-03)
 ==================
 

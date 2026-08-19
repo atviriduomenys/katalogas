@@ -1,0 +1,84 @@
+{
+  "dates": {
+    "created": [
+      [
+        "2023-05-01",
+        1
+      ],
+      [
+        "2024-02-01",
+        1
+      ]
+    ]
+  },
+  "fields": {
+    "category": [
+      [
+        "cat_child",
+        1
+      ],
+      [
+        "cat_root",
+        2
+      ]
+    ],
+    "dataset_status": [
+      [
+        "HAS_DATA",
+        1
+      ]
+    ],
+    "groups": [
+      [
+        "group_x",
+        1
+      ]
+    ],
+    "jurisdiction": [
+      [
+        "aom_a",
+        1
+      ],
+      [
+        "aom_b",
+        1
+      ]
+    ],
+    "organization": [
+      [
+        "org_a",
+        1
+      ],
+      [
+        "org_b",
+        1
+      ]
+    ],
+    "parent_category": [
+      [
+        "cat_root",
+        1
+      ]
+    ],
+    "status": [
+      [
+        "APPROVED",
+        1
+      ],
+      [
+        "CREATED",
+        1
+      ]
+    ],
+    "tags": [
+      [
+        "alpha",
+        1
+      ],
+      [
+        "shared",
+        1
+      ]
+    ]
+  }
+}

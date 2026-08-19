@@ -4,7 +4,8 @@ import re
 
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.utils.html import format_html
-from haystack.forms import FacetedSearchForm
+from vitrina.search.forms import SearchForm
+from vitrina.search.queries import text_query
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
@@ -300,33 +301,9 @@ class OrganizationCreateForm(OrganizationBaseForm):
         return cleaned_data
 
 
-class OrganizationSearchForm(FacetedSearchForm):
-    def search(self):
-        sqs = super().search()
-        sqs = sqs.models(Organization)
-        if not self.is_valid():
-            return self.no_query_found()
-        if self.cleaned_data.get("q"):
-            keyword = self.cleaned_data.get("q")
-            if len(keyword) < 5:
-                sqs = sqs.autocomplete(text__startswith=keyword)
-            else:
-                sqs = sqs.autocomplete(text__icontains=keyword)
-
-            sqs_ids = sqs.values_list("pk", flat=True)
-            if not sqs_ids:
-                sqs_ids = (
-                    self.searchqueryset.models(Organization)
-                    .filter(title__icontains=keyword)
-                    .values_list("pk", flat=True)
-                )
-
-            sqs = self.searchqueryset.models(Organization).filter(id__in=list(sqs_ids))
-
-        return sqs
-
-    def no_query_found(self):
-        return self.searchqueryset.all()
+class OrganizationSearchForm(SearchForm):
+    def filter_by_text(self, queryset, keyword):
+        return queryset.filter(text_query(keyword, "title"))
 
 
 class RepresentativeUpdateForm(ModelForm):

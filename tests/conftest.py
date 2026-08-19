@@ -7,9 +7,7 @@ from unittest.mock import patch
 
 import pytest
 from django.apps import apps
-from django.core.management import call_command
 from pprintpp import pprint as pp
-from pytest_django.lazy_django import skip_if_no_django
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import DCATResourceSubclass
@@ -38,42 +36,20 @@ def app(django_app_factory):
     yield django_app_factory(csrf_checks=False)
 
 
-def pytest_configure(config):
-    config.addinivalue_line("markers", "haystack: use a search index")
-
-
 @pytest.fixture(autouse=True)
-def _haystack_marker(request):
-    if request.keywords.get("haystack"):
-        # Skip if Django is not configured
-        skip_if_no_django()
+def _immediate_search_indexing(request):
+    """Index at once in tests that never commit.
 
-        # Haystack requires database
-        request.getfixturevalue("db")
-
-        # Switch to test index
-        settings = request.getfixturevalue("settings")
-        settings.HAYSTACK_CONNECTIONS = {
-            "default": settings.HAYSTACK_CONNECTIONS["test"],
-        }
-
-        call_command("clear_index", interactive=False, using=["default"])
-
-    yield
-
-
-@pytest.fixture(autouse=True)
-def _immediate_elastic_search_indexing(request):
+    The search app defers indexing to the end of the transaction. A test that
+    wraps itself in a rollback never commits, so the callback would never run.
+    """
     django_db_marker = request.node.get_closest_marker("django_db")
     uses_real_transactions = django_db_marker and django_db_marker.kwargs.get("transaction", False)
 
     if uses_real_transactions:
         yield
     else:
-        with patch(
-            "vitrina.datasets.search_indexes.CustomSignalProcessor._on_commit",
-            staticmethod(lambda func: func()),
-        ):
+        with patch("vitrina.search.signals.on_commit", lambda func: func()):
             yield
 
 

@@ -1,0 +1,160 @@
+{
+  "dates": {
+    "published": [
+      [
+        "2022-11-01",
+        1
+      ],
+      [
+        "2023-03-01",
+        1
+      ],
+      [
+        "2024-07-01",
+        1
+      ]
+    ]
+  },
+  "fields": {
+    "access_rights": [
+      [
+        "PUBLIC",
+        2
+      ],
+      [
+        "RESTRICTED",
+        1
+      ]
+    ],
+    "category": [
+      [
+        "cat_child",
+        1
+      ],
+      [
+        "cat_other",
+        1
+      ],
+      [
+        "cat_root",
+        2
+      ]
+    ],
+    "creator": [
+      [
+        "org_b",
+        1
+      ]
+    ],
+    "formats": [
+      [
+        "fmt_csv",
+        1
+      ],
+      [
+        "fmt_json",
+        1
+      ]
+    ],
+    "frequency": [
+      [
+        "freq_daily",
+        2
+      ],
+      [
+        "freq_yearly",
+        1
+      ]
+    ],
+    "groups": [
+      [
+        "group_x",
+        1
+      ]
+    ],
+    "jurisdiction": [
+      [
+        "aom_a",
+        2
+      ],
+      [
+        "aom_b",
+        1
+      ]
+    ],
+    "level": [
+      [
+        "2",
+        1
+      ],
+      [
+        "4",
+        2
+      ]
+    ],
+    "organization": [
+      [
+        "org_a",
+        1
+      ],
+      [
+        "org_b",
+        1
+      ],
+      [
+        "org_c",
+        1
+      ]
+    ],
+    "parent_category": [
+      [
+        "cat_other",
+        1
+      ],
+      [
+        "cat_root",
+        2
+      ]
+    ],
+    "status": [
+      [
+        "HAS_DATA",
+        1
+      ],
+      [
+        "INVENTORED",
+        1
+      ],
+      [
+        "PLANNED",
+        1
+      ]
+    ],
+    "subclass": [
+      [
+        "dataset",
+        3
+      ]
+    ],
+    "tags": [
+      [
+        "alpha",
+        1
+      ],
+      [
+        "gamma",
+        1
+      ],
+      [
+        "shared",
+        2
+      ]
+    ],
+    "type": [
+      [
+        "type_shown",
+        1
+      ]
+    ]
+  }
+}

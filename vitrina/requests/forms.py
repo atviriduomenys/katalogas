@@ -19,7 +19,9 @@ from django.forms import (
     Textarea,
 )
 from django.utils.translation import gettext_lazy as _
-from haystack.forms import FacetedSearchForm, SearchForm
+from vitrina.search.models import RequestSearchDoc, RequestSearchFacet
+from vitrina.search.forms import SearchForm
+from vitrina.search.queries import text_query
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import Plan, PlanRequest
@@ -33,7 +35,7 @@ from vitrina.requests.models import RequestObject
 from django.contrib.contenttypes.models import ContentType
 
 
-class PublisherWidget(ModelSelect2MultipleWidget, SearchForm):
+class PublisherWidget(ModelSelect2MultipleWidget):
     empty_label = "Pasirinkite organizacijas"
     search_fields = ("title__icontains",)
     is_bound = False
@@ -204,29 +206,26 @@ class RequestDatasetsEditForm(ModelForm):
         self.fields["datasets"].queryset = queryset
 
 
-class RequestSearchForm(FacetedSearchForm):
+class RequestSearchForm(SearchForm):
     date_from = DateField(required=False)
     date_to = DateField(required=False)
 
-    def search(self):
-        sqs = super().search()
-        sqs = sqs.models(Request)
-        if not self.is_valid():
-            return self.no_query_found()
-        if self.cleaned_data.get("q"):
-            keyword = self.cleaned_data.get("q")
-            if len(keyword) < 5:
-                sqs = sqs.autocomplete(text__startswith=keyword)
-            else:
-                sqs = sqs.autocomplete(text__icontains=keyword)
-        if self.cleaned_data.get("date_from"):
-            sqs = sqs.filter(created__gte=self.cleaned_data["date_from"])
-        if self.cleaned_data.get("date_to"):
-            sqs = sqs.filter(created__lte=self.cleaned_data["date_to"])
-        return sqs
+    facet_model = RequestSearchFacet
+    facet_fk = "request_id"
 
-    def no_query_found(self):
-        return self.searchqueryset.all()
+    def filter_by_text(self, queryset, keyword):
+        matching = RequestSearchDoc.objects.filter(text_query(keyword)).values("request_id")
+        return queryset.filter(pk__in=matching)
+
+    def search(self):
+        queryset = super().search()
+        if not self.is_valid():
+            return queryset
+        if self.cleaned_data.get("date_from"):
+            queryset = queryset.filter(created__gte=self.cleaned_data["date_from"])
+        if self.cleaned_data.get("date_to"):
+            queryset = queryset.filter(created__lte=self.cleaned_data["date_to"])
+        return queryset
 
 
 class PlanChoiceField(ModelChoiceField):

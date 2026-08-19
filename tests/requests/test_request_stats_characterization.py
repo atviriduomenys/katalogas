@@ -93,7 +93,6 @@ EXPECTED = {
 }
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("duration", DURATIONS)
 @pytest.mark.parametrize("indicator", INDICATORS)
@@ -119,7 +118,6 @@ def test_request_status_stats_snapshot(app: DjangoTestApp, request_status_data, 
     assert normalize_chart_snapshot(snapshot) == normalize_chart_snapshot(EXPECTED[(indicator, duration)])
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_request_status_stats_query_count(app: DjangoTestApp, request_status_data):
     with freeze_time(FROZEN_NOW):

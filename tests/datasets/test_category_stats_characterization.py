@@ -77,7 +77,6 @@ def category_stats_data(db):
     return parent_cat, child_a, child_b, child_c, ds_a1, ds_a2, ds_b
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("indicator", INDICATORS)
 def test_category_stats_snapshot(category_stats_data, indicator):
@@ -126,7 +125,6 @@ def test_category_stats_snapshot(category_stats_data, indicator):
             assert key in d, f"Missing key {key!r} in category_data entry: {d}"
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_category_stats_query_count(category_stats_data):
     parent_cat, *_ = category_stats_data
@@ -189,7 +187,6 @@ def category_download_stats_data(db):
     return parent_cat, child_a, child_b
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("indicator", ["download-request-count", "download-object-count"])
 def test_category_download_stats_snapshot(category_download_stats_data, indicator):
@@ -211,7 +208,6 @@ def test_category_download_stats_snapshot(category_download_stats_data, indicato
     assert ctx["active_indicator"] == indicator
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_category_download_stats_query_count(category_download_stats_data):
     parent_cat, *_ = category_download_stats_data

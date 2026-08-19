@@ -4,7 +4,7 @@ import secrets
 import json
 import uuid
 from collections import Counter, defaultdict
-from datetime import datetime, date
+from datetime import datetime
 from functools import cached_property
 from typing import List, Any, Type as TypingType
 from urllib.parse import urlencode
@@ -41,8 +41,8 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from haystack.generic_views import FacetedSearchView
-from haystack.query import SearchQuerySet
+from vitrina.search.models import DatasetSearchFacet
+from vitrina.search.views import FacetedListView
 from itsdangerous import URLSafeSerializer
 from parler.utils.context import switch_language
 from parler.utils.i18n import get_language
@@ -98,7 +98,6 @@ from vitrina.uapi.models import Agent
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
-    apply_terms_filter,
     update_facet_data,
     get_frequency_and_format,
     get_requests,
@@ -150,7 +149,7 @@ from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.requests.models import RequestObject, RequestAssignment, Request
 from vitrina.resources.models import DatasetDistribution, Format
-from vitrina.settings import ELASTIC_FACET_SIZE, ELASTIC_TAGS_FACET_SIZE, SPINTA_SERVER_URL
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
@@ -163,7 +162,7 @@ from vitrina.structure.services import (
 from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
 
 
-class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
+class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
     template_name = "vitrina/datasets/list.html"
     facet_fields = [
         "status",
@@ -183,16 +182,21 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         "subclass",
     ]
     form_class = DatasetSearchForm
-    max_num_facets = 20
+    facet_model = DatasetSearchFacet
+    facet_fk = "dataset_id"
+    integer_facet_fields = frozenset({"level", "frequency"})
+    date_facet_field = "published"
+    queryset = Dataset.objects.filter(search_doc__isnull=False)
+    row_select_related = ("organization", "subclass")
+    row_prefetch_related = (
+        "translations",
+        "category",
+        "excluded_groups",
+        "metadata",
+        "model_set",
+        "datasetdistribution_set__format",
+    )
     paginate_by = 20
-    date_facet_fields = [
-        {
-            "field": "published",
-            "start_date": date(2019, 1, 1),
-            "end_date": date.today(),
-            "gap_by": "month",
-        },
-    ]
 
     @property
     def page_title(self) -> str:
@@ -215,15 +219,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         return super().get(request)
 
     def get_queryset(self):
-        queryset: SearchQuerySet = get_datasets_for_user(self.request, super().get_queryset())
+        queryset = get_datasets_for_user(self.request, super().get_queryset())
         sorting = self.request.GET.get("sort", None)
-        queryset = queryset.models(Dataset)
         if self.request.GET.get("q") and not sorting:
             sorting = "sort-by-relevance"
-
-        for field in self.facet_fields:
-            size = ELASTIC_TAGS_FACET_SIZE if field == "tags" else ELASTIC_FACET_SIZE
-            queryset = queryset.facet(field, size=size)
 
         if is_manager_dataset_list(self.request):
             dataset_ct = ContentType.objects.get_for_model(Dataset)
@@ -231,27 +230,22 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             manager_reps = self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
             direct_dataset_ids = manager_reps.filter(content_type=dataset_ct).values_list("object_id", flat=True)
             managed_org_ids = manager_reps.filter(content_type=organization_ct).values_list("object_id", flat=True)
-            allowed_dataset_pks = list(
-                Dataset.objects.filter(Q(pk__in=direct_dataset_ids) | Q(organization_id__in=managed_org_ids))
-                .values_list("pk", flat=True)
-                .distinct()
-            )
-            queryset = apply_terms_filter(queryset, "django_id", allowed_dataset_pks)
+            queryset = queryset.filter(Q(pk__in=direct_dataset_ids) | Q(organization_id__in=managed_org_ids))
 
         if is_org_dataset_list(self.request):
             queryset = queryset.filter(organization=self.organization.pk)
 
         if not sorting or sorting == "sort-by-date-newest":
-            queryset = queryset.order_by("-published_created_s")
+            queryset = queryset.order_by(F("search_doc__published_or_created").desc(nulls_last=True), "pk")
         elif sorting == "sort-by-date-oldest":
-            queryset = queryset.order_by("published_created_s")
+            queryset = queryset.order_by("search_doc__published_or_created", "pk")
         elif sorting == "sort-by-title":
             if self.request.LANGUAGE_CODE == "lt":
-                queryset = queryset.order_by("lt_title_s", "-type_order")
+                queryset = queryset.order_by("search_doc__title_lt", "-search_doc__type_order", "pk")
             else:
-                queryset = queryset.order_by("en_title_s", "-type_order")
+                queryset = queryset.order_by("search_doc__title_en", "-search_doc__type_order", "pk")
         elif sorting == "sort-by-relevance":
-            queryset = queryset.order_by("-type_order")
+            queryset = queryset.order_by("-search_doc__type_order", "pk")
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -2748,7 +2742,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
-        datasets = self.get_queryset()
+        datasets = self.object_list
         indicator = self.request.GET.get("indicator", None) or "dataset-count"
         sorting = self.request.GET.get("sort", None) or "sort-desc"
         duration = self.request.GET.get("duration", None) or "duration-yearly"
@@ -2765,7 +2759,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
             labels = pd.period_range(start=start_date, end=datetime.now(), freq=frequency).tolist()
 
         for dataset in datasets:
-            published = dataset.published
+            published = timezone.localtime(dataset.published) if dataset.published else None
             if published is not None:
                 year_published = published.year
                 year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
@@ -2892,7 +2886,7 @@ class YearStatsView(DatasetListView):
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         max_count = 0
-        datasets = self.get_queryset()
+        datasets = self.object_list
         indicator = self.request.GET.get("indicator", None) or "dataset-count"
         sorting = self.request.GET.get("sort", None) or "sort-desc"
         year_stats = {}
@@ -2900,7 +2894,7 @@ class YearStatsView(DatasetListView):
         selected_year = str(self.kwargs["year"])
 
         for dataset in datasets:
-            published = dataset.published
+            published = timezone.localtime(dataset.published) if dataset.published else None
             if published is not None:
                 year_published = published.year
                 year_stats[year_published] = year_stats.get(year_published, 0) + 1
@@ -2985,14 +2979,14 @@ class QuarterStatsView(DatasetListView):
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         max_count = 0
-        datasets = self.get_queryset()
+        datasets = self.object_list
         indicator = self.request.GET.get("indicator", None) or "dataset-count"
         sorting = self.request.GET.get("sort", None) or "sort-desc"
         monthly_stats = {}
         selected_quarter = str(self.kwargs["quarter"])
 
         for dataset in datasets:
-            published = dataset.published
+            published = timezone.localtime(dataset.published) if dataset.published else None
             if published is not None:
                 year_published = published.year
                 if str(year_published) in selected_quarter:
@@ -3478,15 +3472,21 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         )
 
 
-class UpdateDatasetOrgFilters(FacetedSearchView):
-    template_name = "vitrina/datasets/organization_filter_items.html"
+class DatasetFilterItemsView(FacetedListView):
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+    integer_facet_fields = DatasetListView.integer_facet_fields
+    facet_model = DatasetSearchFacet
+    facet_fk = "dataset_id"
+    queryset = Dataset.objects.filter(search_doc__isnull=False)
+    paginate_by = 0
 
     def get_queryset(self):
-        datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request, datasets)
-        return datasets
+        return get_datasets_for_user(self.request, super().get_queryset())
+
+
+class UpdateDatasetOrgFilters(DatasetFilterItemsView):
+    template_name = "vitrina/datasets/organization_filter_items.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3515,15 +3515,8 @@ class UpdateDatasetOrgFilters(FacetedSearchView):
             return context
 
 
-class UpdateDatasetCategoryFilters(FacetedSearchView):
+class UpdateDatasetCategoryFilters(DatasetFilterItemsView):
     template_name = "vitrina/datasets/category_filter_items.html"
-    form_class = DatasetSearchForm
-    facet_fields = DatasetListView.facet_fields
-
-    def get_queryset(self):
-        datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request, datasets)
-        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3553,15 +3546,8 @@ class UpdateDatasetCategoryFilters(FacetedSearchView):
             return context
 
 
-class UpdateDatasetTagFilters(FacetedSearchView):
+class UpdateDatasetTagFilters(DatasetFilterItemsView):
     template_name = "vitrina/datasets/tag_filter_items.html"
-    form_class = DatasetSearchForm
-    facet_fields = DatasetListView.facet_fields
-
-    def get_queryset(self):
-        datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request, datasets)
-        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3591,15 +3577,8 @@ class UpdateDatasetTagFilters(FacetedSearchView):
             return context
 
 
-class UpdateDatasetJurisdictionFilters(FacetedSearchView):
+class UpdateDatasetJurisdictionFilters(DatasetFilterItemsView):
     template_name = "vitrina/datasets/jurisdiction_filter_items.html"
-    form_class = DatasetSearchForm
-    facet_fields = DatasetListView.facet_fields
-
-    def get_queryset(self):
-        datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request, datasets)
-        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3629,15 +3608,8 @@ class UpdateDatasetJurisdictionFilters(FacetedSearchView):
             return context
 
 
-class UpdateDatasetPublisherFilters(FacetedSearchView):
+class UpdateDatasetPublisherFilters(DatasetFilterItemsView):
     template_name = "vitrina/datasets/publisher_filter_items.html"
-    form_class = DatasetSearchForm
-    facet_fields = DatasetListView.facet_fields
-
-    def get_queryset(self):
-        datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request, datasets)
-        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3729,7 +3701,7 @@ class DatasetChildResourceListView(
 
     def get_queryset(self) -> QuerySet[Dataset]:
         descendants: list[int] = self.object.get_descendants().values_list("pk", flat=True)
-        return super(DatasetChildResourceListView, self).get_queryset().filter(django_id__in=list(descendants))
+        return super(DatasetChildResourceListView, self).get_queryset().filter(pk__in=list(descendants))
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, get_object_or_404(Dataset, pk=self.parent_dataset_id))

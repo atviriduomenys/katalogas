@@ -48,6 +48,9 @@ https://github.com/atviriduomenys/katalogas/issues/2746
 - Read the titles of the tags facet in one query. The sidebar shows up to 50 tags, and the list made
   one query for each of them.
 - Read the areas of management of the organization list in one query.
+- Read the icon of the dataset list in one query for each page. ``get_icon`` asked the database for
+  the root of every category of every row, so a page of 20 datasets made up to 26 category queries.
+  The query count of the list is now flat: 51 -> 28 queries for a page of the production catalogue.
 - Read the distributions of a dataset once in ``distinct_formats``. The project datasets page and the
   landing page read them and every format twice.
 - Cache the navigation menu for each language. A change to a page clears the cache after the

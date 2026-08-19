@@ -21,6 +21,7 @@ from itsdangerous import URLSafeSerializer
 from vitrina.datasets.models import DATASERVICE_FORMAT_TITLES, Dataset, DatasetGroup, DCATResourceSubclass
 from vitrina.helpers import get_filter_url, get_current_domain
 from vitrina.api.models import ApiKey
+from vitrina.classifiers.models import Category
 from vitrina.helpers import email
 from vitrina.likes.models import Like
 from vitrina.messages.models import Subscription, SentMail
@@ -802,10 +803,18 @@ def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
         .order_by("created")
     }
 
+    root_paths = {
+        dataset.pk: {category.path[: Category.steplen] for category in dataset.category.all()} for dataset in datasets
+    }
+    roots = []
+    if any(root_paths.values()):
+        roots = list(Category.objects.filter(depth=1).order_by("title").values_list("path", "icon"))
+
     dataservice_formats = None
 
     for dataset in datasets:
         selected = group_pks_by_dataset[dataset.pk]
+        dataset.icon = next((icon for path, icon in roots if path in root_paths[dataset.pk]), None)
         dataset.like_count = likes.get(dataset.pk, 0)
         dataset.hit_count = hits.get(dataset.pk, 0)
         dataset.display_groups = [group for pk, group in groups.items() if pk in selected]

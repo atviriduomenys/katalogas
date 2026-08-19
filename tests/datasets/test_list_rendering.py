@@ -4,6 +4,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 from hitcount.models import HitCount
 
+from vitrina.classifiers.factories import CategoryFactory
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.likes.models import Like
@@ -52,3 +53,34 @@ def test_dataset_list_shows_the_dataservice_formats(app: DjangoTestApp):
     shown = [str(fmt) for fmt in response.context["object_list"][0].display_formats]
     assert shown == [str(fmt) for fmt in dataset.distinct_formats]
     assert {"CSV", "JSON", "JSONL"}.issubset(set(shown))
+
+
+@pytest.mark.django_db
+def test_dataset_list_shows_the_root_category_icon(app: DjangoTestApp):
+    root = CategoryFactory(title="Aplinka", icon="cloud-sun")
+    dataset = DatasetFactory(category=[root.add_child(title="Oras", featured=False)])
+
+    response = app.get(reverse("dataset-list"))
+
+    assert response.context["object_list"][0].icon == dataset.get_icon() == "cloud-sun"
+    assert "fa-cloud-sun" in response.text
+
+
+@pytest.mark.django_db
+def test_dataset_list_icon_keeps_the_first_root_by_title(app: DjangoTestApp):
+    first = CategoryFactory(title="Aplinka", icon="")
+    second = CategoryFactory(title="Energetika", icon="bolt")
+    dataset = DatasetFactory(category=[first, second])
+
+    response = app.get(reverse("dataset-list"))
+
+    assert response.context["object_list"][0].icon == dataset.get_icon() == ""
+
+
+@pytest.mark.django_db
+def test_dataset_list_icon_is_none_without_a_category(app: DjangoTestApp):
+    dataset = DatasetFactory()
+
+    response = app.get(reverse("dataset-list"))
+
+    assert response.context["object_list"][0].icon == dataset.get_icon() is None

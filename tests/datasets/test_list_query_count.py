@@ -4,6 +4,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
+from vitrina.classifiers.factories import CategoryFactory
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.resources.factories import DatasetDistributionFactory, UapiFormat
 from vitrina.structure.factories import ModelFactory
@@ -106,3 +107,27 @@ def test_dataset_list_query_count_does_not_grow_with_tag_count(app: DjangoTestAp
 
     growth = len(many) - len(few)
     assert growth <= 2, f"{growth} extra queries for 27 extra tags ({len(few)} -> {len(many)})"
+
+
+def _child_category(icon: str = "cloud-sun"):
+    root = CategoryFactory(title="Aplinka", icon=icon)
+    return root.add_child(title="Oras", featured=False)
+
+
+@pytest.mark.django_db
+def test_dataset_list_query_count_does_not_grow_with_categorised_rows(app: DjangoTestApp):
+    category = _child_category()
+    for _ in range(3):
+        DatasetFactory(category=[category])
+    app.get(reverse("dataset-list"))
+
+    with CaptureQueriesContext(connection) as few:
+        app.get(reverse("dataset-list"))
+
+    for _ in range(12):
+        DatasetFactory(category=[category])
+    with CaptureQueriesContext(connection) as many:
+        app.get(reverse("dataset-list"))
+
+    growth = len(many) - len(few)
+    assert growth <= 2, f"{growth} extra queries for 12 extra categorised results ({len(few)} -> {len(many)})"

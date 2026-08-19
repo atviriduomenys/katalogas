@@ -51,6 +51,7 @@ from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
 from vitrina.users.models import User
 from vitrina.datasets.tasks import update_applicable_legislation_description
 from vitrina.uapi.models import Agent
+from vitrina.validators import validate_absolute_uri
 
 
 # Mirrors django.utils.html._json_script_escapes: json.dumps does not escape
@@ -418,11 +419,12 @@ class Dataset(Resource):
         null=True,
         verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"),
     )
-    landing_page = models.URLField(
+    landing_page = models.CharField(
         verbose_name=_("Prieigos nuoroda"),
         max_length=1024,
         null=True,
         blank=True,
+        validators=[validate_absolute_uri],
         help_text=_(
             "Tinklalapis, kuriame galima susipažinti su duomenų ištekliu, jo pateiktimi ir (arba) papildoma informacija. Ji skirta nukreipti į pradinio duomenų paslaugos teikėjo, o ne į trečiosios šalies, pavyzdžiui, agregatoriaus, svetainės puslapį. Atitinka dcat:landingPage."
         ),
@@ -462,11 +464,12 @@ class Dataset(Resource):
             "Atitinka dcat:endpointURL."
         ),
     )
-    endpoint_url = models.URLField(
+    endpoint_url = models.CharField(
         verbose_name=_("API adresas"),
         null=True,
         blank=True,
         max_length=512,
+        validators=[validate_absolute_uri],
     )
     endpoint_type = models.ForeignKey(
         "vitrina_resources.Format",
@@ -477,10 +480,12 @@ class Dataset(Resource):
         related_name="format_endpoint_types",
         help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."),
     )
-    endpoint_description = models.URLField(
+    endpoint_description = models.CharField(
         verbose_name=_("API specifikacija"),
         null=True,
         blank=True,
+        max_length=512,
+        validators=[validate_absolute_uri],
     )
     endpoint_description_type = models.ForeignKey(
         "vitrina_resources.Format",
@@ -518,10 +523,11 @@ class Dataset(Resource):
             "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance."
         ),
     )
-    information_system_assessment_url = models.URLField(
+    information_system_assessment_url = models.CharField(
         null=True,
         blank=True,
         max_length=512,
+        validators=[validate_absolute_uri],
         verbose_name=_("Informacinės sistemos svarbos vertinimas"),
         help_text=_(
             "URL nuoroda į informacinės sistemos svarbos vertinimo dokumentą. "
@@ -632,11 +638,12 @@ class Dataset(Resource):
         help_text=_("Veikla, dėl kurios buvo sukurtas duomenų rinkinys. Atitinka prov:wasGeneratedBy."),
     )
 
-    rights_relation = models.URLField(
+    rights_relation = models.CharField(
         verbose_name=_("Teisės - Susijęs dokumentas"),
         max_length=1024,
         null=True,
         blank=True,
+        validators=[validate_absolute_uri],
         help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
     contact = models.ForeignKey(

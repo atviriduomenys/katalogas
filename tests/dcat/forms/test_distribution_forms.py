@@ -1,4 +1,5 @@
 import pytest
+from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import override as translation_override
 
@@ -26,6 +27,14 @@ class TestDatasetDistributionForm:
         assert not form.fields["availability"].required
         assert not form.fields["data_service"].required
         assert form.fields["format"].required
+
+    def test_url_fields_use_single_line_widgets(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(dataset)
+
+        assert isinstance(form.fields["access_url"].widget, forms.TextInput)
+        assert isinstance(form.fields["download_url"].widget, forms.TextInput)
 
     def test_default_licence_set_as_initial_when_creating(self):
         dataset = DatasetFactory()
@@ -271,6 +280,40 @@ class TestDatasetDistributionForm:
 
         assert "documentation" not in form.errors
         assert form.cleaned_data["documentation"] == ["https://example.com/doc1", "https://example.com/doc2"]
+
+    def test_internal_access_and_download_urls_are_accepted(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(
+            dataset,
+            data={
+                "access_url": "http://ext-db:8888/orawsv/SISTEMA_WS/WS_ESERVICES_PROVIDER?WSDL",
+                "download_url": "http://10.0.0.5:8080/export.csv",
+            },
+        )
+
+        assert "access_url" not in form.errors
+        assert "download_url" not in form.errors
+
+    def test_free_text_access_url_raises_error(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(dataset, data={"access_url": "N/A"})
+
+        assert not form.is_valid()
+        assert "Įveskite tinkamą URL adresą." in form.errors["access_url"]
+
+    def test_internal_documentation_url_is_accepted(self):
+        internal_url = "http://localhost:8000/docs/openapi.json"
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(
+            dataset,
+            data={"access_url": "https://example.com", "documentation": [internal_url]},
+        )
+
+        assert "documentation" not in form.errors
+        assert form.cleaned_data["documentation"] == [internal_url]
 
     def test_dynamic_help_text_applied(self):
         dataset = DatasetFactory()

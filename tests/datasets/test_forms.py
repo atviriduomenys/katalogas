@@ -272,6 +272,39 @@ class TestServiceResourceForm:
         assert "endpoint_description" not in form.errors
         assert "agent" not in form.errors
 
+    def test_internal_endpoint_urls_are_accepted(self, organization: Organization, user: User, rf: RequestFactory):
+        internal_url = "http://internal.lt/id/non-standard/DataServiceStandard"
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+
+        data = {
+            "endpoint_url": internal_url,
+            "endpoint_description": internal_url,
+            "access_rights": Dataset.PUBLIC,
+        }
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        assert "endpoint_url" not in form.errors
+        assert "endpoint_description" not in form.errors
+
+    def test_free_text_endpoint_urls_are_rejected(self, organization: Organization, user: User, rf: RequestFactory):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+
+        data = {
+            "endpoint_url": "N/A",
+            "endpoint_description": "N/A",
+            "access_rights": Dataset.PUBLIC,
+        }
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        assert "Įveskite tinkamą URL adresą." in form.errors["endpoint_url"]
+        assert "Įveskite tinkamą URL adresą." in form.errors["endpoint_description"]
+
     def test_related_fields_auto_filled_if_agent_selected(
         self, organization: Organization, user: User, rf: RequestFactory
     ):

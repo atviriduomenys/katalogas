@@ -432,6 +432,48 @@ class TestServiceResourceForm:
 
         assert form.fields["endpoint_url"].required is True
 
+    def test_internal_endpoint_urls_are_accepted(self):
+        internal_url = "http://ext-db:8888/orawsv/SISTEMA_WS/WS_ESERVICES_PROVIDER?WSDL"
+        organization = OrganizationFactory()
+        contact = ContactFactory(organization=organization)
+
+        form = ServiceResourceForm(
+            organization=organization,
+            url_parent=None,
+            data={
+                "title": "Test Service",
+                "name": "testservice",
+                "tags": "tag1",
+                "contact": contact.pk,
+                "organization": organization.pk,
+                "endpoint_url": internal_url,
+                "endpoint_description": internal_url,
+            },
+        )
+
+        assert "endpoint_url" not in form.errors
+        assert "endpoint_description" not in form.errors
+
+    def test_free_text_endpoint_urls_are_rejected(self):
+        organization = OrganizationFactory()
+
+        form = ServiceResourceForm(
+            organization=organization,
+            url_parent=None,
+            data={
+                "title": "Test Service",
+                "name": "testservice",
+                "tags": "tag1",
+                "organization": organization.pk,
+                "endpoint_url": "N/A",
+                "endpoint_description": "N/A",
+            },
+        )
+
+        assert not form.is_valid()
+        assert "Įveskite tinkamą URL adresą." in form.errors["endpoint_url"]
+        assert "Įveskite tinkamą URL adresą." in form.errors["endpoint_description"]
+
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
         FormFieldTextFactory(

@@ -3,6 +3,9 @@ from copy import copy
 
 from django.db import transaction
 
+from vitrina.requests.models import RequestObject
+from vitrina.search.indexing import index_dataset, index_request
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,9 +25,6 @@ def _with_fresh_relations(instance):
 
 
 def _reindex_dataset(instance):
-    from vitrina.requests.models import RequestObject
-    from vitrina.search.indexing import index_dataset, index_request
-
     index_dataset(_with_fresh_relations(instance))
 
     for request_object in RequestObject.objects.filter(
@@ -36,8 +36,6 @@ def _reindex_dataset(instance):
 
 
 def _reindex_request(instance):
-    from vitrina.search.indexing import index_request
-
     index_request(_with_fresh_relations(instance))
 
 

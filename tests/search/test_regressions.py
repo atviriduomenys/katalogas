@@ -13,6 +13,7 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.requests.models import Request, RequestAssignment, RequestObject
 from vitrina.search.indexing import UNASSIGNED_ORGANIZATION
+from vitrina.search.queries import date_facet_counts
 from vitrina.search.models import DatasetSearchDoc, DatasetSearchFacet, RequestSearchFacet
 
 
@@ -100,10 +101,12 @@ def test_paging_never_repeats_or_drops_a_dataset(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_request_category_facet_drops_all_but_one_category_of_its_dataset():
+def test_request_category_facet_keeps_every_category_of_its_dataset():
     dataset = DatasetFactory(organization=OrganizationFactory(title="Org Three"))
-    dataset.category.add(CategoryFactory(title="First category"))
-    dataset.category.add(CategoryFactory(title="Second category"))
+    first = CategoryFactory(title="First category")
+    second = CategoryFactory(title="Second category")
+    dataset.category.add(first)
+    dataset.category.add(second)
     dataset.save()
 
     request = RequestFactory(dataset=dataset)
@@ -116,8 +119,7 @@ def test_request_category_facet_drops_all_but_one_category_of_its_dataset():
 
     values = RequestSearchFacet.objects.filter(request=request, field="category").values_list("value", flat=True)
 
-    assert dataset.category.count() == 2
-    assert len(values) == 1
+    assert set(values) == {str(first.pk), str(second.pk)}
 
 
 @pytest.mark.django_db
@@ -161,6 +163,52 @@ def test_the_date_facet_reports_a_month_before_the_catalogue_start(app: DjangoTe
     buckets = dict(response.context["facets"]["dates"]["published"])
 
     assert buckets[date(2016, 1, 1)] == 1
+
+
+@pytest.mark.django_db
+def test_the_date_facet_ignores_a_month_after_today():
+    organization = OrganizationFactory(title="Future org")
+    DatasetFactory(organization=organization, published=_published(2024))
+    DatasetFactory(organization=organization, published=_published(2099))
+
+    buckets = date_facet_counts(Dataset.objects.all(), "published")
+
+    assert buckets == [(date(2024, 1, 1), 1)]
+
+
+@pytest.mark.django_db
+def test_the_date_facet_is_empty_when_every_date_is_after_today():
+    DatasetFactory(organization=OrganizationFactory(title="Future only org"), published=_published(2099))
+
+    assert date_facet_counts(Dataset.objects.all(), "published") == []
+
+
+@pytest.mark.django_db
+def test_the_index_keeps_punctuation_as_typed():
+    dataset = DatasetFactory(
+        organization=OrganizationFactory(title="Punctuation org"),
+        title={"lt": 'Lietuvos "vandenys" & upės', "en": "Waters"},
+        description={"lt": "Aprasas", "en": "Description"},
+    )
+
+    text = DatasetSearchDoc.objects.get(pk=dataset.pk).text
+
+    assert '"vandenys"' in text
+    assert "&quot;" not in text
+    assert "&amp;" not in text
+
+
+@pytest.mark.django_db
+def test_search_finds_a_quoted_word(app: DjangoTestApp):
+    DatasetFactory(
+        organization=OrganizationFactory(title="Quote org"),
+        title={"lt": 'Lietuvos "vandenys"', "en": "Waters"},
+        description={"lt": "Aprasas", "en": "Description"},
+    )
+
+    response = app.get(reverse("dataset-list"), {"q": '"vandenys"'})
+
+    assert len(response.context["object_list"]) == 1
 
 
 @pytest.mark.django_db

@@ -1,3 +1,4 @@
+import html
 import logging
 
 from django.db import transaction
@@ -18,12 +19,16 @@ from vitrina.structure.models import Model, Property
 logger = logging.getLogger(__name__)
 
 
+def _category_pks_with_ancestors(categories):
+    pks = []
+    for category in categories:
+        pks.extend([cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()])
+        pks.append(category.pk)
+    return pks
+
+
 def _dataset_categories(dataset):
-    categories = []
-    for category in dataset.category.all():
-        categories.extend([cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()])
-        categories.append(category.pk)
-    return categories
+    return _category_pks_with_ancestors(dataset.category.all())
 
 
 DATASET_FACETS = {
@@ -45,12 +50,9 @@ DATASET_FACETS = {
 
 
 def _request_categories(request):
-    categories = []
-    if request.dataset_id and request.dataset.category:
-        for category in request.dataset.category.all():
-            categories = [cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()]
-            categories.append(category.pk)
-    return categories
+    if request.dataset_id:
+        return _category_pks_with_ancestors(request.dataset.category.all())
+    return []
 
 
 UNASSIGNED_ORGANIZATION = -1
@@ -149,7 +151,7 @@ def _facet_rows(obj, facets):
 
 
 def _render_text(obj, template):
-    return render_to_string(template, {"object": obj})
+    return html.unescape(render_to_string(template, {"object": obj}))
 
 
 @transaction.atomic

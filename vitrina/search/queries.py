@@ -77,7 +77,9 @@ def date_facet_counts(queryset, field: str) -> list[tuple[date, int]]:
         .annotate(count=Count("pk"))
         .order_by()
     )
+    today = date.today()
     found = {row["bucket"].date().replace(day=1): row["count"] for row in rows if row["bucket"]}
+    found = {bucket: count for bucket, count in found.items() if bucket <= today}
     if not found:
         return []
 

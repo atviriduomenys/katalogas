@@ -329,7 +329,6 @@ class ServiceResourceForm(BaseResourceForm):
             "endpoint_url",
             "endpoint_type",
             "endpoint_description",
-            "endpoint_description_type",
             "name",
             "contact",
             "organization",
@@ -371,7 +370,6 @@ class ServiceResourceForm(BaseResourceForm):
             Field("endpoint_url"),
             Field("endpoint_type"),
             Field("endpoint_description"),
-            Field("endpoint_description_type"),
             Field("access_rights"),
             Field("contact"),
             Field("organization"),
@@ -391,7 +389,6 @@ class ServiceResourceForm(BaseResourceForm):
             endpoint_url=cleaned_data.get("endpoint_url"),
             endpoint_type=cleaned_data.get("endpoint_type"),
             endpoint_description=cleaned_data.get("endpoint_description"),
-            endpoint_description_type=cleaned_data.get("endpoint_description_type"),
         )
         for field_name, error_message in errors:
             self.add_error(field_name, error_message)
@@ -681,6 +678,7 @@ class DatasetAdminForm(forms.ModelForm):
             "numchild",
             "path",
             "publisher",
+            "endpoint_description_type",
         )
 
 

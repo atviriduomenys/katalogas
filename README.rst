@@ -250,7 +250,7 @@ Run all tests:
 
 .. code:: sh
 
-    pytest -vvra --tb=short
+    pytest -vvra --tb=short tests
 
 Run a single test:
 

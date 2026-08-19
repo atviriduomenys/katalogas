@@ -924,7 +924,6 @@ class DatasetCreateView(
             self.object.endpoint_url = None
             self.object.endpoint_type = None
             self.object.endpoint_description = None
-            self.object.endpoint_description_type = None
             self.object.service = False
         if subclass.name == DCATResourceSubclass.SERIES:
             self.object.series = True

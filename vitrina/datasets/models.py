@@ -482,14 +482,6 @@ class Dataset(Resource):
         null=True,
         blank=True,
     )
-    endpoint_description_type = models.ForeignKey(
-        "vitrina_resources.Format",
-        on_delete=models.SET_NULL,
-        verbose_name=_("API specifikacijos formatas"),
-        null=True,
-        blank=True,
-        related_name="format_endpoint_description_types",
-    )
     service = models.BooleanField(
         _("DataService rinkinys"),
         default=False,
@@ -674,6 +666,14 @@ class Dataset(Resource):
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
+    endpoint_description_type = models.ForeignKey(
+        "vitrina_resources.Format",
+        on_delete=models.SET_NULL,
+        verbose_name=_("API specifikacijos formatas"),
+        null=True,
+        blank=True,
+        related_name="format_endpoint_description_types",
+    )
     meta = models.TextField(blank=True, null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/9
@@ -2066,7 +2066,7 @@ class DatasetStructure(models.Model):
     )
     file = FilerFileField(blank=True, null=True, related_name="file_structure", on_delete=models.SET_NULL)
 
-    # Deprecatd feilds
+    # Deprecated fields
     standardized = models.BooleanField(blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     distribution_version = models.IntegerField(blank=True, null=True)

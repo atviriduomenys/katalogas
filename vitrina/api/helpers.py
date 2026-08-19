@@ -93,7 +93,6 @@ def get_datasets_for_rdf(qs):
             "endpoint_url": _safe_uri(dataset.endpoint_url),
             "endpoint_type": _get_format(dataset.endpoint_type),
             "endpoint_description": _safe_uri(dataset.endpoint_description),
-            "endpoint_description_type": dataset.endpoint_description_type,
             "related_datasets": (
                 _get_rel_dataset(relation)
                 for relation in dataset.related_datasets.filter(relation__name=Relation.SERVICE)

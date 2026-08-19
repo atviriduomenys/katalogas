@@ -23,7 +23,6 @@ DATASET_STANDARD_URI = "https://data.gov.lt/id/non-standard/DatasetStandard"
 
 UAPI_CONCEPT_CODE = "UAPI"
 JSON_FORMAT = "JSON"
-OPENAPI_FORMAT = "OpenAPI"
 
 
 def validate_dataset_name(name: str | None, dataset: Dataset | None, organization: Organization) -> None:
@@ -110,11 +109,6 @@ def set_default_agent_endpoint_fields(cleaned_data: dict[str, Any]) -> dict[str,
             raise ValidationError(error_template.format(JSON_FORMAT))
         cleaned_data["endpoint_type"] = json_format
 
-    if not cleaned_data.get("endpoint_description_type"):
-        if not (openapi_format := Format.objects.filter(title=OPENAPI_FORMAT).first()):
-            raise ValidationError(error_template.format(OPENAPI_FORMAT))
-        cleaned_data["endpoint_description_type"] = openapi_format
-
     if not cleaned_data.get("conforms_to"):
         if not (uapi_concept := Concept.objects.filter(code=UAPI_CONCEPT_CODE).first()):
             raise ValidationError(error_template.format(UAPI_CONCEPT_CODE))
@@ -129,7 +123,6 @@ def validate_agent_endpoint_fields(
     endpoint_url: str | None,
     endpoint_type: str | None,
     endpoint_description: str | None,
-    endpoint_description_type: str | None,
 ) -> list[tuple[str, str]]:
     errors = []
     if agent:
@@ -142,14 +135,6 @@ def validate_agent_endpoint_fields(
         if endpoint_type and endpoint_type.title != JSON_FORMAT:
             errors.append(
                 ("endpoint_type", _("Pasirinkus agentą, API formatas privalo būti '{0}'").format(JSON_FORMAT))
-            )
-
-        if endpoint_description_type and endpoint_description_type.title != OPENAPI_FORMAT:
-            errors.append(
-                (
-                    "endpoint_description_type",
-                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'").format(OPENAPI_FORMAT),
-                )
             )
 
         if conforms_to and conforms_to.code != UAPI_CONCEPT_CODE:

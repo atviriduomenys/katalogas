@@ -779,8 +779,8 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
 
 
 def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
-    return render_rdf_response(request, Dataset.edp_public.all())
+    return render_rdf_response(request, Dataset.edp_public.all(), only_link_rendered_datasets=True)
 
 
 def edp_dcat_ap_restricted_rdf(request: HttpRequest) -> HttpResponse:
-    return render_rdf_response(request, Dataset.edp_restricted.all())
+    return render_rdf_response(request, Dataset.edp_restricted.all(), only_link_rendered_datasets=True)

@@ -36,6 +36,13 @@ https://github.com/atviriduomenys/katalogas/issues/2755
   lock file because ``django-cms`` needs it. With their own dependencies, this drops 16 packages.
 - Move ``freezegun`` and ``requests-mock`` to the dev group. The tests are their only user.
 
+https://github.com/atviriduomenys/katalogas/issues/2753
+
+- Filter ``dcat:servesDataset`` links in the EDP DCAT-AP export (`/edp/dcat-ap.rdf` and
+  `/edp/dcat-ap-restricted.rdf`). A data service listed the URL of every related dataset, also of
+  non-public and deleted ones, which the European Data Portal turned into empty catalogue records.
+  A service now links only to datasets that the export publishes.
+
 https://github.com/atviriduomenys/dvms/issues/515
 
 - Replace unsanitized ``mark_safe`` with ``format_html`` in admin display methods and form labels

@@ -200,9 +200,7 @@ class TestServiceResourceForm:
         assert "conforms_to" in form.errors
         assert "Su agentu susietos paslaugos privalo atitikti UDTS standartą." in form.errors["conforms_to"]
 
-    def test_wrong_endpoint_type_when_agent_selected(
-        self, organization: Organization, user: User, rf: RequestFactory
-    ):
+    def test_wrong_endpoint_type_when_agent_selected(self, organization: Organization, user: User, rf: RequestFactory):
         request = rf.get("/")
         request.resolver_match = resolve("/")
         request.user = user

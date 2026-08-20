@@ -7,7 +7,7 @@ source notes/migrations/djangocms/utils.sh
 ###############################################
 # venv
 clean_pyenv
-install_library
+poetry_install_all
 # DB
 clean_db
 git checkout G1

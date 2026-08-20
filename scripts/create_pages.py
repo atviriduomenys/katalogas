@@ -57,6 +57,7 @@ def get_or_create_stories_config():
         print(f"  StoriesConfig already exists, skipping (namespace={STORIES_CONFIG['namespace']!r})")
     return config
 
+
 def get_or_create_stories_config():
     apphook_pool.discover_apps()
     config, created = StoriesConfig.objects.get_or_create(
@@ -87,7 +88,9 @@ def run():
 
     existing_slugs = set(
         PageUrl.objects.filter(
-            slug__in=[p["slug"] for p in PAGES if p.get("slug")]
+            slug__in=[p["slug"] for p in PAGES if p.get("slug")],
+            page__site=site,
+            language=LANGUAGE,
         ).values_list("slug", flat=True)
     )
 
@@ -97,6 +100,7 @@ def run():
         slug = page_def.get("slug")
         in_navigation = page_def.get("in_navigation", False)
         attach_stories = page_def.get("stories_config", False)
+        is_home = page_def.get("is_home", False)
 
         if slug in existing_slugs:
             print(f"  Skipping '{title}' — slug {slug!r} already exists")

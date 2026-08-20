@@ -69,6 +69,10 @@ class Migration(migrations.Migration):
         ('vitrina_users', '0002_initial'),
         ('cms', '0022_auto_20180620_1551'),
         ('filer', '0012_file_mime_type'),
+        # create_blog_groups reads djangocms_stories permissions. Without this
+        # the migration can run first, leave the group empty, and never fill it
+        # again - create_groups_with_permissions skips groups that exist.
+        ('djangocms_stories', '0001_initial'),
     ]
 
     operations = [

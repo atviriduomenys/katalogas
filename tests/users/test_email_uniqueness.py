@@ -1,0 +1,42 @@
+import pytest
+from django.db import IntegrityError, transaction
+from django.utils.timezone import now
+
+from vitrina.users.models import User
+
+
+@pytest.mark.django_db
+def test_two_active_users_cannot_share_an_email():
+    User.objects.create(email="a@example.com", status=User.ACTIVE)
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            User.objects.create(email="a@example.com", status=User.ACTIVE)
+
+
+@pytest.mark.django_db
+def test_email_is_free_again_once_its_owner_is_deleted():
+    """Deleting a user is a soft delete, and the address has to become reusable.
+
+    A plain unique column would forbid this, which is why the constraint only
+    covers the rows `UserManager` can see.
+    """
+    first = User.objects.create(email="a@example.com", status=User.ACTIVE)
+    first.deleted = True
+    first.deleted_on = now()
+    first.status = User.DELETED
+    first.save()
+
+    second = User.objects.create(email="a@example.com", status=User.ACTIVE)
+
+    assert User.objects.filter(email="a@example.com").count() == 1
+    assert User.objects_with_deleted.filter(email="a@example.com").count() == 2
+    assert second.pk != first.pk
+
+
+@pytest.mark.django_db
+def test_several_users_may_have_no_email():
+    User.objects.create(email=None, status=User.ACTIVE)
+    User.objects.create(email=None, status=User.ACTIVE)
+
+    assert User.objects.filter(email__isnull=True).count() == 2

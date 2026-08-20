@@ -1,5 +1,6 @@
 import secrets
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import List, Any, Dict, Iterable, Mapping, Type
 
 import numpy as np
@@ -18,7 +19,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from itsdangerous import URLSafeSerializer
 
-from vitrina.datasets.models import DATASERVICE_FORMAT_TITLES, Dataset, DatasetGroup, DCATResourceSubclass
+from vitrina.datasets.models import Dataset, DatasetGroup, DCATResourceSubclass
 from vitrina.helpers import get_filter_url, get_current_domain
 from vitrina.api.models import ApiKey
 from vitrina.classifiers.models import Category
@@ -781,11 +782,21 @@ class DatasetRepresentativeService:
         return f"{get_current_domain(self.request)}{path}"
 
 
-def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
+@dataclass
+class DatasetListRow:
+    dataset: Dataset
+    icon: str | None
+    likes: int
+    hits: int
+    groups: list
+    formats: list
+
+
+def build_dataset_rows(datasets: Iterable[Dataset]) -> list[DatasetListRow]:
     datasets = list(datasets)
     pks = [dataset.pk for dataset in datasets]
     if not pks:
-        return
+        return []
 
     content_type = ContentType.objects.get_for_model(Dataset)
     likes = dict(
@@ -803,25 +814,22 @@ def annotate_dataset_list_rows(datasets: Iterable[Dataset]) -> None:
         .order_by("created")
     }
 
-    root_paths = {
-        dataset.pk: {category.path[: Category.steplen] for category in dataset.category.all()} for dataset in datasets
-    }
-    roots = []
-    if any(root_paths.values()):
-        roots = list(Category.objects.filter(depth=1).order_by("title").values_list("path", "icon"))
+    root_icons = []
+    if any(dataset.category.all() for dataset in datasets):
+        root_icons = Category.root_icons()
 
     dataservice_formats = None
+    if any(dataset.serves_dataservice_formats() for dataset in datasets):
+        dataservice_formats = list(Dataset.dataservice_formats())
 
-    for dataset in datasets:
-        selected = group_pks_by_dataset[dataset.pk]
-        dataset.icon = next((icon for path, icon in roots if path in root_paths[dataset.pk]), None)
-        dataset.like_count = likes.get(dataset.pk, 0)
-        dataset.hit_count = hits.get(dataset.pk, 0)
-        dataset.display_groups = [group for pk, group in groups.items() if pk in selected]
-
-        formats = dataset.formats
-        if dataset.serves_dataservice_formats():
-            if dataservice_formats is None:
-                dataservice_formats = list(Format.objects.filter(title__in=DATASERVICE_FORMAT_TITLES))
-            formats = formats + dataservice_formats
-        dataset.display_formats = sorted(set(formats), key=lambda fmt: fmt.title)
+    return [
+        DatasetListRow(
+            dataset=dataset,
+            icon=dataset.get_icon(root_icons),
+            likes=likes.get(dataset.pk, 0),
+            hits=hits.get(dataset.pk, 0),
+            groups=[group for pk, group in groups.items() if pk in group_pks_by_dataset[dataset.pk]],
+            formats=dataset.get_available_formats(dataservice_formats),
+        )
+        for dataset in datasets
+    ]

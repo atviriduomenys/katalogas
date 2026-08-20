@@ -952,12 +952,7 @@ class Dataset(Resource):
         return [obj.get_format() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
     def filter_formats(self):
-        distributions = list(self.datasetdistribution_set.all())
-        formats = [dist.get_format().pk for dist in distributions if dist.get_format()]
-
-        if self.serves_dataservice_formats(distributions):
-            formats.extend(self.dataservice_formats().values_list("pk", flat=True))
-        return formats
+        return [fmt.pk for fmt in self.get_available_formats()]
 
     def serves_dataservice_formats(self, distributions=None) -> bool:
         if not self.model_set.all():
@@ -966,18 +961,24 @@ class Dataset(Resource):
             distributions = self.datasetdistribution_set.all()
         return any(dist.format.extension == "UAPI" for dist in distributions if dist.format)
 
-    def dataservice_formats(self):
+    @classmethod
+    def dataservice_formats(cls):
         from vitrina.resources.models import Format
 
         return Format.objects.filter(title__in=DATASERVICE_FORMAT_TITLES)
 
-    @property
-    def distinct_formats(self):
+    def get_available_formats(self, dataservice_formats: list | None = None):
         distributions = list(self.datasetdistribution_set.all())
         formats = [dist.get_format() for dist in distributions if dist.get_format()]
         if self.serves_dataservice_formats(distributions):
-            formats = formats + list(self.dataservice_formats())
-        return sorted(set(formats), key=lambda x: x.title)
+            if dataservice_formats is None:
+                dataservice_formats = list(self.dataservice_formats())
+            formats = formats + dataservice_formats
+        return sorted(set(formats), key=lambda fmt: fmt.title)
+
+    @property
+    def distinct_formats(self):
+        return self.get_available_formats()
 
     @cached_property
     def dataset_content_type(self):
@@ -1169,23 +1170,11 @@ class Dataset(Resource):
     def published_created_sort(self):
         return self.published or self.created
 
-    def get_icon(self):
-        root_category_ids = []
-        for cat in self.category.all():
-            root_category_ids.append(cat.get_root().pk)
-
-        if root_category_ids:
-            category = (
-                Category.objects.filter(
-                    pk__in=root_category_ids,
-                    icon__isnull=False,
-                )
-                .order_by("title")
-                .first()
-            )
-            if category:
-                return category.icon
-        return None
+    def get_icon(self, root_icons: list[tuple[str, str]] | None = None):
+        if root_icons is None:
+            root_icons = Category.root_icons()
+        paths = {category.root_path() for category in self.category.all()}
+        return next((icon for path, icon in root_icons if path in paths), None)
 
     def _get_first_metadata(self) -> Metadata | None:
         prefetched = getattr(self, "_prefetched_objects_cache", {})

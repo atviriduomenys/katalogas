@@ -6,37 +6,37 @@
         <div class="container">
             <h2 class="title">{% translate "Duomenų ištekliai" %}</h2>
             <div class="columns is-multiline p-t-lg">
-                {% for dataset in datasets %}
+                {% for row in datasets %}
                     <div class="column is-flex">
                         <div class="card">
                             <div class="card-content">
                                 <div class="content">
                                     <p>
-                                        <a href="{{ dataset.get_absolute_url }}"
+                                        <a href="{{ row.dataset.get_absolute_url }}"
                                            class="has-text-info-dark is-size-5">
-                                            {% objectlanguage dataset LANGUAGE_CODE %}
-                                            {{ dataset.title }}
+                                            {% objectlanguage row.dataset LANGUAGE_CODE %}
+                                            {{ row.dataset.title }}
                                         {% endobjectlanguage %}
                                     </a>
                                 </p>
                                 <p>
-                                    <a href="{{ dataset.organization.get_absolute_url }}"
-                                       class="has-text-dark">{{ dataset.organization.title }}</a>
+                                    <a href="{{ row.dataset.organization.get_absolute_url }}"
+                                       class="has-text-dark">{{ row.dataset.organization.title }}</a>
                                 </p>
                             </div>
                             <div class="card-actions">
-                                {% with formats=dataset.display_formats %}
+                                {% with formats=row.formats %}
                                     {% for format in formats %}
                                         <a href="{% url 'dataset-list' %}?selected_facets=formats_exact:{{ format.pk }}"
                                            class="tag is-info is-light mr-3">{{ format }}</a>
                                     {% endfor %}
                                     <span class="icon is-small {% if formats %}mx-5{% else %}mr-5{% endif %}">
                                         <i class="fas fa-eye"></i>
-                                        &nbsp;{{ dataset.hit_count }}
+                                        &nbsp;{{ row.hits }}
                                     </span>
                                     <span class="icon is-small ml-5">
                                         <i class="fas fa-thumbs-up"></i>
-                                        &nbsp;{{ dataset.like_count }}
+                                        &nbsp;{{ row.likes }}
                                     </span>
                                 {% endwith %}
                             </div>

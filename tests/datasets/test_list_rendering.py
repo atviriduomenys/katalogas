@@ -24,7 +24,7 @@ def test_dataset_list_shows_the_real_hit_count(app: DjangoTestApp):
 
     response = app.get(reverse("dataset-list"))
 
-    assert response.context["object_list"][0].hit_count == 4471
+    assert response.context["rows"][0].hits == 4471
     assert "4471" in response.text
 
 
@@ -37,7 +37,7 @@ def test_dataset_list_shows_the_real_like_count(app: DjangoTestApp):
 
     response = app.get(reverse("dataset-list"))
 
-    assert response.context["object_list"][0].like_count == 3
+    assert response.context["rows"][0].likes == 3
 
 
 @pytest.mark.django_db
@@ -50,7 +50,7 @@ def test_dataset_list_shows_the_dataservice_formats(app: DjangoTestApp):
 
     response = app.get(reverse("dataset-list"))
 
-    shown = [str(fmt) for fmt in response.context["object_list"][0].display_formats]
+    shown = [str(fmt) for fmt in response.context["rows"][0].formats]
     assert shown == [str(fmt) for fmt in dataset.distinct_formats]
     assert {"CSV", "JSON", "JSONL"}.issubset(set(shown))
 
@@ -62,7 +62,8 @@ def test_dataset_list_shows_the_root_category_icon(app: DjangoTestApp):
 
     response = app.get(reverse("dataset-list"))
 
-    assert response.context["object_list"][0].icon == dataset.get_icon() == "cloud-sun"
+    assert response.context["rows"][0].icon == "cloud-sun"
+    assert dataset.get_icon() == "cloud-sun"
     assert "fa-cloud-sun" in response.text
 
 
@@ -74,7 +75,8 @@ def test_dataset_list_icon_keeps_the_first_root_by_title(app: DjangoTestApp):
 
     response = app.get(reverse("dataset-list"))
 
-    assert response.context["object_list"][0].icon == dataset.get_icon() == ""
+    assert response.context["rows"][0].icon == ""
+    assert dataset.get_icon() == ""
 
 
 @pytest.mark.django_db
@@ -83,4 +85,5 @@ def test_dataset_list_icon_is_none_without_a_category(app: DjangoTestApp):
 
     response = app.get(reverse("dataset-list"))
 
-    assert response.context["object_list"][0].icon == dataset.get_icon() is None
+    assert response.context["rows"][0].icon is None
+    assert dataset.get_icon() is None

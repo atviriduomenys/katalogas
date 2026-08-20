@@ -37,6 +37,6 @@ def test_landing_shows_the_real_hit_count(app: DjangoTestApp):
 
     response = app.get(reverse("home"))
 
-    rendered = {row.pk: row for row in response.context["datasets"]}
-    assert rendered[dataset.pk].hit_count == 3123
+    rendered = {row.dataset.pk: row for row in response.context["datasets"]}
+    assert rendered[dataset.pk].hits == 3123
     assert "3123" in response.text

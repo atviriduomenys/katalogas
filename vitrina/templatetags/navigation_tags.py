@@ -8,7 +8,7 @@ from django.utils.translation import get_language
 
 register = template.Library()
 
-MENU_CACHE_SECONDS = 600
+MENU_CACHE_SECONDS = 60
 
 
 def menu_cache_key(language: str) -> str:

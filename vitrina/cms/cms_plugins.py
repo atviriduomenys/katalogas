@@ -13,8 +13,11 @@ def _published_page_ids():
     djangocms-versioning replaces `PageContent.objects` with a manager that
     returns published versions only, so pages whose content is still a draft
     are left out. Without this the menus would leak unpublished pages.
+
+    distinct() is needed because that manager joins to the version table and a
+    page has one PageContent per language, so ids repeat.
     """
-    return PageContent.objects.values_list("page_id", flat=True)
+    return PageContent.objects.values_list("page_id", flat=True).distinct()
 
 
 @plugin_pool.register_plugin

@@ -8,9 +8,11 @@ def _published_nav_page_ids():
     """Return PKs of Pages that have published, in-navigation content.
 
     djangocms-versioning replaces `PageContent.objects` with a manager that
-    returns published versions only, so drafts are already excluded here.
+    returns published versions only, so drafts are already excluded here. That
+    manager joins to the version table, and there is one PageContent per
+    language, so the same page id comes back more than once - hence distinct().
     """
-    return PageContent.objects.filter(in_navigation=True).values_list("page_id", flat=True)
+    return PageContent.objects.filter(in_navigation=True).values_list("page_id", flat=True).distinct()
 
 
 @register.inclusion_tag("menu.html")

@@ -1,9 +1,9 @@
 import pytest
-from cms.api import create_page
+from cms.api import create_page, create_page_content
 from cms.models import PageContent
 from django.template import Context, Template
 
-from vitrina.templatetags.navigation_tags import show_menu
+from vitrina.templatetags.navigation_tags import _published_nav_page_ids, show_menu
 from vitrina.users.factories import UserFactory
 
 TEMPLATE = "pages/page.html"
@@ -111,3 +111,17 @@ def test_child_renders_with_its_own_title_and_url(user):
     assert "navbar-dropdown" in html
     assert child.get_menu_title() in html
     assert 'href="%s"' % child.get_absolute_url() in html
+
+
+@pytest.mark.django_db
+def test_page_published_in_two_languages_yields_one_id(user):
+    page = make_page("Vienas", "vienas", user)
+    create_page_content(language="en", title="One", page=page, created_by=user, in_navigation=True)
+    PageContent.admin_manager.filter(page=page, language="en").first().versions.first().publish(user)
+
+    ids = list(_published_nav_page_ids())
+
+    # There is one PageContent per language and the versioning manager joins to
+    # the version table, so without distinct() the same id comes back twice.
+    assert ids == [page.pk]
+    assert list(show_menu()["pages"]) == [page]

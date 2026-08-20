@@ -98,7 +98,6 @@ def jurisdiction_data(db):
     return parent_org, child_a, child_b, child_c
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("indicator", INDICATORS)
 def test_jurisdiction_stats_snapshot(jurisdiction_data, indicator):
@@ -142,7 +141,6 @@ def test_jurisdiction_stats_snapshot(jurisdiction_data, indicator):
         assert "count" in d
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_jurisdiction_stats_query_count(jurisdiction_data):
     parent_org, *_ = jurisdiction_data

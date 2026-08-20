@@ -19,6 +19,7 @@ from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
 
 from vitrina.helpers import validate_file
+from vitrina.validators import validate_absolute_uri
 
 
 class MultipleValueWidget(TextInput):
@@ -245,6 +246,12 @@ class DisabledTextInput(TextInput):
 
 class DisabledCharField(CharField):
     widget = DisabledTextInput
+
+
+class URIFormField(CharField):
+    # TextInput, not URLInput: Bulma does not support type: 'url'.
+    widget = TextInput
+    default_validators = [validate_absolute_uri]
 
 
 class StringListWidget(Widget):

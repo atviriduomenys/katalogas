@@ -1,6 +1,5 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -9,8 +8,9 @@ from crispy_forms.layout import Field, Submit, Layout
 from parler.forms import TranslatedField, TranslatableModelForm
 
 from vitrina.classifiers.models import Licence, Concept
+from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerFileField, StringListField
+from vitrina.fields import FilerFileField, StringListField, URIFormField
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import AccessType
 from django.db.models import Case, When, IntegerField
@@ -78,16 +78,12 @@ class DatasetResourceForm(TranslatableModelForm):
     access = forms.ChoiceField(
         label=_("Prieigos lygmuo"), choices=[("", _("nepasirinkta"))] + list(AccessType.choices), required=False
     )
-    access_url = forms.URLField(
-        # TODO: Bulma does not support type: 'url'
-        widget=forms.TextInput(),
+    access_url = URIFormField(
         label=_("Prieigos nuoroda"),
         help_text=_("Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo nuorodas."),
         required=False,
     )
-    download_url = forms.URLField(
-        # TODO: Bulma does not support type: 'url'
-        widget=forms.TextInput(),
+    download_url = URIFormField(
         label=_("Atsisiuntimo nuoroda"),
         help_text=_(
             "Tiesioginė duomenų atsisiuntimo nuoroda. Ši nuoroda turi rodyti "
@@ -300,28 +296,13 @@ class DatasetResourceForm(TranslatableModelForm):
 
     def clean_applicable_legislation(self) -> list[str]:
         urls = self.cleaned_data.get("applicable_legislation", []) or []
-        validator = URLValidator()
 
-        cleaned = []
-        item_errors = []
-
-        for url in urls:
-            if not url:
-                item_errors.append(None)
-                continue
-
-            try:
-                validator(url)
-                cleaned.append(url)
-                item_errors.append(None)
-            except ValidationError as e:
-                item_errors.append(f"{url}: {e.message}")
-
+        item_errors = validate_urls(urls)
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors
             raise ValidationError(_("Yra klaidų sąraše."))
 
-        return cleaned
+        return [url for url in urls if url]
 
 
 class FormatAdminForm(forms.ModelForm):

@@ -74,7 +74,6 @@ def test_organization_members_tab(app: DjangoTestApp):
     ]
 
 
-@pytest.mark.haystack
 def test_organization_dataset_tab(app: DjangoTestApp):
     organization1 = OrganizationFactory()
     organization2 = OrganizationFactory()
@@ -83,6 +82,9 @@ def test_organization_dataset_tab(app: DjangoTestApp):
     resp = app.get(reverse("organization-datasets", args=[organization1.pk]))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [dataset1.pk]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų ištekliai"]
+
+
+MIGRATED_ORGANIZATION_PK = 1
 
 
 @pytest.fixture
@@ -105,10 +107,10 @@ def organizations():
     return [organization1, organization2, organization3]
 
 
-@pytest.mark.haystack
 def test_search_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse("organization-list"))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [
+        MIGRATED_ORGANIZATION_PK,
         organizations[0].pk,
         organizations[1].pk,
         organizations[2].pk,
@@ -120,13 +122,11 @@ def test_search_with_query_that_doesnt_match(app: DjangoTestApp, organizations):
     assert [int(obj.pk) for obj in resp.context["object_list"]] == []
 
 
-@pytest.mark.haystack
 def test_search_with_query_that_matches_one(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=%s" % (reverse("organization-list"), "1"))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[0].pk]
 
 
-@pytest.mark.haystack
 def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=%s" % (reverse("organization-list"), "organization"))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [
@@ -136,30 +136,31 @@ def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
     ]
 
 
-@pytest.mark.haystack
 def test_filter_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse("organization-list"))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [
+        MIGRATED_ORGANIZATION_PK,
         organizations[0].pk,
         organizations[1].pk,
         organizations[2].pk,
     ]
     assert resp.context["selected_jurisdiction"] is None
-    assert resp.context["jurisdictions"] == [
+    assert sorted(resp.context["jurisdictions"], key=lambda item: item["id"]) == [
+        {"id": 1, "title": "Nepriskirta", "query": "?jurisdiction=1", "count": 2},
         {"id": 30, "title": "Jurisdiction30", "query": "?jurisdiction=30", "count": 2},
-        {"id": 1, "title": "Nepriskirta", "query": "?jurisdiction=1", "count": 1},
     ]
 
 
-@pytest.mark.haystack
 def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=1" % reverse("organization-list"))
-    assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[0].pk]
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
+        MIGRATED_ORGANIZATION_PK,
+        organizations[0].pk,
+    ]
     assert resp.context["selected_jurisdiction"] == "Nepriskirta"
-    assert resp.context["jurisdictions"] == [{"id": 1, "title": "Nepriskirta", "query": "?jurisdiction=1", "count": 1}]
+    assert resp.context["jurisdictions"] == [{"id": 1, "title": "Nepriskirta", "query": "?jurisdiction=1", "count": 2}]
 
 
-@pytest.mark.haystack
 def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=30" % reverse("organization-list"))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[1].pk, organizations[2].pk]
@@ -169,7 +170,6 @@ def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
     ]
 
 
-@pytest.mark.haystack
 def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=0" % reverse("organization-list"))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == []
@@ -177,7 +177,6 @@ def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations
     assert resp.context["jurisdictions"] == []
 
 
-@pytest.mark.haystack
 def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=2&jurisdiction=30" % reverse("organization-list"))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[1].pk]
@@ -187,7 +186,6 @@ def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
     ]
 
 
-@pytest.mark.haystack
 def test_filter_with_query_containing_special_characters(app: DjangoTestApp):
     jurisdiction = AreaOfManagementFactory(id=30, name_lt="Jurisdiction\"<'>\\", name_en="Jurisdiction\"<'>\\")
     organization = OrganizationFactory(title="Organization \"<'>\\", jurisdiction=jurisdiction)

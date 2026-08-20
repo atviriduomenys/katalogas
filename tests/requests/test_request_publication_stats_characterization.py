@@ -128,7 +128,6 @@ EXPECTED_PUB = {
 }
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("indicator", PUB_INDICATORS)
 @pytest.mark.parametrize("duration", PUB_DURATIONS)
@@ -166,7 +165,6 @@ def test_request_publication_stats_snapshot(request_pub_data, indicator, duratio
     )
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_request_publication_stats_query_count_open(request_pub_data):
     with freeze_time(FROZEN_NOW):
@@ -184,7 +182,6 @@ def test_request_publication_stats_query_count_open(request_pub_data):
     )
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_request_publication_stats_query_count_late(request_pub_data):
     with freeze_time(FROZEN_NOW):
@@ -217,7 +214,6 @@ def request_late_multiplan_data(db):
     return req
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_request_count_late_counts_plan_request_rows(request_late_multiplan_data):
     with freeze_time(FROZEN_NOW):
@@ -248,7 +244,6 @@ EXPECTED_YEAR = {
 }
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_request_year_stats_snapshot(request_pub_data):
     with freeze_time(FROZEN_NOW):
@@ -276,7 +271,6 @@ def test_request_year_stats_snapshot(request_pub_data):
     assert selected_year == "2022"
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_request_quarter_stats_snapshot(request_pub_data):
     with freeze_time(FROZEN_NOW):

@@ -37,7 +37,7 @@ from filer.validation import FileValidationError, validate_upload
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
-from haystack.forms import FacetedSearchForm
+from vitrina.search.forms import SearchForm
 
 from crispy_forms.layout import Div, Submit
 from vitrina.messages.models import EmailTemplate, SentMail
@@ -56,7 +56,7 @@ class Filter:
     def __init__(
         self,
         request: HttpRequest,
-        form: FacetedSearchForm,
+        form: SearchForm,
         fields: Dict[
             str,  # Field name
             List[
@@ -368,7 +368,7 @@ class FilterItem:
 
 
 def get_selected_value(
-    form: FacetedSearchForm,
+    form: SearchForm,
     field_name: str,
     multiple: bool = False,
     is_int: bool = True,

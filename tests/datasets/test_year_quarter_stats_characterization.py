@@ -117,7 +117,6 @@ def year_quarter_data(db):
     return [ds_a, ds_b, ds_c]
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("indicator", INDICATORS)
 def test_year_stats_snapshot(app: DjangoTestApp, year_quarter_data, indicator):
@@ -152,7 +151,6 @@ def test_year_stats_snapshot(app: DjangoTestApp, year_quarter_data, indicator):
     assert snapshot["yAxis_title"] == expected["yAxis_title"], f"yAxis_title mismatch for {indicator!r}"
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("indicator", INDICATORS)
 def test_quarter_stats_snapshot(app: DjangoTestApp, year_quarter_data, indicator):
@@ -187,7 +185,6 @@ def test_quarter_stats_snapshot(app: DjangoTestApp, year_quarter_data, indicator
     assert snapshot["yAxis_title"] == expected["yAxis_title"], f"yAxis_title mismatch for {indicator!r}"
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_year_stats_query_count(app: DjangoTestApp, year_quarter_data):
     with freeze_time(FROZEN_NOW):
@@ -204,7 +201,6 @@ def test_year_stats_query_count(app: DjangoTestApp, year_quarter_data):
     )
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_quarter_stats_query_count(app: DjangoTestApp, year_quarter_data):
     with freeze_time(FROZEN_NOW):

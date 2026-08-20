@@ -180,7 +180,6 @@ def status_org_stats_data(db):
     return ds
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("duration", DURATIONS)
 @pytest.mark.parametrize("indicator", INDICATORS)
@@ -206,7 +205,6 @@ def test_org_stats_snapshot(app: DjangoTestApp, status_org_stats_data, duration,
     assert normalize_chart_snapshot(snapshot) == normalize_chart_snapshot(EXPECTED[(indicator, duration)])
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_org_stats_query_count(app: DjangoTestApp, status_org_stats_data):
     with freeze_time(FROZEN_NOW):

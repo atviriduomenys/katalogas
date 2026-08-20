@@ -4,7 +4,6 @@ from django.db.models import QuerySet
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.services import filter_out_non_public_datasets_for_user
 from vitrina.orgs.models import Representative
-from haystack.query import SearchQuerySet
 
 
 class DatasetAccessMixin:
@@ -20,12 +19,7 @@ class DatasetAccessMixin:
             return Dataset.objects.none()
 
         if self.user:
-            search_queryset = (
-                SearchQuerySet().models(Dataset).filter(django_id__in=queryset.values_list("id", flat=True))
-            )
-            datasets = filter_out_non_public_datasets_for_user(self.user, search_queryset)
-            ids = datasets.models(Dataset).values_list("pk", flat=True)
-            return queryset.filter(pk__in=ids)
+            return filter_out_non_public_datasets_for_user(self.user, queryset.filter(search_doc__isnull=False))
         elif self.organization_role:
             if self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
                 return queryset.filter(access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
@@ -34,8 +28,10 @@ class DatasetAccessMixin:
 
     def _check_dataset_access(self, dataset: Dataset) -> None:
         if self.user:
-            search_queryset = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
-            if not filter_out_non_public_datasets_for_user(self.user, search_queryset):
+            allowed = filter_out_non_public_datasets_for_user(
+                self.user, Dataset.objects.filter(pk=dataset.pk, search_doc__isnull=False)
+            )
+            if not allowed.exists():
                 raise PermissionDenied()
         elif self.organization and self.organization_role:
             if self.organization_role in Representative.OPEN_DATA_ROLE_KEYS and dataset.access_rights not in (

@@ -29,7 +29,7 @@ from django.views.generic import (
 from django.views.generic import DetailView, View
 from django.utils.text import slugify
 from django.views.generic.edit import FormView
-from haystack.generic_views import SearchView
+from vitrina.search.views import FacetedListView
 from itsdangerous import URLSafeSerializer, BadSignature
 from requests import Response
 from reversion.models import Version
@@ -332,29 +332,34 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
         return redirect("/coordinator-admin/vitrina_orgs/representativerequest/")
 
 
-class OrganizationListView(SearchView):
+class OrganizationListView(FacetedListView):
     template_name = "vitrina/orgs/list.html"
     form_class = OrganizationSearchForm
+    queryset = Organization.objects.all()
     paginate_by = 20
 
     def get_queryset(self):
         organizations = super().get_queryset()
         jurisdiction_id = self.request.GET.get("jurisdiction")
-        organizations = organizations.models(Organization)
 
         if jurisdiction_id:
             if not jurisdiction_id.isdigit():
                 jurisdiction_id = 1  # unassigned
 
             organizations = organizations.filter(jurisdiction=jurisdiction_id)
-        return organizations.order_by("title_s")
+        return organizations.order_by("title", "pk")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        filtered_queryset = self.get_queryset()
+        filtered_queryset = self.object_list
         query = self.request.GET.get("q", "")
         context["q"] = query
 
+        counts = {
+            row["jurisdiction_id"]: row["count"]
+            for row in filtered_queryset.order_by().values("jurisdiction_id").annotate(count=Count("pk"))
+            if row["jurisdiction_id"] is not None and row["count"]
+        }
         jurisdictions = Organization.public.values_list("jurisdiction_id", flat=True).distinct()
         jurisdictions_objects = {
             jurisdiction: AreaOfManagement.objects.filter(id=jurisdiction).first() for jurisdiction in jurisdictions
@@ -370,10 +375,10 @@ class OrganizationListView(SearchView):
                     "&" if query else "",
                     aom_object.id,
                 ),
-                "count": filtered_queryset.filter(jurisdiction=aom_id).count(),
+                "count": counts[aom_id],
             }
             for aom_id, aom_object in jurisdictions_objects.items()
-            if filtered_queryset.filter(jurisdiction=aom_id)
+            if aom_object and counts.get(aom_id)
         ]
         context["jurisdictions"] = sorted(context["jurisdictions"], key=lambda x: x["count"], reverse=True)
 
@@ -397,7 +402,7 @@ class OrganizationManagementsView(OrganizationListView):
         context = super().get_context_data(**kwargs)
         jurisdictions = context.get("jurisdictions")
 
-        orgs = self.get_queryset()
+        orgs = self.object_list
 
         indicator = self.request.GET.get("indicator", None) or "organization-count"
         sorting = self.request.GET.get("sort", None) or "sort-desc"

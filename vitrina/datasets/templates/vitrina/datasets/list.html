@@ -180,10 +180,10 @@
             </div>
             {% for i in page_obj %}
                 {% get_current_language as LANGUAGE_CODE %}
-                {% if i.object %}
+                {% if i %}
                     <article class="media adp-media is-block">
                         <div class="columns">
-                            {% define i.object.get_icon as icon %}
+                            {% define i.get_icon as icon %}
                             {% if icon %}
                                 <div class="column is-2 is-align-self-center">
                                     <div class="category-icon has-text-centered">
@@ -196,40 +196,40 @@
                                     <div class="content">
                                         <div>
                                             <strong>
-                                                <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                                    {% objectlanguage i.object LANGUAGE_CODE %}
-                                                    {{ i.object.title }}
+                                                <a href="{{ i.get_absolute_url }}"class="dataset-list-title">
+                                                    {% objectlanguage i LANGUAGE_CODE %}
+                                                    {{ i.title }}
                                                 {% endobjectlanguage %}
                                             </a>
                                         </strong>
                                     </div>
                                     <div class="tags mt-2 mb-1">
                                         <span class="tag is-white has-text-dark">
-                                            {% if i.object.published %}
+                                            {% if i.published %}
                                                 {% translate "Publikuota" %}:
-                                                {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                                {{ i.published|date:"SHORT_DATE_FORMAT" }}
                                             {% else %}
                                                 {% translate "Sukurta" %}:
-                                                {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
+                                                {{ i.created|date:"SHORT_DATE_FORMAT" }}
                                             {% endif %}
                                         </span>
-                                        {% if i.object.modified and i.object.modified > i.object.published %}
+                                        {% if i.modified and i.modified > i.published %}
                                             <span class="tag is-white has-text-dark">
                                                 {% translate "Atnaujinta" %}:
-                                                {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
+                                                {{ i.modified|date:"SHORT_DATE_FORMAT" }}
                                             </span>
                                         {% endif %}
-                                        {% if i.object.organization.title %}
-                                            <a href="{{ i.object.organization.get_absolute_url }}"
+                                        {% if i.organization.title %}
+                                            <a href="{{ i.organization.get_absolute_url }}"
                                                class="tag is-white has-text-dark dataset-list-organization">
-                                                {{ i.object.organization.title }}
+                                                {{ i.organization.title }}
                                             </a>
                                         {% endif %}
                                     </div>
                                     <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
                                         <span class="tag is-white has-text-dark">
                                             {% translate "Duomenų išteklius viešinamas" %}:
-                                            {% if i.object.is_public %}
+                                            {% if i.is_public %}
                                                 {% translate "Taip" %}
                                             {% else %}
                                                 {% translate "Ne" %}
@@ -237,7 +237,7 @@
                                         </span>
                                         <span class="tag is-white has-text-dark">
                                             {% translate "Brandos lygis" %}:
-                                            {% with level=i.object.get_level|add:"0" %}
+                                            {% with level=i.get_level|add:"0" %}
                                                 <span class="u-ml-half{% if level and level > 0 %} has-text-warning{% endif %}">
                                                     {% for i in "12345" %}
                                                         {% if level > 0 and forloop.counter <= level %}
@@ -251,9 +251,9 @@
                                         </span>
                                     </div>
                                     <p class="dataset-list-description my-1">
-                                        {% if i.object %}
-                                            {% objectlanguage i.object LANGUAGE_CODE %}
-                                            {{ i.object.description|markdown|safe }}
+                                        {% if i %}
+                                            {% objectlanguage i LANGUAGE_CODE %}
+                                            {{ i.description|markdown|safe }}
                                         {% endobjectlanguage %}
                                     {% else %}
                                         {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
@@ -261,10 +261,10 @@
                                     {% endif %}
                                 </p>
                                 <div class="tags mt-3 mb-1">
-                                    {% for group in i.object.get_all_groups %}
+                                    {% for group in i.get_all_groups %}
                                         <p class="tag is-info is-light dataset-list-group-tag">{{ group }}</p>
                                     {% endfor %}
-                                    {% for t in i.object.distinct_formats %}
+                                    {% for t in i.distinct_formats %}
                                         <a href="?selected_facets=formats_exact:{{ t.pk }}"
                                            class="tag is-info is-light">{{ t }}</a>
                                     {% endfor %}
@@ -274,18 +274,18 @@
                     </div>
                     <div class="column is-2 is-align-self-center">
                         <div class="has-text-centered">
-                            {% get_hit_count for i.object as total_hits %}
+                            {% get_hit_count for i as total_hits %}
                             <div>
                                 <i class="fa fa-eye"></i>
                                 <span>{{ total_hits }}</span>
                             </div>
                             <div>
                                 <i class="fa fa-thumbs-up"></i>
-                                <span>{{ i.object.get_likes }}</span>
+                                <span>{{ i.get_likes }}</span>
                             </div>
                             <div title="{% translate 'Atsisiuntimų skaičius' %}">
                                 <i class="fas fa-cloud-download-alt"></i>
-                                <span>{{ i.object.get_download_count }}</span>
+                                <span>{{ i.get_download_count }}</span>
                             </div>
                         </div>
                     </div>

@@ -125,7 +125,6 @@ def _normalize_bar_chart(bar_chart_data):
     )
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("duration", DURATIONS)
 def test_status_comment_snapshot(app: DjangoTestApp, comment_seeded_data, duration):
@@ -155,7 +154,6 @@ def test_status_comment_snapshot(app: DjangoTestApp, comment_seeded_data, durati
         assert any(y > 0 for y in all_y), "Branch B produced no non-zero counts — seeding may be wrong"
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_query_count_guard(app: DjangoTestApp, comment_seeded_data):
     with freeze_time(FROZEN_NOW):

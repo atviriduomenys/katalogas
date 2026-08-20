@@ -13,6 +13,7 @@ from vitrina.datasets.services import (
     bucket_grouped_rows,
 )
 from vitrina.helpers import get_stats_filter_options_based_on_model
+from vitrina.search.queries import apply_selected_facets
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import StatRoute
 
@@ -79,8 +80,12 @@ class StatsMixin:
             time_data = []
             bar_data = []
 
-            query = {self.filter: item["filter_value"]}
-            filter_queryset_ids = queryset.filter(**query).values_list("pk", flat=True)
+            filter_queryset_ids = apply_selected_facets(
+                queryset,
+                self.facet_model,
+                self.facet_fk,
+                [f"{self.filter}_exact:{item['filter_value']}"],
+            ).values_list("pk", flat=True)
             filter_queryset = self.get_index_queryset().filter(pk__in=filter_queryset_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, filter_queryset)

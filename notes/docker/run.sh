@@ -12,7 +12,6 @@ docker run -it --rm -p 8000:8000 \
     --name katalogas \
     --network katalogas_default \
     -e DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev \
-    -e SEARCH_URL=elasticsearch7://elasticsearch:9200/haystack \
     -e SECRET_KEY=insecure-secret-key \
     -e ALLOWED_HOSTS=localhost \
     -e VIISP_PROXY_AUTH=https://test.epaslaugos.lt/portal/services/AuthenticationServiceProxy \

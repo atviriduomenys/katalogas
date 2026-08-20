@@ -1,6 +1,6 @@
 # AGENTS.md — Katalogas (data.gov.lt)
 
-Lithuania's open data catalogue. Django 4.2 / Python 3.11 / django-cms / PostgreSQL 14 / Elasticsearch 7.
+Lithuania's open data catalogue. Django 4.2 / Python 3.11 / django-cms / PostgreSQL 14.
 
 ## Specifications implemented
 
@@ -69,10 +69,10 @@ Katalogas uses **[Spinta](https://github.com/atviriduomenys/spinta)** — a comp
 
 ```sh
 cp .env.example .env
-docker compose up -d              # postgres, elasticsearch 7, redis, celery
+docker compose up -d              # postgres, redis, celery
 poetry install
 poetry run python manage.py migrate --skip-checks   # --skip-checks needed for django-cms Site bootstrapping
-poetry run python manage.py rebuild_index --noinput
+poetry run python manage.py rebuild_search
 poetry run python manage.py createinitialrevisions
 cd webpack && npm install && npm run build && cd ..
 poetry run python manage.py collectstatic
@@ -84,13 +84,13 @@ Nix dev shell available (`nix develop`) — provides Python, Poetry, Node, and a
 ## Testing
 
 - Services must be running: `docker compose up -d`
-- `poetry run pytest -vvra --tb=short` — full suite ~30 min (Elasticsearch bottleneck)
+- `poetry run pytest -vvra --tb=short` — full suite ~10-15 min
 - Single test: `poetry run pytest -vvra --tb=short tests/path/to/test.py::test_name`
 - Use pytest style test functions, not `unittest.TestCase` classes.
 - Follow TDD: write the test first, verify it fails, then implement the fix.
-- `@pytest.mark.haystack` marks tests needing ES search index
 - `tests/conftest.py` auto-manages unmanaged models, temp media roots, clears cache, mocks translation
-- CI uses `docker-compose-test.yml` (PostgreSQL only; ES/Redis are GH Actions services)
+- `tests/conftest.py` also patches `vitrina.search.signals.on_commit` so search indexing runs at once
+- CI uses `docker-compose-test.yml` (PostgreSQL only; Redis is a GH Actions service)
 
 ## Code quality
 
@@ -127,8 +127,9 @@ poetry run ruff format .
 
 - `DJANGO_SETTINGS_MODULE=vitrina.settings` (set in `pytest.ini` and `manage.py`)
 - `AUTH_USER_MODEL = vitrina_users.User` (email-based, no username)
-- Custom Haystack engine: `vitrina.datasets.search_backends.ElasticSearchEngine`
-- `HAYSTACK_CONNECTIONS` has `default` and `test` — `conftest.py` swaps to test index for `@pytest.mark.haystack`
+- Search is plain PostgreSQL in `vitrina.search`: a `*SearchDoc` row and `*SearchFacet` rows for each
+  searchable model, built by `indexing.py`, kept current by a `post_save` signal, read by `queries.py`
+- Run `rebuild_search` after a schema or data change that bypasses `save()`
 - Celery: `vitrina.celery` app, Redis broker (db 3), `DatabaseScheduler`, auto-discover tasks
 - django-reversion on all models (except those in `NOT_VERSIONED_MODELS`)
 - django-flags feature flags (e.g. `publish_button` enabled in tests)
@@ -139,7 +140,6 @@ poetry run ruff format .
 
 ## Notable settings (`.env`)
 
-- `SEARCH_URL=elasticsearch7://127.0.0.1:9200/haystack`
 - `USE_OTP_VALIDATION=True` — OTP can be disabled in tests via settings override
 - `RECAPTCHA_PUBLIC_KEY` / `RECAPTCHA_PRIVATE_KEY` — test keys in `.env.example`
 - `OAUTH_*` — OAuth server config for Spinta integration

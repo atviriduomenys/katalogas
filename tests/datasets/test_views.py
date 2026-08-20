@@ -397,7 +397,6 @@ class TestDatasetDetailView:
             in response.text
         )
         assert "JSON" in response.text
-        assert "OpenAPI" in response.text
         assert uapi_concept.label in response.text
 
     def test_data_service_view_without_agent(self, app: DjangoTestApp):
@@ -421,6 +420,7 @@ class TestDatasetDetailView:
         assert data_service.endpoint_url in response.text
         assert data_service.endpoint_description in response.text
         assert data_service.endpoint_type.title in response.text
+        assert endpoint_description_format.title not in response.text
 
 
 @pytest.mark.haystack
@@ -1734,13 +1734,11 @@ class TestDatasetUpdateView:
     def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         json_format = Format.objects.get(title="JSON")
-        openapi_format = Format.objects.get(title="OpenAPI")
         dataservice = DatasetServiceFactory(
             organization=organization,
             endpoint_url=None,
             endpoint_description=None,
             endpoint_type=json_format,
-            endpoint_description_type=openapi_format,
         )
         agent = AgentFactory(organization=organization)
         user = UserFactory(is_staff=True)

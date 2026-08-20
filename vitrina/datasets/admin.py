@@ -79,9 +79,8 @@ class DatasetAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
         if request.user.has_perm("vitrina_datasets.view_dataset") and not request.user.has_perm(
             "vitrina_datasets.change_dataset"
         ):
-            readonly_fields.extend(
-                [field.name for field in self.model._meta.fields if field.name != "endpoint_description_type"]
-            )
+            excluded_fields = set(DatasetAdminForm.Meta.exclude)
+            readonly_fields.extend(field.name for field in self.model._meta.fields if field.name not in excluded_fields)
 
         return readonly_fields
 

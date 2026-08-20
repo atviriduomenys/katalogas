@@ -664,16 +664,8 @@ class Dataset(Resource):
         limit_choices_to={"concept_schemas__uri": DATASET_TYPE_SCHEME_URI},
     )
 
-    # TODO: To be removed:
+    # Deprecated fields
     # ---------------------------8<-------------------------------------
-    endpoint_description_type = models.ForeignKey(
-        "vitrina_resources.Format",
-        on_delete=models.SET_NULL,
-        verbose_name=_("API specifikacijos formatas"),
-        null=True,
-        blank=True,
-        related_name="format_endpoint_description_types",
-    )
     meta = models.TextField(blank=True, null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/9
@@ -738,6 +730,15 @@ class Dataset(Resource):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="primary_datasets",
+    )
+    # TODO: Remove as part of https://github.com/atviriduomenys/katalogas/issues/2771
+    endpoint_description_type = models.ForeignKey(
+        "vitrina_resources.Format",
+        on_delete=models.SET_NULL,
+        verbose_name=_("API specifikacijos formatas"),
+        null=True,
+        blank=True,
+        related_name="format_endpoint_description_types",
     )
     # --------------------------->8-------------------------------------
 

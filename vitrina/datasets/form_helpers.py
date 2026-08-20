@@ -121,7 +121,7 @@ def validate_agent_endpoint_fields(
     agent: Agent | None,
     conforms_to: Concept | None,
     endpoint_url: str | None,
-    endpoint_type: str | None,
+    endpoint_type: Format | None,
     endpoint_description: str | None,
 ) -> list[tuple[str, str]]:
     errors = []

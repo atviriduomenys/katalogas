@@ -14,7 +14,6 @@ def many_orgs_with_datasets(db):
         DatasetFactory(organization=OrganizationFactory(title=f"Org {i:03d}"))
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_sidebar_organization_filter_offers_all_organizations(app: DjangoTestApp, many_orgs_with_datasets):
     resp = app.get(reverse("dataset-list"))
@@ -22,7 +21,6 @@ def test_sidebar_organization_filter_offers_all_organizations(app: DjangoTestApp
     assert len(list(org_filter.items())) == ORG_COUNT
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 def test_organization_stats_chart_includes_all_organizations(app: DjangoTestApp, many_orgs_with_datasets):
     resp = app.get(reverse("dataset-stats-organization"))

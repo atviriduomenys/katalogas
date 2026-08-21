@@ -8,11 +8,49 @@ https://github.com/atviriduomenys/katalogas/issues/2762
 
 - Bump gunicorn 20.1.0 -> 23.0.0: setuptools 83 removed pkg_resources
 
+https://github.com/atviriduomenys/katalogas/issues/2771
+
+- Hide the deprecated "API specifikacijos formatas" (``endpoint_description_type``) field from
+  service forms, detail pages, and administration while preserving existing database values and
+  API output.
+
 https://github.com/atviriduomenys/katalogas/issues/2722
 
 - Make the "API specifikacija" (``dcat:endpointDescription``) field optional in the data service
   form. DCAT-AP and DCAT-AP-LT mark this property as recommended, not mandatory, so the form no
   longer demands an agent or an API specification. The mandatory ``dcat:endpointURL`` rule stays.
+
+https://github.com/atviriduomenys/katalogas/issues/2723
+
+- Accept links that point to an internal host. Django's ``URLValidator`` demands a public DNS
+  name, so it refused ``http://ext-db:8888/orawsv/...``. A new ``validate_absolute_uri``
+  validator asks only for an ``http``, ``https``, ``ftp`` or ``ftps`` scheme and a host, so a
+  host name without a dot, a port and an IP address are all permitted. Free text, a missing
+  scheme and ``javascript:`` stay refused, so the RDF ``rdf:resource`` output stays well formed.
+- Apply the new validator to every link field a user fills in: ``access_url`` and
+  ``download_url`` on a distribution, ``endpoint_url``, ``endpoint_description``,
+  ``landing_page``, ``information_system_assessment_url`` and ``rights_relation`` on a data
+  resource, and the link list fields (documentation, legal basis, service quality, qualified
+  relation). This covers the old forms and the new DCAT forms.
+- Raise ``endpoint_description`` from 200 to 512 characters, the same limit as ``endpoint_url``.
+- The required fields do not change. DCAT-AP marks ``dcat:accessURL`` and ``dcat:endpointURL``
+  as mandatory.
+- A link with no scheme is now refused. Before this change ``forms.URLField`` silently made
+  ``www.example.com`` into ``http://www.example.com``. Give the full link.
+
+https://github.com/atviriduomenys/katalogas/issues/1825
+
+- Remove Elasticsearch and ``django-haystack``. Use PostgreSQL for search.
+- Add the ``vitrina.search`` app.
+- Replace the ``rebuild_index`` deploy step with ``rebuild_search``.
+- Replace the nightly ``update_index`` job in ``cronjobs/crontab`` with ``rebuild_search``. Install
+  the new crontab on the server together with this release.
+- Drop the ``SEARCH_URL`` and ``ELASTIC_FACET_SIZE`` settings, and the Elasticsearch service from
+  the compose files and from the test workflow.
+- Sort the request list by the title of the request.
+- End every list order with the primary key, so a page cannot repeat or drop a row.
+- Match a search word anywhere in the text, not only at the start of a word. A search now finds
+  more datasets than before.
 
 DAS-643
 
@@ -49,6 +87,13 @@ https://github.com/atviriduomenys/katalogas/issues/2755
   collides with ``python-docx`` on the ``docx`` module name. ``django-formtools`` stays in the
   lock file because ``django-cms`` needs it. With their own dependencies, this drops 16 packages.
 - Move ``freezegun`` and ``requests-mock`` to the dev group. The tests are their only user.
+
+https://github.com/atviriduomenys/katalogas/issues/2753
+
+- Filter ``dcat:servesDataset`` links in the EDP DCAT-AP export (`/edp/dcat-ap.rdf` and
+  `/edp/dcat-ap-restricted.rdf`). A data service listed the URL of every related dataset, also of
+  non-public and deleted ones, which the European Data Portal turned into empty catalogue records.
+  A service now links only to datasets that the export publishes.
 
 https://github.com/atviriduomenys/dvms/issues/515
 

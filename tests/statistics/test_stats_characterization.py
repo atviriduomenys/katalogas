@@ -193,7 +193,6 @@ def status_stats_data(db):
     return ds
 
 
-@pytest.mark.haystack
 @pytest.mark.django_db
 @pytest.mark.parametrize("duration", DURATIONS)
 @pytest.mark.parametrize("indicator", ["dataset-count", "object-count", "level-average"])

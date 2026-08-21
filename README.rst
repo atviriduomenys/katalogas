@@ -143,20 +143,13 @@ From project root directory run:
 
     docker compose up -d
 
-If elasticsearch does not start and raises `AccessDeniedException` on
-`createDirectory()`, try this:
-
-.. code:: sh
-
-    sudo chown -R $UID:$GID var/elasticsearch
-
 Then we can run:
 
 .. code:: sh
 
     poetry install
     python manage.py migrate --skip-checks
-    python manage.py rebuild_index --noinput
+    python manage.py rebuild_search
     python manage.py createinitialrevisions
 
 `--skip-checks` disables Django's system checks. It is needed because the URL
@@ -239,7 +232,7 @@ and set provided google analytics id.
 Testing
 *******
 
-Docker services (PostgreSQL and Elasticsearch) must be running before executing
+Docker services (PostgreSQL and Redis) must be running before executing
 tests:
 
 .. code:: sh
@@ -250,7 +243,7 @@ Run all tests:
 
 .. code:: sh
 
-    pytest -vvra --tb=short
+    pytest -vvra --tb=short tests
 
 Run a single test:
 
@@ -260,6 +253,5 @@ Run a single test:
 
 .. note::
 
-    Running the full test suite takes approximately 30 minutes on a fast
-    computer, primarily because tests interact with Elasticsearch for search
-    indexing.
+    Running the full test suite takes approximately 10 to 15 minutes on a fast
+    computer.

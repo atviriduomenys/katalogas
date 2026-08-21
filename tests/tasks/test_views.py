@@ -37,14 +37,12 @@ def set_up_data():
     }
 
 
-@pytest.mark.haystack
 def test_task_list_with_user(app: DjangoTestApp, set_up_data):
     app.set_user(set_up_data["user"])
     resp = app.get("%s?owner=user" % reverse("user-task-list", kwargs={"pk": set_up_data["user"].pk}))
     assert list([int(task.pk) for task in resp.context["object_list"]]) == [set_up_data["task_for_user"].pk]
 
 
-@pytest.mark.haystack
 def test_task_list_with_organization(app: DjangoTestApp, set_up_data):
     app.set_user(set_up_data["user_with_organization"])
     resp = app.get("%s?owner=all" % reverse("user-task-list", kwargs={"pk": set_up_data["user_with_organization"].pk}))
@@ -173,7 +171,6 @@ def test_task_assign_with_user_with_access(app: DjangoTestApp):
     assert task.status == Task.ASSIGNED
 
 
-@pytest.mark.haystack
 def test_task_search_with_title(app: DjangoTestApp):
     user = UserFactory()
     task1 = TaskFactory(user=user, title="Test: task")
@@ -184,7 +181,6 @@ def test_task_search_with_title(app: DjangoTestApp):
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk, task2.pk])
 
 
-@pytest.mark.haystack
 def test_task_search_with_description(app: DjangoTestApp):
     user = UserFactory()
     task1 = TaskFactory(user=user, description="Test description")
@@ -195,7 +191,6 @@ def test_task_search_with_description(app: DjangoTestApp):
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk, task2.pk])
 
 
-@pytest.mark.haystack
 def test_task_search_with_user_name(app: DjangoTestApp):
     user = UserFactory(first_name="Test", last_name="User")
     task1 = TaskFactory(user=user)
@@ -206,7 +201,6 @@ def test_task_search_with_user_name(app: DjangoTestApp):
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk, task2.pk])
 
 
-@pytest.mark.haystack
 def test_task_search_with_organization_name(app: DjangoTestApp):
     organization = OrganizationFactory(title="Organization")
     user = UserFactory(organization=organization)
@@ -221,7 +215,6 @@ def test_task_search_with_organization_name(app: DjangoTestApp):
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk, task2.pk])
 
 
-@pytest.mark.haystack
 def test_task_search_with_filter(app: DjangoTestApp):
     user = UserFactory()
     task1 = TaskFactory(user=user, title="Test: task", status=Task.CREATED)
@@ -232,7 +225,6 @@ def test_task_search_with_filter(app: DjangoTestApp):
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk])
 
 
-@pytest.mark.haystack
 def test_task_list_with_owner_filter__user(app: DjangoTestApp):
     organization = OrganizationFactory(title="Organization")
     user = UserFactory(organization=organization)
@@ -247,7 +239,6 @@ def test_task_list_with_owner_filter__user(app: DjangoTestApp):
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk, task2.pk])
 
 
-@pytest.mark.haystack
 def test_task_list_with_owner_filter__all(app: DjangoTestApp):
     organization = OrganizationFactory(title="Organization")
     user = UserFactory(organization=organization)
@@ -328,7 +319,6 @@ def test_task_detail_superuser_can_access_other_users_tasks(app: DjangoTestApp):
     assert resp.context["object"].pk == task.pk
 
 
-@pytest.mark.haystack
 def test_task_list_status_filter(app: DjangoTestApp):
     user = UserFactory()
     task_created = TaskFactory(user=user, status=Task.CREATED)
@@ -350,7 +340,6 @@ def test_task_list_status_filter(app: DjangoTestApp):
     assert task_created.pk not in result_pks
 
 
-@pytest.mark.haystack
 def test_task_list_type_filter(app: DjangoTestApp):
     user = UserFactory()
     task_request = TaskFactory(user=user, type=Task.REQUEST)
@@ -372,7 +361,6 @@ def test_task_list_type_filter(app: DjangoTestApp):
     assert task_request.pk not in result_pks
 
 
-@pytest.mark.haystack
 def test_task_list_combined_filters(app: DjangoTestApp):
     user = UserFactory()
     task_match = TaskFactory(user=user, status=Task.CREATED, type=Task.REQUEST)
@@ -387,7 +375,6 @@ def test_task_list_combined_filters(app: DjangoTestApp):
     assert result_pks == [task_match.pk]
 
 
-@pytest.mark.haystack
 def test_task_list_filter_counts_are_accurate(app: DjangoTestApp):
     user = UserFactory()
     TaskFactory(user=user, status=Task.CREATED)
@@ -414,7 +401,6 @@ def test_task_list_filter_counts_are_accurate(app: DjangoTestApp):
     assert completed_item["count"] == 1
 
 
-@pytest.mark.haystack
 def test_task_list_owner_filter_counts_with_organization(app: DjangoTestApp):
     organization = OrganizationFactory()
     user = UserFactory(organization=organization)

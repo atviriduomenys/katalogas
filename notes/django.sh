@@ -27,7 +27,7 @@ User.objects.update(password=user.password)
 exit()
 
 # Update search index
-poetry run python manage.py rebuild_index --noinput --using default
+poetry run python manage.py rebuild_search
 
 # Static files
 poetry run python manage.py collectstatic --noinput

@@ -11,12 +11,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.forms import Form
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from haystack.backends import SQ
-from haystack.query import SearchQuerySet
 from itsdangerous import URLSafeSerializer
 
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
@@ -282,33 +280,13 @@ def get_total_by_indicator_from_stats(st, indicator, total):
     return total
 
 
-def get_public_dataset_id_list():
-    public_datasets = Dataset.objects.filter(is_public=True)
-    public_dataset_id_list = [dataset.id for dataset in public_datasets]
-    return public_dataset_id_list
+def get_datasets_for_user(request: DrfRequest, datasets: QuerySet[Dataset]) -> QuerySet[Dataset]:
+    return filter_out_non_public_datasets_for_user(request.user, datasets)
 
 
-def filter_datasets_for_user(user: User, datasets: SearchQuerySet) -> SearchQuerySet:
-    coordinator_orgs = [
-        rep.object_id
-        for rep in user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
-    ]
-    public_dataset_id_list = get_public_dataset_id_list()
-    coordinated_datasets = Dataset.objects.filter(organization_id__in=coordinator_orgs)
-    dataset_id_list = public_dataset_id_list + [dataset.id for dataset in coordinated_datasets]
-    datasets = datasets.filter(django_id__in=dataset_id_list)
-    return datasets
-
-
-def get_datasets_for_user(request: DrfRequest, datasets: SearchQuerySet) -> SearchQuerySet:
-    datasets = filter_out_non_public_datasets_for_user(request.user, datasets)
-    datasets = datasets.models(Dataset)
-    return datasets
-
-
-def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet) -> SearchQuerySet:
-    public_filter: SQ = SQ(
-        is_public="true",
+def filter_out_non_public_datasets_for_user(user: User, datasets: QuerySet[Dataset]) -> QuerySet[Dataset]:
+    public_filter = Q(
+        is_public=True,
         access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
     )
 
@@ -427,14 +405,7 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
             access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),
         )
 
-    allowed_dataset_pks = list(Dataset.objects.filter(permission_filter).values_list("pk", flat=True).distinct())
-    return apply_terms_filter(datasets, "django_id", allowed_dataset_pks)
-
-
-def apply_terms_filter(searchqueryset: SearchQuerySet, field: str, values: Iterable[Any]) -> SearchQuerySet:
-    clone = searchqueryset._clone()
-    clone.query.add_terms_filter(field, values)
-    return clone
+    return datasets.filter(permission_filter)
 
 
 def create_subscription(user, dataset):

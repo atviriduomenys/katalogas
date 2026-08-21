@@ -3,7 +3,7 @@
 0 3 * * * cd /srv/vitrina && docker compose exec vitrina python scripts/create_dataset_stats.py >> /var/log/vitrina-cron.log 2>&1
 
 # Run at 4AM daily
-0 4 * * * cd /srv/vitrina && docker compose exec vitrina django-admin update_index --remove --using default --settings=vitrina.settings >> /var/log/vitrina-cron.log 2>&1
+0 4 * * * cd /srv/vitrina && docker compose exec vitrina django-admin rebuild_search --settings=vitrina.settings >> /var/log/vitrina-cron-rebuild-search.log 2>&1
 
 # Run at 9AM on the first Monday of each month
 0 9 */100,1-7 * MON cd /srv/vitrina && docker compose exec vitrina django-admin send_monthly_newsletter --settings=vitrina.settings >> /var/log/vitrina-cron.log 2>&1

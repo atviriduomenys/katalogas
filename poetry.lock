@@ -1778,26 +1778,6 @@ files = [
 Django = ">=4.2"
 
 [[package]]
-name = "django-haystack"
-version = "3.4.0"
-description = "Pluggable search for Django."
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "django_haystack-3.4.0.tar.gz", hash = "sha256:1226a7c9ce13e1e7ead8ac83f6e87bfef4996f146ed24971fde7896115b1c530"},
-]
-
-[package.dependencies]
-Django = ">=4.2"
-elasticsearch = {version = ">=5,<8", optional = true, markers = "extra == \"elasticsearch\""}
-packaging = "*"
-
-[package.extras]
-elasticsearch = ["elasticsearch (>=5,<8)"]
-testing = ["coverage", "geopy (==2)", "pysolr (>=3.7)", "python-dateutil", "requests", "whoosh (>=2.5.4,<3.0)"]
-
-[[package]]
 name = "django-hitcount"
 version = "1.3.5"
 description = "Hit counting application for Django."
@@ -2470,28 +2450,6 @@ files = [
 
 [package.extras]
 dev = ["mypy (>=1.15)"]
-
-[[package]]
-name = "elasticsearch"
-version = "7.8.1"
-description = "Python client for Elasticsearch"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4"
-groups = ["main"]
-files = [
-    {file = "elasticsearch-7.8.1-py2.py3-none-any.whl", hash = "sha256:2ffbd746fc7d2db08e5ede29c822483705f29c4bf43b0875c238637d5d843d44"},
-    {file = "elasticsearch-7.8.1.tar.gz", hash = "sha256:92b534931865a186906873f75ae0b91808ff5036b0f2b9269eb5f6dc09644b55"},
-]
-
-[package.dependencies]
-certifi = "*"
-urllib3 = ">=1.21.1"
-
-[package.extras]
-async = ["aiohttp (>=3,<4)", "yarl"]
-develop = ["black", "coverage", "jinja2", "mock", "pytest", "pytest-cov", "pyyaml", "requests (>=2.0.0,<3.0.0)", "sphinx (<1.7)", "sphinx-rtd-theme"]
-docs = ["sphinx (<1.7)", "sphinx-rtd-theme"]
-requests = ["requests (>=2.4.0,<3.0.0)"]
 
 [[package]]
 name = "et-xmlfile"
@@ -7215,4 +7173,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "b44ff22ba2e751d4aeb9a8d69493b88a8ed4987672d1ea96961648440ce3aa30"
+content-hash = "a7810735e093b8e327306ca948d0e7a362e875d19e7514d8a3459385395752c0"

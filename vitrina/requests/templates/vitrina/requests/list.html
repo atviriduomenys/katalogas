@@ -131,8 +131,8 @@
                             <div class="content">
                                 <div>
                                     <strong>
-                                        <a href="{{ i.object.get_absolute_url }}" class="dataset-list-title">
-                                            {{ i.object.title | escape }}
+                                        <a href="{{ i.get_absolute_url }}" class="dataset-list-title">
+                                            {{ i.title | escape }}
                                         </a>
                                     </strong>
                                 </div>
@@ -140,10 +140,10 @@
                                 <div class="tags mt-2">
                                     <span class="tag is-white has-text-dark no-margin-bottom">
                                         {% translate "Būsena" %}:
-                                        {{ i.object.get_status_display }}
+                                        {{ i.get_status_display }}
                                     </span>
-                                    {% if i.object.requestassignment_set.all %}
-                                        {% for assignment in i.object.requestassignment_set.all %}
+                                    {% if i.requestassignment_set.all %}
+                                        {% for assignment in i.requestassignment_set.all %}
                                             <span class="tag is-white has-text-dark no-margin-bottom">
                                                 <a href="{{ assignment.organization.get_absolute_url }}">
                                                     {{ assignment.organization.title }}
@@ -157,43 +157,29 @@
                                 </div>
 
                                 <div class="tags mt-3 mb-1">
-                                    {% if i.object.created %}
+                                    {% if i.created %}
                                         <span class="tag is-white has-text-dark">
                                             {% translate "Registravimo data" %}:
-                                            {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
+                                            {{ i.created|date:"SHORT_DATE_FORMAT" }}
                                         </span>
                                     {% endif %}
-                                    {% if i.object.modified %}
+                                    {% if i.modified %}
                                         <span class="tag is-white has-text-dark">
                                             {% translate "Atnaujinimo data" %}:
-                                            {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
+                                            {{ i.modified|date:"SHORT_DATE_FORMAT" }}
                                         </span>
                                     {% endif %}
                                 </div>
 
                                 <p class="dataset-list-description my-1">
-                                    {% if i.object.description %}
-                                        {{ i.object.description|escape }}
+                                    {% if i.description %}
+                                        {{ i.description|escape }}
                                     {% endif %}
                                 </p>
 
                                 </div>
                             </div>
                         </div>
-{#                        <div class="column is-2 is-align-self-center">#}
-{#                            <div class="has-text-centered">#}
-{#                                {% if i.object.comment_count %}#}
-{#                                    <div>#}
-{#                                        <i class="fa fa-eye"></i>#}
-{#                                        <span>{{ i.object.comment_count }}</span>#}
-{#                                    </div>#}
-{#                                {% endif %}#}
-{#                                <div>#}
-{#                                    <i class="fa fa-thumbs-up"></i>#}
-{#                                    <span>{{ i.object.get_likes }}</span>#}
-{#                                </div>#}
-{#                            </div>#}
-{#                        </div>#}
                     </div>
                 </article>
             {% endfor %}

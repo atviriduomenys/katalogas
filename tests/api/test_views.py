@@ -1,5 +1,6 @@
 import secrets
 from datetime import datetime
+from xml.etree import ElementTree
 
 import pytest
 from django.test import TestCase
@@ -19,12 +20,15 @@ from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import CategoryFactory
 from vitrina.datasets.factories import (
     DatasetFactory,
+    DatasetRelationFactory,
+    DatasetServiceFactory,
     DatasetStructureFactory,
     DatasetGroupFactory,
     DCATResourceSubclassFactory,
     DatasetGroupCategoryUriFactory,
+    RelationFactory,
 )
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, Relation
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.statistics.models import ModelDownloadStats
@@ -3165,6 +3169,25 @@ def test_edp_dcat_ap_rdf_drops_whitespace_uris(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_edp_dcat_ap_rdf_keeps_internal_endpoint_urls(app: DjangoTestApp):
+    Dataset.objects.all().delete()
+    internal_url = "http://ext-db:8888/orawsv/SISTEMA_WS/WS_ESERVICES_PROVIDER?WSDL"
+    DatasetFactory(
+        access_rights=Dataset.PUBLIC,
+        service=True,
+        endpoint_url=internal_url,
+        endpoint_description=internal_url,
+    )
+
+    res = app.get("/edp/dcat-ap.rdf")
+
+    assert res.status_code == 200
+    assert f'<dcat:endpointURL rdf:resource="{internal_url}"/>' in res.text
+    assert f'<dcat:endpointDescription rdf:resource="{internal_url}"/>' in res.text
+    ElementTree.fromstring(res.text)
+
+
+@pytest.mark.django_db
 def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     Dataset.objects.all().delete()
     hvd_group = DatasetGroupFactory(name="hvd")
@@ -3366,3 +3389,59 @@ def test_edp_dcat_ap_rdf_only_inventored_and_opened_statuses(
     assert res.status_code == 200
     assert "Inventored dataset" in res.text
     assert "Other status dataset" not in res.text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "url_name, access_rights",
+    [
+        ("edp-dcat-ap-rdf", Dataset.PUBLIC),
+        ("edp-dcat-ap-restricted-rdf", Dataset.RESTRICTED),
+    ],
+)
+def test_edp_dcat_ap_rdf_serves_dataset_excludes_hidden_datasets(app: DjangoTestApp, url_name, access_rights):
+    Dataset.objects.all().delete()
+    organization = OrganizationFactory()
+    service = DatasetServiceFactory(organization=organization, access_rights=access_rights, status=Dataset.HAS_DATA)
+    relation = RelationFactory(name=Relation.SERVICE)
+    served = DatasetFactory(
+        access_rights=access_rights,
+        is_public=True,
+        status=Dataset.HAS_DATA,
+        organization=organization,
+    )
+    hidden = DatasetFactory(
+        access_rights=access_rights,
+        is_public=False,
+        status=Dataset.HAS_DATA,
+        organization=organization,
+    )
+    planned = DatasetFactory(
+        access_rights=access_rights,
+        is_public=True,
+        status=Dataset.PLANNED,
+        organization=organization,
+    )
+    deleted = DatasetFactory(
+        access_rights=access_rights,
+        is_public=True,
+        status=Dataset.HAS_DATA,
+        organization=organization,
+        deleted=True,
+        deleted_on=timezone.now(),
+    )
+    exported_in_other_feed = DatasetFactory(
+        access_rights=Dataset.RESTRICTED if access_rights == Dataset.PUBLIC else Dataset.PUBLIC,
+        is_public=True,
+        status=Dataset.HAS_DATA,
+        organization=organization,
+    )
+    for dataset in (served, hidden, planned, deleted, exported_in_other_feed):
+        DatasetRelationFactory(relation=relation, part_of=service, dataset=dataset)
+
+    res = app.get(reverse(url_name))
+
+    assert res.status_code == 200
+    assert f'<dcat:Dataset rdf:about="http://localhost/datasets/{served.pk}/" />' in res.text
+    for dataset in (hidden, planned, deleted, exported_in_other_feed):
+        assert f"/datasets/{dataset.pk}/" not in res.text

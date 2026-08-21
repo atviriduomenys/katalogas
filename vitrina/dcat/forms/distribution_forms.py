@@ -3,7 +3,6 @@ from crispy_forms.layout import Field, Layout, Div
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet, Q
-from django.forms.widgets import URLInput
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm
 
@@ -11,7 +10,7 @@ from vitrina.classifiers.models import Concept, FormFieldText, Licence
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.fields import StringListField
+from vitrina.fields import StringListField, URIFormField
 from vitrina.resources.models import (
     DatasetDistribution,
     DISTRIBUTION_STANDARD_URI,
@@ -60,8 +59,8 @@ class DatasetDistributionForm(TranslatableModelForm):
             "temporal_resolution",
         )
         field_classes = {
-            "access_url": forms.URLField,
-            "download_url": forms.URLField,
+            "access_url": URIFormField,
+            "download_url": URIFormField,
         }
         widgets = {
             "availability": Select2Widget,
@@ -72,7 +71,9 @@ class DatasetDistributionForm(TranslatableModelForm):
             "compression_format": Select2Widget,
             "packaging_format": Select2Widget,
             "checksum_algorithm": Select2Widget,
-            "download_url": URLInput,
+            # The model field is a TextField, whose default Textarea widget overrides the
+            # TextInput that URIFormField declares. Keep the download link on a single line.
+            "download_url": forms.TextInput,
             # Change input type to text because browsers silently clear unparseable <input type="number">
             # values to "" before submit, so IntegerField's server-side validation never sees the bad input.
             "size": forms.TextInput,

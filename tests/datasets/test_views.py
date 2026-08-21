@@ -13,7 +13,6 @@ from filer.models import File
 from reversion.models import Version
 from webtest import Upload
 from unittest.mock import patch
-from elasticsearch.client import Elasticsearch
 
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import (
@@ -397,18 +396,19 @@ class TestDatasetDetailView:
             in response.text
         )
         assert "JSON" in response.text
-        assert "OpenAPI" in response.text
         assert uapi_concept.label in response.text
 
     def test_data_service_view_without_agent(self, app: DjangoTestApp):
         org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
+        endpoint_format = Format.objects.create(title="Service endpoint format")
+        endpoint_description_format = Format.objects.create(title="Service endpoint description format")
         data_service = DatasetServiceFactory(
             organization=org,
             endpoint_url="http://test.com",
-            endpoint_type=Format.objects.first(),
+            endpoint_type=endpoint_format,
             endpoint_description="http://example.com",
-            endpoint_description_type=Format.objects.first(),
+            endpoint_description_type=endpoint_description_format,
         )
 
         app.set_user(user)
@@ -419,10 +419,9 @@ class TestDatasetDetailView:
         assert data_service.endpoint_url in response.text
         assert data_service.endpoint_description in response.text
         assert data_service.endpoint_type.title in response.text
-        assert data_service.endpoint_description_type.title in response.text
+        assert endpoint_description_format.title not in response.text
 
 
-@pytest.mark.haystack
 class TestDatasetListView:
     def test_dataset_list_view_anon_user_with_datasets(self, app: DjangoTestApp):
         DatasetFactory()
@@ -641,7 +640,7 @@ class TestDatasetListView:
         resp = resp.click(linkid="manager-dataset-url")
         assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted([dataset.pk, dataset2.pk])
 
-    def test_manager_dataset_list_uses_terms_query_not_or_expansion(self, app: DjangoTestApp):
+    def test_manager_dataset_list_holds_every_managed_dataset(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset_ct = ContentType.objects.get_for_model(Dataset)
         user = User.objects.create_user(email="manyreps@test.com", password="test123")
@@ -654,38 +653,11 @@ class TestDatasetListView:
                 user=user,
             )
 
-        captured_bodies: list[dict] = []
-        original_search = Elasticsearch.search
-
-        def _capture_search(self_, *args, **kwargs):
-            captured_bodies.append(kwargs.get("body") or (args[0] if args else None))
-            return original_search(self_, *args, **kwargs)
-
         app.set_user(user)
-        with patch.object(Elasticsearch, "search", _capture_search):
-            resp = app.get(reverse("manager-dataset-list"))
+        resp = app.get(reverse("manager-dataset-list"))
 
         assert resp.status_code == 200
-
-        def _terms_field_names(node):
-            names = set()
-            if isinstance(node, dict):
-                if "terms" in node and isinstance(node["terms"], dict):
-                    names.update(node["terms"].keys())
-                for value in node.values():
-                    names.update(_terms_field_names(value))
-            elif isinstance(node, list):
-                for item in node:
-                    names.update(_terms_field_names(item))
-            return names
-
-        django_id_terms_seen = any("django_id" in _terms_field_names(body) for body in captured_bodies if body)
-        assert django_id_terms_seen, "Expected a terms clause on django_id; found OR-expansion or none"
-
-        body_dump = repr(captured_bodies)
-
-        assert "django_id:(" not in body_dump
-        assert "id:(" not in body_dump
+        assert sorted(int(obj.pk) for obj in resp.context["object_list"]) == sorted(d.pk for d in datasets)
 
     def test_search_without_query(self, app: DjangoTestApp, search_datasets: list[Dataset]):
         resp = app.get(reverse("dataset-list"))
@@ -1168,13 +1140,13 @@ class TestDatasetListView:
         assert response.status_code == 200
         assert len(response.context["object_list"]) == 2
         for ds in response.context["object_list"]:
-            assert ds.creator == [creator1.pk]
+            assert ds.get_creators() == [creator1.pk]
 
         response = app.get(reverse("dataset-list") + f"?selected_facets=creator_exact:{creator2.pk}")
         assert response.status_code == 200
         assert len(response.context["object_list"]) == 1
         for ds in response.context["object_list"]:
-            assert ds.creator == [creator2.pk]
+            assert ds.get_creators() == [creator2.pk]
 
 
 class TestDatasetUpdateView:
@@ -1733,13 +1705,11 @@ class TestDatasetUpdateView:
     def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         json_format = Format.objects.get(title="JSON")
-        openapi_format = Format.objects.get(title="OpenAPI")
         dataservice = DatasetServiceFactory(
             organization=organization,
             endpoint_url=None,
             endpoint_description=None,
             endpoint_type=json_format,
-            endpoint_description_type=openapi_format,
         )
         agent = AgentFactory(organization=organization)
         user = UserFactory(is_staff=True)
@@ -2236,7 +2206,6 @@ class TestDatasetCreateView:
         form["contact"] = contact.pk
         form["agent"] = agent.pk
         form["endpoint_type"] = Format.objects.get(title="JSON").pk
-        form["endpoint_description_type"] = Format.objects.get(title="OpenAPI").pk
         form["conforms_to"] = Concept.objects.get(code="UAPI").pk
 
         response = form.submit()
@@ -3539,7 +3508,6 @@ def test_add_subclass_form_wrong_login(app: DjangoTestApp):
     assert response.status_code == 403
 
 
-@pytest.mark.haystack
 def test_click_add_button(app: DjangoTestApp):
     org = OrganizationFactory(
         title="Org_title",
@@ -3555,7 +3523,6 @@ def test_click_add_button(app: DjangoTestApp):
     assert response.status_code == 200
 
 
-@pytest.mark.haystack
 def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp):
     jurisdiction = AreaOfManagementFactory(id=30, name_lt="Organization")
     organization = OrganizationFactory(title="Organization", jurisdiction=jurisdiction)
@@ -4841,6 +4808,18 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     </dcat:DataService>
 </rdf:RDF>"""
     )
+
+
+def test_dataset_rdf_download__data_service_links_non_public_served_dataset(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    service = DatasetServiceFactory(organization=organization)
+    non_public = DatasetFactory(organization=organization, is_public=False)
+    DatasetRelationFactory(relation=RelationFactory(name=Relation.SERVICE), part_of=service, dataset=non_public)
+
+    res = app.get(reverse("dataset-rdf-download", args=[service.pk]))
+
+    assert res.status_code == 200
+    assert f'<dcat:Dataset rdf:about="http://localhost/datasets/{non_public.pk}/" />' in res.text
 
 
 class TestRemoveRequestView:

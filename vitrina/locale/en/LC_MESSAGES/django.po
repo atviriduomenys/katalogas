@@ -844,10 +844,6 @@ msgstr "If agent is selected, this field must be left emtpy."
 msgid "Pasirinkus agentą, API formatas privalo būti '{0}'"
 msgstr "If an agent is selected, the API format must be '{0}'."
 
-#, python-brace-format
-msgid "Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'"
-msgstr "If an agent is selected, the API specification format must be '{0}'."
-
 msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
 msgstr "Services associated with an agent must comply with the UAPI standard."
 
@@ -1885,9 +1881,6 @@ msgstr "Technical format (e.g., REST, SOAP)"
 msgid "Nuoroda į API dokumentaciją (pvz., OpenAPI, Swagger)"
 msgstr "Link to API documentation (e.g., OpenAPI, Swagger)"
 
-msgid "API dokumentacijos formatas (pvz., JSON, YAML)"
-msgstr "API documentation format (e.g., JSON, YAML)"
-
 msgid "Nurodo kokį standartą atitinka paslauga. (pvz., UDTS)"
 msgstr "Specifies which standard the service conforms to (e.g., UAPI)."
 
@@ -2477,9 +2470,6 @@ msgid ""
 msgstr ""
 "Contact information that can be used for sending comments about the service. "
 "Corresponds to dcat:contactPoint"
-
-msgid "Prieigos taško aprašo formatas."
-msgstr "Endpoint description format."
 
 msgid "Duomenų teikėjas"
 msgstr "Data provider"

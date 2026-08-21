@@ -11,7 +11,6 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/
       - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
-      - SEARCH_URL=elasticsearch7://elasticsearch:9200/haystack
       - DJANGO_SUPERUSER_EMAIL=test@test.com
       - DJANGO_SUPERUSER_PASSWORD=test
       - DEBUG=true
@@ -26,7 +25,6 @@ services:
     depends_on:
       - postgres
       - redis
-      - elasticsearch
   postgres:
     image: postgres:14
     restart: always
@@ -47,16 +45,6 @@ services:
       ADMINER_PLUGINS: 'tables-filter'
       ADMINER_DEFAULT_SERVER: 'postgres'
 
-  elasticsearch:
-    image: elasticsearch:7.8.1
-    ports:
-      - 127.0.0.1:9200:9200
-    environment:
-      discovery.type: 'single-node'
-      indices.query.bool.max_clause_count: 8192
-    volumes:
-      - ./var/elasticsearch:/usr/share/elasticsearch/data
-
   redis:
     image: redis:latest
     restart: always
@@ -74,7 +62,6 @@ services:
       - REDIS_URL=redis://redis:6379/
       - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
       - DJANGO_SETTINGS_MODULE=vitrina.settings
-      - SEARCH_URL=elasticsearch7://elasticsearch:9200/haystack
       - CELERY_BROKER_URL=redis://redis:6379/3
     env_file:
       - .env

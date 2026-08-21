@@ -1,18 +1,36 @@
 import json
+import re
 import sys
 import uuid
+from datetime import datetime, timezone
 from typing import Set
 
 import dataset
 from dataset import Database, Table
 from faker import Faker
 from tqdm import tqdm
-from typer import Argument, Option, confirm, run
+from typer import Argument, Option, confirm, echo, run
+
+
+_KEEP_PUBLIC_CONTENT = False
 
 
 def main(
     uri: str = Argument(..., help=("Database URI (postgresql://user:pass@host:port/db)")),
     yes: bool = Option(False, help="Do not ask anything, just do it"),
+    keep_public_content: bool = Option(
+        False,
+        help=(
+            "Keep PUBLISHED editorial content readable: news and CMS page texts, titles "
+            "and slugs. Drafts, scheduled, expired, non-public and deleted rows are anonymized "
+            "as usual - only what the site already shows to everyone is spared. Bylines are "
+            "removed, including the one scripts/migrate_news.py wrote into the article text as "
+            "'<p>Autorius: NAME</p>'. WARNING: the kept text itself is NOT scanned, so it can "
+            "still contain names, e-mail addresses or phone numbers that an editor typed into "
+            "an article. Use this when someone has to REVIEW the content, e.g. after a CMS "
+            "migration - with every article replaced by 'example' such a review proves nothing."
+        ),
+    ),
 ):
     """
     Anonymize database.
@@ -21,6 +39,16 @@ def main(
     restore it. So before using this command, make sure to pass correct database
     connection string.
     """
+    global _KEEP_PUBLIC_CONTENT
+    _KEEP_PUBLIC_CONTENT = keep_public_content
+
+    if keep_public_content:
+        echo(
+            "WARNING! --keep-public-content leaves published article and page text as it is. "
+            "That text is not scanned, so it can still hold names, e-mail addresses or phone "
+            "numbers an editor typed in. Do not treat such a dump as fully anonymized."
+        )
+
     db = dataset.connect(uri)
 
     tables = (
@@ -85,8 +113,45 @@ def main(
             func(db, fake, pbar, users)
 
 
+# scripts/migrate_news.py prepends "<p>Autorius: NAME</p>" to the body and the summary, so the
+# byline ends up inside post_text / abstract, not only in a column of its own. Keeping the article
+# text therefore means keeping that name unless it is scrubbed out explicitly.
+_BYLINE_RE = re.compile(r"<p>Autorius:.*?</p>", re.S)
+
+
+def _scrub_byline(text: str | None) -> str | None:
+    if not text:
+        return text
+    return _BYLINE_RE.sub("<p>Autorius: example, example</p>", text)
+
+
+def _published_post_ids(db: Database) -> Set[int]:
+    """Ids of posts djangocms-blog would actually show.
+
+    Not just `publish`: its published() queryset also requires the start date to have
+    passed and the end date not to have. A scheduled or expired post is not public yet
+    (or any more), so its text must not be spared.
+    """
+    now = datetime.now(timezone.utc)
+
+    def _passed(value, future: bool) -> bool:
+        if value is None:
+            return True
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value > now if future else value <= now
+
+    return {
+        row["id"]
+        for row in db["djangocms_blog_post"].all()
+        if row.get("publish")
+        and _passed(row.get("date_published"), future=False)
+        and _passed(row.get("date_published_end"), future=True)
+    }
+
+
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["djangocms_blog_post_translation"]
+    objects: Table = db["organization"]
     pk_name = "id"
     for record in objects.all():
         data = {
@@ -104,7 +169,20 @@ def _anonymize_djangocms_blog_post_translation(
 ) -> None:
     objects: Table = db["djangocms_blog_post_translation"]
     pk_name = "id"
+    published = _published_post_ids(db) if _KEEP_PUBLIC_CONTENT else set()
     for record in objects.all():
+        if _KEEP_PUBLIC_CONTENT and record.get("master_id") in published:
+            # Published article: keep the text, but strip the byline embedded in it.
+            objects.update(
+                {
+                    pk_name: record[pk_name],
+                    "post_text": _scrub_byline(record.get("post_text")),
+                    "abstract": _scrub_byline(record.get("abstract")),
+                },
+                [pk_name],
+            )
+            pbar.update(1)
+            continue
         data = {
             pk_name: record[pk_name],
             "title": "example",
@@ -124,22 +202,37 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
     objects: Table = db["news_item"]
     pk_name = "id"
     for record in objects.all():
-        data = {
-            pk_name: record[pk_name],
-            "body": "<p>example</p>",
-            "title": "example",
-            "slug": f"example-{uuid.uuid4()}",
-            "summary": "example",
-            "author_name": "example, example",
-        }
+        if _KEEP_PUBLIC_CONTENT and record.get("is_public") and not record.get("deleted"):
+            # Published item: keep the text, drop both byline columns and the byline
+            # that migrate_news.py wrote into the text itself.
+            data = {
+                pk_name: record[pk_name],
+                "author_name": "example, example",
+                "author": None,  # bytea in production, text in the canonical schema - None fits both
+                "body": _scrub_byline(record.get("body")),
+                "summary": _scrub_byline(record.get("summary")),
+            }
+        else:
+            data = {
+                pk_name: record[pk_name],
+                "body": "<p>example</p>",
+                "title": "example",
+                "slug": f"example-{uuid.uuid4()}",
+                "summary": "example",
+                "author_name": "example, example",
+                "author": None,  # bytea in production, text in the canonical schema - None fits both
+            }
         objects.update(data, [pk_name])
         pbar.update(1)
 
 
 def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["news_item"]
+    objects: Table = db["adp_cms_page"]
     pk_name = "id"
     for record in objects.all():
+        if _KEEP_PUBLIC_CONTENT and record.get("published") and not record.get("deleted"):
+            pbar.update(1)
+            continue
         data = {
             pk_name: record[pk_name],
             "body": "<p>example</p>",

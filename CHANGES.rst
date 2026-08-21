@@ -52,6 +52,20 @@ https://github.com/atviriduomenys/katalogas/issues/1825
 - Match a search word anywhere in the text, not only at the start of a word. A search now finds
   more datasets than before.
 
+DAS-643
+
+- Fix ``scripts/anonymize.py`` writing to the wrong tables. ``_anonymize_organization`` operated on
+  ``djangocms_blog_post_translation`` instead of ``organization``, so organisation e-mails, phone
+  numbers and addresses were never anonymized. ``_anonymize_adp_cms_page`` operated on ``news_item``,
+  so ``adp_cms_page`` was left untouched and ``news_item`` was anonymized twice.
+- Add ``--keep-public-content``. It keeps published news and CMS page texts, titles and slugs
+  readable, so that content can be reviewed after a migration; without it every article becomes
+  ``example`` and such a review proves nothing. Only what the site actually shows is spared —
+  drafts, scheduled, expired, non-public and deleted rows are anonymized as before. Bylines are
+  removed, including the one ``scripts/migrate_news.py`` wrote into the article text itself. The
+  kept text is not scanned, so the command warns that it can still contain personal data an editor
+  typed in. Default behaviour is unchanged.
+
 v 1.23.0 (2026-08-03)
 ==================
 

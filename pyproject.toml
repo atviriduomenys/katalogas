@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vitrina"
-version = "1.23.0"
+version = "1.24.0"
 description = ""
 authors = ["IVPK <atviriduomenys@ivpk.lt>"]
 packages = [

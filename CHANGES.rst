@@ -1,8 +1,17 @@
 Changes
 #######
 
-v 1.24.0 (current)
+v 1.25.0 (current)
 ==================
+
+
+
+v 1.24.0 (2026-08-21)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2785
+
+- Bump `spinta` version `1.0.0` -> `1.1.0`.
 
 https://github.com/atviriduomenys/katalogas/issues/2762
 

@@ -8,6 +8,12 @@ https://github.com/atviriduomenys/katalogas/issues/2762
 
 - Bump gunicorn 20.1.0 -> 23.0.0: setuptools 83 removed pkg_resources
 
+https://github.com/atviriduomenys/katalogas/issues/2771
+
+- Hide the deprecated "API specifikacijos formatas" (``endpoint_description_type``) field from
+  service forms, detail pages, and administration while preserving existing database values and
+  API output.
+
 https://github.com/atviriduomenys/katalogas/issues/2722
 
 - Make the "API specifikacija" (``dcat:endpointDescription``) field optional in the data service

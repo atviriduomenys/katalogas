@@ -396,18 +396,19 @@ class TestDatasetDetailView:
             in response.text
         )
         assert "JSON" in response.text
-        assert "OpenAPI" in response.text
         assert uapi_concept.label in response.text
 
     def test_data_service_view_without_agent(self, app: DjangoTestApp):
         org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
+        endpoint_format = Format.objects.create(title="Service endpoint format")
+        endpoint_description_format = Format.objects.create(title="Service endpoint description format")
         data_service = DatasetServiceFactory(
             organization=org,
             endpoint_url="http://test.com",
-            endpoint_type=Format.objects.first(),
+            endpoint_type=endpoint_format,
             endpoint_description="http://example.com",
-            endpoint_description_type=Format.objects.first(),
+            endpoint_description_type=endpoint_description_format,
         )
 
         app.set_user(user)
@@ -418,7 +419,7 @@ class TestDatasetDetailView:
         assert data_service.endpoint_url in response.text
         assert data_service.endpoint_description in response.text
         assert data_service.endpoint_type.title in response.text
-        assert data_service.endpoint_description_type.title in response.text
+        assert endpoint_description_format.title not in response.text
 
 
 class TestDatasetListView:
@@ -1704,13 +1705,11 @@ class TestDatasetUpdateView:
     def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         json_format = Format.objects.get(title="JSON")
-        openapi_format = Format.objects.get(title="OpenAPI")
         dataservice = DatasetServiceFactory(
             organization=organization,
             endpoint_url=None,
             endpoint_description=None,
             endpoint_type=json_format,
-            endpoint_description_type=openapi_format,
         )
         agent = AgentFactory(organization=organization)
         user = UserFactory(is_staff=True)
@@ -2207,7 +2206,6 @@ class TestDatasetCreateView:
         form["contact"] = contact.pk
         form["agent"] = agent.pk
         form["endpoint_type"] = Format.objects.get(title="JSON").pk
-        form["endpoint_description_type"] = Format.objects.get(title="OpenAPI").pk
         form["conforms_to"] = Concept.objects.get(code="UAPI").pk
 
         response = form.submit()

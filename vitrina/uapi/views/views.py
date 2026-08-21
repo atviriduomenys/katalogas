@@ -96,7 +96,6 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelView
                 "frequency",
                 "publisher",
                 "endpoint_type",
-                "endpoint_description_type",
                 "current_structure",
             )
             .filter(

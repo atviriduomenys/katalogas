@@ -792,10 +792,6 @@ msgstr ""
 msgid "Pasirinkus agentą, API formatas privalo būti '{0}'"
 msgstr ""
 
-#, python-brace-format
-msgid "Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'"
-msgstr ""
-
 msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
 msgstr ""
 
@@ -1717,9 +1713,6 @@ msgstr ""
 msgid "Nuoroda į API dokumentaciją (pvz., OpenAPI, Swagger)"
 msgstr ""
 
-msgid "API dokumentacijos formatas (pvz., JSON, YAML)"
-msgstr ""
-
 msgid "Nurodo kokį standartą atitinka paslauga. (pvz., UDTS)"
 msgstr ""
 
@@ -2277,9 +2270,6 @@ msgstr ""
 msgid ""
 "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų "
 "paslaugą. Atitinka dcat:contactPoint."
-msgstr ""
-
-msgid "Prieigos taško aprašo formatas."
 msgstr ""
 
 msgid "Duomenų teikėjas"

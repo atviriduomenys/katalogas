@@ -40,3 +40,20 @@ def test_several_users_may_have_no_email():
     User.objects.create(email=None, status=User.ACTIVE)
 
     assert User.objects.filter(email__isnull=True).count() == 2
+
+
+@pytest.mark.django_db
+def test_factory_reuses_the_user_that_owns_an_email():
+    """Two calls with the same address must not race the unique constraint.
+
+    The factory fills first_name, last_name and phone at random, so a lookup
+    keyed on those as well would never match an existing row and would go on
+    to create a duplicate.
+    """
+    from vitrina.users.factories import UserFactory
+
+    first = UserFactory(email="shared@example.com")
+    second = UserFactory(email="shared@example.com")
+
+    assert second.pk == first.pk
+    assert User.objects.filter(email="shared@example.com").count() == 1

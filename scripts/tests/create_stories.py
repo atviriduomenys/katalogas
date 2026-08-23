@@ -80,7 +80,7 @@ def create_multiple_stories(page: Page, count: int) -> None:
     """Create multiple stories with dynamically generated data."""
     print(f"\nStarting to create {count} stories...\n")
 
-    for i in range(STORY_COUNT):
+    for _ in range(count):
         story_data = generate_story_data()
         create_story(page, story_data)
         print()

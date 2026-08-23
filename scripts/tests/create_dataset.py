@@ -1,23 +1,14 @@
-import re
-from playwright.sync_api import Playwright, sync_playwright, expect
+from playwright.sync_api import Playwright, sync_playwright
+
+from utils import BASE_URL, login
 
 
 def run(playwright: Playwright) -> None:
     browser = playwright.chromium.launch(headless=False)
     context = browser.new_context()
     page = context.new_page()
-    page.goto("http://localhost:8000/")
-    page.get_by_role("link", name="Prisijungti").click()
-    page.get_by_role("textbox", name="El. paštas *").click()
-    page.get_by_role("textbox", name="El. paštas *").fill("superadmin@aa.lt")
-    page.get_by_role("textbox", name="El. paštas *").press("Tab")
-    page.get_by_role("textbox", name="Slaptažodis *").fill("Liabas.2345")
-    page.get_by_role("textbox", name="Slaptažodis *").press("Enter")
-    page.get_by_role("textbox", name="Slaptažodis *").click()
-    page.get_by_role("textbox", name="Slaptažodis *").press("Shift+Home")
-    page.get_by_role("textbox", name="Slaptažodis *").fill("Liabas.12345")
-    page.get_by_role("textbox", name="Slaptažodis *").press("Enter")
-    page.get_by_role("button", name="Prisijungti").click()
+    page.goto(BASE_URL)
+    login(page)
     page.get_by_role("link", name="Organizacijos").click()
     page.get_by_role("link", name="Org1").click()
     page.locator("#main-content").get_by_role("link", name="Duomenų ištekliai").click()

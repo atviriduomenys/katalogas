@@ -30,8 +30,16 @@ python scripts/tests/create_organisation.py
 
 ## What a script expects
 
-- The portal running on `http://localhost:8000` (`BASE_URL` in `utils.py`).
-- An account matching `CREDENTIALS` in `utils.py`, with rights to reach the admin.
+- The portal running on `http://localhost:8000`, or `VITRINA_UI_URL` pointing elsewhere.
+- An account with rights to reach the admin, passed in the environment:
+
+  ```bash
+  export VITRINA_UI_EMAIL=...
+  export VITRINA_UI_PASSWORD=...
+  ```
+
+  The scripts stop with an explanation if either is missing, rather than typing an empty
+  password into the form and failing on some later selector.
 - Lithuanian interface language - every element is looked up by its Lithuanian label
   (`get_by_role("link", name="Prisijungti")`), so another language makes the lookups miss.
 - `add_blog_post.py` additionally expects a file named `03.png` in a filer folder called

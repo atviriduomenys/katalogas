@@ -57,3 +57,12 @@ def test_factory_reuses_the_user_that_owns_an_email():
 
     assert second.pk == first.pk
     assert User.objects.filter(email="shared@example.com").count() == 1
+
+
+@pytest.mark.django_db
+def test_several_users_may_have_a_blank_email():
+    """`blank=True` means "" is a valid way to say "no address", like NULL."""
+    User.objects.create(email="", status=User.ACTIVE)
+    User.objects.create(email="", status=User.ACTIVE)
+
+    assert User.objects.filter(email="").count() == 2

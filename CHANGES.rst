@@ -1,8 +1,28 @@
 Changes
 #######
 
-v 1.24.0 (current)
+v 1.25.0 (current)
 ==================
+
+
+
+v 1.24.0 (2026-08-21)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2785
+
+- Bump `spinta` version `1.0.0` -> `1.1.0`.
+- Bump cryptography from 48.0.1 to 50.0.0 (CVE-2026-69247).
+- Bump sqlparse from 0.5.5 to 0.6.0.
+- Bump aiohttp from 3.14.1 to 3.14.3.
+- Bump the npm package fast-uri from 3.1.4 to 3.1.5.
+- Bump the npm package nanoid from 3.3.16 to 3.3.18.
+- Drop eight orphan packages from ``poetry.lock``: ``gprof2dot``, ``jsonschema``,
+  ``jsonschema-specifications``, ``jsonsir``, ``pyinstrument``, ``pytest-profiling``, ``snakeviz``
+  and ``tornado``.
+
+The open Django alerts stay open. The fix for them is Django 5.2, and the team plans that upgrade
+as a separate task: https://github.com/atviriduomenys/katalogas/issues/1826
 
 https://github.com/atviriduomenys/katalogas/issues/2762
 
@@ -70,6 +90,7 @@ https://github.com/atviriduomenys/katalogas/issues/1825
 - End every list order with the primary key, so a page cannot repeat or drop a row.
 - Match a search word anywhere in the text, not only at the start of a word. A search now finds
   more datasets than before.
+
 
 v 1.23.0 (2026-08-03)
 ==================

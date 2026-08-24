@@ -7,7 +7,11 @@ from vitrina.users.models import User
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
-        django_get_or_create = ("first_name", "last_name", "email", "phone")
+        # Keyed on email alone: it is unique in the database, so a second call
+        # with an email that is already taken has to return that user. Keying
+        # on the other fields too would miss on the lookup - they are random -
+        # and then fail on the constraint.
+        django_get_or_create = ("email",)
 
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
@@ -22,12 +26,7 @@ class UserFactory(DjangoModelFactory):
 class ManagerFactory(DjangoModelFactory):
     class Meta:
         model = User
-        django_get_or_create = (
-            "first_name",
-            "last_name",
-            "email",
-            "phone",
-        )
+        django_get_or_create = ("email",)
 
     first_name = factory.Faker("last_name")
     last_name = factory.Faker("last_name")

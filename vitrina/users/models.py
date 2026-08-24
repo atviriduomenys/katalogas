@@ -91,9 +91,19 @@ class User(AbstractUser):
             # free to be used again once its owner is gone. A plain unique
             # column would forbid that, and would refuse to apply at all on a
             # database that already holds such a pair.
+            #
+            # The empty string is left out for the same reason. The field is
+            # blank=True, so "no address" can reach the database either as NULL
+            # or as "". Postgres already lets NULL repeat in a unique index; ""
+            # would not repeat, and the constraint would be stricter than the
+            # field's own contract.
             models.UniqueConstraint(
                 fields=["email"],
-                condition=models.Q(deleted__isnull=True, deleted_on__isnull=True) & ~models.Q(status=DELETED),
+                condition=(
+                    models.Q(deleted__isnull=True, deleted_on__isnull=True)
+                    & ~models.Q(status=DELETED)
+                    & ~models.Q(email="")
+                ),
                 name="unique_active_user_email",
             )
         ]

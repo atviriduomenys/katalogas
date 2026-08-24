@@ -45,7 +45,7 @@
                 {% if plan.description %}
                 <div class="columns">
                     <div class="column is-three-quarters">
-                        <p class="no-margin-bottom">{{ plan.description | markdown | safe }}</p>
+                        <div class="no-margin-bottom">{{ plan.description | markdown | safe }}</div>
                     </div>
                 </div>
                 {% endif %}

@@ -38,6 +38,25 @@ https://github.com/atviriduomenys/katalogas/issues/2723
 - A link with no scheme is now refused. Before this change ``forms.URLField`` silently made
   ``www.example.com`` into ``http://www.example.com``. Give the full link.
 
+https://github.com/atviriduomenys/katalogas/issues/2746
+
+- Render the dataset list without a query for each row. The view now batches the likes, the hits, the
+  group titles and the data service formats once for each page. A list of 20 datasets that serve a
+  data service made 172 queries and now makes 20.
+- Stop the dataset list and the landing page writing to the database. The ``get_hit_count`` tag
+  created a row for every dataset that nobody had opened yet, so a GET inserted rows on every render.
+- Read the titles of the tags facet in one query. The sidebar shows up to 50 tags, and the list made
+  one query for each of them.
+- Read the areas of management of the organization list in one query.
+- Read the icon of the dataset list in one query for each page. ``get_icon`` asked the database for
+  the root of every category of every row, so a page of 20 datasets made up to 26 category queries.
+  The query count of the list is now flat: 51 -> 28 queries for a page of the production catalogue.
+- Read the distributions of a dataset once in ``distinct_formats``. The project datasets page and the
+  landing page read them and every format twice.
+- Cache the navigation menu for each language. A change to a page clears the cache after the
+  transaction commits. The cache lasts 60 seconds, because a page move sends no signal.
+- Fix the dataset list pushing its cards past the right edge of the page.
+
 https://github.com/atviriduomenys/katalogas/issues/1825
 
 - Remove Elasticsearch and ``django-haystack``. Use PostgreSQL for search.

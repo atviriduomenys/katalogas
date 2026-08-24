@@ -48,7 +48,7 @@
                 {% if project.other_assignee_legislations %}
                     <div class="content">
                         <h5 class="has-text-weight-bold">{% translate "Duomenų gavimo teisinis pagrindas" %}</h5>
-                        <p>{{ project.other_assignee_legislations|markdown|safe }}</p>
+                        {{ project.other_assignee_legislations|markdown|safe }}
                     </div>
                 {% endif %}
                 {% if project.url %}

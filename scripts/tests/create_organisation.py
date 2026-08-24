@@ -96,10 +96,10 @@ def run(playwright: Playwright) -> None:
 
     page.goto(BASE_URL)
     login(page)
-    for i in range(3):
+    for _ in range(3):
         go_to_organizations(page)
-        ORGANISATION = generate_organisation_data()
-        create_organization(page, ORGANISATION)
+        organisation = generate_organisation_data()
+        create_organization(page, organisation)
 
     context.close()
     browser.close()

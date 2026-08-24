@@ -85,10 +85,12 @@ def upload_images_to_blog(page: Page) -> None:
 
     page1.goto(f"{BASE_URL}/admin/filer/folder/?_pick=file&_popup=1")
     page1.get_by_role("link", name="Skaiciai").click()
+    folder_url = page1.url
     page1.get_by_role("link", name="įkelti bylas").set_input_files(
         ["02.jpg", "05.png", "04.png", "03.png", "01.jpg", "00.jpg"]
     )
-    page1.goto(f"{BASE_URL}/admin/filer/folder/1/list/?_pick=file&_popup=1&order_by=-modified_at")
+    # Back to the same folder, newest first - its id differs between databases.
+    page1.goto(f"{folder_url}&order_by=-modified_at")
     page1.get_by_role("link", name="01.jpg").click()
     page1.close()
 

@@ -40,7 +40,7 @@ def run(playwright: Playwright) -> None:
     with page.expect_popup() as page1_info:
         page.locator("iframe").content_frame.get_by_role("link", name=" Pasirinkti bylą").click()
     page1 = page1_info.value
-    page1.get_by_role("link", name="skaičiai").click()
+    page1.get_by_role("link", name="Skaiciai").click()
     page1.get_by_role("link", name="03.png").click()
     page1.close()
     page.get_by_role("link", name="Išsaugoti", exact=True).click()

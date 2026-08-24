@@ -43,7 +43,8 @@ def run(playwright: Playwright) -> None:
     page.locator("#plan-form").get_by_role("button", name="Įtraukti").click()
     page.once("dialog", lambda dialog: dialog.dismiss())
     page.get_by_role("link", name="Įtraukti į planą").click()
-    page.goto("http://localhost:8000/datasets/2/plans/")
+    # Dataset 2 is what this recording created on the machine it was recorded on.
+    page.goto(f"{BASE_URL}/datasets/2/plans/")
 
     # ---------------------
     context.close()

@@ -43,7 +43,7 @@ python scripts/tests/create_organisation.py
 - Lithuanian interface language - every element is looked up by its Lithuanian label
   (`get_by_role("link", name="Prisijungti")`), so another language makes the lookups miss.
 - `add_blog_post.py` additionally expects a file named `03.png` in a filer folder called
-  `skaičiai`.
+  `Skaiciai` - the one `create_blog_posts.py` creates.
 
 Scripts that stop mid-way usually mean the admin markup moved. Re-record with
 `playwright codegen http://localhost:8000` rather than patching the selectors by hand.

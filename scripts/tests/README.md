@@ -42,8 +42,13 @@ python scripts/tests/create_organisation.py
   password into the form and failing on some later selector.
 - Lithuanian interface language - every element is looked up by its Lithuanian label
   (`get_by_role("link", name="Prisijungti")`), so another language makes the lookups miss.
-- `add_blog_post.py` additionally expects a file named `03.png` in a filer folder called
-  `Skaiciai` - the one `create_blog_posts.py` creates.
+- `create_blog_posts.py` uploads six local images (`00.jpg`, `01.jpg`, `02.jpg`, `03.png`,
+  `04.png`, `05.png`). They are not in the repository - put them somewhere and point
+  `VITRINA_UI_IMAGES` at that directory, or run the script from it. The script stops with the
+  list of what it could not find.
+- `add_blog_post.py` and `stories_images.py` expect those images to be uploaded already, in a
+  filer folder called `Skaiciai` - the one `create_blog_posts.py` creates.
+- `stories_images.py` also expects the stories named in its `STORY_TITLES` to exist.
 
 Scripts that stop mid-way usually mean the admin markup moved. Re-record with
 `playwright codegen http://localhost:8000` rather than patching the selectors by hand.

@@ -1,6 +1,29 @@
+import os
+from pathlib import Path
+
 from playwright.sync_api import Page, Playwright, sync_playwright
 
 from utils import BASE_URL, login
+
+IMAGES = ["00.jpg", "01.jpg", "02.jpg", "03.png", "04.png", "05.png"]
+
+
+def _image_paths() -> list[str]:
+    """Where the uploaded images come from.
+
+    The files are not in the repository. Point VITRINA_UI_IMAGES at a directory
+    holding them, or run the script from one - and say so plainly rather than
+    letting the upload fail on an empty selection.
+    """
+    directory = Path(os.environ.get("VITRINA_UI_IMAGES", "."))
+    missing = [name for name in IMAGES if not (directory / name).is_file()]
+    if missing:
+        raise SystemExit(
+            f"Missing image files in {directory.resolve()}: {', '.join(missing)}.\n"
+            f"Set VITRINA_UI_IMAGES to the directory that holds {', '.join(IMAGES)}."
+        )
+    return [str(directory / name) for name in IMAGES]
+
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -86,9 +109,7 @@ def upload_images_to_blog(page: Page) -> None:
     page1.goto(f"{BASE_URL}/admin/filer/folder/?_pick=file&_popup=1")
     page1.get_by_role("link", name="Skaiciai").click()
     folder_url = page1.url
-    page1.get_by_role("link", name="įkelti bylas").set_input_files(
-        ["02.jpg", "05.png", "04.png", "03.png", "01.jpg", "00.jpg"]
-    )
+    page1.get_by_role("link", name="įkelti bylas").set_input_files(_image_paths())
     # Back to the same folder, newest first - its id differs between databases.
     page1.goto(f"{folder_url}&order_by=-modified_at")
     page1.get_by_role("link", name="01.jpg").click()

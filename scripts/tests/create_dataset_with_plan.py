@@ -1,3 +1,4 @@
+import re
 from playwright.sync_api import Playwright, sync_playwright
 
 from utils import BASE_URL, login
@@ -43,8 +44,10 @@ def run(playwright: Playwright) -> None:
     page.locator("#plan-form").get_by_role("button", name="Įtraukti").click()
     page.once("dialog", lambda dialog: dialog.dismiss())
     page.get_by_role("link", name="Įtraukti į planą").click()
-    # Dataset 2 is what this recording created on the machine it was recorded on.
-    page.goto(f"{BASE_URL}/datasets/2/plans/")
+    # The id differs per database, so read it from wherever we ended up rather
+    # than from the recording, which happened to produce dataset 2.
+    match = re.search(r"/datasets/(\d+)/", page.url)
+    page.goto(f"{BASE_URL}/datasets/{match.group(1) if match else '2'}/plans/")
 
     # ---------------------
     context.close()

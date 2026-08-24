@@ -4,6 +4,19 @@ Changes
 v 1.24.0 (current)
 ==================
 
+https://github.com/atviriduomenys/dvms/issues/513
+
+- Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)
+  in the UML diagram model click-link generation (``_generate_mermaid_model_click_links``). A model
+  whose name carries such a character in a namespace segment (the basename-only name validation does
+  not catch it) could otherwise break out of the ``click`` directive and inject Mermaid syntax.
+- Set the Mermaid ``securityLevel`` to ``antiscript`` on the UML canvas, so a ``javascript:`` link in a
+  rendered diagram is neutralized while legitimate ``https`` links keep working.
+- Wrap ``mermaid.render`` in a try/catch on the UML canvas so a malformed stored diagram no longer aborts
+  the whole load handler — the download button and pan/zoom stay functional and an error message is shown
+  instead of a dead viewport.
+- Add tests for the Mermaid click-link escaping (``_mermaid_safe`` and the malicious-namespace case).
+
 https://github.com/atviriduomenys/katalogas/issues/2762
 
 - Bump gunicorn 20.1.0 -> 23.0.0: setuptools 83 removed pkg_resources

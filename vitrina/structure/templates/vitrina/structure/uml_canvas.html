@@ -119,7 +119,7 @@
 
     mermaid.initialize({
         startOnLoad: false,
-        securityLevel: 'loose',
+        securityLevel: 'antiscript',
         maxTextSize: 100000,
         ...(expanded && { useMaxWidth: false }),
     });
@@ -128,8 +128,16 @@
         const sceneElement = document.getElementById('scene');
         const mermaidCode = JSON.parse(document.getElementById('mermaid-source').textContent);
 
-        const { svg } = await mermaid.render('diagram-1', mermaidCode);
-        sceneElement.innerHTML = svg;
+
+        let svg;
+        try {
+            ({ svg } = await mermaid.render('diagram-1', mermaidCode));
+            sceneElement.innerHTML = svg;
+        } catch (error) {
+            console.error('Failed to render the UML diagram:', error);
+            sceneElement.innerHTML =
+                '<div class="uml-loader"><p>{% translate "Įvyko klaida atvaizduojant diagramą." as uml_error %}{{ uml_error|escapejs }}</p></div>';
+        }
 
         const downloadButton = document.getElementById('uml-download-button');
         if (downloadButton) {
@@ -141,6 +149,7 @@
                     window.location.href = mmdUrl;
                     return;
                 }
+                if (!svg) return;
                 const svgWithNs = svg.includes('xmlns:xlink')
                     ? svg
                     : svg.replace('<svg ', '<svg xmlns:xlink="http://www.w3.org/1999/xlink" ');

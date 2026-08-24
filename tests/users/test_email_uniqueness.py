@@ -66,3 +66,29 @@ def test_several_users_may_have_a_blank_email():
     User.objects.create(email="", status=User.ACTIVE)
 
     assert User.objects.filter(email="").count() == 2
+
+
+@pytest.mark.django_db
+def test_migration_names_the_duplicates_it_cannot_resolve():
+    """The guard in 0008 has to explain itself, not fail on a bare index error.
+
+    The constraint is dropped inside the test transaction so that duplicates
+    can be created at all; the drop rolls back with everything else.
+    """
+    from importlib import import_module
+
+    from django.apps import apps as global_apps
+    from django.db import connection
+
+    migration = import_module("vitrina.users.migrations.0008_user_unique_active_user_email")
+
+    with connection.cursor() as cursor:
+        cursor.execute("DROP INDEX unique_active_user_email")
+
+    User.objects.create(email="shared@example.com", status=User.ACTIVE)
+    User.objects.create(email="shared@example.com", status=User.ACTIVE)
+
+    with pytest.raises(RuntimeError) as error:
+        migration.check_for_duplicate_active_emails(global_apps, None)
+
+    assert "shared@example.com" in str(error.value)

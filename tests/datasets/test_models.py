@@ -6,6 +6,8 @@ import pytest
 import pytz
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils.html import escape
 
@@ -20,6 +22,7 @@ from vitrina.datasets import ContactKind
 from vitrina.datasets.models import DCATResourceSubclass, Dataset, Contact
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
+from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.structure.factories import VersionFactory, ModelFactory, MetadataFactory
 from vitrina.structure.models import VersionStatus, Model as StructureModel, MetadataVersion
 from vitrina.users.factories import UserFactory
@@ -571,3 +574,18 @@ class TestDatasetGetJsonLd:
         assert "</script>" not in json_ld
         assert "<script>" not in json_ld
         assert json.loads(json_ld)["name"] == title
+
+
+@pytest.mark.django_db
+def test_distinct_formats_reads_the_distributions_once():
+    dataset = DatasetFactory()
+    for index in range(5):
+        DatasetDistributionFactory(dataset=dataset, format=FileFormat(title=f"F{index}", extension=f"E{index}"))
+    ModelFactory(metadata_version__dataset=dataset)
+
+    fresh = Dataset.objects.get(pk=dataset.pk)
+    with CaptureQueriesContext(connection) as queries:
+        fresh.distinct_formats
+
+    reads = [query for query in queries.captured_queries if 'FROM "dataset_distribution"' in query["sql"]]
+    assert len(reads) == 1, f"distinct_formats read the distributions {len(reads)} times"

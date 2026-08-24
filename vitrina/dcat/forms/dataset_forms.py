@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Div, Layout, Field
+from crispy_forms.layout import Layout, Field
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -332,7 +332,6 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             "contact",
             "endpoint_description",
             "endpoint_type",  # Not in DCAT
-            "endpoint_description_type",  # Not in DCAT
             "tags",
             "organization",
             "category",
@@ -348,7 +347,6 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
 
         widgets = {
             "endpoint_type": Select2Widget,
-            "endpoint_description_type": Select2Widget,
             "organization": OrganizationSingleWidget,
             "access_rights": Select2Widget,
             "follows": Select2MultipleWidget,
@@ -374,8 +372,6 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų paslaugą. "
             "Atitinka dcat:contactPoint."
         )
-
-        self.fields["endpoint_description_type"].help_text = _("Prieigos taško aprašo formatas.")
 
         self.fields["organization"].required = True
         self.fields["organization"].label = _("Duomenų teikėjas")
@@ -407,11 +403,7 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
             Field("endpoint_url"),
             Field("contact"),
             Field("endpoint_description"),
-            Div(
-                Div(Field("endpoint_type"), css_class="column"),
-                Div(Field("endpoint_description_type"), css_class="column is-right"),
-                css_class="columns is-align-items-flex-start",
-            ),
+            Field("endpoint_type"),
             Field("tags"),
             Field("organization"),
             Field("category"),

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vitrina"
-version = "1.23.0"
+version = "1.24.0"
 description = ""
 authors = ["IVPK <atviriduomenys@ivpk.lt>"]
 packages = [
@@ -31,7 +31,7 @@ crispy-bulma = "^0.8.0"
 django-allauth = "^65.14.3"
 oauthlib = "^3.2.0"
 requests = ">=2.0.0,<3.0.0"
-cryptography = "^48.0.1"
+cryptography = "^50.0.0"
 djangorestframework = "^3.14.0"
 drf-yasg = "^1.21.4"
 requests-cache = "^1.0.0"

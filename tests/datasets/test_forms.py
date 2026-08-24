@@ -157,7 +157,6 @@ class TestServiceResourceForm:
         request.user = user
         agent = AgentFactory(organization=organization)
         Format.objects.get_or_create(title="JSON")
-        Format.objects.get_or_create(title="OpenAPI")
         Concept.objects.get_or_create(code="UAPI", defaults={"valid_since": "2000-01-01"})
 
         data = {
@@ -184,7 +183,6 @@ class TestServiceResourceForm:
         request.user = user
         agent = AgentFactory(organization=organization)
         Format.objects.get_or_create(title="JSON")
-        Format.objects.get_or_create(title="OpenAPI")
         concepts_schema, _ = ConceptSchema.objects.get_or_create(
             uri="https://data.gov.lt/id/non-standard/DataServiceStandard"
         )
@@ -202,9 +200,7 @@ class TestServiceResourceForm:
         assert "conforms_to" in form.errors
         assert "Su agentu susietos paslaugos privalo atitikti UDTS standartą." in form.errors["conforms_to"]
 
-    def test_wrong_endpoint_type_and_description_type_when_agent_selected(
-        self, organization: Organization, user: User, rf: RequestFactory
-    ):
+    def test_wrong_endpoint_type_when_agent_selected(self, organization: Organization, user: User, rf: RequestFactory):
         request = rf.get("/")
         request.resolver_match = resolve("/")
         request.user = user
@@ -215,19 +211,13 @@ class TestServiceResourceForm:
         data = {
             "agent": agent,
             "endpoint_type": wrong_format,
-            "endpoint_description_type": wrong_format,
             "access_rights": Dataset.PUBLIC,
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
 
         assert "endpoint_type" in form.errors
-        assert "endpoint_description_type" in form.errors
         assert "Pasirinkus agentą, API formatas privalo būti 'JSON'" in form.errors["endpoint_type"]
-        assert (
-            "Pasirinkus agentą, API specifikacijos formatas privalo būti 'OpenAPI'"
-            in form.errors["endpoint_description_type"]
-        )
 
     def test_agent_must_be_selected_if_conforms_to_is_uapi(
         self, organization: Organization, user: User, rf: RequestFactory
@@ -313,7 +303,6 @@ class TestServiceResourceForm:
         request.user = user
         agent = AgentFactory(organization=organization)
         json_format, _ = Format.objects.get_or_create(title="JSON")
-        openapi_format, _ = Format.objects.get_or_create(title="OpenAPI")
         uapi_concept, _ = Concept.objects.get_or_create(code="UAPI", defaults={"valid_since": "2000-01-01"})
 
         data = {
@@ -326,7 +315,6 @@ class TestServiceResourceForm:
         assert not form.is_valid()
         form_cleaned_data = form.cleaned_data
         assert form_cleaned_data["endpoint_type"] == json_format
-        assert form_cleaned_data["endpoint_description_type"] == openapi_format
         assert form_cleaned_data["conforms_to"] == uapi_concept
 
 

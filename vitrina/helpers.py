@@ -76,7 +76,6 @@ class Filter:
         # For tree-like filters
         parent: str = "",
         stats: bool = True,
-        display_method: str = None,
         use_str: bool = False,
         remove_search_query: bool = False,
         order: classmethod = None,
@@ -93,7 +92,6 @@ class Filter:
         self.is_int = is_int
         self.parent = parent
         self.stats = stats
-        self.display_method = display_method
         self.use_str = use_str
         self.remove_search_query = remove_search_query
         self.order = order
@@ -142,7 +140,7 @@ class Filter:
             facet = self.order(facet)
 
         objects_by_pk = {}
-        if self.model and not self.display_method:
+        if self.model:
             objects_by_pk = {
                 str(obj.pk): obj for obj in self.model.objects.filter(pk__in=[value for value, _ in facet])
             }
@@ -150,10 +148,7 @@ class Filter:
         show_count = 1
         for value, count in facet:
             title = value
-            if self.model and self.display_method and getattr(self.model, self.display_method):
-                method = getattr(self.model, self.display_method)
-                title = method(self.model, value)
-            elif self.model:
+            if self.model:
                 obj = objects_by_pk.get(str(value))
                 if obj is not None:
                     title = str(obj) if self.use_str else obj.title

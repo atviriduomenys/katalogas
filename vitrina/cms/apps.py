@@ -1,4 +1,6 @@
 from django.apps import AppConfig
+from django.db import transaction
+from django.db.models.signals import post_delete, post_migrate, post_save
 
 BLOG_ADMINISTRATORS = "Blog Administrators"
 
@@ -8,7 +10,25 @@ class CmsConfig(AppConfig):
     label = "vitrina_cms"
 
     def ready(self):
-        from django.db.models.signals import post_migrate, post_save
+        from cms.models import Page, PageContent
+        from djangocms_versioning.signals import post_version_operation
+
+        from vitrina.templatetags.navigation_tags import clear_menu_cache
+
+        def _clear(sender, **kwargs):
+            transaction.on_commit(clear_menu_cache)
+
+        post_save.connect(_clear, sender=Page, dispatch_uid="vitrina_cms.clear_menu_cache")
+        post_delete.connect(_clear, sender=Page, dispatch_uid="vitrina_cms.clear_menu_cache")
+        # Publishing and unpublishing are what change the menu now, and neither
+        # writes to Page - the state lives on the version of the page content,
+        # so the two signals above never fire for it.
+        post_version_operation.connect(
+            _clear,
+            sender=PageContent,
+            dispatch_uid="vitrina_cms.clear_menu_cache_on_version_operation",
+        )
+        self._clear_menu_cache = _clear
 
         post_save.connect(_add_default_text_plugin, sender="djangocms_stories.PostContent")
         post_migrate.connect(_sync_blog_administrator_permissions, sender=self)

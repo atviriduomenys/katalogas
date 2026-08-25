@@ -1,9 +1,14 @@
+"""Create stories, and the filer folder with the images they use.
+
+Uploads the local images named in IMAGES; see the README for where they come from.
+"""
+
 import os
 import re
 from pathlib import Path
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-from utils import BASE_URL, login
+from utils import BASE_URL, IMAGE_FOLDER, browser_page
 
 IMAGES = ["00.jpg", "01.jpg", "02.jpg", "03.png", "04.png", "05.png"]
 
@@ -102,12 +107,12 @@ def upload_images_to_blog(page: Page) -> None:
     with page1.expect_popup() as page2_info:
         page1.get_by_role("link", name="Naujas aplankas").click()
     page2 = page2_info.value
-    page2.get_by_role("textbox", name="Vardas:").fill("Skaiciai")
+    page2.get_by_role("textbox", name="Vardas:").fill(IMAGE_FOLDER)
     page2.get_by_role("button", name="Išsaugoti").click()
     page2.close()
 
     page1.goto(f"{BASE_URL}/admin/filer/folder/?_pick=file&_popup=1")
-    page1.get_by_role("link", name="Skaiciai").click()
+    page1.get_by_role("link", name=IMAGE_FOLDER).click()
     folder_url = page1.url
     # set_input_files wants an input element (or a label pointing at one), and this
     # is a link, so go through the chooser the click opens.
@@ -135,20 +140,12 @@ def view_blog_post(page: Page) -> None:
 # ---------------------------------------------------------------------------
 
 def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context(viewport={"width": 1920, "height": 1080})
-    page = context.new_page()
-
-    page.goto(BASE_URL)
-    login(page)
-    go_to_blog_list(page)
-    create_blog_post(page, BLOG_DATA)
-    open_post_properties(page)
-    upload_images_to_blog(page)
-    view_blog_post(page)
-
-    context.close()
-    browser.close()
+    with browser_page(playwright) as page:
+        go_to_blog_list(page)
+        create_blog_post(page, BLOG_DATA)
+        open_post_properties(page)
+        upload_images_to_blog(page)
+        view_blog_post(page)
 
 
 if __name__ == "__main__":

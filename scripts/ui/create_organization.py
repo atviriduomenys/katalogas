@@ -1,8 +1,13 @@
+"""Create organizations, numbered from VITRINA_UI_ORG_START.
+
+Starts from an empty portal; nothing has to exist first.
+"""
+
 import itertools
 import os
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-from utils import BASE_URL, login
+from utils import BASE_URL, browser_page
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -10,6 +15,8 @@ from utils import BASE_URL, login
 
 # Organization name and slug are unique, so a second run over the same database
 # collides on Org1. Set VITRINA_UI_ORG_START past whatever is already there.
+ORGANIZATION_COUNT = 3
+
 _org_counter = itertools.count(start=int(os.environ.get("VITRINA_UI_ORG_START", "1")))
 
 
@@ -88,19 +95,11 @@ def create_organization(page: Page, org: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context(viewport={"width": 1920, "height": 1080})
-    page = context.new_page()
-
-    page.goto(BASE_URL)
-    login(page)
-    for _ in range(3):
-        go_to_organizations(page)
-        organization = generate_organization_data()
-        create_organization(page, organization)
-
-    context.close()
-    browser.close()
+    with browser_page(playwright) as page:
+        for _ in range(ORGANIZATION_COUNT):
+            go_to_organizations(page)
+            organization = generate_organization_data()
+            create_organization(page, organization)
 
 
 if __name__ == "__main__":

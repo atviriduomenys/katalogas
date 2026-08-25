@@ -1,7 +1,12 @@
+"""Attach images to stories that already exist.
+
+Expects the stories named in STORY_TITLES and the image folder to be there.
+"""
+
 import re
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-from utils import BASE_URL, login
+from utils import IMAGE_FOLDER, browser_page
 
 # -----------------------------------------------------------------------------
 # Configuration
@@ -19,7 +24,7 @@ STORY_TITLES = {
 
 # Images to select
 IMAGES = {
-    "fourth": {"folder": "Skaiciai", "file": "03.png"},
+    "fourth": {"folder": IMAGE_FOLDER, "file": "03.png"},
     "second": {"file": "05.png"},
 }
 
@@ -145,16 +150,8 @@ def run_stories_image_workflow(page: Page) -> None:
 # -----------------------------------------------------------------------------
 
 def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context(viewport={"width": 1920, "height": 1080})
-    page = context.new_page()
-
-    page.goto(BASE_URL)
-    login(page)
-    run_stories_image_workflow(page)
-
-    context.close()
-    browser.close()
+    with browser_page(playwright) as page:
+        run_stories_image_workflow(page)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-
 from utils import BASE_URL, login
 
 IMAGES = ["00.jpg", "01.jpg", "02.jpg", "03.png", "04.png", "05.png"]

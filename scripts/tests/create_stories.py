@@ -1,5 +1,6 @@
-from playwright.sync_api import Page, Playwright, sync_playwright
 import itertools
+
+from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
 
 # ---------------------------------------------------------------------------
@@ -19,7 +20,6 @@ def generate_story_data() -> dict:
         "title": f"Blog {index} pavadinimas",
         "abstract": f"Blog {index} santrauka - Tai yra trumpas aprašymas apie ką kalbama šioje naujienoje.",
         "content": f"Blog {index} pilnas straipsnio tekstas\nTai yra pagrindinis turinio tekstas.",
-        "extra_content": f"Papildomas Blog {index} tekstas.",
     }
 
 

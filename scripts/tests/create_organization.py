@@ -1,6 +1,6 @@
-from playwright.sync_api import Page, Playwright, sync_playwright
 import itertools
 
+from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
 
 # ---------------------------------------------------------------------------
@@ -10,8 +10,8 @@ from utils import BASE_URL, login
 _org_counter = itertools.count(start=1)
 
 
-def generate_organisation_data():
-    """Generate unique organisation data for each call."""
+def generate_organization_data():
+    """Generate unique organization data for each call."""
     n = next(_org_counter)
     n_padded = f"{n:02d}"
     n_phone = f"{n:03d}"
@@ -78,7 +78,7 @@ def submit_organization_form(page: Page) -> None:
 
 def create_organization(page: Page, org: dict) -> None:
     """Run the full creation flow for a single organization."""
-    print(f"Creating organisation: {org['name']}...")
+    print(f"Creating organization: {org['name']}...")
     start_new_organization(page, org["search_query"])
     fill_organization_form(page, org)
     submit_organization_form(page)
@@ -98,8 +98,8 @@ def run(playwright: Playwright) -> None:
     login(page)
     for _ in range(3):
         go_to_organizations(page)
-        organisation = generate_organisation_data()
-        create_organization(page, organisation)
+        organization = generate_organization_data()
+        create_organization(page, organization)
 
     context.close()
     browser.close()

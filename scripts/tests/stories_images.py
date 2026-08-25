@@ -1,6 +1,6 @@
 import re
-from playwright.sync_api import Page, Playwright, sync_playwright
 
+from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
 
 # -----------------------------------------------------------------------------
@@ -29,7 +29,7 @@ IMAGES = {
 SELECT_FILE = re.compile(r"Pasirinkti bylą")
 
 UI_TEXT = {
-        "save": "Išsaugoti",
+    "save": "Išsaugoti",
     "news": "Naujienos",
     "localhost": "localhost",
     "posts": "Posts...",
@@ -93,7 +93,7 @@ def save_story(page: Page) -> None:
 # -----------------------------------------------------------------------------
 
 def edit_first_story(page: Page) -> None:
-    """Edit the first story (Blogas 1) - just collapse fieldset and close."""
+    """Edit the story configured as "first" - collapse the fieldset and close."""
     print(f"Editing story: {STORY_TITLES['first']}...")
     open_story_edit(page, STORY_TITLES["first"])
     collapse_fieldset(page)
@@ -102,7 +102,7 @@ def edit_first_story(page: Page) -> None:
 
 
 def add_image_to_fourth_story(page: Page) -> None:
-    """Add image to the fourth story (Blog 4) from the Skaiciai folder."""
+    """Add an image to the story configured as "fourth", from the Skaiciai folder."""
     print(f"Adding image to story: {STORY_TITLES['fourth']}...")
     open_story_edit(page, STORY_TITLES["fourth"])
     collapse_fieldset(page)
@@ -112,7 +112,7 @@ def add_image_to_fourth_story(page: Page) -> None:
 
 
 def add_image_to_second_story(page: Page) -> None:
-    """Add image to the second story (Blog 2)."""
+    """Add an image to the story configured as "second"."""
     print(f"Adding image to story: {STORY_TITLES['second']}...")
     open_story_edit(page, STORY_TITLES["second"])
     collapse_fieldset(page)

@@ -25,7 +25,7 @@ playwright install chromium
 Each script then runs on its own:
 
 ```bash
-python scripts/tests/create_organisation.py
+python scripts/tests/create_organization.py
 ```
 
 ## What a script expects
@@ -40,8 +40,10 @@ python scripts/tests/create_organisation.py
 
   The scripts stop with an explanation if either is missing, rather than typing an empty
   password into the form and failing on some later selector.
-- Lithuanian interface language - every element is looked up by its Lithuanian label
-  (`get_by_role("link", name="Prisijungti")`), so another language makes the lookups miss.
+- Lithuanian interface language for the portal itself - most elements are looked up by their
+  Lithuanian label (`get_by_role("link", name="Prisijungti")`), so another language makes those
+  lookups miss. The django-cms toolbar is the exception: its controls are matched in English
+  ("Publish", "New +", "+ properties..."), because that is what the toolbar shows.
 - `create_blog_posts.py` uploads six local images (`00.jpg`, `01.jpg`, `02.jpg`, `03.png`,
   `04.png`, `05.png`). They are not in the repository - put them somewhere and point
   `VITRINA_UI_IMAGES` at that directory, or run the script from it. The script stops with the

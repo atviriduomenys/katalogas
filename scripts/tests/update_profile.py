@@ -1,6 +1,6 @@
-from playwright.sync_api import Page, Playwright, sync_playwright
 import re
 
+from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
 
 # ---------------------------------------------------------------------------

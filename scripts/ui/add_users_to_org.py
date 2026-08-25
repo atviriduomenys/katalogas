@@ -27,7 +27,6 @@ def run(playwright: Playwright) -> None:
         page.get_by_label("Rolė *").select_option("resource_manager")
         page.get_by_label("Rolė *").press("Tab")
         page.get_by_role("textbox", name="El. paštas *").click()
-        page.get_by_role("textbox", name="El. paštas *").click()
         page.get_by_role("textbox", name="El. paštas *").press("Home")
         page.get_by_role("textbox", name="El. paštas *").fill("tvark1@org1.lt")
         page.get_by_role("textbox", name="Telefono numeris").click()

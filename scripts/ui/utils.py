@@ -1,4 +1,5 @@
 import os
+import re
 from contextlib import contextmanager
 
 from playwright.sync_api import Page, Playwright
@@ -18,6 +19,9 @@ PASSWORD_VAR = "VITRINA_UI_PASSWORD"
 # to get content into the database.
 # The filer folder create_blog_posts.py makes and the other two read from.
 IMAGE_FOLDER = "Skaiciai"
+
+# The file picker link carries a leading icon glyph, so match on the text alone.
+SELECT_FILE = re.compile(r"Pasirinkti bylą")
 
 HEADLESS = os.environ.get("VITRINA_UI_HEADLESS") == "1"
 SLOW_MO = 0 if HEADLESS else 500

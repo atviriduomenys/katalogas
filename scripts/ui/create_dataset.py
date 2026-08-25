@@ -16,7 +16,6 @@ def run(playwright: Playwright) -> None:
         page.get_by_text("Koncepcinė klasė, aprašanti").click()
         page.get_by_role("button", name="Toliau").click()
         page.get_by_role("textbox", name="Pavadinimas *").click()
-        page.get_by_role("textbox", name="Pavadinimas *").click()
         page.get_by_role("textbox", name="Pavadinimas *").fill("Duom rink 1")
         page.get_by_role("textbox", name="Pavadinimas *").press("Tab")
         page.get_by_role("textbox", name="Kodinis pavadinimas").fill("datasets/org/org1/dr1")

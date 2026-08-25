@@ -4,9 +4,17 @@ Expects Org1 to exist - create_organization.py makes it.
 """
 
 import re
+from datetime import date, timedelta
 
 from playwright.sync_api import Playwright, sync_playwright
 from utils import BASE_URL, browser_page
+
+# The plan picker only offers plans whose deadline is still ahead
+# (vitrina/datasets/forms.py filters on deadline__gt=date.today()), so these
+# have to be generated rather than written down - a fixed date stops working
+# the day it passes.
+ACTION_DEADLINE = (date.today() + timedelta(days=30)).isoformat()
+PLAN_DEADLINE = (date.today() + timedelta(days=60)).isoformat()
 
 
 def run(playwright: Playwright) -> None:
@@ -30,7 +38,7 @@ def run(playwright: Playwright) -> None:
         page.get_by_role("link", name="Įtraukti į planą").click()
         page.get_by_role("textbox", name="Aprašymas").click()
         page.get_by_role("textbox", name="Aprašymas").fill("Plano 1 veiksmo 1 aprašymas")
-        page.get_by_role("textbox", name="Įgyvendinimo terminas").fill("2026-05-29")
+        page.get_by_role("textbox", name="Įgyvendinimo terminas").fill(ACTION_DEADLINE)
         page.locator("#plan-form").get_by_role("button", name="Įtraukti").click()
         page.get_by_role("link", name="Įtraukti į planą").click()
         page.get_by_role("textbox", name="Aprašymas").click()
@@ -38,7 +46,7 @@ def run(playwright: Playwright) -> None:
         page.get_by_role("textbox", name="Pavadinimas *").click()
         page.get_by_role("textbox", name="Pavadinimas *").press("Shift+Home")
         page.get_by_role("textbox", name="Pavadinimas *").fill("Org 1 planas 2")
-        page.get_by_role("textbox", name="Įgyvendinimo terminas").fill("2026-05-31")
+        page.get_by_role("textbox", name="Įgyvendinimo terminas").fill(PLAN_DEADLINE)
         page.once("dialog", lambda dialog: dialog.dismiss())
         page.locator("#plan-form").get_by_role("button", name="Įtraukti").click()
         page.once("dialog", lambda dialog: dialog.dismiss())

@@ -3,10 +3,9 @@
 Expects the stories named in STORY_TITLES and the image folder to be there.
 """
 
-import re
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-from utils import IMAGE_FOLDER, browser_page
+from utils import IMAGE_FOLDER, SELECT_FILE, browser_page
 
 # -----------------------------------------------------------------------------
 # Configuration
@@ -29,10 +28,6 @@ IMAGES = {
 }
 
 # UI text constants
-# The file picker link carries a leading icon glyph, so match the text alone -
-# the glyph moves with theme changes.
-SELECT_FILE = re.compile(r"Pasirinkti bylą")
-
 UI_TEXT = {
     "save": "Išsaugoti",
     "news": "Naujienos",

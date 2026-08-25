@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-from utils import BASE_URL, IMAGE_FOLDER, browser_page
+from utils import BASE_URL, IMAGE_FOLDER, SELECT_FILE, browser_page
 
 IMAGES = ["00.jpg", "01.jpg", "02.jpg", "03.png", "04.png", "05.png"]
 
@@ -101,7 +101,7 @@ def upload_images_to_blog(page: Page) -> None:
     """Upload images to the blog post media library."""
     with page.expect_popup() as page1_info:
         frame = page.locator("iframe").content_frame
-        frame.get_by_role("link", name="Pasirinkti bylą").click()
+        frame.get_by_role("link", name=SELECT_FILE).click()
     page1 = page1_info.value
 
     with page1.expect_popup() as page2_info:

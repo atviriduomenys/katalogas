@@ -1,7 +1,12 @@
+"""Give the logged in account a first and last name.
+
+Starts from an empty portal; nothing has to exist first.
+"""
+
 import re
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-from utils import BASE_URL, login
+from utils import browser_page
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -50,17 +55,9 @@ def edit_profile(page: Page, first_name: str, last_name: str) -> None:
 # ---------------------------------------------------------------------------
 
 def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context(viewport={"width": 1920, "height": 1080})
-    page = context.new_page()
-
-    page.goto(BASE_URL)
-    login(page)
-    go_to_profile(page)
-    edit_profile(page, PROFILE_DATA["first_name"], PROFILE_DATA["last_name"])
-
-    context.close()
-    browser.close()
+    with browser_page(playwright) as page:
+        go_to_profile(page)
+        edit_profile(page, PROFILE_DATA["first_name"], PROFILE_DATA["last_name"])
 
 
 if __name__ == "__main__":

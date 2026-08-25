@@ -109,14 +109,12 @@ def run():
         version = Version.objects.get_for_content(content)
         version.publish(user=superuser)
 
-        print(f"  Created: '{title}' (slug={slug!r}, is_home={is_home})")
-        label = f"slug={slug!r}"
+        label = f"slug={slug!r}, is_home={is_home}"
         if attach_stories:
             label += f", apphook=StoriesApp/{stories_config.namespace}"
         print(f"  Created + published: '{title}' ({label})")
         created_count += 1
 
-    print(f"\nDone. {len(PAGES)} pages created.")
     if home_page:
         print(f"Homepage set to: '{home_page.get_title()}'")
     print(f"\nDone. {created_count} page(s) created, {len(PAGES) - created_count} skipped.")

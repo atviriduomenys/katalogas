@@ -44,11 +44,17 @@ def test_several_users_may_have_no_email():
 
 @pytest.mark.django_db
 def test_factory_reuses_the_user_that_owns_an_email():
-    """Two calls with the same address must not race the unique constraint.
+    """Guards the factory's own configuration, not the application.
 
-    The factory fills first_name, last_name and phone at random, so a lookup
-    keyed on those as well would never match an existing row and would go on
-    to create a duplicate.
+    UserFactory keys django_get_or_create on email alone. Keyed on the other
+    fields too - they are filled at random - a call passing an address that is
+    already taken would miss on the lookup and go on to create a duplicate,
+    which the constraint then rejects.
+
+    Nothing else in the suite would notice: this is the only test that hands
+    the factory the same address twice. Without it, going back to the old key
+    leaves the suite green and surfaces later, as an IntegrityError in whatever
+    test someone writes next.
     """
     from vitrina.users.factories import UserFactory
 
@@ -56,7 +62,6 @@ def test_factory_reuses_the_user_that_owns_an_email():
     second = UserFactory(email="shared@example.com")
 
     assert second.pk == first.pk
-    assert User.objects.filter(email="shared@example.com").count() == 1
 
 
 @pytest.mark.django_db

@@ -20,7 +20,7 @@ create_superuser
 git cherry-pick 5ca3a297e95eff905010e1b3d1d10264508f2852
 pip install playwright
 playwright install chromium
-python scripts/tests/create_organisation.py
+python scripts/ui/create_organization.py
 ##############################################
 dump_db_GPX GP1dev
 ls -altr dist/backup/20260519

@@ -57,3 +57,21 @@ python scripts/tests/create_organization.py
 
 Scripts that stop mid-way usually mean the admin markup moved. Re-record with
 `playwright codegen http://localhost:8000` rather than patching the selectors by hand.
+
+## `content_frame` is a property
+
+`page.locator("iframe").content_frame.get_by_role(...)` is correct and is what
+`playwright codegen` emits. Review tooling keeps reporting it as a method that has to be called;
+it is not:
+
+```python
+>>> inspect.getattr_static(Locator, "content_frame")   # playwright 1.62
+<property object>
+>>> inspect.signature(...fget).return_annotation
+'FrameLocator'
+```
+
+Its own docstring says "Returns a `FrameLocator` object pointing to the same `iframe` as this
+locator", and `FrameLocator` carries `get_by_text`, `get_by_role` and `locator`.
+`page.frame_locator("iframe")` reaches the same place and is equally fine - it is an alternative,
+not a fix.

@@ -36,11 +36,6 @@ def generate_organization_data():
 # Step functions
 # ---------------------------------------------------------------------------
 
-def go_to_herbas(page: Page) -> None:
-    page.get_by_role("link", name="herbas    data.gov.lt").click()
-    page.wait_for_load_state("networkidle")
-
-
 def go_to_organizations(page: Page) -> None:
     """Navigate to the Organizations list from the homepage."""
     page.goto(f"{BASE_URL}/organizations/")

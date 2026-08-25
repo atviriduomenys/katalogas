@@ -1,4 +1,5 @@
 import itertools
+import os
 
 from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
@@ -7,7 +8,9 @@ from utils import BASE_URL, login
 # Configuration
 # ---------------------------------------------------------------------------
 
-_org_counter = itertools.count(start=1)
+# Organization name and slug are unique, so a second run over the same database
+# collides on Org1. Set VITRINA_UI_ORG_START past whatever is already there.
+_org_counter = itertools.count(start=int(os.environ.get("VITRINA_UI_ORG_START", "1")))
 
 
 def generate_organization_data():

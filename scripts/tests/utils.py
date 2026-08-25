@@ -6,7 +6,8 @@ from playwright.sync_api import Page
 # Configuration
 # ---------------------------------------------------------------------------
 
-BASE_URL = os.environ.get("VITRINA_UI_URL", "http://localhost:8000")
+# Trailing slash stripped: every caller builds urls as f"{BASE_URL}/...".
+BASE_URL = os.environ.get("VITRINA_UI_URL", "http://localhost:8000").rstrip("/")
 
 EMAIL_VAR = "VITRINA_UI_EMAIL"
 PASSWORD_VAR = "VITRINA_UI_PASSWORD"

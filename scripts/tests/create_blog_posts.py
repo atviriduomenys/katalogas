@@ -109,7 +109,11 @@ def upload_images_to_blog(page: Page) -> None:
     page1.goto(f"{BASE_URL}/admin/filer/folder/?_pick=file&_popup=1")
     page1.get_by_role("link", name="Skaiciai").click()
     folder_url = page1.url
-    page1.get_by_role("link", name="įkelti bylas").set_input_files(_image_paths())
+    # set_input_files wants an input element (or a label pointing at one), and this
+    # is a link, so go through the chooser the click opens.
+    with page1.expect_file_chooser() as chooser:
+        page1.get_by_role("link", name="įkelti bylas").click()
+    chooser.value.set_files(_image_paths())
     # Back to the same folder, newest first - its id differs between databases.
     page1.goto(f"{folder_url}&order_by=-modified_at")
     page1.get_by_role("link", name="01.jpg").click()

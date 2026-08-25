@@ -54,6 +54,9 @@ python scripts/tests/create_organization.py
 - `add_blog_post.py` and `stories_images.py` expect those images to be uploaded already, in a
   filer folder called `Skaiciai` - the one `create_blog_posts.py` creates.
 - `stories_images.py` also expects the stories named in its `STORY_TITLES` to exist.
+- `create_organization.py` names its organizations Org1, Org2, Org3, and those names are unique in
+  the database. Running it twice over the same database collides, so set `VITRINA_UI_ORG_START`
+  past the highest number already there.
 
 Scripts that stop mid-way usually mean the admin markup moved. Re-record with
 `playwright codegen http://localhost:8000` rather than patching the selectors by hand.

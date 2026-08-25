@@ -27,7 +27,9 @@ class Command(BaseCommand):
         from djangocms_stories.models import PostContent
 
         dry_run = options["dry_run"]
-        posts = PostContent.objects.exclude(post_text="").exclude(post_text__isnull=True)
+        # admin_manager, not objects: this has to move the text of every version,
+        # and `objects` returns published content only.
+        posts = PostContent.admin_manager.exclude(post_text="").exclude(post_text__isnull=True)
         self.stdout.write(f"Found {posts.count()} post(s) with post_text content.")
 
         for post in posts:

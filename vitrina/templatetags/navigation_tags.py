@@ -19,19 +19,24 @@ def clear_menu_cache() -> None:
     cache.delete_many([menu_cache_key(code) for code, _ in settings.LANGUAGES])
 
 
-def _published_nav_page_ids():
+def _published_nav_page_ids(language):
     """Return PKs of Pages that have published, in-navigation content.
 
     djangocms-versioning replaces `PageContent.objects` with a manager that
-    returns published versions only, so drafts are already excluded here. That
-    manager joins to the version table, and there is one PageContent per
-    language, so the same page id comes back more than once - hence distinct().
+    returns published versions only, so drafts are already excluded here.
+
+    The language filter matters because the rendered menu is cached per
+    language: without it, a page published only in English would appear in the
+    Lithuanian menu. distinct() stays because that manager joins to the version
+    table.
     """
-    return PageContent.objects.filter(in_navigation=True).values_list("page_id", flat=True).distinct()
+    return (
+        PageContent.objects.filter(in_navigation=True, language=language).values_list("page_id", flat=True).distinct()
+    )
 
 
-def _render_menu() -> str:
-    published_ids = _published_nav_page_ids()
+def _render_menu(language: str) -> str:
+    published_ids = _published_nav_page_ids(language)
     pages = Page.objects.filter(pk__in=published_ids, parent__isnull=True).order_by("path")
     return render_to_string(
         "menu.html",
@@ -44,6 +49,6 @@ def show_menu():
     key = menu_cache_key(get_language())
     html = cache.get(key)
     if html is None:
-        html = _render_menu()
+        html = _render_menu(get_language())
         cache.set(key, html, MENU_CACHE_SECONDS)
     return mark_safe(html)

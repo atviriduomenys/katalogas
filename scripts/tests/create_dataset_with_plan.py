@@ -1,23 +1,15 @@
 import re
-from playwright.sync_api import Playwright, sync_playwright, expect
+
+from playwright.sync_api import Playwright, sync_playwright
+from utils import BASE_URL, login
 
 
 def run(playwright: Playwright) -> None:
     browser = playwright.chromium.launch(headless=False)
     context = browser.new_context()
     page = context.new_page()
-    page.goto("http://localhost:8000/")
-    page.get_by_role("link", name="Prisijungti").click()
-    page.get_by_role("textbox", name="El. paštas *").click()
-    page.get_by_role("textbox", name="El. paštas *").fill("superadmin@aa.lt")
-    page.get_by_role("textbox", name="El. paštas *").press("Tab")
-    page.get_by_role("textbox", name="Slaptažodis *").fill("Liabas.2345")
-    page.get_by_role("textbox", name="Slaptažodis *").press("Enter")
-    page.get_by_role("textbox", name="Slaptažodis *").click()
-    page.get_by_role("textbox", name="Slaptažodis *").press("Shift+Home")
-    page.get_by_role("textbox", name="Slaptažodis *").fill("Liabas.12345")
-    page.get_by_role("textbox", name="Slaptažodis *").press("Enter")
-    page.get_by_role("button", name="Prisijungti").click()
+    page.goto(BASE_URL)
+    login(page)
     page.get_by_role("link", name="Organizacijos").click()
     page.get_by_role("link", name="Org1").click()
     page.locator("#main-content").get_by_role("link", name="Duomenų ištekliai").click()
@@ -46,17 +38,24 @@ def run(playwright: Playwright) -> None:
     page.get_by_role("textbox", name="Aprašymas").fill("Org 1 planas 2 aprašymas\n")
     page.get_by_role("textbox", name="Pavadinimas *").click()
     page.get_by_role("textbox", name="Pavadinimas *").press("Shift+Home")
-    page.get_by_role("textbox", name="Pavadinimas *").fill("<script>alert(document.domain)</script>")
+    page.get_by_role("textbox", name="Pavadinimas *").fill("Org 1 planas 2")
     page.get_by_role("textbox", name="Įgyvendinimo terminas").fill("2026-05-31")
+    page.once("dialog", lambda dialog: dialog.dismiss())
     page.locator("#plan-form").get_by_role("button", name="Įtraukti").click()
     page.once("dialog", lambda dialog: dialog.dismiss())
     page.get_by_role("link", name="Įtraukti į planą").click()
-    page.goto("http://localhost:8000/datasets/2/plans/")
+    # The id differs per database, so read it from wherever we ended up. Guessing
+    # would open some unrelated dataset and hide whatever went wrong here.
+    match = re.search(r"/datasets/(\d+)/", page.url)
+    if not match:
+        raise SystemExit(f"Expected to be on a dataset page, but the url is {page.url}")
+    page.goto(f"{BASE_URL}/datasets/{match.group(1)}/plans/")
 
     # ---------------------
     context.close()
     browser.close()
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)

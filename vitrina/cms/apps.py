@@ -41,7 +41,7 @@ def _add_default_text_plugin(sender, instance, created, **kwargs):
     from cms.models import CMSPlugin
 
     if not CMSPlugin.objects.filter(placeholder=instance.content).exists():
-        add_plugin(instance.content, "TextPlugin", instance.language, body="<Vieta Jūsų tekstui.>")
+        add_plugin(instance.content, "TextPlugin", instance.language, body="<p>Vieta Jūsų tekstui.</p>")
 
 
 def _sync_blog_administrator_permissions(sender, **kwargs):

@@ -7,17 +7,20 @@ from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
 from vitrina.orgs.models import PublishedReport
 
 
-def _published_page_ids():
-    """PKs of pages that have published content.
+def _published_page_ids(language):
+    """PKs of pages that have published content in this language.
 
     djangocms-versioning replaces `PageContent.objects` with a manager that
     returns published versions only, so pages whose content is still a draft
     are left out. Without this the menus would leak unpublished pages.
 
-    distinct() is needed because that manager joins to the version table and a
-    page has one PageContent per language, so ids repeat.
+    The language matters as much: content is per language, so without the
+    filter a page published only in English would show up in the Lithuanian
+    menu, pointing at a page the reader cannot see.
+
+    distinct() stays because that manager joins to the version table.
     """
-    return PageContent.objects.values_list("page_id", flat=True).distinct()
+    return PageContent.objects.filter(language=language).values_list("page_id", flat=True).distinct()
 
 
 @plugin_pool.register_plugin
@@ -34,7 +37,7 @@ class SideMenuPlugin(CMSPluginBase):
             context.update({"children": Page.objects.none(), "parent": None})
             return context
 
-        published = _published_page_ids()
+        published = _published_page_ids(instance.language)
         children = page.get_child_pages().filter(pk__in=published)
         if children:
             parent = page

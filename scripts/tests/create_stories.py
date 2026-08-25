@@ -1,5 +1,7 @@
-from playwright.sync_api import Page, Playwright, sync_playwright
 import itertools
+import re
+
+from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
 
 # ---------------------------------------------------------------------------
@@ -19,7 +21,6 @@ def generate_story_data() -> dict:
         "title": f"Blog {index} pavadinimas",
         "abstract": f"Blog {index} santrauka - Tai yra trumpas aprašymas apie ką kalbama šioje naujienoje.",
         "content": f"Blog {index} pilnas straipsnio tekstas\nTai yra pagrindinis turinio tekstas.",
-        "extra_content": f"Papildomas Blog {index} tekstas.",
     }
 
 
@@ -37,7 +38,7 @@ def start_new_story(page: Page) -> None:
     """Start creating a new story."""
     page.get_by_role("link", name="Sukurti").click()
     frame = page.locator("iframe").content_frame
-    frame.get_by_text("Naujas +").click()
+    frame.get_by_text(re.compile(r"(Naujas|New) \+")).click()
     page.get_by_role("link", name="Kitas", exact=True).click()
 
 
@@ -62,7 +63,7 @@ def submit_story_form(page: Page) -> None:
 
 def publish_story(page: Page) -> None:
     """Publish the created story."""
-    page.get_by_role("link", name="Publish").click()
+    page.get_by_role("link", name=re.compile(r"Publish|Publikuoti")).click()
     page.wait_for_load_state("networkidle")
 
 
@@ -80,7 +81,7 @@ def create_multiple_stories(page: Page, count: int) -> None:
     """Create multiple stories with dynamically generated data."""
     print(f"\nStarting to create {count} stories...\n")
 
-    for i in range(STORY_COUNT):
+    for _ in range(count):
         story_data = generate_story_data()
         create_story(page, story_data)
         print()
@@ -106,5 +107,6 @@ def run(playwright: Playwright) -> None:
     browser.close()
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)

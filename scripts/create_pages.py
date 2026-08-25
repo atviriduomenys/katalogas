@@ -58,22 +58,6 @@ def get_or_create_stories_config():
     return config
 
 
-def get_or_create_stories_config():
-    apphook_pool.discover_apps()
-    config, created = StoriesConfig.objects.get_or_create(
-        namespace=STORIES_CONFIG["namespace"],
-        defaults=config_defaults,
-    )
-    if created:
-        config.set_current_language(LANGUAGE)
-        config.app_title = STORIES_CONFIG["app_title"]
-        config.save()
-        print(f"  Created StoriesConfig: '{STORIES_CONFIG['app_title']}' (namespace={STORIES_CONFIG['namespace']!r})")
-    else:
-        print(f"  StoriesConfig already exists, skipping (namespace={STORIES_CONFIG['namespace']!r})")
-    return config
-
-
 def run():
     site = Site.objects.get_current()
     User = get_user_model()
@@ -116,7 +100,6 @@ def run():
             created_by=superuser,
             apphook="StoriesApp" if attach_stories else None,
             apphook_namespace=stories_config.namespace if attach_stories else None,
-            published=True,
         )
 
         if is_home:

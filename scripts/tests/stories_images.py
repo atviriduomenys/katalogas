@@ -1,5 +1,6 @@
-from playwright.sync_api import Page, Playwright, sync_playwright
+import re
 
+from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
 
 # -----------------------------------------------------------------------------
@@ -7,6 +8,9 @@ from utils import BASE_URL, login
 # -----------------------------------------------------------------------------
 
 # Story titles to edit
+# These stories have to exist already. create_stories.py generates
+# "Blog 1..N", so either run it enough times or point these at stories that
+# are really in the database.
 STORY_TITLES = {
     "first": "Blog 11 pavadinimas",
     "fourth": "Blog 10 pavadinimas",
@@ -20,8 +24,11 @@ IMAGES = {
 }
 
 # UI text constants
+# The file picker link carries a leading icon glyph, so match the text alone -
+# the glyph moves with theme changes.
+SELECT_FILE = re.compile(r"Pasirinkti bylą")
+
 UI_TEXT = {
-    "select_file": " Pasirinkti bylą",
     "save": "Išsaugoti",
     "news": "Naujienos",
     "localhost": "localhost",
@@ -68,7 +75,7 @@ def add_image_to_story(page: Page, folder: str | None, filename: str) -> None:
     frame = page.locator("iframe").content_frame
 
     with page.expect_popup() as popup_info:
-        frame.get_by_role("link", name=UI_TEXT["select_file"]).click()
+        frame.get_by_role("link", name=SELECT_FILE).click()
 
     popup = popup_info.value
     select_image_in_popup(popup, folder, filename)
@@ -86,7 +93,7 @@ def save_story(page: Page) -> None:
 # -----------------------------------------------------------------------------
 
 def edit_first_story(page: Page) -> None:
-    """Edit the first story (Blogas 1) - just collapse fieldset and close."""
+    """Edit the story configured as "first" - collapse the fieldset and close."""
     print(f"Editing story: {STORY_TITLES['first']}...")
     open_story_edit(page, STORY_TITLES["first"])
     collapse_fieldset(page)
@@ -95,7 +102,7 @@ def edit_first_story(page: Page) -> None:
 
 
 def add_image_to_fourth_story(page: Page) -> None:
-    """Add image to the fourth story (Blog 4) from the Skaiciai folder."""
+    """Add an image to the story configured as "fourth", from the Skaiciai folder."""
     print(f"Adding image to story: {STORY_TITLES['fourth']}...")
     open_story_edit(page, STORY_TITLES["fourth"])
     collapse_fieldset(page)
@@ -105,7 +112,7 @@ def add_image_to_fourth_story(page: Page) -> None:
 
 
 def add_image_to_second_story(page: Page) -> None:
-    """Add image to the second story (Blog 2)."""
+    """Add an image to the story configured as "second"."""
     print(f"Adding image to story: {STORY_TITLES['second']}...")
     open_story_edit(page, STORY_TITLES["second"])
     collapse_fieldset(page)

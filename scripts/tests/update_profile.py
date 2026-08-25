@@ -1,6 +1,6 @@
-from playwright.sync_api import Page, Playwright, sync_playwright
 import re
 
+from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import BASE_URL, login
 
 # ---------------------------------------------------------------------------
@@ -18,8 +18,15 @@ PROFILE_DATA = {
 # ---------------------------------------------------------------------------
 
 def open_user_menu(page: Page) -> None:
-    """Open the user dropdown menu (handles 'None None' display name)."""
-    page.locator("a").filter(has_text=re.compile(r"^None None$")).click()
+    """Open the user dropdown menu.
+
+    The link carries the display name, which reads "None None" until this
+    script has run once and the configured name afterwards, so accept both -
+    otherwise a second run finds nothing to click.
+    """
+    names = ["None None", "{first_name} {last_name}".format(**PROFILE_DATA)]
+    pattern = re.compile(r"^(%s)$" % "|".join(re.escape(name) for name in names))
+    page.locator("a").filter(has_text=pattern).click()
 
 
 def go_to_profile(page: Page) -> None:
@@ -56,5 +63,6 @@ def run(playwright: Playwright) -> None:
     browser.close()
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)

@@ -1,5 +1,5 @@
 import pytest
-from cms.api import add_plugin, create_page
+from cms.api import add_plugin, create_page, create_page_content
 from cms.models import PageContent
 
 from vitrina.cms.cms_plugins import SideMenuPlugin
@@ -100,3 +100,18 @@ def test_page_whose_children_are_all_drafts_falls_back_to_siblings(user):
     # The only child is a draft, so the menu shows the section the page sits in.
     assert context["parent"] == root
     assert sibling in list(context["children"])
+
+
+@pytest.mark.django_db
+def test_children_published_only_in_another_language_are_hidden(user):
+    parent = make_page("Tėvinis", "tevinis", user)
+    child = make_page("Vaikas", "vaikas", user, parent=parent)
+    english_only = make_page("English only", "english-only", user, parent=parent, published=False)
+    content = create_page_content(language="en", title="English only", page=english_only, created_by=user)
+    content.versions.first().publish(user)
+
+    context = render_side_menu(parent, user)
+
+    children = list(context["children"])
+    assert child in children
+    assert english_only not in children

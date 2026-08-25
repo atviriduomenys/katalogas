@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 from playwright.sync_api import Page, Playwright, sync_playwright
@@ -48,7 +49,7 @@ def go_to_blog_list(page: Page) -> None:
 
 def start_new_blog_post(page: Page) -> None:
     """Start creating a new blog post."""
-    page.get_by_role("link", name="New +").click()
+    page.get_by_role("link", name=re.compile(r"(Naujas|New) \+")).click()
     page.get_by_role("link", name="Kitas").click()
     page.wait_for_load_state("networkidle")
 
@@ -70,7 +71,7 @@ def submit_blog_form(page: Page) -> None:
 
 def publish_blog_post(page: Page) -> None:
     """Publish the created blog post."""
-    page.get_by_role("link", name="Publish").click()
+    page.get_by_role("link", name=re.compile(r"Publish|Publikuoti")).click()
     page.wait_for_load_state("networkidle")
 
 
@@ -146,5 +147,6 @@ def run(playwright: Playwright) -> None:
     browser.close()
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)

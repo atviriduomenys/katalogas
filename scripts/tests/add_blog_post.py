@@ -12,7 +12,7 @@ def run(playwright: Playwright) -> None:
     login(page)
     page.get_by_role("link", name="Blog").click()
     page.get_by_role("link", name="Sukurti").click()
-    page.locator("iframe").content_frame.get_by_text("Naujas Article").click()
+    page.locator("iframe").content_frame.get_by_text(re.compile(r"(Naujas|New) Article")).click()
     page.get_by_role("link", name="Kitas").click()
     page.locator("iframe").content_frame.get_by_role("textbox", name="Pavadinimas", exact=True).click()
     page.locator("iframe").content_frame.get_by_role("textbox", name="Pavadinimas", exact=True).fill("Blog 3 pavadinimas")
@@ -31,7 +31,7 @@ def run(playwright: Playwright) -> None:
     page.locator("iframe").content_frame.locator("#id_1-post_text_editor").get_by_role("button", name="Underline").click()
     page.locator("iframe").content_frame.locator("#id_1-post_text_editor").get_by_role("button", name="Italic").click()
     page.get_by_role("link", name="Sukurti").nth(1).click()
-    page.get_by_role("link", name="Publikuoti Article dabar").click()
+    page.get_by_role("link", name=re.compile(r"Publikuoti Article dabar|Publish Article now")).click()
     page.get_by_role("link", name="Blog").click()
     page.get_by_role("link", name="Tinklaraštis").click()
     page.get_by_role("link", name="Straipsnių sąrašas...").click()
@@ -51,5 +51,6 @@ def run(playwright: Playwright) -> None:
     browser.close()
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)

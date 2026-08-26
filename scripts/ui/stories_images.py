@@ -12,19 +12,21 @@ from utils import IMAGE_FOLDER, SELECT_FILE, browser_page
 # -----------------------------------------------------------------------------
 
 # Story titles to edit
-# These stories have to exist already. create_stories.py generates
-# "Blog 1..N", so either run it enough times or point these at stories that
-# are really in the database.
+# These stories have to exist already, and these are the ones create_stories.py
+# makes: it counts from one on every run, so "Blog 10" and "Blog 11" - which is
+# what this used to name - could never appear without editing that script.
 STORY_TITLES = {
-    "first": "Blog 11 pavadinimas",
-    "fourth": "Blog 10 pavadinimas",
+    "first": "Blog 1 pavadinimas",
+    "fourth": "Blog 2 pavadinimas",
     "second": "Blog 3 pavadinimas",
 }
 
 # Images to select
+# Both files live in IMAGE_FOLDER - create_blog_posts.py uploads all six there.
+# Without the folder the picker looks in the filer root and finds nothing.
 IMAGES = {
     "fourth": {"folder": IMAGE_FOLDER, "file": "03.png"},
-    "second": {"file": "05.png"},
+    "second": {"folder": IMAGE_FOLDER, "file": "05.png"},
 }
 
 # UI text constants

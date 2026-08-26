@@ -28,10 +28,10 @@ def run(playwright: Playwright) -> None:
         page.get_by_role("textbox", name="Pavadinimas *").click()
         page.get_by_role("textbox", name="Pavadinimas *").fill("Duom rink 1")
         page.get_by_role("textbox", name="Pavadinimas *").press("Tab")
-        page.get_by_role("textbox", name="Kodinis pavadinimas").fill("datasets/org/org1/dr1")
+        page.get_by_role("textbox", name="Kodinis pavadinimas").fill("duomenu_rinkinys")  # a suffix; the form prepends the organization prefix
         page.get_by_role("textbox", name="Kodinis pavadinimas").press("Tab")
         page.get_by_role("textbox", name="Aprašymas *").fill("Duom rink 1 pilnas aprašymas")
-        page.get_by_label("Atnaujinimo dažnumas *").select_option("15")
+        page.get_by_label("Kaupimo periodiškumas *").select_option("15")
         page.get_by_role("button", name="Sukurti").click()
         page.locator("h1").get_by_text("Duom rink").click()
         page.get_by_role("link", name="Planas").click()

@@ -24,7 +24,10 @@ def generate_organization_data():
     """Generate unique organization data for each call."""
     n = next(_org_counter)
     n_padded = f"{n:02d}"
-    n_phone = f"{n:03d}"
+    # vitrina/validators.py wants exactly eight digits after +370, and this
+    # used to produce six - the form stayed invalid while the script reported
+    # success and moved on.
+    n_phone = f"{n:05d}"
 
     return {
         "search_query": f"123{n_padded}",

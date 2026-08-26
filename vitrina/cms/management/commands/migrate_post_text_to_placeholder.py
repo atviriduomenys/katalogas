@@ -8,7 +8,7 @@ For each PostContent with non-empty post_text the command:
 Posts that already have placeholder plugins retain them; post_text is prepended as a new plugin.
 """
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 
@@ -30,6 +30,23 @@ class Command(BaseCommand):
         # admin_manager, not objects: this has to move the text of every version,
         # and `objects` returns published content only.
         posts = PostContent.admin_manager.exclude(post_text="").exclude(post_text__isnull=True)
+
+        # The template renders the placeholder only when the app config asks for
+        # it, and falls back to post_text otherwise. Clearing post_text under a
+        # config that has placeholders off would leave the article body blank.
+        disabled = sorted(
+            {
+                post.post.app_config.namespace
+                for post in posts
+                if post.post.app_config and not post.post.app_config.use_placeholder
+            }
+        )
+        if disabled and not dry_run:
+            raise CommandError(
+                "These app configs still have placeholder mode off: " + ", ".join(disabled) + ".\n"
+                "Their articles are rendered from post_text, which this command clears, so turn "
+                "use_placeholder on for them first - or the pages come out empty."
+            )
         self.stdout.write(f"Found {posts.count()} post(s) with post_text content.")
 
         for post in posts:

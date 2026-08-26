@@ -8,9 +8,12 @@ export ENV_NAME=prod
 export DB_HOST=localhost
 export DB_USER=adp
 export DB_NAME=adp-dev
-export USERNAME=superadmin@aa.lt
-export PASSWORD=Liabas.12345
-export PGPASSWORD=secret
+# Passwords come from the caller; this file says prod at the top, and secrets
+# do not belong in the repository even when the environment is not.
+: "${USERNAME:?export USERNAME before sourcing this file}"
+: "${PASSWORD:?export PASSWORD before sourcing this file}"
+: "${PGPASSWORD:?export PGPASSWORD before sourcing this file}"
+export USERNAME PASSWORD PGPASSWORD
 export PYENV_VER=kt312b
 export BACKUP_DIR=dist/backup/${LABEL}
 export PROD_DUMP=dist/backup/adp-prod-2026-01-05.dump

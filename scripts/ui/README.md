@@ -43,6 +43,10 @@ python scripts/ui/create_organization.py
 
   The scripts stop with an explanation if either is missing, rather than typing an empty
   password into the form and failing on some later selector.
+- One-time codes turned off. `USE_OTP_VALIDATION` defaults to `True`, and every Playwright run
+  is a new browser, so the portal treats it as an unrecognised device and asks for a code sent by
+  email. The login helper does not answer that challenge - start the portal with
+  `USE_OTP_VALIDATION=False` for these scripts.
 - Lithuanian interface language for the portal itself - its elements are looked up by their
   Lithuanian label (`get_by_role("link", name="Prisijungti")`), so another language makes those
   lookups miss.

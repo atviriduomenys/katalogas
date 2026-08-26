@@ -34,10 +34,13 @@ def _image_paths() -> list[str]:
 # Configuration
 # ---------------------------------------------------------------------------
 
+# Numbered past what create_stories.py makes (Blog 1..3). Sharing a title with
+# one of those leaves two links with the same name, and a locator that matches
+# both fails on Playwright's strict mode.
 BLOG_DATA = {
-    "title": "Blog 1 pavadinimas",
-    "abstract": "Blog 1 santrauka",
-    "content": "Blog 1 ilgas, pilnas straipsnio tekstas\n\naaa\n\nbbb\n\nccc",
+    "title": "Blog 4 pavadinimas",
+    "abstract": "Blog 4 santrauka",
+    "content": "Blog 4 ilgas, pilnas straipsnio tekstas\n\naaa\n\nbbb\n\nccc",
 }
 
 

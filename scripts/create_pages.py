@@ -15,7 +15,10 @@ from djangocms_versioning.models import Version
 
 
 LANGUAGE = "lt"
-TEMPLATE = "INHERIT"
+# Every page below is a root page, so there is no ancestor to inherit from.
+# django-cms falls back to the first entry in CMS_TEMPLATES in that case, which
+# is this one - saying so beats relying on the fallback.
+TEMPLATE = "pages/page.html"
 
 STORIES_CONFIG = {
     "namespace": "blog",

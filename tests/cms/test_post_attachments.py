@@ -67,3 +67,25 @@ def test_moving_post_text_refuses_when_placeholders_are_off():
         call_command("migrate_post_text_to_placeholder")
 
     assert PostContent.admin_manager.get(post=post).post_text == "<p>Tekstas</p>"
+
+
+@pytest.mark.django_db
+def test_moving_post_text_refuses_when_a_post_has_no_config():
+    """A post with no app config falls back to post_text as well.
+
+    The template asks the config whether to use placeholders, and there is no
+    config to ask - so the article is rendered from post_text, which this
+    command clears.
+    """
+    from django.core.management import call_command
+    from django.core.management.base import CommandError
+
+    post = Post.objects.create()
+    PostContent.admin_manager.create(
+        post=post, title="Naujiena", slug="naujiena", language="lt", post_text="<p>Tekstas</p>"
+    )
+
+    with pytest.raises(CommandError):
+        call_command("migrate_post_text_to_placeholder")
+
+    assert PostContent.admin_manager.get(post=post).post_text == "<p>Tekstas</p>"

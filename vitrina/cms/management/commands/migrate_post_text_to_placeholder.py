@@ -34,11 +34,13 @@ class Command(BaseCommand):
         # The template renders the placeholder only when the app config asks for
         # it, and falls back to post_text otherwise. Clearing post_text under a
         # config that has placeholders off would leave the article body blank.
+        # A post with no app config at all falls back to post_text just the same,
+        # since the template asks the config whether to use placeholders.
         disabled = sorted(
             {
-                post.post.app_config.namespace
+                post.post.app_config.namespace if post.post.app_config else "(be konfigūracijos)"
                 for post in posts
-                if post.post.app_config and not post.post.app_config.use_placeholder
+                if not (post.post.app_config and post.post.app_config.use_placeholder)
             }
         )
         if disabled and not dry_run:

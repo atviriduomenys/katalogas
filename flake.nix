@@ -31,6 +31,7 @@
         geos
         proj
         gdal
+        file
       ];
     in {
       devShells.${system}.default = pkgs.mkShell {
@@ -45,6 +46,10 @@
 
           # GitHub CLI
           gh
+
+          # Playwright (end-to-end browser tests)
+          playwright
+          chromium
 
           # C build tools
           pkg-config

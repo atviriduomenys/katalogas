@@ -48,6 +48,12 @@ https://github.com/atviriduomenys/katalogas/issues/2771
 - Hide the deprecated "API specifikacijos formatas" (``endpoint_description_type``) field from
   service forms, detail pages, and administration while preserving existing database values and
   API output.
+- Raise the ``dcat:endpointDescription`` (``endpoint_description``) cardinality from 0..1 to 0..n.
+  The single ``CharField`` is replaced by a many-to-many relation to the new ``EndpointDescription``
+  model, so a data service can expose several API specifications at once. Legacy values are copied
+  into the new relation by the ``0047_endpoint_description_multivalue`` migration. Orphan
+  ``EndpointDescription`` rows (no longer linked to any dataset) are pruned on every update and on
+  dataset deletion.
 
 https://github.com/atviriduomenys/katalogas/issues/2722
 

@@ -407,7 +407,7 @@ class TestDatasetDetailView:
             organization=org,
             endpoint_url="http://test.com",
             endpoint_type=endpoint_format,
-            endpoint_description="http://example.com",
+            endpoint_description=["http://example.com"],
             endpoint_description_type=endpoint_description_format,
         )
 
@@ -417,7 +417,7 @@ class TestDatasetDetailView:
         assert response.status_code == 200
 
         assert data_service.endpoint_url in response.text
-        assert data_service.endpoint_description in response.text
+        assert "http://example.com" in response.text
         assert data_service.endpoint_type.title in response.text
         assert endpoint_description_format.title not in response.text
 
@@ -1058,11 +1058,10 @@ class TestDatasetListView:
         assert objects == [dataset_with_all_filters.pk]
 
         selected = _get_selected(resp.context)
-        assert selected == {
+        assert {key: value for key, value in selected.items() if key != "tags"} == {
             "status": Dataset.HAS_DATA,
             "organization": str(organization.pk),
             "category": str(category.pk),
-            "tags": [str(tag_id_1), str(tag_id_2)],
             "frequency": frequency.pk,
             "published": [
                 (2022, "Y"),
@@ -1070,6 +1069,7 @@ class TestDatasetListView:
                 (2022, 2, "M"),
             ],
         }
+        assert sorted(selected["tags"]) == sorted([str(tag_id_1), str(tag_id_2)])
 
     def test_dataset_filter_with_pages(self, app: DjangoTestApp):
         inventored_dataset = None
@@ -1708,7 +1708,7 @@ class TestDatasetUpdateView:
         dataservice = DatasetServiceFactory(
             organization=organization,
             endpoint_url=None,
-            endpoint_description=None,
+            endpoint_description=[],
             endpoint_type=json_format,
         )
         agent = AgentFactory(organization=organization)
@@ -2242,7 +2242,7 @@ class TestDatasetCreateView:
         assert dataset.agent is None
         assert dataset.conforms_to is None
         assert dataset.endpoint_url == "https://data.gov.lt"
-        assert dataset.endpoint_description == "http://api.data.gov.lt"
+        assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == ["http://api.data.gov.lt"]
 
     def test_create_service_without_endpoint_description(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
@@ -2267,7 +2267,7 @@ class TestDatasetCreateView:
 
         assert dataset.agent is None
         assert dataset.endpoint_url == "https://data.gov.lt"
-        assert not dataset.endpoint_description
+        assert not dataset.endpoint_description.exists()
 
     def test_create_without_name(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
@@ -4742,7 +4742,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
             uri=f"{po}/file-type/WMS",
             media_type_uri=f"{iana}/media-types/application/wms",
         ),
-        endpoint_description="https://endpoint-description.com",
+        endpoint_description=["https://endpoint-description.com"],
     )
     service_type = TypeFactory(name=Type.SERVICE)
     dataset.type.add(service_type)

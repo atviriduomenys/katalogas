@@ -128,6 +128,7 @@ from vitrina.datasets.models import (
     Contact,
     DatasetExcludedGroups,
     DCATResourceSubclass,
+    EndpointDescription,
 )
 from vitrina.classifiers.models import (
     Category,
@@ -920,7 +921,6 @@ class DatasetCreateView(
         else:
             self.object.endpoint_url = None
             self.object.endpoint_type = None
-            self.object.endpoint_description = None
             self.object.service = False
         if subclass.name == DCATResourceSubclass.SERIES:
             self.object.series = True
@@ -996,6 +996,9 @@ class DatasetCreateView(
 
         if documentation_urls := form.cleaned_data.get("documentation"):
             self.object.update_documentation(documentation_urls)
+
+        if endpoint_description_urls := form.cleaned_data.get("endpoint_description"):
+            self.object.update_endpoint_description(endpoint_description_urls)
 
         if service_type := form.cleaned_data.get("service_type"):
             self.object.service_type.set(service_type)
@@ -1217,6 +1220,9 @@ class DatasetUpdateView(
         if "documentation" in form.changed_data:
             self.object.update_documentation(form.cleaned_data["documentation"])
 
+        if "endpoint_description" in form.changed_data:
+            self.object.update_endpoint_description(form.cleaned_data.get("endpoint_description") or [])
+
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
 
@@ -1333,6 +1339,12 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         attribution_history_objects = self._get_history_objects_for_model(DatasetAttribution)
         relation_history_objects = self._get_history_objects_for_model(DatasetRelation)
 
+        # Issue #2771: show versions of endpoint description URLs linked to this dataset.
+        endpoint_description_ids = list(self.object.endpoint_description.values_list("pk", flat=True))
+        endpoint_description_history_objects = Version.objects.get_for_model(EndpointDescription).filter(
+            object_id__in=endpoint_description_ids
+        )
+
         history_objects = (
             property_history_objects
             | model_history_objects
@@ -1341,6 +1353,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             | dataset_distribution_history_objects
             | attribution_history_objects
             | relation_history_objects
+            | endpoint_description_history_objects
         )
         return history_objects.order_by("-revision__date_created")
 

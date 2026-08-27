@@ -339,6 +339,9 @@ class DcatDatasetCreateView(
             if "service_quality" in form.changed_data:
                 self.object.update_service_quality(form.cleaned_data.get("service_quality"))
 
+            if "endpoint_description" in form.changed_data:
+                self.object.update_endpoint_description(form.cleaned_data.get("endpoint_description") or [])
+
             if "languages" in form.changed_data:
                 self.object.languages.set(form.cleaned_data.get("languages"))
 
@@ -520,6 +523,9 @@ class DcatDatasetUpdateView(
 
         if "service_quality" in form.changed_data:
             self.object.update_service_quality(form.cleaned_data.get("service_quality"))
+
+        if "endpoint_description" in form.changed_data:
+            self.object.update_endpoint_description(form.cleaned_data.get("endpoint_description") or [])
 
         if "languages" in form.changed_data:
             self.object.languages.set(form.cleaned_data.get("languages"))

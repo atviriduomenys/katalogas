@@ -4715,7 +4715,11 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     iana = "http://www.iana.org/assignments"
     po = "http://publications.europa.eu/resource/authority"
 
-    dataset = DatasetFactory(
+    organization = OrganizationFactory(
+        title="Data Enterprise",
+        email="data@example.com",
+    )
+    dataset = DatasetServiceFactory(
         title={
             "lt": "Testas1",
             "en": "Test1",
@@ -4732,11 +4736,8 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
                 uri=f"{po}/data-theme/ENVI",
             ),
         ],
-        organization=OrganizationFactory(
-            title="Data Enterprise",
-            email="data@example.com",
-        ),
-        service=True,
+        organization=organization,
+        contact=ContactFactory(email="data@example.com", organization=organization),
         endpoint_url="https://endpoint-url.com",
         endpoint_type=FileFormat(
             uri=f"{po}/file-type/WMS",
@@ -4797,6 +4798,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
                 <vcard:hasEmail rdf:resource="mailto:data@example.com"/>
             </vcard:Kind>
         </dcat:contactPoint>
+            <dcat:keyword>test tag</dcat:keyword>
         <dcat:endpointURL rdf:resource="https://endpoint-url.com"/>
         <dct:format>
             <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/WMS"/>

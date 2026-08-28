@@ -150,6 +150,17 @@ class DatasetFactory(DjangoModelFactory):
             dataset=self, content_type=ContentType.objects.get_for_model(self), object_id=self.pk, name=name
         )
 
+    @factory.post_generation
+    def endpoint_description(self, create, extracted, **kwargs) -> None:
+        if extracted:
+            raise AssertionError(
+                "DatasetFactory does not support `endpoint_description`; use DatasetServiceFactory for data services."
+            )
+        if create and self.endpoint_description.exists():
+            raise AssertionError(
+                "DatasetFactory must not set `endpoint_description`; use DatasetServiceFactory for data services."
+            )
+
 
 def _get_language_value(lang: str, value: Union[str | dict]) -> str:
     if isinstance(value, str):

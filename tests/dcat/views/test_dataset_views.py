@@ -28,6 +28,7 @@ from vitrina.datasets.factories import (
     ContactFactory,
     DatasetAttributionFactory,
     DatasetFactory,
+    DatasetServiceFactory,
     DatasetQualifiedRelationFactory,
     DatasetRelationFactory,
     DCATResourceSubclassFactory,
@@ -892,11 +893,10 @@ class TestDcatDatasetUpdateView:
         org = OrganizationFactory()
         new_org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
-        dataset = DatasetFactory(
+        dataset = DatasetServiceFactory(
             organization=org,
             subclass=subclass,
             is_public=False,
-            service=True,
             endpoint_url="https://api.example.com",
             endpoint_description="https://api.example.com/spec",
         )

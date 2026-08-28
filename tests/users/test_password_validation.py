@@ -2,6 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django_recaptcha.client import RecaptchaResponse
@@ -249,6 +250,7 @@ def test_password_change_not_unique(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_successful_login_before_limit(app: DjangoTestApp):
     user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!", status=User.ACTIVE)
     EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)

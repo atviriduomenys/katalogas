@@ -40,7 +40,12 @@ def _render_menu(language: str) -> str:
     pages = Page.objects.filter(pk__in=published_ids, parent__isnull=True).order_by("path")
     return render_to_string(
         "menu.html",
-        {"pages": {page: page.children.filter(pk__in=published_ids) for page in pages}},
+        {
+            # order_by: `children` is the plain reverse accessor and Page has no
+            # default ordering, so without this the dropdown comes back in
+            # database order - and show_menu then caches whichever order it got.
+            "pages": {page: page.children.filter(pk__in=published_ids).order_by("path") for page in pages}
+        },
     )
 
 

@@ -4,7 +4,9 @@
     <article class="panel m-b-md">
         {% page_attribute "page_title" as current_title %}
         <h1 class="panel-heading">
-            <a href="{{ parent.get_redirect|default:parent.get_absolute_url }}">{{ parent.get_title }}</a>
+            {% if parent %}
+                <a href="{{ parent.get_redirect|default:parent.get_absolute_url }}">{{ parent.get_title }}</a>
+            {% endif %}
         </h1>
         <nav class="category-panel">
             {% for child in children %}

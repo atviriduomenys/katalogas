@@ -147,3 +147,19 @@ def test_page_published_only_in_another_language_is_hidden(user):
     assert "English only" not in html
     assert english_only.pk not in list(_published_nav_page_ids("lt"))
     assert english_only.pk in list(_published_nav_page_ids("en"))
+
+
+@pytest.mark.django_db
+def test_dropdown_children_are_ordered(user):
+    parent = make_page("Tėvinis", "tevinis", user)
+    first = make_page("Aaa", "aaa", user, parent=parent)
+    second = make_page("Bbb", "bbb", user, parent=parent)
+    third = make_page("Ccc", "ccc", user, parent=parent)
+
+    # Rewriting a row is enough to change the order the database hands back.
+    second.save()
+
+    html = _render_menu("lt")
+    positions = [html.index(page.get_menu_title()) for page in (first, second, third)]
+
+    assert positions == sorted(positions)

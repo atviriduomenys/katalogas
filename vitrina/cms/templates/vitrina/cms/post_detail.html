@@ -40,7 +40,7 @@
                         <span>{% translate "Publikavimo data" %}: {{ post.date_published|date:"SHORT_DATETIME_FORMAT" }}</span>
                     </div>
                     <div>
-                        {% if post.post.app_config.use_placeholder and post.content %}
+                        {% if post.post.app_config.use_placeholder %}
                             {% render_placeholder post.content %}
                         {% else %}
                             {{ post.post_text|safe }}

@@ -115,3 +115,24 @@ def test_children_published_only_in_another_language_are_hidden(user):
     children = list(context["children"])
     assert child in children
     assert english_only not in children
+
+
+@pytest.mark.django_db
+def test_no_empty_heading_when_the_parent_is_not_published(user):
+    """The heading links to the parent, so with no parent there is nothing to link.
+
+    Rendering it anyway leaves <a href=""> with no text, which sends the reader
+    back to the page they are already on.
+    """
+    from django.template.loader import render_to_string
+
+    root = make_page("Šaknis", "saknis", user, published=False)
+    page = make_page("Puslapis", "puslapis", user, parent=root)
+    sibling = make_page("Brolis", "brolis", user, parent=root)
+
+    context = render_side_menu(page, user)
+    assert context["parent"] is None
+    assert sibling in list(context["children"])
+
+    html = render_to_string("pages/side_menu.html", context)
+    assert 'href=""' not in html

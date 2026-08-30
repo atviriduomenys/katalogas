@@ -22,7 +22,7 @@ TEMPLATE = "pages/page.html"
 
 STORIES_CONFIG = {
     "namespace": "blog",
-    "app_title": "Tiklaraštis",
+    "app_title": "Tinklaraštis",
 }
 
 PAGES = [

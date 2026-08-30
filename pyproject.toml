@@ -73,7 +73,9 @@ django-flags = "^5.1.0"
 spinta = "^1.0.0"
 djangocms-versioning = "^2.5.1"
 djangocms-alias = "^3.0.0"
-djangocms-stories = "^0.9.1"
+# Pinned exactly: MIGRATION_MODULES points django at local copies of this
+# package's migrations, so a release that adds one would be skipped silently.
+djangocms-stories = "0.9.3"
 # Bundled djangocms-blog migrations import this during the one-time upgrade.
 aldryn-apphooks-config = "^0.7.0"
 djangocms-file = "^3.0.1"

@@ -60,3 +60,20 @@ def test_missing_group_is_not_an_error():
     Group.objects.filter(name=BLOG_ADMINISTRATORS).delete()
 
     _sync_blog_administrator_permissions(sender=None)
+
+
+@pytest.mark.django_db
+def test_a_revoked_permission_stays_revoked():
+    """The repair runs once. Re-granting on every migrate would undo an admin.
+
+    Once the group carries stories permissions and no leftover blog ones, there
+    is nothing left to repair, so a permission somebody deliberately took away
+    must not come back with the next deployment.
+    """
+    group = Group.objects.get(name=BLOG_ADMINISTRATORS)
+    revoked = group.permissions.get(codename="delete_post", content_type__app_label="djangocms_stories")
+    group.permissions.remove(revoked)
+
+    _sync_blog_administrator_permissions(sender=None)
+
+    assert revoked not in group.permissions.all()

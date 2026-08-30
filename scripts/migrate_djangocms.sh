@@ -2,7 +2,9 @@
 
 set -euo pipefail
 
-upgrade_state="$(python3 manage.py djangocms_upgrade_state --skip-checks)"
+# tail: anything an app prints while loading would otherwise land in the value
+# and send us to the "unknown state" branch, where the container refuses to boot.
+upgrade_state="$(python3 manage.py djangocms_upgrade_state --skip-checks | tail -n1)"
 
 case "${upgrade_state}" in
     pending)

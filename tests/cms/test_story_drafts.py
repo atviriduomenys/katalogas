@@ -11,8 +11,12 @@ from vitrina.users.factories import UserFactory
 DEFAULT_TEXT = "<p>Vieta Jūsų tekstui.</p>"
 
 
+def placeholder_config(namespace="stories"):
+    return StoriesConfig.objects.create(namespace=namespace, **{**config_defaults, "use_placeholder": True})
+
+
 def make_published_story(user, body="<p>Tikras tekstas</p>"):
-    config = StoriesConfig.objects.create(namespace="stories", **config_defaults)
+    config = placeholder_config()
     post = Post.objects.create(app_config=config)
     content = PostContent.admin_manager.create(post=post, title="Naujiena", slug="naujiena", language="lt")
 
@@ -26,8 +30,7 @@ def make_published_story(user, body="<p>Tikras tekstas</p>"):
 
 @pytest.mark.django_db
 def test_a_new_story_gets_the_editor_hint():
-    config = StoriesConfig.objects.create(namespace="stories", **config_defaults)
-    post = Post.objects.create(app_config=config)
+    post = Post.objects.create(app_config=placeholder_config())
 
     content = PostContent.admin_manager.create(post=post, title="Naujiena", slug="naujiena", language="lt")
 
@@ -51,3 +54,18 @@ def test_editing_a_published_story_keeps_the_article():
     assert draft.placeholders.count() == 1
     plugins = CMSPlugin.objects.filter(placeholder=draft.content)
     assert [p.get_plugin_instance()[0].body for p in plugins] == ["<p>Tikras tekstas</p>"]
+
+
+@pytest.mark.django_db
+def test_no_hint_when_the_config_renders_post_text():
+    """With placeholders off the hint is never displayed, so it is not written.
+
+    post_detail.html falls back to post_text for such configs; a hint plugin
+    would only leave an unused placeholder behind.
+    """
+    config = StoriesConfig.objects.create(namespace="off", **{**config_defaults, "use_placeholder": False})
+    post = Post.objects.create(app_config=config)
+
+    content = PostContent.admin_manager.create(post=post, title="Naujiena", slug="naujiena", language="lt")
+
+    assert not CMSPlugin.objects.filter(placeholder=content.content).exists()

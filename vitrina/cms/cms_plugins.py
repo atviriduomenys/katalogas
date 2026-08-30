@@ -42,7 +42,10 @@ class SideMenuPlugin(CMSPluginBase):
         if children:
             parent = page
         else:
-            parent = page.parent
+            # The heading links to the parent, so it has to be published in this
+            # language as well - otherwise the menu offers a 404 under an empty
+            # title.
+            parent = page.parent if page.parent_id in published else None
             children = page.get_siblings().filter(pk__in=published)
         context.update({"children": children, "parent": parent})
         return context

@@ -35,13 +35,36 @@ class CmsConfig(AppConfig):
 
 
 def _add_default_text_plugin(sender, instance, created, **kwargs):
-    if not created or not instance.content:
+    """Put a hint in the editor when a story is written for the first time.
+
+    Only then. Versioning makes a draft out of a published story by creating a
+    new content row and copying the placeholders afterwards, and this receiver
+    runs in between. Reading `instance.content` at that moment creates a second
+    "content" placeholder, which then wins over the copied one - the editor
+    opens the draft, finds this boilerplate instead of the article, and
+    publishing it would put the boilerplate on the site. So leave alone any
+    content that already has a sibling in the same language.
+    """
+    if not created:
         return
+
     from cms.api import add_plugin
     from cms.models import CMSPlugin
+    from djangocms_stories.models import PostContent
 
-    if not CMSPlugin.objects.filter(placeholder=instance.content).exists():
-        add_plugin(instance.content, "TextPlugin", instance.language, body="<p>Vieta Jūsų tekstui.</p>")
+    siblings = PostContent.admin_manager.filter(
+        post_id=instance.post_id,
+        language=instance.language,
+    ).exclude(pk=instance.pk)
+    if siblings.exists():
+        return
+
+    placeholder = instance.content
+    if not placeholder:
+        return
+
+    if not CMSPlugin.objects.filter(placeholder=placeholder).exists():
+        add_plugin(placeholder, "TextPlugin", instance.language, body="<p>Vieta Jūsų tekstui.</p>")
 
 
 def _sync_blog_administrator_permissions(sender, **kwargs):

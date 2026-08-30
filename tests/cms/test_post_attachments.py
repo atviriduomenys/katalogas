@@ -116,3 +116,48 @@ def test_moving_post_text_refuses_when_a_post_has_no_config():
         call_command("migrate_post_text_to_placeholder")
 
     assert PostContent.admin_manager.get(post=post).post_text == "<p>Tekstas</p>"
+
+
+@pytest.mark.django_db
+def test_moving_post_text_into_the_placeholder():
+    """The command's own job: the html becomes a plugin and the field is cleared."""
+    from cms.api import add_plugin
+    from cms.models import CMSPlugin
+    from django.core.management import call_command
+    from djangocms_stories.cms_appconfig import StoriesConfig, config_defaults
+
+    config = StoriesConfig.objects.create(namespace="on", **{**config_defaults, "use_placeholder": True})
+    post = Post.objects.create(app_config=config)
+    content = PostContent.admin_manager.create(
+        post=post, title="Naujiena", slug="naujiena", language="lt", post_text="<p>Senas tekstas</p>"
+    )
+    CMSPlugin.objects.filter(placeholder=content.content).delete()
+    add_plugin(content.content, "TextPlugin", "lt", body="<p>Jau esamas</p>")
+
+    call_command("migrate_post_text_to_placeholder")
+
+    content.refresh_from_db()
+    assert content.post_text == ""
+    bodies = [
+        p.get_plugin_instance()[0].body
+        for p in CMSPlugin.objects.filter(placeholder=content.content).order_by("position")
+    ]
+    # The article body goes in front of whatever was already there.
+    assert bodies == ["<p>Senas tekstas</p>", "<p>Jau esamas</p>"]
+
+
+@pytest.mark.django_db
+def test_dry_run_moves_nothing():
+    from django.core.management import call_command
+    from djangocms_stories.cms_appconfig import StoriesConfig, config_defaults
+
+    config = StoriesConfig.objects.create(namespace="on", **{**config_defaults, "use_placeholder": True})
+    post = Post.objects.create(app_config=config)
+    content = PostContent.admin_manager.create(
+        post=post, title="Naujiena", slug="naujiena", language="lt", post_text="<p>Senas tekstas</p>"
+    )
+
+    call_command("migrate_post_text_to_placeholder", "--dry-run")
+
+    content.refresh_from_db()
+    assert content.post_text == "<p>Senas tekstas</p>"

@@ -38,6 +38,10 @@ def run(playwright: Playwright) -> None:
         page.get_by_role("link", name="Įtraukti į planą").click()
         page.get_by_role("textbox", name="Aprašymas").click()
         page.get_by_role("textbox", name="Aprašymas").fill("Plano 1 veiksmo 1 aprašymas")
+        # Title is required on this form. The recording left it out, the submit
+        # bounced, and the next block filled it in on the redisplayed form -
+        # which is why it starts with Shift+Home over an existing value.
+        page.get_by_role("textbox", name="Pavadinimas *").fill("Org 1 planas 1")
         page.get_by_role("textbox", name="Įgyvendinimo terminas").fill(ACTION_DEADLINE)
         page.locator("#plan-form").get_by_role("button", name="Įtraukti").click()
         page.get_by_role("link", name="Įtraukti į planą").click()

@@ -51,7 +51,7 @@ BLOG_DATA = {
 def go_to_blog_list(page: Page) -> None:
     """Navigate to the blog list page."""
     page.get_by_role("link", name="Naujienos").click()
-    page.get_by_role("link", name="Tiklaraštis").click()
+    page.get_by_role("link", name="Tinklaraštis").click()
     page.wait_for_load_state("networkidle")
 
 

@@ -183,6 +183,22 @@ frozenlist = ">=1.1.0"
 typing-extensions = {version = ">=4.2", markers = "python_version < \"3.13\""}
 
 [[package]]
+name = "aldryn-apphooks-config"
+version = "0.7.0"
+description = "Namespaces based configuration for Apphooks"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "aldryn-apphooks-config-0.7.0.tar.gz", hash = "sha256:d6467ed1a61f88ef73ea02d5ec5a9c3ffd96855738192b1849ab0df86a5e1566"},
+    {file = "aldryn_apphooks_config-0.7.0-py2.py3-none-any.whl", hash = "sha256:909339d91ebde6b9d0b1e5b791f08cce4f52d3f7967fa3de2d6e299fd869344c"},
+]
+
+[package.dependencies]
+django-appdata = ">=0.3.0"
+django-cms = ">=3.9"
+
+[[package]]
 name = "alembic"
 version = "1.18.5"
 description = "A database migration tool for SQLAlchemy."
@@ -1515,6 +1531,21 @@ groups = ["main", "dev"]
 files = [
     {file = "django_appconf-1.2.0-py3-none-any.whl", hash = "sha256:b81bce5ef0ceb9d84df48dfb623a32235d941c78cc5e45dbb6947f154ea277f4"},
     {file = "django_appconf-1.2.0.tar.gz", hash = "sha256:15a88d60dd942d6059f467412fe4581db632ef03018a3c183fb415d6fc9e5cec"},
+]
+
+[package.dependencies]
+django = "*"
+
+[[package]]
+name = "django-appdata"
+version = "0.4.0"
+description = "Extendable field that enables Django apps to store their data on your models."
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "django-appdata-0.4.0.tar.gz", hash = "sha256:db5726e3118f15b3894e581392dfde355ebce4d66000b15c0cffc3fc80a01446"},
+    {file = "django_appdata-0.4.0-py2.py3-none-any.whl", hash = "sha256:3d415c9d2b627184dba8f92ae454345adcdc803514c86a25a87bbf34ea2b3d91"},
 ]
 
 [package.dependencies]
@@ -7069,4 +7100,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "7ae0d3a7973b7c4d085e6e4ccbc014bdec89bd5952c3d1612f15f8ab550393b2"
+content-hash = "032bce9b3eb7684bb5bfada90b86efca7df96bc07a876ee452cf5a8bd362abe7"

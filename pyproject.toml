@@ -74,6 +74,8 @@ spinta = "^1.0.0"
 djangocms-versioning = "^2.5.1"
 djangocms-alias = "^3.0.0"
 djangocms-stories = "^0.9.1"
+# Bundled djangocms-blog migrations import this during the one-time upgrade.
+aldryn-apphooks-config = "^0.7.0"
 djangocms-file = "^3.0.1"
 djangocms-picture = "^4.1.1"
 djangocms-link = "^5.1.1"

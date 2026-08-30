@@ -7,6 +7,7 @@ from djangocms_stories.models import Post, PostContent
 from djangocms_versioning.models import Version
 
 from vitrina.cms.models import FileResource
+from vitrina.cms.stories_migrations._helpers import remap_generic_relations
 from vitrina.cms.views import PostDetailView
 from vitrina.users.factories import UserFactory
 
@@ -44,6 +45,32 @@ def test_attachments_are_found_through_the_post_not_its_content():
         content_type=ContentType.objects.get_for_model(content),
         object_id=content.pk,
     ).exists()
+
+
+@pytest.mark.django_db
+def test_legacy_attachments_are_remapped_to_the_new_post_ids():
+    legacy_content_type, _ = ContentType.objects.get_or_create(
+        app_label="djangocms_blog",
+        model="post",
+    )
+    stories_content_type = ContentType.objects.get_for_model(Post)
+    post = Post.objects.create()
+    attachment = FileResource.objects.create(
+        version=1,
+        content_type=legacy_content_type,
+        object_id=41,
+    )
+
+    remap_generic_relations(
+        FileResource,
+        source_content_type=legacy_content_type,
+        target_content_type=stories_content_type,
+        object_id_map={41: post.pk},
+    )
+
+    attachment.refresh_from_db()
+    assert attachment.content_type == stories_content_type
+    assert attachment.object_id == post.pk
 
 
 @pytest.mark.django_db

@@ -177,6 +177,15 @@ INSTALLED_APPS = [
     "vitrina.search",
 ]
 
+# djangocms-stories bundles the legacy app solely for its one-time data migration.
+# scripts/migrate_djangocms.sh enables it only while that migration is pending.
+if env.bool("DJANGOCMS_BLOG_MIGRATION", default=False):
+    INSTALLED_APPS.insert(INSTALLED_APPS.index("djangocms_stories"), "djangocms_blog")
+
+MIGRATION_MODULES = {
+    "djangocms_stories": "vitrina.cms.stories_migrations",
+}
+
 SERIALIZATION_MODULES = {
     "xml": "tagulous.serializers.xml_serializer",
     "json": "tagulous.serializers.json",

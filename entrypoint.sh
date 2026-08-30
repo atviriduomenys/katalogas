@@ -7,9 +7,8 @@ npm run build || echo "⚠️ Webpack build (partially) failed, continuing..."
 cd ..
 
 python3 manage.py collectstatic --noinput
-# --skip-checks bypasses the URL system check that queries the Site table before migrations run,
-# which causes Site.DoesNotExist on a fresh database (django-cms bootstrapping issue).
-python3 manage.py migrate --skip-checks -v 2 || exit 1
+# The helper runs the one-time legacy blog stage when required, then all migrations.
+./scripts/migrate_djangocms.sh || exit 1
 python3 manage.py rebuild_search
 
 if [[ $RUN_MODE == "DEVELOPMENT" ]]; then

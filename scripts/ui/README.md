@@ -16,9 +16,9 @@ the pytest suite uses, so there is no way to exercise them without a real browse
 
 ## Running one
 
-Playwright is deliberately not a project dependency - it is needed only for these scripts,
-and adding it would drag a browser download into every `poetry install`. Install it
-separately:
+Playwright is deliberately not a project dependency - only these scripts want it, and they
+are run by hand a few times a year. Install it separately, browser included: the pip package
+brings the driver, the second command fetches Chromium.
 
 ```bash
 pip install playwright

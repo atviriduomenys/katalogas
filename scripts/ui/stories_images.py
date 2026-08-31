@@ -17,16 +17,16 @@ from utils import IMAGE_FOLDER, SELECT_FILE, browser_page
 # what this used to name - could never appear without editing that script.
 STORY_TITLES = {
     "first": "Blog 1 pavadinimas",
-    "fourth": "Blog 2 pavadinimas",
-    "second": "Blog 3 pavadinimas",
+    "second": "Blog 2 pavadinimas",
+    "third": "Blog 3 pavadinimas",
 }
 
 # Images to select
 # Both files live in IMAGE_FOLDER - create_blog_posts.py uploads all six there.
 # Without the folder the picker looks in the filer root and finds nothing.
 IMAGES = {
-    "fourth": {"folder": IMAGE_FOLDER, "file": "03.png"},
-    "second": {"folder": IMAGE_FOLDER, "file": "05.png"},
+    "second": {"folder": IMAGE_FOLDER, "file": "03.png"},
+    "third": {"folder": IMAGE_FOLDER, "file": "05.png"},
 }
 
 # UI text constants
@@ -103,24 +103,24 @@ def edit_first_story(page: Page) -> None:
     print(f"✅ {STORY_TITLES['first']} edited successfully.")
 
 
-def add_image_to_fourth_story(page: Page) -> None:
-    """Add an image to the story configured as "fourth", from the Skaiciai folder."""
-    print(f"Adding image to story: {STORY_TITLES['fourth']}...")
-    open_story_edit(page, STORY_TITLES["fourth"])
-    collapse_fieldset(page)
-    add_image_to_story(page, IMAGES["fourth"]["folder"], IMAGES["fourth"]["file"])
-    save_story(page)
-    print(f"✅ Image added to {STORY_TITLES['fourth']} successfully.")
-
-
 def add_image_to_second_story(page: Page) -> None:
     """Add an image to the story configured as "second"."""
     print(f"Adding image to story: {STORY_TITLES['second']}...")
     open_story_edit(page, STORY_TITLES["second"])
     collapse_fieldset(page)
-    add_image_to_story(page, IMAGES["second"].get("folder"), IMAGES["second"]["file"])
+    add_image_to_story(page, IMAGES["second"]["folder"], IMAGES["second"]["file"])
     save_story(page)
     print(f"✅ Image added to {STORY_TITLES['second']} successfully.")
+
+
+def add_image_to_third_story(page: Page) -> None:
+    """Add an image to the story configured as "third"."""
+    print(f"Adding image to story: {STORY_TITLES['third']}...")
+    open_story_edit(page, STORY_TITLES["third"])
+    collapse_fieldset(page)
+    add_image_to_story(page, IMAGES["third"]["folder"], IMAGES["third"]["file"])
+    save_story(page)
+    print(f"✅ Image added to {STORY_TITLES['third']} successfully.")
 
 
 def run_stories_image_workflow(page: Page) -> None:
@@ -131,10 +131,10 @@ def run_stories_image_workflow(page: Page) -> None:
     edit_first_story(page)
 
     navigate_to_posts(page)
-    add_image_to_fourth_story(page)
+    add_image_to_second_story(page)
 
     navigate_to_posts(page)
-    add_image_to_second_story(page)
+    add_image_to_third_story(page)
 
     close_sideframe(page)
     page.get_by_role("link", name=UI_TEXT["news"]).click()

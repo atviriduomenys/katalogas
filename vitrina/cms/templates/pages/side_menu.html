@@ -3,11 +3,11 @@
 <div class="column is-one-quarter">
     <article class="panel m-b-md">
         {% page_attribute "page_title" as current_title %}
-        <h1 class="panel-heading">
-            {% if parent %}
+        {% if parent %}
+            <h1 class="panel-heading">
                 <a href="{{ parent.get_redirect|default:parent.get_absolute_url }}">{{ parent.get_title }}</a>
-            {% endif %}
-        </h1>
+            </h1>
+        {% endif %}
         <nav class="category-panel">
             {% for child in children %}
                 <a class="panel-block {% if current_title == child.get_title %} is-active {% endif %}"

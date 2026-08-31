@@ -136,3 +136,6 @@ def test_no_empty_heading_when_the_parent_is_not_published(user):
 
     html = render_to_string("pages/side_menu.html", context)
     assert 'href=""' not in html
+    # And no heading element at all: an empty <h1> is still a heading to anyone
+    # navigating by them.
+    assert "panel-heading" not in html

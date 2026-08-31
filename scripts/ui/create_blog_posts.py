@@ -100,7 +100,7 @@ def open_post_properties(page: Page) -> None:
     frame.locator("#fieldsetcollapser1").click()
 
 
-def upload_images_to_blog(page: Page) -> None:
+def upload_images_to_blog(page: Page, image_paths: list[str]) -> None:
     """Upload images to the blog post media library."""
     with page.expect_popup() as page1_info:
         frame = page.locator("iframe").content_frame
@@ -121,7 +121,7 @@ def upload_images_to_blog(page: Page) -> None:
     # is a link, so go through the chooser the click opens.
     with page1.expect_file_chooser() as chooser:
         page1.get_by_role("link", name="įkelti bylas").click()
-    chooser.value.set_files(_image_paths())
+    chooser.value.set_files(image_paths)
     # Back to the same folder, newest first - its id differs between databases.
     page1.goto(f"{folder_url}&order_by=-modified_at")
     page1.get_by_role("link", name="01.jpg").click()
@@ -143,11 +143,15 @@ def view_blog_post(page: Page) -> None:
 # ---------------------------------------------------------------------------
 
 def run(playwright: Playwright) -> None:
+    # Checked before the browser opens. Finding a file missing half-way through
+    # leaves Blog 4 published and the filer folder created, and the fixed title
+    # and folder name then collide with themselves on the next run.
+    image_paths = _image_paths()
     with browser_page(playwright) as page:
         go_to_blog_list(page)
         create_blog_post(page, BLOG_DATA)
         open_post_properties(page)
-        upload_images_to_blog(page)
+        upload_images_to_blog(page, image_paths)
         view_blog_post(page)
 
 

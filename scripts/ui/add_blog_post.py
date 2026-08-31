@@ -20,7 +20,7 @@ def run(playwright: Playwright) -> None:
         page.locator("iframe").content_frame.get_by_role("textbox", name="Pavadinimas", exact=True).press("Tab")
         page.locator("iframe").content_frame.get_by_role("textbox", name="Nuoroda").press("Tab")
         page.locator("iframe").content_frame.locator("#id_1-abstract_editor").get_by_role("textbox").click()
-        page.locator("iframe").content_frame.locator("#id_1-abstract_editor").get_by_role("textbox").fill("Format\nStyles\n\nBlog 3 santrauka")
+        page.locator("iframe").content_frame.locator("#id_1-abstract_editor").get_by_role("textbox").fill("Format\nStyles\n\nBlog 5 santrauka")
         page.locator("iframe").content_frame.get_by_role("textbox", name="Subtitle").click()
         page.locator("iframe").content_frame.get_by_role("textbox", name="Subtitle").fill("Blog 5 subtitle")
         page.locator("iframe").content_frame.get_by_role("paragraph").filter(has_text=re.compile(r"^$")).click()

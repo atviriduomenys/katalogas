@@ -8,6 +8,24 @@ from vitrina.cms.stories_migrations._helpers import remap_generic_relations
 upstream = import_module("djangocms_stories.migrations.0002_auto_20250618_1556")
 
 
+def remap_file_resources(apps, pk_maps, source_model, target_model):
+    """Move the news attachments onto the ids the posts were copied to.
+
+    pk_maps.get, not pk_maps["Post"]: upstream fills that key inside its
+    per-row loop, so a database that has the blog tables but no posts in them
+    never gets one, and asking for it directly would end the deployment with a
+    KeyError.
+    """
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    FileResource = apps.get_model("vitrina_cms", "FileResource")
+    remap_generic_relations(
+        FileResource,
+        source_content_type=ContentType.objects.get_for_model(source_model),
+        target_content_type=ContentType.objects.get_for_model(target_model),
+        object_id_map=pk_maps.get("Post", {}),
+    )
+
+
 def migrate_from_blog_to_stories(apps, schema_editor):
     original_copy_data = upstream.copy_data
 
@@ -16,16 +34,7 @@ def migrate_from_blog_to_stories(apps, schema_editor):
         if target_model._meta.label_lower != "djangocms_stories.post":
             return
 
-        ContentType = apps.get_model("contenttypes", "ContentType")
-        FileResource = apps.get_model("vitrina_cms", "FileResource")
-        source_content_type = ContentType.objects.get_for_model(source_model)
-        target_content_type = ContentType.objects.get_for_model(target_model)
-        remap_generic_relations(
-            FileResource,
-            source_content_type=source_content_type,
-            target_content_type=target_content_type,
-            object_id_map=pk_maps["Post"],
-        )
+        remap_file_resources(apps, pk_maps, source_model, target_model)
 
     upstream.copy_data = copy_data
     try:

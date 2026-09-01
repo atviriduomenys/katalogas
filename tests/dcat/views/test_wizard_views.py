@@ -121,6 +121,22 @@ class TestOrganizationWizardView:
             "organization-change", kwargs={"pk": org.pk}
         )
 
+    def test_resource_manager_pane_explains_the_missing_organization_form(self, app: DjangoTestApp):
+        # `x-init` selects the organization node at once, so the notice and the "loading a form"
+        # placeholder both have to key off that node rather than off an empty selection.
+        org = OrganizationFactory()
+        app.set_user(_representative(org, Representative.RESOURCE_MANAGER).user)
+
+        response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
+
+        pane = response.html.find(id="wizard-main-pane")
+        notice = pane.find("div", class_="notification")
+        assert notice is not None
+        assert notice["x-show"] == f"selected && selected.key === 'org:{org.pk}'"
+
+        placeholder = pane.find("div", attrs={"x-show": lambda v: v and v.startswith("mode === 'detail'")})
+        assert f"selected.key !== 'org:{org.pk}'" in placeholder["x-show"]
+
 
 class TestOrganizationDetailWizardButton:
     @pytest.mark.parametrize("role", [Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER])

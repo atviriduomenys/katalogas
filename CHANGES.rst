@@ -41,8 +41,11 @@ https://github.com/atviriduomenys/katalogas/issues/2791
   asked for it again on click, but ``Action.UPDATE`` on an organization belongs to the
   coordinators alone. A resource manager therefore got a redirect, which HTMX swapped into the
   pane as a whole organization page. The wizard now sends that request only for a user who holds
-  the right, and shows a short note in its place for everyone else. The bug predates this change,
-  but until now no resource manager had a button to reach it.
+  the right, and shows a short note in its place for everyone else. The note and the "loading a
+  form" placeholder both key off the organization node, because ``x-init`` selects that node as
+  soon as Alpine starts, so a condition on an empty selection would never hold and the pane would
+  sit on "Įkeliama forma..." for good. The bug predates this change, but until now no resource
+  manager had a button to reach it.
 
 
 

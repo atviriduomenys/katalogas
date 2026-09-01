@@ -177,13 +177,14 @@
                          {% endif %}>
 
                         {% if not can_update_organization %}
-                            <div class="notification is-light" x-show="!selected" x-cloak>
+                            <div class="notification is-light"
+                                 x-show="selected && selected.key === 'org:{{ organization.pk }}'" x-cloak>
                                 {% translate "Organizacijos duomenis redaguoja duomenų išteklių koordinatorius. Pasirinkite elementą medyje kairėje." %}
                             </div>
                         {% endif %}
 
                         {# Initial placeholder (replaced by HTMX on first select) #}
-                        <div x-show="mode === 'detail' && selected" x-cloak>
+                        <div x-show="mode === 'detail' && selected{% if not can_update_organization %} && selected.key !== 'org:{{ organization.pk }}'{% endif %}" x-cloak>
                             <header class="wizard-detail-header is-flex is-align-items-center mb-4">
                                 <span class="icon is-large has-text-grey-dark mr-3">
                                     <i class="fas fa-2x" :class="selected && selected.icon"></i>

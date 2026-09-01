@@ -10,6 +10,14 @@ from vitrina.users.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 
+# Every view of the wizard takes its access rules from `WizardAccessMixin`.
+WIZARD_URL_NAMES = [
+    "organization-wizard",
+    "organization-wizard-tree",
+    "organization-wizard-nodes",
+    "organization-wizard-create",
+]
+
 
 def _representative(org, role: str) -> Representative:
     return RepresentativeFactory(
@@ -20,19 +28,23 @@ def _representative(org, role: str) -> Representative:
 
 
 class TestOrganizationWizardView:
-    def test_unauthenticated_redirects_to_login(self, app: DjangoTestApp):
+    @pytest.mark.parametrize("url_name", WIZARD_URL_NAMES)
+    def test_unauthenticated_redirects_to_login(self, app: DjangoTestApp, url_name: str):
         org = OrganizationFactory()
+        url = reverse(url_name, kwargs={"pk": org.pk})
 
-        response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
+        response = app.get(url)
 
         assert response.status_code == 302
         assert settings.LOGIN_URL in response.location
+        assert url in response.location
 
-    def test_unrelated_user_is_redirected_to_organization(self, app: DjangoTestApp):
+    @pytest.mark.parametrize("url_name", WIZARD_URL_NAMES)
+    def test_unrelated_user_is_redirected_to_organization(self, app: DjangoTestApp, url_name: str):
         org = OrganizationFactory()
         app.set_user(UserFactory())
 
-        response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
+        response = app.get(reverse(url_name, kwargs={"pk": org.pk}))
 
         assert response.status_code == 302
         assert response.location == reverse("organization-detail", kwargs={"pk": org.pk})

@@ -27,6 +27,9 @@ https://github.com/atviriduomenys/katalogas/issues/2791
   An anonymous request now falls back to ``super().handle_no_permission()``, which keeps the
   ``next`` parameter, and an authenticated but unauthorized one still lands on the organization
   page. This matches ``OrganizationUpdateView``.
+- Gather the access rules of the four wizard views into ``WizardAccessMixin``. Each of them
+  carried its own copy of ``has_permission`` and ``handle_no_permission``, which is why the same
+  anonymous redirect bug sat in all four. The method resolution order does not change.
 
 
 

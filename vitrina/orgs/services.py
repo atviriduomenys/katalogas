@@ -538,7 +538,7 @@ def can_manage_is_metadata(user: User, organization: Organization) -> bool:
             user=user,
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization.pk,
-            role__in=sorted(Representative.RESOURCE_ROLE_KEYS),
+            role__in=Representative.RESOURCE_ROLE_KEYS,
         )
         .exclude(deleted=True)
         .exists()

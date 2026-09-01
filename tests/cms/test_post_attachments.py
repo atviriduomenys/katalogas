@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory
@@ -144,6 +146,43 @@ def test_moving_post_text_into_the_placeholder():
     ]
     # The article body goes in front of whatever was already there.
     assert bodies == ["<p>Senas tekstas</p>", "<p>Jau esamas</p>"]
+
+
+@pytest.mark.django_db
+def test_dry_run_says_the_real_run_would_refuse():
+    """A dry run has to predict the real one, not describe work it would refuse."""
+    from django.core.management import call_command
+    from djangocms_stories.cms_appconfig import StoriesConfig, config_defaults
+
+    config = StoriesConfig.objects.create(namespace="off", **{**config_defaults, "use_placeholder": False})
+    post = Post.objects.create(app_config=config)
+    PostContent.admin_manager.create(
+        post=post, title="Naujiena", slug="naujiena", language="lt", post_text="<p>Tekstas</p>"
+    )
+
+    out = StringIO()
+    call_command("migrate_post_text_to_placeholder", "--dry-run", stdout=out)
+
+    assert "would refuse" in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_dry_run_creates_no_placeholder():
+    """Reading PostContent.content creates the row, so a dry run must not."""
+    from cms.models import Placeholder
+    from django.core.management import call_command
+    from djangocms_stories.cms_appconfig import StoriesConfig, config_defaults
+
+    config = StoriesConfig.objects.create(namespace="on", **{**config_defaults, "use_placeholder": True})
+    post = Post.objects.create(app_config=config)
+    PostContent.admin_manager.create(
+        post=post, title="Naujiena", slug="naujiena", language="lt", post_text="<p>Tekstas</p>"
+    )
+    Placeholder.objects.all().delete()
+
+    call_command("migrate_post_text_to_placeholder", "--dry-run", stdout=StringIO())
+
+    assert not Placeholder.objects.exists()
 
 
 @pytest.mark.django_db

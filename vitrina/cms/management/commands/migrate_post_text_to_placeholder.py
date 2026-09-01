@@ -43,23 +43,26 @@ class Command(BaseCommand):
                 if not (post.post.app_config and post.post.app_config.use_placeholder)
             }
         )
-        if disabled and not dry_run:
-            raise CommandError(
+        if disabled:
+            message = (
                 "These app configs still have placeholder mode off: " + ", ".join(disabled) + ".\n"
                 "Their articles are rendered from post_text, which this command clears, so turn "
                 "use_placeholder on for them first - or the pages come out empty."
             )
+            if not dry_run:
+                raise CommandError(message)
+            # A dry run is supposed to predict the real one, so say that it would
+            # stop here rather than listing work that will never happen.
+            self.stdout.write(self.style.WARNING(f"[dry-run] The real run would refuse: {message}"))
         self.stdout.write(f"Found {posts.count()} post(s) with post_text content.")
 
         for post in posts:
             self.stdout.write(f"\nPost id={post.pk} '{post.title}' (language={post.language})")
             self.stdout.write(f"  post_text length: {len(post.post_text)}")
 
-            if not post.content:
-                self.stdout.write(self.style.WARNING("  No content placeholder — skipping."))
-                continue
-
             if dry_run:
+                # Before the placeholder is read, not after: reading it creates
+                # the row, and a dry run has no business writing anything.
                 self.stdout.write("  [dry-run] Would create TextPlugin and clear post_text.")
                 continue
 

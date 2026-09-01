@@ -140,6 +140,37 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
         objects.update(data, [pk_name])
         pbar.update(1)
 
+    _scrub_story_plugins(db)
+
+
+# Story bodies do not always live in a column. `migrate_post_text_to_placeholder`
+# moves them into text plugins and empties post_text, so from then on scrubbing
+# the column alone leaves the article itself in the dump. Only plugins hanging
+# off story content are touched; page content is a separate matter this script
+# has never covered.
+STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"), ("djangocms_blog", "post"))
+
+
+def _scrub_story_plugins(db: Database) -> None:
+    if "djangocms_text_text" not in db.tables:
+        return
+
+    conditions = " OR ".join(
+        f"(ct.app_label = '{app_label}' AND ct.model = '{model}')" for app_label, model in STORY_CONTENT_TYPES
+    )
+    db.query(
+        f"""
+        UPDATE djangocms_text_text SET body = '<p>example</p>'
+        WHERE cmsplugin_ptr_id IN (
+            SELECT plugin.id
+            FROM cms_cmsplugin plugin
+            JOIN cms_placeholder placeholder ON placeholder.id = plugin.placeholder_id
+            JOIN django_content_type ct ON ct.id = placeholder.content_type_id
+            WHERE {conditions}
+        )
+        """
+    )
+
 
 def _anonymize_djangocms_blog_post_translation(
     db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]

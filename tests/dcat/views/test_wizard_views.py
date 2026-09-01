@@ -122,20 +122,42 @@ class TestOrganizationWizardView:
         )
 
     def test_resource_manager_pane_explains_the_missing_organization_form(self, app: DjangoTestApp):
-        # `x-init` selects the organization node at once, so the notice and the "loading a form"
-        # placeholder both have to key off that node rather than off an empty selection.
+        # `x-init` selects the organization node at once, so the notice keys off that node rather
+        # than off an empty selection, and it sits outside `#wizard-main-pane` because an HTMX
+        # swap replaces everything inside that element.
         org = OrganizationFactory()
         app.set_user(_representative(org, Representative.RESOURCE_MANAGER).user)
 
         response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
 
-        pane = response.html.find(id="wizard-main-pane")
-        notice = pane.find("div", class_="notification")
+        notice = response.html.find(id="wizard-org-notice")
         assert notice is not None
-        assert notice["x-show"] == f"selected && selected.key === 'org:{org.pk}'"
+        assert notice["x-show"] == f"mode === 'detail' && selected && selected.key === 'org:{org.pk}'"
 
-        placeholder = pane.find("div", attrs={"x-show": lambda v: v and v.startswith("mode === 'detail'")})
-        assert f"selected.key !== 'org:{org.pk}'" in placeholder["x-show"]
+        pane = response.html.find(id="wizard-main-pane")
+        assert notice not in pane.find_all("div")
+        assert f"!(selected && selected.key === 'org:{org.pk}')" in pane["x-show"]
+
+    def test_resource_manager_can_return_to_the_organization_node(self, app: DjangoTestApp):
+        # Without a `select(...)` call the row only toggles the subtree, so a manager who opened a
+        # child form could never get the pane back to the organization state.
+        org = OrganizationFactory()
+        app.set_user(_representative(org, Representative.RESOURCE_MANAGER).user)
+
+        response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
+
+        root_row = response.html.find("li", class_="wizard-tree-root").find("div", class_="wizard-tree-row")
+        assert f"select('org:{org.pk}')" in root_row["@click.stop"]
+        assert root_row.get("hx-get") is None
+
+    def test_resource_coordinator_sees_no_organization_notice(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        app.set_user(_representative(org, Representative.RESOURCE_COORDINATOR).user)
+
+        response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
+
+        assert response.html.find(id="wizard-org-notice") is None
+        assert response.html.find(id="wizard-main-pane")["x-show"] == "mode !== 'create'"
 
 
 class TestOrganizationDetailWizardButton:

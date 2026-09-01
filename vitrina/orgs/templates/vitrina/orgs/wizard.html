@@ -122,10 +122,8 @@
                                  hx-target="#wizard-main-pane"
                                  hx-swap="innerHTML"
                                  hx-headers='{"X-Wizard-Request": "true"}'
-                                 @click.stop="select('org:{{ organization.pk }}'){% if wizard_tree %}; open = !open{% endif %}"
-                                 {% else %}
-                                 @click.stop="{% if wizard_tree %}open = !open{% endif %}"
-                                 {% endif %}>
+                                 {% endif %}
+                                 @click.stop="select('org:{{ organization.pk }}'){% if wizard_tree %}; open = !open{% endif %}">
                                 <span class="wizard-tree-caret has-text-grey"
                                       {% if wizard_tree %}
                                       :class="open ? 'is-open' : ''"
@@ -166,8 +164,19 @@
                 {# Right main pane — form fragments load here #}
                 <main class="column wizard-main">
 
+                    {% if not can_update_organization %}
+                    {# Lives outside `#wizard-main-pane`: an HTMX swap replaces everything inside it, so a
+                       notice kept in there would be gone the moment the first child form loads. #}
+                    <div id="wizard-org-notice" class="notification is-light"
+                         x-show="mode === 'detail' && selected && selected.key === 'org:{{ organization.pk }}'"
+                         x-cloak>
+                        {% translate "Organizacijos duomenis redaguoja duomenų išteklių koordinatorius. Pasirinkite elementą medyje kairėje." %}
+                    </div>
+                    {% endif %}
+
                     {# HTMX fragment target — auto-loads org form on page open for whoever may edit it #}
-                    <div id="wizard-main-pane" x-show="mode !== 'create'"
+                    <div id="wizard-main-pane"
+                         x-show="mode !== 'create'{% if not can_update_organization %} && !(selected && selected.key === 'org:{{ organization.pk }}'){% endif %}"
                          {% if can_update_organization %}
                          hx-get="{% url 'organization-change' pk=organization.pk %}"
                          hx-trigger="load"
@@ -176,15 +185,8 @@
                          hx-headers='{"X-Wizard-Request": "true"}'
                          {% endif %}>
 
-                        {% if not can_update_organization %}
-                            <div class="notification is-light"
-                                 x-show="selected && selected.key === 'org:{{ organization.pk }}'" x-cloak>
-                                {% translate "Organizacijos duomenis redaguoja duomenų išteklių koordinatorius. Pasirinkite elementą medyje kairėje." %}
-                            </div>
-                        {% endif %}
-
                         {# Initial placeholder (replaced by HTMX on first select) #}
-                        <div x-show="mode === 'detail' && selected{% if not can_update_organization %} && selected.key !== 'org:{{ organization.pk }}'{% endif %}" x-cloak>
+                        <div x-show="mode === 'detail' && selected" x-cloak>
                             <header class="wizard-detail-header is-flex is-align-items-center mb-4">
                                 <span class="icon is-large has-text-grey-dark mr-3">
                                     <i class="fas fa-2x" :class="selected && selected.icon"></i>

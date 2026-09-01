@@ -101,6 +101,26 @@ class TestOrganizationWizardView:
 
         assert response.status_code == 200
 
+    def test_resource_manager_pane_does_not_ask_for_the_organization_form(self, app: DjangoTestApp):
+        # `Action.UPDATE` on an organization belongs to the coordinators, so asking for that
+        # fragment would answer a redirect that HTMX swaps into the pane as a whole page.
+        org = OrganizationFactory()
+        app.set_user(_representative(org, Representative.RESOURCE_MANAGER).user)
+
+        response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
+
+        assert response.html.find(id="wizard-main-pane").get("hx-get") is None
+
+    def test_resource_coordinator_pane_asks_for_the_organization_form(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        app.set_user(_representative(org, Representative.RESOURCE_COORDINATOR).user)
+
+        response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
+
+        assert response.html.find(id="wizard-main-pane").get("hx-get") == reverse(
+            "organization-change", kwargs={"pk": org.pk}
+        )
+
 
 class TestOrganizationDetailWizardButton:
     @pytest.mark.parametrize("role", [Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER])

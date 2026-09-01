@@ -36,6 +36,13 @@ https://github.com/atviriduomenys/katalogas/issues/2791
   everything, so such a user reaches the forms through a direct URL but sees no button. The
   three roles above are the ones the team asked for; the docstring of ``can_manage_is_metadata``
   records the open question.
+- Stop the wizard asking for the organization form on behalf of a user who may not edit the
+  organization. The pane loaded ``organization-change`` on open, and the root node of the tree
+  asked for it again on click, but ``Action.UPDATE`` on an organization belongs to the
+  coordinators alone. A resource manager therefore got a redirect, which HTMX swapped into the
+  pane as a whole organization page. The wizard now sends that request only for a user who holds
+  the right, and shows a short note in its place for everyone else. The bug predates this change,
+  but until now no resource manager had a button to reach it.
 
 
 

@@ -112,13 +112,20 @@
                         </li>
                         <li class="wizard-tree-node wizard-tree-root" x-data="{ open: true }"
                             @treetoggleall.window="if ($event.detail) open = true">
+                            {# The organization form belongs to `Action.UPDATE` on the organization, which the
+                               resource manager does not hold. Asking for it anyway answers a redirect to the
+                               organization page, and HTMX swaps that whole page into the pane. #}
                             <div class="wizard-tree-row is-flex is-align-items-center"
                                  :class="selected && selected.key === 'org:{{ organization.pk }}' && mode === 'detail' ? 'is-active' : ''"
+                                 {% if can_update_organization %}
                                  hx-get="{% url 'organization-change' pk=organization.pk %}"
                                  hx-target="#wizard-main-pane"
                                  hx-swap="innerHTML"
                                  hx-headers='{"X-Wizard-Request": "true"}'
-                                 @click.stop="select('org:{{ organization.pk }}'){% if wizard_tree %}; open = !open{% endif %}">
+                                 @click.stop="select('org:{{ organization.pk }}'){% if wizard_tree %}; open = !open{% endif %}"
+                                 {% else %}
+                                 @click.stop="{% if wizard_tree %}open = !open{% endif %}"
+                                 {% endif %}>
                                 <span class="wizard-tree-caret has-text-grey"
                                       {% if wizard_tree %}
                                       :class="open ? 'is-open' : ''"
@@ -159,13 +166,21 @@
                 {# Right main pane — form fragments load here #}
                 <main class="column wizard-main">
 
-                    {# HTMX fragment target — auto-loads org form on page open #}
+                    {# HTMX fragment target — auto-loads org form on page open for whoever may edit it #}
                     <div id="wizard-main-pane" x-show="mode !== 'create'"
+                         {% if can_update_organization %}
                          hx-get="{% url 'organization-change' pk=organization.pk %}"
                          hx-trigger="load"
                          hx-target="#wizard-main-pane"
                          hx-swap="innerHTML"
-                         hx-headers='{"X-Wizard-Request": "true"}'>
+                         hx-headers='{"X-Wizard-Request": "true"}'
+                         {% endif %}>
+
+                        {% if not can_update_organization %}
+                            <div class="notification is-light" x-show="!selected" x-cloak>
+                                {% translate "Organizacijos duomenis redaguoja duomenų išteklių koordinatorius. Pasirinkite elementą medyje kairėje." %}
+                            </div>
+                        {% endif %}
 
                         {# Initial placeholder (replaced by HTMX on first select) #}
                         <div x-show="mode === 'detail' && selected" x-cloak>

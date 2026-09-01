@@ -523,15 +523,22 @@ def is_supervisor(user: User, node: Model) -> bool:
     return False
 
 
-def is_organization_resource_manager(user: User, organization: Organization) -> bool:
+def can_manage_is_metadata(user: User, organization: Organization) -> bool:
+    """Who may open the IS metadata wizard of an organization.
+
+    Superusers, plus the resource coordinators and the resource managers of that
+    organization. The wizard forms themselves guard each object through ``has_perm``.
+    """
     if not user.is_authenticated:
         return False
+    if user.is_superuser:
+        return True
     return (
         Representative.objects.filter(
             user=user,
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization.pk,
-            role=Representative.RESOURCE_MANAGER,
+            role__in=sorted(Representative.RESOURCE_ROLE_KEYS),
         )
         .exclude(deleted=True)
         .exists()

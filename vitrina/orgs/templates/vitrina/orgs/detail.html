@@ -29,15 +29,16 @@
                 <div class="column">
                     <h2 class="custom-title is-size-4-mobile no-margin-bottom">{{ organization.title }}</h2>
                 </div>
-				{% if can_update_organization %}
+				{% if can_manage_is_metadata or can_update_organization %}
 					<div class="column buttons is-one-third">
-						{% if is_information_system_administrator %}
+						{% if can_manage_is_metadata %}
 							<a href="{% url 'organization-wizard' pk=organization.id %}"
 							   class="button is-primary is-normal is-fullwidth m-t-md is-size-6-mobile"
 							   id="open_organization_wizard">
 								{% translate "Tvarkyti IS metaduomenis" %}
 							</a>
-						{% else %}
+						{% endif %}
+						{% if can_update_organization %}
                             <a href="{%url 'organization-change' pk=organization.id %}"
                                class="button is-primary is-normal is-fullwidth m-t-md is-size-6-mobile"
                                id="change_organization">

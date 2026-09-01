@@ -4,6 +4,24 @@ Changes
 v 1.25.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2791
+
+- Show the "Tvarkyti IS metaduomenis" button, and open the IS metadata wizard, for every role that
+  the wizard already allows: the resource coordinator, the resource manager and the superuser.
+  Until now the button asked for two conditions that no single role met. The resource manager
+  passed the wizard check but failed ``can_update_organization``, because updating a
+  ``Representative`` is a coordinator right, so the button was never rendered for them. The
+  resource coordinator and the superuser passed ``can_update_organization`` but failed the wizard
+  check, which asked for the ``resource_manager`` role alone, so they were shown the "Redaguoti
+  organizaciją" button instead. Nobody saw the wizard.
+- The ACL of the wizard forms already granted ``CREATE_WIZARD``, ``UPDATE_WIZARD`` and
+  ``DELETE_WIZARD`` to both resource roles, and ``has_perm`` already granted everything to a
+  superuser, so this change opens the wizard shell to the users its forms already accepted.
+- Replace ``is_organization_resource_manager`` with ``can_manage_is_metadata``, and rename the
+  template flag ``is_information_system_administrator`` to ``can_manage_is_metadata``.
+- The organization page now shows both buttons where both apply: a resource coordinator gets
+  "Tvarkyti IS metaduomenis" and "Redaguoti organizaciją".
+
 
 
 v 1.24.0 (2026-08-21)

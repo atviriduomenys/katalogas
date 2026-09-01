@@ -528,6 +528,15 @@ def can_manage_is_metadata(user: User, organization: Organization) -> bool:
 
     Superusers, plus the resource coordinators and the resource managers of that
     organization. The wizard forms themselves guard each object through ``has_perm``.
+
+    A staff account that is not a superuser is deliberately left out, and this is the one
+    place where the shell is narrower than the forms behind it. ``determine_user_role`` maps
+    ``is_staff`` to ``Role.GLOBAL_MANAGER``, every wizard ACL rule lists that role, and
+    ``has_perm`` returns ``True`` for staff outright, so such a user can post to the wizard
+    forms through a direct URL while the button and the shell stay closed to them (see
+    ``test_dataset_create_wizard_permission_global_manager``). The three roles above are the
+    ones the team asked for; whether the global manager joins them is an open question, so
+    widen this helper rather than working around it if the answer turns out to be yes.
     """
     if not user.is_authenticated:
         return False

@@ -30,6 +30,12 @@ https://github.com/atviriduomenys/katalogas/issues/2791
 - Gather the access rules of the four wizard views into ``WizardAccessMixin``. Each of them
   carried its own copy of ``has_permission`` and ``handle_no_permission``, which is why the same
   anonymous redirect bug sat in all four. The method resolution order does not change.
+- A staff account that is not a superuser stays outside the wizard shell for now, which leaves it
+  narrower than the forms it opens: ``determine_user_role`` maps ``is_staff`` to
+  ``Role.GLOBAL_MANAGER``, every wizard ACL rule lists that role, and ``has_perm`` grants staff
+  everything, so such a user reaches the forms through a direct URL but sees no button. The
+  three roles above are the ones the team asked for; the docstring of ``can_manage_is_metadata``
+  records the open question.
 
 
 

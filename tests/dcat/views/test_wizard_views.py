@@ -69,6 +69,10 @@ class TestOrganizationWizardView:
         assert response.location == reverse("organization-detail", kwargs={"pk": org.pk})
 
     def test_deleted_representative_is_redirected(self, app: DjangoTestApp):
+        # Only the shell is closed to a soft-deleted representative. `has_perm` ignores the
+        # `deleted` flag, so the forms behind the shell still answer such a row. Nothing in the
+        # code sets the flag today (the member views delete the row), so this guards the helper,
+        # not a live revocation path.
         org = OrganizationFactory()
         rep = _representative(org, Representative.RESOURCE_MANAGER)
         rep.deleted = True

@@ -37,6 +37,8 @@ class OrganizationWizardView(
         return can_manage_is_metadata(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
         return redirect("organization-detail", pk=self.organization.pk)
 
     def get_context_data(self, **kwargs) -> dict:
@@ -73,6 +75,8 @@ class OrganizationWizardTreeView(
         return can_manage_is_metadata(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
         return redirect("organization-detail", pk=self.organization.pk)
 
     def get_context_data(self, **kwargs) -> dict:
@@ -92,6 +96,8 @@ class OrganizationWizardNodesView(
         return can_manage_is_metadata(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
         return redirect("organization-detail", pk=self.organization.pk)
 
     def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
@@ -109,6 +115,8 @@ class OrganizationWizardCreateRedirectView(
         return can_manage_is_metadata(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
         return redirect("organization-detail", pk=self.organization.pk)
 
     def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:

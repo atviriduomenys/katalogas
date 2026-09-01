@@ -21,6 +21,12 @@ https://github.com/atviriduomenys/katalogas/issues/2791
   template flag ``is_information_system_administrator`` to ``can_manage_is_metadata``.
 - The organization page now shows both buttons where both apply: a resource coordinator gets
   "Tvarkyti IS metaduomenis" and "Redaguoti organizaciją".
+- Send a logged out visitor of a wizard URL to the login page again. Every wizard view overrode
+  ``handle_no_permission`` unconditionally, and ``LoginRequiredMixin`` routes an anonymous request
+  through that same method, so the login flow was replaced by a redirect to the organization page.
+  An anonymous request now falls back to ``super().handle_no_permission()``, which keeps the
+  ``next`` parameter, and an authenticated but unauthorized one still lands on the organization
+  page. This matches ``OrganizationUpdateView``.
 
 
 

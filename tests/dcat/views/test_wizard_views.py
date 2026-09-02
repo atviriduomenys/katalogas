@@ -180,12 +180,44 @@ class TestOrganizationDetailWizardButton:
 
         assert response.html.find(id="open_organization_wizard") is not None
 
-    def test_coordinator_still_sees_organization_edit_button(self, app: DjangoTestApp):
+    @pytest.mark.parametrize("role", [Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER])
+    def test_resource_role_does_not_see_organization_edit_button(self, app: DjangoTestApp, role: str):
+        # The resource roles describe the organization through the wizard, so the organization
+        # form is not offered to them here even though the coordinator holds `Action.UPDATE`.
         org = OrganizationFactory()
-        app.set_user(_representative(org, Representative.RESOURCE_COORDINATOR).user)
+        app.set_user(_representative(org, role).user)
 
         response = app.get(reverse("organization-detail", kwargs={"pk": org.pk}))
 
+        assert response.html.find(id="change_organization") is None
+
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.OPEN_DATA_MANAGER,
+            Representative.OPEN_DATA_PUBLISHER,
+        ],
+    )
+    def test_open_data_roles_keep_what_they_had(self, app: DjangoTestApp, role: str):
+        # Only the coordinator among them may update the organization, and this branch changes
+        # nothing for any of the three.
+        org = OrganizationFactory()
+        app.set_user(_representative(org, role).user)
+
+        response = app.get(reverse("organization-detail", kwargs={"pk": org.pk}))
+
+        expected = role == Representative.OPEN_DATA_COORDINATOR
+        assert (response.html.find(id="change_organization") is not None) is expected
+        assert response.html.find(id="open_organization_wizard") is None
+
+    def test_superuser_sees_both_buttons(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        app.set_user(UserFactory(is_superuser=True))
+
+        response = app.get(reverse("organization-detail", kwargs={"pk": org.pk}))
+
+        assert response.html.find(id="open_organization_wizard") is not None
         assert response.html.find(id="change_organization") is not None
 
     def test_unrelated_user_sees_no_button(self, app: DjangoTestApp):

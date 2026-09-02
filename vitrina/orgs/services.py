@@ -554,6 +554,42 @@ def can_manage_is_metadata(user: User, organization: Organization) -> bool:
     )
 
 
+def _direct_organization_roles(user: User, organization: Organization) -> set[str]:
+    """The roles this user holds on the organization itself, ignoring revoked rows."""
+    return set(
+        Representative.objects.filter(
+            user=user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization.pk,
+        )
+        .exclude(deleted=True)
+        .values_list("role", flat=True)
+    )
+
+
+def can_edit_organization_details(user: User, organization: Organization) -> bool:
+    """Who sees the "Redaguoti organizaciją" button on the organization page.
+
+    The resource coordinator holds ``Action.UPDATE``, but the team asked that neither of the
+    resource roles be offered the organization form there: they describe the organization
+    through the IS metadata wizard instead. The open data roles keep exactly the access they
+    had, and a superuser keeps both buttons.
+
+    The wizard itself still asks ``can_update_organization``, because that is the right
+    ``OrganizationUpdateView`` checks when its root node loads the form.
+    """
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    if not has_perm(user, Action.UPDATE, Representative, organization):
+        return False
+    roles = _direct_organization_roles(user, organization)
+    # Hidden only when every role they hold here is a resource one; holding an open data role
+    # as well leaves that role's access untouched.
+    return not (roles and roles <= Representative.RESOURCE_ROLE_KEYS)
+
+
 def is_manager(user: User, node: Model) -> bool:
     if isinstance(node, Organization):
         for rep in user.representative_set.all():

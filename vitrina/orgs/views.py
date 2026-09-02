@@ -105,6 +105,7 @@ from vitrina.orgs.services import (
     has_perm,
     Action,
     hash_api_key,
+    can_edit_organization_details,
     can_manage_is_metadata,
     manage_subscriptions_for_representative,
     pre_representative_delete,
@@ -144,6 +145,9 @@ class OrganizationBaseViewMixin:
             self.request.user, Action.UPDATE, Representative, self.organization
         )
         context_data["can_manage_is_metadata"] = can_manage_is_metadata(self.request.user, self.organization)
+        context_data["can_edit_organization_details"] = can_edit_organization_details(
+            self.request.user, self.organization
+        )
         context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         context_data["organization"] = self.organization

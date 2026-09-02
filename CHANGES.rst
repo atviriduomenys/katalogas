@@ -30,12 +30,13 @@ https://github.com/atviriduomenys/katalogas/issues/2791
 - Gather the access rules of the four wizard views into ``WizardAccessMixin``. Each of them
   carried its own copy of ``has_permission`` and ``handle_no_permission``, which is why the same
   anonymous redirect bug sat in all four. The method resolution order does not change.
-- A staff account that is not a superuser stays outside the wizard shell for now, which leaves it
-  narrower than the forms it opens: ``determine_user_role`` maps ``is_staff`` to
-  ``Role.GLOBAL_MANAGER``, every wizard ACL rule lists that role, and ``has_perm`` grants staff
-  everything, so such a user reaches the forms through a direct URL but sees no button. The
-  three roles above are the ones the team asked for; the docstring of ``can_manage_is_metadata``
-  records the open question.
+- A staff account that is not a superuser stays outside the wizard shell. The team weighed
+  ``is_staff``, the global manager, and settled on ``is_superuser``, which the two
+  administrators who need the wizard both hold. That leaves the shell narrower than the forms it
+  opens: ``determine_user_role`` maps ``is_staff`` to ``Role.GLOBAL_MANAGER``, every wizard ACL
+  rule lists that role, and ``has_perm`` grants staff everything, so such a user reaches the
+  forms through a direct URL but sees no button. The docstring of ``can_manage_is_metadata``
+  records the decision.
 - Keep the "Redaguoti organizaciją" button away from the two resource roles, so that the
   organization form is offered in one place rather than two: the wizard already opens it from
   its root node. The resource coordinator keeps the right itself and still edits the

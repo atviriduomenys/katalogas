@@ -36,14 +36,13 @@ https://github.com/atviriduomenys/katalogas/issues/2791
   everything, so such a user reaches the forms through a direct URL but sees no button. The
   three roles above are the ones the team asked for; the docstring of ``can_manage_is_metadata``
   records the open question.
-- Keep the "Redaguoti organizaciją" button away from the two resource roles. The resource
-  coordinator holds ``Action.UPDATE`` and so was offered it, but the team asked that both
-  resource roles describe the organization through the IS metadata wizard instead. A new
-  ``can_edit_organization_details`` decides that button, and it hides it only when every role
-  the user holds on that organization is a resource one. The open data roles keep exactly the
-  access they had, a superuser keeps both buttons, and no ACL changes: the wizard still asks
-  ``can_update_organization`` when its root node loads the organization form, because that is
-  the right ``OrganizationUpdateView`` checks.
+- Keep the "Redaguoti organizaciją" button away from the two resource roles, so that the
+  organization form is offered in one place rather than two: the wizard already opens it from
+  its root node. The resource coordinator keeps the right itself and still edits the
+  organization there. A new ``can_edit_organization_details`` decides the button, and hides it
+  only when every role the user holds on that organization is a resource one, so a user who
+  also holds an open data role there keeps what that role gave them. The open data roles keep
+  exactly the access they had, a superuser keeps both buttons, and no ACL rule moves.
 - Stop the wizard asking for the organization form on behalf of a user who may not edit the
   organization. The pane loaded ``organization-change`` on open, and the root node of the tree
   asked for it again on click, but ``Action.UPDATE`` on an organization belongs to the

@@ -182,8 +182,8 @@ class TestOrganizationDetailWizardButton:
 
     @pytest.mark.parametrize("role", [Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER])
     def test_resource_role_does_not_see_organization_edit_button(self, app: DjangoTestApp, role: str):
-        # The resource roles describe the organization through the wizard, so the organization
-        # form is not offered to them here even though the coordinator holds `Action.UPDATE`.
+        # Removed from this page so the same form is not offered twice: the wizard opens it from
+        # its root node. The coordinator keeps `Action.UPDATE` and still edits it there.
         org = OrganizationFactory()
         app.set_user(_representative(org, role).user)
 

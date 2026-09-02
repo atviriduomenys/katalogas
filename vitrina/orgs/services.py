@@ -570,13 +570,13 @@ def _direct_organization_roles(user: User, organization: Organization) -> set[st
 def can_edit_organization_details(user: User, organization: Organization) -> bool:
     """Who sees the "Redaguoti organizaciją" button on the organization page.
 
-    The resource coordinator holds ``Action.UPDATE``, but the team asked that neither of the
-    resource roles be offered the organization form there: they describe the organization
-    through the IS metadata wizard instead. The open data roles keep exactly the access they
-    had, and a superuser keeps both buttons.
+    The resource coordinator holds ``Action.UPDATE`` and keeps it: the button is gone from this
+    page only so that the same organization form is not offered twice, since the wizard already
+    opens it from its root node. This is a matter of where the form is reached from, not of who
+    may edit the organization, so no ACL rule moves and the wizard still asks
+    ``can_update_organization`` when its root node loads the form.
 
-    The wizard itself still asks ``can_update_organization``, because that is the right
-    ``OrganizationUpdateView`` checks when its root node loads the form.
+    The open data roles keep exactly the access they had, and a superuser keeps both buttons.
     """
     if not user.is_authenticated:
         return False

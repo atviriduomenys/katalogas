@@ -6,61 +6,28 @@ v 1.25.0 (current)
 
 https://github.com/atviriduomenys/katalogas/issues/2791
 
-- Show the "Tvarkyti IS metaduomenis" button, and open the IS metadata wizard, for every role that
-  the wizard already allows: the resource coordinator, the resource manager and the superuser.
-  Until now the button asked for two conditions that no single role met. The resource manager
-  passed the wizard check but failed ``can_update_organization``, because updating a
-  ``Representative`` is a coordinator right, so the button was never rendered for them. The
-  resource coordinator and the superuser passed ``can_update_organization`` but failed the wizard
-  check, which asked for the ``resource_manager`` role alone, so they were shown the "Redaguoti
-  organizaciją" button instead. Nobody saw the wizard.
-- The ACL of the wizard forms already granted ``CREATE_WIZARD``, ``UPDATE_WIZARD`` and
-  ``DELETE_WIZARD`` to both resource roles, and ``has_perm`` already granted everything to a
-  superuser, so this change opens the wizard shell to the users its forms already accepted.
-- Replace ``is_organization_resource_manager`` with ``can_manage_is_metadata``, and rename the
-  template flag ``is_information_system_administrator`` to ``can_manage_is_metadata``.
-- The organization page now shows both buttons where both apply: a resource coordinator gets
-  "Tvarkyti IS metaduomenis" and "Redaguoti organizaciją".
-- Send a logged out visitor of a wizard URL to the login page again. Every wizard view overrode
-  ``handle_no_permission`` unconditionally, and ``LoginRequiredMixin`` routes an anonymous request
-  through that same method, so the login flow was replaced by a redirect to the organization page.
-  An anonymous request now falls back to ``super().handle_no_permission()``, which keeps the
-  ``next`` parameter, and an authenticated but unauthorized one still lands on the organization
-  page. This matches ``OrganizationUpdateView``.
-- Gather the access rules of the four wizard views into ``WizardAccessMixin``. Each of them
-  carried its own copy of ``has_permission`` and ``handle_no_permission``, which is why the same
-  anonymous redirect bug sat in all four. The method resolution order does not change.
-- A staff account that is not a superuser stays outside the wizard shell. The team weighed
-  ``is_staff``, the global manager, and settled on ``is_superuser``, which the two
-  administrators who need the wizard both hold. That leaves the shell narrower than the forms it
-  opens: ``determine_user_role`` maps ``is_staff`` to ``Role.GLOBAL_MANAGER``, every wizard ACL
-  rule lists that role, and ``has_perm`` grants staff everything, so such a user reaches the
-  forms through a direct URL but sees no button. The docstring of ``can_manage_is_metadata``
-  records the decision.
-- Keep the "Redaguoti organizaciją" button away from the two resource roles, so that the
-  organization form is offered in one place rather than two: the wizard already opens it from
-  its root node. The resource coordinator keeps the right itself and still edits the
-  organization there. A new ``can_edit_organization_details`` decides the button, and hides it
-  only when every role the user holds on that organization is a resource one, so a user who
-  also holds an open data role there keeps what that role gave them. The open data roles keep
-  exactly the access they had, a superuser keeps both buttons, and no ACL rule moves.
-- Stop the wizard asking for the organization form on behalf of a user who may not edit the
-  organization. The pane loaded ``organization-change`` on open, and the root node of the tree
-  asked for it again on click, but ``Action.UPDATE`` on an organization belongs to the
-  coordinators alone. A resource manager therefore got a redirect, which HTMX swapped into the
-  pane as a whole organization page. The wizard now sends that request only for a user who holds
-  the right, and shows a short note in its place for everyone else. That note keys off the
-  organization node, because ``x-init`` selects that node as soon as Alpine starts, and it lives
-  outside ``#wizard-main-pane``, because an HTMX swap replaces everything inside that element and
-  would carry the note away with the first child form. The pane itself hides while the
-  organization node is the selected one, and the root row still calls ``select(...)``, so a
-  resource manager can leave a child form and come back to the organization state. The bug
-  predates this change, but until now no resource manager had a button to reach it.
+- Show the "Tvarkyti IS metaduomenis" button and open the IS metadata wizard for the resource
+  coordinator, the resource manager and the superuser. The button asked for two conditions that
+  no single role met, so nobody reached the wizard, even though its forms already accepted these
+  users through ``has_perm`` and the wizard ACL. Only the shell was closed.
+- Do not offer "Redaguoti organizaciją" to the two resource roles, so the organization form is
+  reached from one place rather than two: the wizard already opens it from its root node. The
+  resource coordinator keeps the right and still edits the organization there. Nothing changes
+  for the open data roles, and no ACL rule moves.
+- A staff account that is not a superuser stays outside the wizard. The team weighed ``is_staff``
+  and settled on ``is_superuser``, which both administrators who need the wizard hold. ``has_perm``
+  still grants staff the wizard forms through a direct URL, so the shell is narrower than the
+  forms behind it; the docstring of ``can_manage_is_metadata`` records the decision.
+- Send a logged out visitor of a wizard URL to the login page again, with the ``next`` parameter
+  intact. Every wizard view overrode ``handle_no_permission`` unconditionally, and
+  ``LoginRequiredMixin`` routes an anonymous request through that same method.
+- Stop the wizard requesting the organization form for a user who may not edit the organization:
+  it answered a redirect that HTMX swapped into the pane as a whole page. A short note takes its
+  place, and the root node still returns the pane to the organization state.
+- Replace ``is_organization_resource_manager`` with ``can_manage_is_metadata``, add
+  ``can_edit_organization_details``, and gather the four wizard views' access rules into
+  ``WizardAccessMixin``.
 
-
-
-v 1.24.0 (2026-08-21)
-==================
 
 https://github.com/atviriduomenys/katalogas/issues/2785
 

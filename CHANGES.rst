@@ -29,6 +29,9 @@ https://github.com/atviriduomenys/katalogas/issues/2791
   ``WizardAccessMixin``.
 
 
+v 1.24.0 (2026-08-21)
+==================
+
 https://github.com/atviriduomenys/katalogas/issues/2785
 
 - Bump `spinta` version `1.0.0` -> `1.1.0`.

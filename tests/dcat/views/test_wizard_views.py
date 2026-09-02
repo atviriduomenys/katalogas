@@ -132,6 +132,8 @@ class TestOrganizationWizardView:
 
         notice = response.html.find(id="wizard-org-notice")
         assert notice is not None
+        # Django renders a `{# #}` comment that spans lines as plain text, so guard against one.
+        assert "{#" not in response.text and "{% comment" not in response.text
         assert notice["x-show"] == f"mode === 'detail' && selected && selected.key === 'org:{org.pk}'"
 
         pane = response.html.find(id="wizard-main-pane")

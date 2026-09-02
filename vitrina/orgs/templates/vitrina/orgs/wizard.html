@@ -112,9 +112,11 @@
                         </li>
                         <li class="wizard-tree-node wizard-tree-root" x-data="{ open: true }"
                             @treetoggleall.window="if ($event.detail) open = true">
-                            {# The organization form belongs to `Action.UPDATE` on the organization, which the
-                               resource manager does not hold. Asking for it anyway answers a redirect to the
-                               organization page, and HTMX swaps that whole page into the pane. #}
+                            {% comment %}
+                                The organization form belongs to `Action.UPDATE` on the organization, which
+                                the resource manager does not hold. Asking for it anyway answers a redirect
+                                to the organization page, and HTMX swaps that whole page into the pane.
+                            {% endcomment %}
                             <div class="wizard-tree-row is-flex is-align-items-center"
                                  :class="selected && selected.key === 'org:{{ organization.pk }}' && mode === 'detail' ? 'is-active' : ''"
                                  {% if can_update_organization %}
@@ -165,8 +167,10 @@
                 <main class="column wizard-main">
 
                     {% if not can_update_organization %}
-                    {# Lives outside `#wizard-main-pane`: an HTMX swap replaces everything inside it, so a
-                       notice kept in there would be gone the moment the first child form loads. #}
+                    {% comment %}
+                        Lives outside `#wizard-main-pane`: an HTMX swap replaces everything inside it, so a
+                        notice kept in there would be gone the moment the first child form loads.
+                    {% endcomment %}
                     <div id="wizard-org-notice" class="notification is-light"
                          x-show="mode === 'detail' && selected && selected.key === 'org:{{ organization.pk }}'"
                          x-cloak>

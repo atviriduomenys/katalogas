@@ -4,6 +4,10 @@ Changes
 v 1.25.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2793
+
+- Upgrade PostgreSQL from `14` to `18`.
+
 
 
 v 1.24.0 (2026-08-21)

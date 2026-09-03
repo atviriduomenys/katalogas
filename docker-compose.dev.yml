@@ -24,11 +24,13 @@ services:
       - /tmp/static:/app/static:Z
 
   katalogas-database:
-    image: postgres:16
+    image: postgres:18
     environment:
       - POSTGRES_DB=katalogas
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin123
+      # postgres:18 changed the image default to /var/lib/postgresql/18/docker.
+      - PGDATA=/var/lib/postgresql/data
     volumes:
       - postgres:/var/lib/postgresql/data
 

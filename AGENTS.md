@@ -1,6 +1,6 @@
 # AGENTS.md — Katalogas (data.gov.lt)
 
-Lithuania's open data catalogue. Django 4.2 / Python 3.11 / django-cms / PostgreSQL 14.
+Lithuania's open data catalogue. Django 4.2 / Python 3.11 / django-cms / PostgreSQL 18.
 
 ## Specifications implemented
 

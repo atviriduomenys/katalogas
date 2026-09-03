@@ -556,40 +556,27 @@ def can_manage_is_metadata(user: User, organization: Organization) -> bool:
     )
 
 
-def _direct_organization_roles(user: User, organization: Organization) -> set[str]:
-    """The roles this user holds on the organization itself, ignoring revoked rows."""
-    return set(
-        Representative.objects.filter(
-            user=user,
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=organization.pk,
-        )
-        .exclude(deleted=True)
-        .values_list("role", flat=True)
-    )
-
-
 def can_edit_organization_details(user: User, organization: Organization) -> bool:
     """Who sees the "Redaguoti organizaciją" button on the organization page.
 
-    The resource coordinator holds ``Action.UPDATE`` and keeps it: the button is gone from this
-    page only so that the same organization form is not offered twice, since the wizard already
-    opens it from its root node. This is a matter of where the form is reached from, not of who
-    may edit the organization, so no ACL rule moves and the wizard still asks
-    ``can_update_organization`` when its root node loads the form.
+    Anyone who may update the organization, except the people who already reach that same form
+    from the wizard's root node: the button is gone from this page only so the form is offered
+    in one place rather than two. Nobody loses access, and no ACL rule moves. A superuser keeps
+    both buttons, which is what the team asked for.
 
-    The open data roles keep exactly the access they had, and a superuser keeps both buttons.
+    Asking ``can_manage_is_metadata`` rather than listing roles keeps this in step with the
+    wizard by construction, however a user came by their access — a direct role, an
+    organizational one, or a flag. The permission asked for is ``Action.UPDATE`` on the
+    organization, which is what ``OrganizationUpdateView`` itself checks, so the button and the
+    form it leads to cannot drift apart.
     """
     if not user.is_authenticated:
         return False
     if user.is_superuser:
         return True
-    if not has_perm(user, Action.UPDATE, Representative, organization):
+    if not has_perm(user, Action.UPDATE, organization):
         return False
-    roles = _direct_organization_roles(user, organization)
-    # Hidden only when every role they hold here is a resource one; holding an open data role
-    # as well leaves that role's access untouched.
-    return not (roles and roles <= Representative.RESOURCE_ROLE_KEYS)
+    return not can_manage_is_metadata(user, organization)
 
 
 def is_manager(user: User, node: Model) -> bool:

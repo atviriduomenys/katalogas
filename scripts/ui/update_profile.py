@@ -3,8 +3,6 @@
 Starts from an empty portal; nothing has to exist first.
 """
 
-import re
-
 from playwright.sync_api import Page, Playwright, sync_playwright
 from utils import browser_page
 
@@ -25,13 +23,13 @@ PROFILE_DATA = {
 def open_user_menu(page: Page) -> None:
     """Open the user dropdown menu.
 
-    The link carries the display name, which reads "None None" until this
-    script has run once and the configured name afterwards, so accept both -
-    otherwise a second run finds nothing to click.
+    The link carries the display name, which is whatever the account already
+    has - "None None" on a fresh one, a real name on an account someone has
+    used. Naming them all is a losing game, so key off the menu instead: it is
+    the one holding the profile link.
     """
-    names = ["None None", "{first_name} {last_name}".format(**PROFILE_DATA)]
-    pattern = re.compile(r"^(%s)$" % "|".join(re.escape(name) for name in names))
-    page.locator("a").filter(has_text=pattern).click()
+    menu = page.locator(".navbar-item.has-dropdown").filter(has=page.get_by_role("link", name="Profilis"))
+    menu.locator("a.navbar-link").click()
 
 
 def go_to_profile(page: Page) -> None:

@@ -132,9 +132,14 @@ def upload_images_to_blog(page: Page, image_paths: list[str]) -> None:
 
 
 def view_blog_post(page: Page) -> None:
-    """Navigate to view the published blog post."""
+    """Navigate to view the published blog post.
+
+    By title, not by the read-more link: the list renders that as "Skaityti
+    daugiau...", and once the other scripts have added their stories there is
+    one on every entry anyway.
+    """
     page.get_by_label("breadcrumbs").get_by_role("link", name="Naujienos").click()
-    page.get_by_role("link", name="skaityti daugiau »").click()
+    page.get_by_role("link", name=BLOG_DATA["title"]).click()
     page.wait_for_load_state("networkidle")
 
 

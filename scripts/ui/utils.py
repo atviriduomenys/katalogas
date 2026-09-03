@@ -71,12 +71,14 @@ def browser_page(playwright: Playwright):
     wide enough for the admin and some not.
     """
     browser = playwright.chromium.launch(headless=HEADLESS, slow_mo=SLOW_MO)
-    context = browser.new_context(viewport=VIEWPORT)
-    page = context.new_page()
-    page.goto(BASE_URL)
-    login(page)
     try:
-        yield page
+        context = browser.new_context(viewport=VIEWPORT)
+        try:
+            page = context.new_page()
+            page.goto(BASE_URL)
+            login(page)
+            yield page
+        finally:
+            context.close()
     finally:
-        context.close()
         browser.close()

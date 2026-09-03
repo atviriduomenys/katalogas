@@ -1,11 +1,13 @@
 services:
   test_db:
-    image: postgres:14
+    image: postgres:18
     restart: always
     environment:
       POSTGRES_DB: adp-dev
       POSTGRES_USER: adp
       POSTGRES_PASSWORD: secret
+      # postgres:18 changed the image default to /var/lib/postgresql/18/docker.
+      PGDATA: /var/lib/postgresql/data
     volumes:
       - ./var/postgres:/var/lib/postgresql/data
     ports:

@@ -8,7 +8,7 @@ with every article's real title and text in it.
 
 import pytest
 
-from scripts.anonymize import STORY_CONTENT_TABLES, _story_content_table
+from scripts.anonymize import STORY_CONTENT_TABLES, _story_content_tables
 
 
 class FakeDatabase:
@@ -16,23 +16,30 @@ class FakeDatabase:
         self.tables = list(tables)
 
 
-def test_prefers_the_stories_table():
+def test_finds_the_stories_table():
     db = FakeDatabase("organization", "djangocms_stories_postcontent")
 
-    assert _story_content_table(db) == "djangocms_stories_postcontent"
+    assert _story_content_tables(db) == ["djangocms_stories_postcontent"]
 
 
-def test_falls_back_to_the_blog_table_before_the_upgrade():
+def test_finds_the_blog_table_before_the_upgrade():
     db = FakeDatabase("organization", "djangocms_blog_post_translation")
 
-    assert _story_content_table(db) == "djangocms_blog_post_translation"
+    assert _story_content_tables(db) == ["djangocms_blog_post_translation"]
+
+
+def test_takes_both_when_an_upgrade_stopped_half_way():
+    """Taking only the newer one would send the legacy articles out in full."""
+    db = FakeDatabase("organization", "djangocms_stories_postcontent", "djangocms_blog_post_translation")
+
+    assert _story_content_tables(db) == list(STORY_CONTENT_TABLES)
 
 
 def test_stops_when_the_database_has_neither():
     db = FakeDatabase("organization")
 
     with pytest.raises(SystemExit) as stop:
-        _story_content_table(db)
+        _story_content_tables(db)
 
     for name in STORY_CONTENT_TABLES:
         assert name in str(stop.value)

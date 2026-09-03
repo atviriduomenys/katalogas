@@ -12,25 +12,30 @@ from typer import Argument, Option, confirm, run
 
 # The story text changed table in the django-cms 5 upgrade: djangocms-blog's
 # translation rows became djangocms-stories content rows. The columns are the
-# same, so the same scrubbing fits either one - only the name has to be chosen
-# when the script runs.
+# same, so the same scrubbing fits either one - only the names have to be
+# chosen when the script runs.
 STORY_CONTENT_TABLES = ("djangocms_stories_postcontent", "djangocms_blog_post_translation")
 
 
-def _story_content_table(db: Database) -> str:
-    """Whichever of the two this database has.
+def _story_content_tables(db: Database) -> list[str]:
+    """Every one of these this database has - not just the first.
 
     Stopping matters here: `dataset` resolves a missing table lazily, so asking
     for the wrong one iterates nothing, reports no error, and hands back a dump
     that still carries every article's real title and text.
+
+    Taking the first would be just as quiet a leak. A half-finished upgrade
+    leaves both tables standing - djangocms_upgrade_state calls that state
+    inconsistent and refuses to boot on it - and the legacy one holds the same
+    articles, so scrub whatever is present.
     """
-    for name in STORY_CONTENT_TABLES:
-        if name in db.tables:
-            return name
-    raise SystemExit(
-        "This database has neither " + " nor ".join(STORY_CONTENT_TABLES) + ". "
-        "Story text would go out unscrubbed, so nothing was changed."
-    )
+    present = [name for name in STORY_CONTENT_TABLES if name in db.tables]
+    if not present:
+        raise SystemExit(
+            "This database has neither " + " nor ".join(STORY_CONTENT_TABLES) + ". "
+            "Story text would go out unscrubbed, so nothing was changed."
+        )
+    return present
 
 
 def main(
@@ -50,7 +55,7 @@ def main(
         "organization",
         "adp_cms_page",
         "news_item",
-        _story_content_table(db),
+        *_story_content_tables(db),
         "reversion_version",
         "api_description",
         "vitrina_datasets_contact",
@@ -107,6 +112,10 @@ def main(
             func = sys.modules[__name__].__dict__[f"_anonymize_{table}"]
             func(db, fake, pbar, users)
 
+    # Once, not per table: it goes by the plugin's content type, so it covers
+    # both schemas in one pass.
+    _scrub_story_plugins(db)
+
 
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["organization"]
@@ -139,8 +148,6 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
         }
         objects.update(data, [pk_name])
         pbar.update(1)
-
-    _scrub_story_plugins(db)
 
 
 # Story bodies do not always live in a column. `migrate_post_text_to_placeholder`

@@ -144,10 +144,6 @@ class OrganizationBaseViewMixin:
         context_data["can_update_organization"] = has_perm(
             self.request.user, Action.UPDATE, Representative, self.organization
         )
-        context_data["can_manage_is_metadata"] = can_manage_is_metadata(self.request.user, self.organization)
-        context_data["can_edit_organization_details"] = can_edit_organization_details(
-            self.request.user, self.organization
-        )
         context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         context_data["organization"] = self.organization
@@ -521,6 +517,12 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, OrganizationBas
             language_code=self.request.LANGUAGE_CODE,
         )
         context_data["parent_links"].update({None: _("Informacija")})
+        # Only this page draws the two buttons, and both checks query `Representative`, so they
+        # stay out of `OrganizationBaseViewMixin` and off every other organization page.
+        context_data["can_manage_is_metadata"] = can_manage_is_metadata(self.request.user, self.organization)
+        context_data["can_edit_organization_details"] = can_edit_organization_details(
+            self.request.user, self.organization
+        )
         return context_data
 
 

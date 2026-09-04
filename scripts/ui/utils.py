@@ -14,6 +14,10 @@ BASE_URL = os.environ.get("VITRINA_UI_URL", "http://localhost:8000").rstrip("/")
 EMAIL_VAR = "VITRINA_UI_EMAIL"
 PASSWORD_VAR = "VITRINA_UI_PASSWORD"
 
+# The django-cms admin lists pages under the Site's name, which is whatever the
+# deployment called it - only a local portal is called "localhost".
+SITE_NAME = os.environ.get("VITRINA_UI_SITE", "localhost")
+
 # These scripts are meant to be watched, so the browser is visible and slowed
 # down by default. VITRINA_UI_HEADLESS=1 turns that off when the point is only
 # to get content into the database.

@@ -34,6 +34,8 @@ python scripts/ui/create_organization.py
 ## What a script expects
 
 - The portal running on `http://localhost:8000`, or `VITRINA_UI_URL` pointing elsewhere.
+- The django-cms Site named `localhost`, or `VITRINA_UI_SITE` naming it. `stories_images.py`
+  reaches the stories through the admin's site link, and a deployment names that after itself.
 - An account with rights to reach the admin, passed in the environment:
 
   ```bash

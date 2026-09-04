@@ -18,8 +18,10 @@ def run(playwright: Playwright) -> None:
         page.get_by_role("textbox", name="Pavadinimas *").click()
         page.get_by_role("textbox", name="Pavadinimas *").fill("Duom rink 1")
         page.get_by_role("textbox", name="Pavadinimas *").press("Tab")
-        page.get_by_role("textbox", name="Kodinis pavadinimas").fill("duomenu_rinkinys")  # a suffix; the form prepends the organization prefix
-        page.get_by_role("textbox", name="Kodinis pavadinimas").press("Tab")
+        # "Kodinis pavadinimas" is the disabled preview of the full URI; the
+        # editable field is the identifier, and it takes the suffix alone.
+        page.get_by_role("textbox", name="Identifikatorius").fill("duomenu_rinkinys")
+        page.get_by_role("textbox", name="Identifikatorius").press("Tab")
         page.get_by_role("textbox", name="Aprašymas *").fill("Duom rink 1 pilnas aprašymas")
         page.get_by_label("Kaupimo periodiškumas *").select_option("15")
         page.get_by_role("button", name="Sukurti").click()

@@ -5,7 +5,7 @@ Expects the stories named in STORY_TITLES and the image folder to be there.
 
 
 from playwright.sync_api import Page, Playwright, sync_playwright
-from utils import IMAGE_FOLDER, SELECT_FILE, browser_page
+from utils import IMAGE_FOLDER, SELECT_FILE, SITE_NAME, browser_page
 
 # -----------------------------------------------------------------------------
 # Configuration
@@ -33,7 +33,7 @@ IMAGES = {
 UI_TEXT = {
     "save": "Išsaugoti",
     "news": "Naujienos",
-    "localhost": "localhost",
+    "site": SITE_NAME,
     "posts": "Posts...",
 }
 
@@ -44,7 +44,7 @@ UI_TEXT = {
 def navigate_to_posts(page: Page) -> None:
     """Navigate to the Posts management page."""
     page.get_by_role("link", name=UI_TEXT["news"]).click()
-    page.get_by_role("link", name=UI_TEXT["localhost"]).click()
+    page.get_by_role("link", name=UI_TEXT["site"]).click()
     page.get_by_role("link", name=UI_TEXT["posts"]).click()
 
 

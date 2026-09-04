@@ -4,6 +4,21 @@ Changes
 v 1.25.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2791
+
+- Show the "Tvarkyti IS metaduomenis" button and open the IS metadata wizard for the resource
+  coordinator, the resource manager and the superuser. The button asked for two conditions that
+  no single role met, so nobody reached the wizard, although its forms already accepted these
+  users. Staff without ``is_superuser`` stays outside the wizard shell.
+- Do not offer "Redaguoti organizaciją" to the two resource roles: the wizard opens the same form
+  from its root node. Nobody loses access, and nothing changes for the open data roles.
+- Send a logged out visitor of a wizard URL to the login page again, with ``next`` intact.
+- Stop the wizard requesting the organization form for a user who may not edit the organization,
+  which answered a redirect that HTMX swapped into the pane as a whole page. A short note takes
+  its place, and the root node still returns the pane to the organization state.
+- Replace ``is_organization_resource_manager`` with ``can_manage_is_metadata``, add
+  ``can_edit_organization_details``, and gather the four wizard views' access rules into
+  ``WizardAccessMixin``.
 
 
 v 1.24.0 (2026-08-21)

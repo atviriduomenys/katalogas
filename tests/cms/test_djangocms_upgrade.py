@@ -27,6 +27,21 @@ def test_fresh_database_does_not_need_the_legacy_migration_stage():
     assert state == "fresh"
 
 
+def test_a_django_cms_3_database_is_refused_before_anything_else():
+    """cms_title means the 3 -> 4 conversion has not run.
+
+    Such a database carries the legacy blog tables too, so without this it
+    would read as "pending" and the migrate that follows would take the page
+    schema past the point where cms4_migration still works.
+    """
+    state = get_upgrade_state(
+        tables={"cms_title", "djangocms_blog_post"},
+        applied_migrations=set(),
+    )
+
+    assert state == "legacy_pages"
+
+
 def test_upgrade_is_inconsistent_if_legacy_tables_remain_after_migration():
     state = get_upgrade_state(
         tables={"djangocms_blog_post"},

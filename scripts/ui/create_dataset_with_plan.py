@@ -26,16 +26,19 @@ def run(playwright: Playwright) -> None:
         page.get_by_text("Koncepcinė klasė, aprašanti").click()
         page.get_by_role("button", name="Toliau").click()
         page.get_by_role("textbox", name="Pavadinimas *").click()
-        page.get_by_role("textbox", name="Pavadinimas *").fill("Duom rink 1")
+        page.get_by_role("textbox", name="Pavadinimas *").fill("Duom rink 2")
         page.get_by_role("textbox", name="Pavadinimas *").press("Tab")
         # "Kodinis pavadinimas" is the disabled preview of the full URI; the
         # editable field is the identifier, and it takes the suffix alone.
-        page.get_by_role("textbox", name="Identifikatorius").fill("duomenu_rinkinys")
+        # Numbered past create_dataset.py's: both scripts run against the same
+        # portal, and two datasets sharing a name and identifier leave every
+        # later locator picking between them.
+        page.get_by_role("textbox", name="Identifikatorius").fill("duomenu_rinkinys_2")
         page.get_by_role("textbox", name="Identifikatorius").press("Tab")
-        page.get_by_role("textbox", name="Aprašymas *").fill("Duom rink 1 pilnas aprašymas")
+        page.get_by_role("textbox", name="Aprašymas *").fill("Duom rink 2 pilnas aprašymas")
         page.get_by_label("Kaupimo periodiškumas *").select_option("15")
         page.get_by_role("button", name="Sukurti").click()
-        page.locator("h1").get_by_text("Duom rink").click()
+        page.locator("h1").get_by_text("Duom rink 2").click()
         page.get_by_role("link", name="Planas").click()
         page.get_by_role("link", name="Įtraukti į planą").click()
         page.get_by_role("textbox", name="Aprašymas").click()

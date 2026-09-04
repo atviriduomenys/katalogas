@@ -1,3 +1,10 @@
+"""One-off import of the old portal's news into djangocms_blog. No longer runs.
+
+It imports djangocms_blog, which django-cms 5 replaced with djangocms_stories,
+so it fails at import. Kept as the record of how the news were brought over in
+2022; porting it was considered and dropped - there is nothing left to import.
+"""
+
 import os
 import django
 

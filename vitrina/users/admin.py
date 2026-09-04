@@ -1,6 +1,4 @@
 import csv
-from djangocms_blog.models import Post
-from djangocms_blog.admin import PostAdmin as OriginalPostAdmin
 import secrets
 from datetime import datetime
 
@@ -506,29 +504,6 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
         )
         self.message_user(request, msg, messages.SUCCESS)
         return redirect(reverse("admin:vitrina_users_user_changelist"))
-
-
-# Unregister the original `django-cms` blog post admin.
-admin.site.unregister(Post)
-
-
-@admin.register(Post)
-class CustomPostAdmin(OriginalPostAdmin):
-    def has_module_permission(self, request):
-        """Only Blog Administrators can see the blog section"""
-        return request.user.has_perm("djangocms_blog.view_post")
-
-    def has_add_permission(self, request):
-        return request.user.has_perm("djangocms_blog.add_post")
-
-    def has_change_permission(self, request, obj=None):
-        return request.user.has_perm("djangocms_blog.change_post")
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.has_perm("djangocms_blog.delete_post")
-
-    def has_view_permission(self, request, obj=None):
-        return request.user.has_perm("djangocms_blog.view_post")
 
 
 admin.site.unregister(EmailAddress)

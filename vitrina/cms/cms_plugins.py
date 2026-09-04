@@ -1,10 +1,26 @@
-from cms.models import CMSPlugin
+from cms.models import CMSPlugin, Page, PageContent
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
 from django.utils.translation import gettext as _
 
 from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
 from vitrina.orgs.models import PublishedReport
+
+
+def _published_page_ids(language):
+    """PKs of pages that have published content in this language.
+
+    djangocms-versioning replaces `PageContent.objects` with a manager that
+    returns published versions only, so pages whose content is still a draft
+    are left out. Without this the menus would leak unpublished pages.
+
+    The language matters as much: content is per language, so without the
+    filter a page published only in English would show up in the Lithuanian
+    menu, pointing at a page the reader cannot see.
+
+    distinct() stays because that manager joins to the version table.
+    """
+    return PageContent.objects.filter(language=language).values_list("page_id", flat=True).distinct()
 
 
 @plugin_pool.register_plugin
@@ -16,12 +32,21 @@ class SideMenuPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        if instance.page.node.get_children():
-            parent = instance.page.node
-            children = instance.page.node.get_children()
+        page = instance.placeholder.page if instance.placeholder_id else None
+        if page is None:
+            context.update({"children": Page.objects.none(), "parent": None})
+            return context
+
+        published = _published_page_ids(instance.language)
+        children = page.get_child_pages().filter(pk__in=published)
+        if children:
+            parent = page
         else:
-            parent = instance.page.node.get_parent()
-            children = instance.page.node.get_siblings()
+            # The heading links to the parent, so it has to be published in this
+            # language as well - otherwise the menu offers a 404 under an empty
+            # title.
+            parent = page.parent if page.parent_id in published else None
+            children = page.get_siblings().filter(pk__in=published)
         context.update({"children": children, "parent": parent})
         return context
 

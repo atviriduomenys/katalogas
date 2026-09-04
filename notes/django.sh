@@ -15,8 +15,10 @@ poetry run python scripts/migrate_files.py \
     -distribution-path var/data/ \
     --cms-path var/data/files/ \
     --structure-path var/data/structure/
-poetry run python scripts/migrate_pages.py
-poetry run python scripts/migrate_news.py
+# These two no longer run: they are written against django-cms 3 and
+# djangocms_blog, both gone since the cms 5 upgrade. Left for the record.
+# poetry run python scripts/migrate_pages.py
+# poetry run python scripts/migrate_news.py
 
 # Reset passwords of all users
 poetry run python manage.py shell

@@ -129,17 +129,18 @@ INSTALLED_APPS = [
     "treebeard",
     "filer",
     "easy_thumbnails",
-    "djangocms_text_ckeditor",
     "djangocms_file",
     "djangocms_picture",
     "djangocms_link",
-    "aldryn_apphooks_config",
     "parler",
     "taggit",
     "taggit_autosuggest",
     "meta",
     "sortedm2m",
-    "djangocms_blog",
+    "djangocms_text",
+    "djangocms_versioning",
+    "djangocms_alias",
+    "djangocms_stories",
     "reversion",
     "hitcount",
     "crispy_forms",
@@ -175,6 +176,15 @@ INSTALLED_APPS = [
     "vitrina.dcat",
     "vitrina.search",
 ]
+
+# djangocms-stories bundles the legacy app solely for its one-time data migration.
+# scripts/migrate_djangocms.sh enables it only while that migration is pending.
+if env.bool("DJANGOCMS_BLOG_MIGRATION", default=False):
+    INSTALLED_APPS.insert(INSTALLED_APPS.index("djangocms_stories"), "djangocms_blog")
+
+MIGRATION_MODULES = {
+    "djangocms_stories": "vitrina.cms.stories_migrations",
+}
 
 SERIALIZATION_MODULES = {
     "xml": "tagulous.serializers.xml_serializer",
@@ -528,7 +538,7 @@ PASSWORD_HASHERS = [
 
 HASHER_SALT = "2LxpaW5qOe80xZjTPyzpgi"
 
-BLOG_USE_PLACEHOLDER = False
+STORIES_USE_PLACEHOLDER = False
 META_USE_SITES = True
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = ("bulma",)
@@ -784,3 +794,9 @@ TAGULOUS_AUTOCOMPLETE_JS = (
     "tagulous/adaptor/select2-4.js",
 )
 TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}
+
+# djangocms_versioning, djangocms_alias and djangocms_stories are already listed
+# in INSTALLED_APPS above, in an order that satisfies both constraints:
+# vitrina.users before cms, and vitrina.cms after djangocms_stories.
+CMS_CONFIRM_VERSION4 = True
+DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"

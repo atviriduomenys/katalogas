@@ -1,3 +1,10 @@
+"""One-off import of the old portal's pages into django-cms 3. No longer runs.
+
+It calls create_title and reads title_set, both gone in django-cms 4, and links
+to djangocms_blog urls. Kept as the record of how the pages were brought over in
+2022; porting it was considered and dropped - there is nothing left to import.
+"""
+
 import os
 import django
 

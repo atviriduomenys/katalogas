@@ -1,5 +1,5 @@
 from django.urls import path, include
-from djangocms_blog.settings import get_setting
+from djangocms_stories.settings import get_setting
 
 from vitrina.cms.views import (
     PolicyView,

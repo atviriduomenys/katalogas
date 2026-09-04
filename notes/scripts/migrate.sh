@@ -1,3 +1,8 @@
+# A log of one-off imports run in 2022, kept for the record.
+#
+# migrate_news.py and migrate_pages.py no longer run: they are written against
+# django-cms 3 and djangocms_blog, both gone since the cms 5 upgrade.
+
 # 2022-10-20 08:50 Test news import
 
 mkdir var/images

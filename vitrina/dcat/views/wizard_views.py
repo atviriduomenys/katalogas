@@ -28,11 +28,7 @@ class WizardAccessMixin(
     PermissionRequiredMixin,
     OrganizationBaseViewMixin,
 ):
-    """Access rules shared by every view of the IS metadata wizard.
-
-    ``OrganizationBaseViewMixin.setup`` resolves the organization before ``dispatch``
-    asks about permissions, so ``self.organization`` is always set here.
-    """
+    """Access rules shared by every view of the IS metadata wizard."""
 
     organization: Organization
 
@@ -40,8 +36,7 @@ class WizardAccessMixin(
         return can_manage_is_metadata(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
-        # ``LoginRequiredMixin`` sends an anonymous request through this method too, so
-        # falling back to ``super()`` keeps the login redirect and its ``next`` parameter.
+        # ``LoginRequiredMixin`` routes anonymous requests here too; ``super()`` keeps ``next``.
         if not self.request.user.is_authenticated:
             return super().handle_no_permission()
         return redirect("organization-detail", pk=self.organization.pk)

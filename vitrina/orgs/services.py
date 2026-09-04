@@ -524,21 +524,11 @@ def is_supervisor(user: User, node: Model) -> bool:
 
 
 def can_manage_is_metadata(user: User, organization: Organization) -> bool:
-    """Who may open the IS metadata wizard of an organization.
+    """Who may open the IS metadata wizard: superusers and the organization's resource roles.
 
-    Superusers, plus the resource coordinators and the resource managers of that
-    organization. The wizard forms themselves guard each object through ``has_perm``.
-
-    A staff account that is not a superuser is left out on purpose. The team weighed
-    ``is_staff``, which is the global manager, and settled on ``is_superuser``: the two
-    administrators who need the wizard both hold it.
-
-    That leaves the shell narrower than the forms behind it, and this is the one place where
-    that is true. ``determine_user_role`` maps ``is_staff`` to ``Role.GLOBAL_MANAGER``, every
-    wizard ACL rule lists that role, and ``has_perm`` returns ``True`` for staff outright, so
-    such a user can post to the wizard forms through a direct URL while the button and the
-    shell stay closed to them (see ``test_dataset_create_wizard_permission_global_manager``).
-    Widen this helper rather than working around it if that ever has to change.
+    Staff without ``is_superuser`` is left out on purpose; the team weighed ``is_staff`` and
+    settled on ``is_superuser``. ``has_perm`` still grants staff the wizard forms through a
+    direct URL, so widen this helper rather than working around it.
     """
     if not user.is_authenticated:
         return False
@@ -559,16 +549,8 @@ def can_manage_is_metadata(user: User, organization: Organization) -> bool:
 def can_edit_organization_details(user: User, organization: Organization) -> bool:
     """Who sees the "Redaguoti organizaciją" button on the organization page.
 
-    Anyone who may update the organization, except the people who already reach that same form
-    from the wizard's root node: the button is gone from this page only so the form is offered
-    in one place rather than two. Nobody loses access, and no ACL rule moves. A superuser keeps
-    both buttons, which is what the team asked for.
-
-    Asking ``can_manage_is_metadata`` rather than listing roles keeps this in step with the
-    wizard by construction, however a user came by their access — a direct role, an
-    organizational one, or a flag. The permission asked for is ``Action.UPDATE`` on the
-    organization, which is what ``OrganizationUpdateView`` itself checks, so the button and the
-    form it leads to cannot drift apart.
+    Anyone with ``Action.UPDATE``, except those who already open the same form from the wizard's
+    root node. Nobody loses access, no ACL rule moves, and a superuser keeps both buttons.
     """
     if not user.is_authenticated:
         return False

@@ -517,8 +517,7 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, OrganizationBas
             language_code=self.request.LANGUAGE_CODE,
         )
         context_data["parent_links"].update({None: _("Informacija")})
-        # Only this page draws the two buttons, and both checks query `Representative`, so they
-        # stay out of `OrganizationBaseViewMixin` and off every other organization page.
+        # Only this page draws the buttons, so these queries stay off every other organization page.
         context_data["can_manage_is_metadata"] = can_manage_is_metadata(self.request.user, self.organization)
         context_data["can_edit_organization_details"] = can_edit_organization_details(
             self.request.user, self.organization

@@ -748,8 +748,8 @@ SELECT2_CACHE_BACKEND = "select2"
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = None
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
 
 # Cookie security: SameSite and HttpOnly flags
 SESSION_COOKIE_SAMESITE = "Lax"  # Prevents CSRF via cross-site requests
@@ -757,7 +757,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access (XSS protection)
 # Note: CSRF_COOKIE_HTTPONLY not set - jquery.postcsrf.js needs to read it for hitcount
 
-CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt"]
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=["https://*.gov.lt"])
 LANGUAGE_COOKIE_SECURE = True
 
 OTP_EMAIL_TOKEN_VALIDITY = 600

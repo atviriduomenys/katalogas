@@ -352,7 +352,9 @@
                 </span>
             </th>
             <td>
-                <a href="{{ dataset.get_endpoint_description }}">{{ dataset.get_endpoint_description|truncatechars:50 }}</a>
+                {% for endpoint_description in dataset.get_endpoint_descriptions %}
+                <a href="{{ endpoint_description }}">{{ endpoint_description|truncatechars:50 }}</a>{% if not forloop.last %}<br/>{% endif %}
+                {% endfor %}
             </td>
         </tr>
         <tr>

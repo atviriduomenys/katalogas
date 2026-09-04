@@ -31,6 +31,7 @@ from vitrina.datasets.models import (
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 
+
 MANIFEST = """\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count
 ,datasets/gov/ivpk/adk,,,,,,,,,,,,,,,Opend Data Portal,,
@@ -148,6 +149,17 @@ class DatasetFactory(DjangoModelFactory):
         MetadataFactory.create(
             dataset=self, content_type=ContentType.objects.get_for_model(self), object_id=self.pk, name=name
         )
+
+    @factory.post_generation
+    def endpoint_description(self, create, extracted, **kwargs) -> None:
+        if extracted:
+            raise AssertionError(
+                "DatasetFactory does not support `endpoint_description`; use DatasetServiceFactory for data services."
+            )
+        if create and self.endpoint_description.exists():
+            raise AssertionError(
+                "DatasetFactory must not set `endpoint_description`; use DatasetServiceFactory for data services."
+            )
 
 
 def _get_language_value(lang: str, value: Union[str | dict]) -> str:
@@ -296,7 +308,6 @@ class DatasetServiceFactory(DjangoModelFactory):
         }
     )
     endpoint_url = factory.Faker("url")
-    endpoint_description = factory.Faker("url")
     subclass = factory.SubFactory(DCATResourceSubclassFactory, name="service")
     contact = factory.SubFactory(ContactFactory, organization=factory.SelfAttribute("..organization"))
 
@@ -340,6 +351,21 @@ class DatasetServiceFactory(DjangoModelFactory):
         MetadataFactory.create(
             dataset=self, content_type=ContentType.objects.get_for_model(self), object_id=self.pk, name=name
         )
+
+    @factory.post_generation
+    def endpoint_description(self, create, extracted, **kwargs) -> None:
+        if not create:
+            return
+        urls = extracted
+        if urls is None:
+            return
+        if isinstance(urls, str):
+            urls = [urls]
+        from vitrina.datasets.models import EndpointDescription
+
+        for url in urls:
+            description, _ = EndpointDescription.objects.get_or_create(download_url=url)
+            self.endpoint_description.add(description)
 
 
 class MeasurementTitleFactory(DjangoModelFactory):

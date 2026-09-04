@@ -32,10 +32,10 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 from django_otp.forms import OTPAuthenticationForm
 from django_recaptcha.fields import ReCaptchaField
+from django.conf import settings
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 from ipware import get_client_ip
 
-from vitrina import settings
 from vitrina.datasets.models import Dataset
 from vitrina.fields import DisabledCharField
 from vitrina.helpers import email, join_br

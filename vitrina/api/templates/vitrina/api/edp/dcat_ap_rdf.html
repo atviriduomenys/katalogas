@@ -100,9 +100,9 @@
             <dct:MediaTypeOrExtent rdf:about="{{ dataset.endpoint_type.uri|encode_uri }}"/>
         </dct:format>
         {% endif %}
-        {% if dataset.endpoint_description %}
-        <dcat:endpointDescription rdf:resource="{{ dataset.endpoint_description|encode_uri }}"/>
-        {% endif %}
+        {% for endpoint_description in dataset.endpoint_description %}
+        <dcat:endpointDescription rdf:resource="{{ endpoint_description|encode_uri }}"/>
+        {% endfor %}
         {% if dataset.related_datasets %}
         {% for rel_dataset in dataset.related_datasets %}
         <dcat:servesDataset>

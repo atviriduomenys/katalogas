@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from django.test import override_settings
 from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
@@ -36,6 +37,7 @@ def test_login_with_wrong_credentials(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
     form = app.get(reverse("login")).forms["login-form"]
     form["username"] = "test@test.com"
@@ -49,6 +51,7 @@ def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_viisp_flag_reset_on_email_login(app: DjangoTestApp, user: User):
     user.is_viisp_login = True
     user.viisp_company_code = "123"
@@ -216,6 +219,7 @@ def test_change_password_with_wrong_user(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_change_password_with_correct_user(app: DjangoTestApp):
     user = User.objects.create_user(email="testas1@testas.com", password="testas123")
     app.set_user(user)
@@ -332,6 +336,7 @@ def test_account_login_alias_redirects_to_login(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_login_second_time(app: DjangoTestApp):
     user = User.objects.create_user(email="testas1@testas.com", password="testas123", status=User.ACTIVE)
     app.set_user(user)

@@ -1,6 +1,11 @@
-"""Add members to Org1.
+"""Invite members to Org1.
 
 Expects Org1 to exist - create_organization.py makes it.
+
+These are invitations, not accounts. RepresentativeCreateView looks for a user
+with the address and, finding none on an empty portal, saves a pending
+Representative and emails a registration link. The accounts appear only once
+somebody follows it.
 """
 
 from playwright.sync_api import Playwright, sync_playwright

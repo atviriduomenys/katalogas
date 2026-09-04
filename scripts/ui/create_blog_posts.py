@@ -122,6 +122,10 @@ def upload_images_to_blog(page: Page, image_paths: list[str]) -> None:
     with page1.expect_file_chooser() as chooser:
         page1.get_by_role("link", name="įkelti bylas").click()
     chooser.value.set_files(image_paths)
+    # set_files only hands the files over; filer uploads them by xhr afterwards,
+    # and navigating mid-flight cancels whatever has not finished. The images the
+    # other scripts then look for are simply absent.
+    page1.wait_for_load_state("networkidle")
     # Back to the same folder, newest first - its id differs between databases.
     page1.goto(f"{folder_url}&order_by=-modified_at")
     page1.get_by_role("link", name="01.jpg").click()

@@ -3,8 +3,8 @@
 Recorded browser sessions that drive the portal through Chromium. They live in `scripts/ui/`
 rather than under a directory called `tests`, which is what they used to be called and what they
 are not. They create content
-(pages, stories, organisations, datasets, users) so the admin can be looked at with real
-data in it.
+(pages, stories, organisations, datasets, pending member invitations) so the admin can be
+looked at with real data in it.
 
 **These are not tests.** They assert nothing, and they run headed and slowed down so a person can
 watch. The automated suite is `tests/`, run with pytest. `VITRINA_UI_HEADLESS=1` turns the browser

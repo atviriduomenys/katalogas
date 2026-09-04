@@ -47,3 +47,14 @@ def test_staff_still_see_flash_messages_outside_the_editor():
 @pytest.mark.django_db
 def test_messages_step_aside_for_the_editing_toolbar():
     assert "Įrašas išsaugotas" not in render(edit_mode_active=True)
+
+
+@pytest.mark.django_db
+def test_the_page_carries_no_template_comment_markup():
+    """`{# #}` is single-line only.
+
+    Django's lexer matches it without DOTALL, so a comment written across
+    several lines is not a comment at all - it goes out to every visitor as
+    page text.
+    """
+    assert "{#" not in render(edit_mode_active=False)

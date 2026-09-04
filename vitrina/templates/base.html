@@ -80,10 +80,13 @@
     {% endif %}
 {% endblock %}
 {% block messages %}
-    {# Hidden only while a cms page is being edited, where the toolbar covers this
-       strip. `show_toolbar` is true for every staff user on every page, so gating
-       on it hid all flash messages site-wide - and since the list was never
-       iterated, they were never marked read either, so they came back forever. #}
+    {% comment %}
+        Hidden only while a cms page is being edited, where the toolbar covers
+        this strip. `show_toolbar` is true for every staff user on every page,
+        so gating on it hid all flash messages site-wide - and since the list
+        was never iterated, they were never marked read either, so they came
+        back forever.
+    {% endcomment %}
     {% if messages and not request.toolbar.edit_mode_active %}
         <ul class="messages">
             {% for message in messages %}

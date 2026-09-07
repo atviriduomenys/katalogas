@@ -27,9 +27,11 @@ own - they only put content in front of a person who can tell whether it looks r
 ## Where they fit in the django-cms upgrade
 
 **Before, to build the baseline.** A clean database on the pre-upgrade code, seeded, then dumped
-as the point to return to. `notes/migrations/djangocms` does exactly that: clean the database,
-check out the old code, migrate, create the superuser, run `create_organization.py`, dump. Every
-later attempt restores that dump rather than starting over.
+as the point to return to: clean the database, check out the old code, migrate, create the
+superuser, run `create_organization.py`, dump. Every later attempt restores that dump rather than
+starting over. The upgrade branch writes this out step by step in `notes/migrations/djangocms` -
+those notes reach devel with the django-cms 5 work, not with this branch, so do not go looking
+for them here yet.
 
 **After, to see what survived.** The same portal on the new code, gone through by hand, with the
 story scripts adding fresh content to show that versioning, the editor and publishing work.

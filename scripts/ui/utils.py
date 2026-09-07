@@ -18,15 +18,16 @@ PASSWORD_VAR = "VITRINA_UI_PASSWORD"
 # deployment called it - only a local portal is called "localhost".
 SITE_NAME = os.environ.get("VITRINA_UI_SITE", "localhost")
 
-# These scripts are meant to be watched, so the browser is visible and slowed
-# down by default. VITRINA_UI_HEADLESS=1 turns that off when the point is only
-# to get content into the database.
 # The filer folder create_blog_posts.py makes and the other two read from.
 IMAGE_FOLDER = "Skaiciai"
 
 # The file picker link carries a leading icon glyph, so match on the text alone.
 SELECT_FILE = re.compile(r"Pasirinkti bylą")
 
+
+# These scripts are meant to be watched, so the browser is visible and slowed
+# down by default. VITRINA_UI_HEADLESS=1 turns that off when the point is only
+# to get content into the database.
 HEADLESS = os.environ.get("VITRINA_UI_HEADLESS") == "1"
 SLOW_MO = 0 if HEADLESS else 500
 VIEWPORT = {"width": 1920, "height": 1080}

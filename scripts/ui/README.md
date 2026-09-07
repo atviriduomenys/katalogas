@@ -54,7 +54,8 @@ at a glance what went missing, which 59 articles and 5000 datasets will not tell
 
 Each script runs on its own, and none of them clean up after themselves.
 
-On either portal, in any order:
+On either portal, in this order. Only the first stands alone: everything from step 3 on
+navigates to Org1, so `create_organization.py` has to have run before them.
 
 1. `update_profile.py` - gives the logged-in account a first and last name.
 2. `create_organization.py` - Org1, Org2, Org3. The names are unique in the database, so read

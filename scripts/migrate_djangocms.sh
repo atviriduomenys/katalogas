@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+# --skip-checks, here and in every manage.py call below: the URL system check
+# queries the Site table before migrations have run, so on a fresh database it
+# fails with Site.DoesNotExist. A django-cms bootstrapping problem, not ours.
+#
 # tail: anything an app prints while loading would otherwise land in the value
 # and send us to the "unknown state" branch, where the container refuses to boot.
 upgrade_state="$(python3 manage.py djangocms_upgrade_state --skip-checks | tail -n1)"

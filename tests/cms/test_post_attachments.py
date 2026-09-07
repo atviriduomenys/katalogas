@@ -9,7 +9,6 @@ from djangocms_stories.models import Post, PostContent
 from djangocms_versioning.models import Version
 
 from vitrina.cms.models import FileResource
-from vitrina.cms.stories_migrations._helpers import remap_generic_relations
 from vitrina.cms.views import PostDetailView
 from vitrina.users.factories import UserFactory
 
@@ -47,32 +46,6 @@ def test_attachments_are_found_through_the_post_not_its_content():
         content_type=ContentType.objects.get_for_model(content),
         object_id=content.pk,
     ).exists()
-
-
-@pytest.mark.django_db
-def test_legacy_attachments_are_remapped_to_the_new_post_ids():
-    legacy_content_type, _ = ContentType.objects.get_or_create(
-        app_label="djangocms_blog",
-        model="post",
-    )
-    stories_content_type = ContentType.objects.get_for_model(Post)
-    post = Post.objects.create()
-    attachment = FileResource.objects.create(
-        version=1,
-        content_type=legacy_content_type,
-        object_id=41,
-    )
-
-    remap_generic_relations(
-        FileResource,
-        source_content_type=legacy_content_type,
-        target_content_type=stories_content_type,
-        object_id_map={41: post.pk},
-    )
-
-    attachment.refresh_from_db()
-    assert attachment.content_type == stories_content_type
-    assert attachment.object_id == post.pk
 
 
 @pytest.mark.django_db
@@ -205,20 +178,3 @@ def test_dry_run_moves_nothing():
 
     content.refresh_from_db()
     assert content.post_text == "<p>Senas tekstas</p>"
-
-
-@pytest.mark.django_db
-def test_the_remap_survives_a_blog_with_no_posts():
-    """Upstream only records the id map while copying rows.
-
-    A database that still has the blog tables but nothing in them copies
-    nothing, so the "Post" key is never created - and reaching for it directly
-    would end the deployment with a KeyError before anything else ran.
-    """
-    from importlib import import_module
-
-    from django.apps import apps as global_apps
-
-    migration = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
-
-    migration.remap_file_resources(global_apps, {}, Post, Post)

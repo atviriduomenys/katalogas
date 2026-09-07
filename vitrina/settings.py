@@ -177,10 +177,6 @@ INSTALLED_APPS = [
     "vitrina.search",
 ]
 
-MIGRATION_MODULES = {
-    "djangocms_stories": "vitrina.cms.stories_migrations",
-}
-
 SERIALIZATION_MODULES = {
     "xml": "tagulous.serializers.xml_serializer",
     "json": "tagulous.serializers.json",

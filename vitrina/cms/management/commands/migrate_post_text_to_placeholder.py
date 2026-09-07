@@ -52,8 +52,10 @@ class Command(BaseCommand):
             if not dry_run:
                 raise CommandError(message)
             # A dry run is supposed to predict the real one, so say that it would
-            # stop here rather than listing work that will never happen.
+            # stop here - and then stop, rather than going on to list work that
+            # the real run will never reach.
             self.stdout.write(self.style.WARNING(f"[dry-run] The real run would refuse: {message}"))
+            return
         self.stdout.write(f"Found {posts.count()} post(s) with post_text content.")
 
         for post in posts:

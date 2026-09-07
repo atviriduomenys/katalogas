@@ -163,7 +163,12 @@ def test_dry_run_says_the_real_run_would_refuse():
     out = StringIO()
     call_command("migrate_post_text_to_placeholder", "--dry-run", stdout=out)
 
-    assert "would refuse" in out.getvalue()
+    printed = out.getvalue()
+    assert "would refuse" in printed
+    # And then says nothing more: listing the posts it would convert, right after
+    # saying the real run stops before converting any, is guidance that argues
+    # with itself.
+    assert "Would create TextPlugin" not in printed
 
 
 @pytest.mark.django_db

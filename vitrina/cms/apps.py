@@ -74,25 +74,22 @@ def _add_default_text_plugin(sender, instance, created, **kwargs):
 
 
 def _sync_blog_administrator_permissions(sender, **kwargs):
-    """Point the Blog Administrators group at the djangocms_stories permissions.
+    """Fill the Blog Administrators group with the djangocms_stories permissions.
 
     `vitrina/users/migrations/0003` fills this group by reading the permissions
     of the blog app. A migration cannot get this right: permissions for a
     model are created by `post_migrate`, once every migration has run, so at
-    the time 0003 executes there is nothing to read. On a fresh database the
-    group therefore comes out empty, and on production it is still holding the
-    24 djangocms_blog permissions 0003 gave it back when that app existed -
-    dead rows now that `vitrina/cms/admin.py` asks for djangocms_stories ones.
+    the time 0003 executes there is nothing to read, and on a fresh database
+    the group comes out empty.
 
     This runs after every migrate and is a no-op once the group is in order.
     django.contrib.auth creates permissions on the same signal, and
     djangocms_stories is listed before vitrina.cms in INSTALLED_APPS, so its
     permissions are already in place by the time this fires.
 
-    The other group 0003 creates, CMS Administrators, needs no such repair: its
-    four cms.title permissions have no successor, because PageContent declares
-    `default_permissions = []`. Its page permissions survive the upgrade
-    untouched.
+    The other group 0003 creates, CMS Administrators, needs nothing: its four
+    cms.title permissions have no successor, because PageContent declares
+    `default_permissions = []`, and its page permissions stand on their own.
     """
     from django.contrib.auth.models import Group, Permission
 
@@ -100,12 +97,9 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     if group is None:
         return
 
-    stale = group.permissions.filter(content_type__app_label="djangocms_blog")
-    granted = group.permissions.filter(content_type__app_label="djangocms_stories")
-
-    # Repair once, then leave the group alone. Re-granting the whole set on every
+    # Fill once, then leave the group alone. Re-granting the whole set on every
     # migrate would undo any permission an administrator has since taken away.
-    if granted.exists() and not stale.exists():
+    if group.permissions.filter(content_type__app_label="djangocms_stories").exists():
         return
 
     missing = Permission.objects.filter(content_type__app_label="djangocms_stories").exclude(
@@ -113,5 +107,3 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     )
     if missing:
         group.permissions.add(*missing)
-    if stale:
-        group.permissions.remove(*stale)

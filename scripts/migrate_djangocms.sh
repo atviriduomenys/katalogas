@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+# Lives only as long as the django-cms 5 upgrade does. Once no database reports
+# a pending or legacy state, #2795 deletes this file and the entrypoints call
+# migrate directly again. Both entrypoints share it meanwhile, so the state check
+# cannot drift between them.
+
 # --skip-checks, here and in every manage.py call below: the URL system check
 # queries the Site table before migrations have run, so on a fresh database it
 # fails with Site.DoesNotExist. A django-cms bootstrapping problem, not ours.

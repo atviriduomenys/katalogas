@@ -8,6 +8,8 @@ cd ..
 
 python3 manage.py collectstatic --noinput
 # The helper runs the one-time legacy blog stage when required, then all migrations.
+# Temporary: #2795 puts the plain migrate call back once every environment is past
+# the upgrade, and the helper goes with it.
 ./scripts/migrate_djangocms.sh || exit 1
 python3 manage.py rebuild_search
 export DJANGO_SUPERUSER_EMAIL=test@test.com; export DJANGO_SUPERUSER_USERNAME=test@test.com; export DJANGO_SUPERUSER_PASSWORD=test; python manage.py createsuperuser --noinput || True

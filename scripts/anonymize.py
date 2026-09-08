@@ -10,32 +10,25 @@ from tqdm import tqdm
 from typer import Argument, Option, confirm, run
 
 
-# The story text changed table in the django-cms 5 upgrade: djangocms-blog's
-# translation rows became djangocms-stories content rows. The columns are the
-# same, so the same scrubbing fits either one - only the names have to be
-# chosen when the script runs.
-STORY_CONTENT_TABLES = ("djangocms_stories_postcontent", "djangocms_blog_post_translation")
+# Story text lives in djangocms-stories content rows. Before the django-cms 5
+# upgrade it was djangocms-blog translation rows; that schema is gone.
+STORY_CONTENT_TABLE = "djangocms_stories_postcontent"
 
 
-def _story_content_tables(db: Database) -> list[str]:
-    """Every one of these this database has - not just the first.
+def _story_content_table(db: Database) -> str:
+    """The story content table, or stop.
 
     Stopping matters here: `dataset` resolves a missing table lazily, so asking
-    for the wrong one iterates nothing, reports no error, and hands back a dump
-    that still carries every article's real title and text.
-
-    Taking the first would be just as quiet a leak. A half-finished upgrade
-    leaves both tables standing - djangocms_upgrade_state calls that state
-    inconsistent and refuses to boot on it - and the legacy one holds the same
-    articles, so scrub whatever is present.
+    for a table that is not there iterates nothing, reports no error, and hands
+    back a dump that still carries every article's real title and text. A
+    pre-upgrade dump now lands here too, and refusing is the right answer - it
+    holds story text this script no longer knows how to reach.
     """
-    present = [name for name in STORY_CONTENT_TABLES if name in db.tables]
-    if not present:
+    if STORY_CONTENT_TABLE not in db.tables:
         raise SystemExit(
-            "This database has neither " + " nor ".join(STORY_CONTENT_TABLES) + ". "
-            "Story text would go out unscrubbed, so nothing was changed."
+            f"This database has no {STORY_CONTENT_TABLE}. Story text would go out unscrubbed, so nothing was changed."
         )
-    return present
+    return STORY_CONTENT_TABLE
 
 
 def main(
@@ -55,7 +48,7 @@ def main(
         "organization",
         "adp_cms_page",
         "news_item",
-        *_story_content_tables(db),
+        _story_content_table(db),
         "reversion_version",
         "api_description",
         "vitrina_datasets_contact",
@@ -160,7 +153,7 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
 # the column alone leaves the article itself in the dump. Only plugins hanging
 # off story content are touched; page content is a separate matter this script
 # has never covered.
-STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"), ("djangocms_blog", "post"))
+STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"),)
 
 
 def _scrub_story_plugins(db: Database) -> None:
@@ -184,17 +177,10 @@ def _scrub_story_plugins(db: Database) -> None:
     )
 
 
-def _anonymize_djangocms_blog_post_translation(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
-) -> None:
-    """Story text before the django-cms 5 upgrade."""
-    _anonymize_story_content(db, pbar, "djangocms_blog_post_translation")
-
-
 def _anonymize_djangocms_stories_postcontent(
     db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
 ) -> None:
-    """Story text after it."""
+    """Story text."""
     _anonymize_story_content(db, pbar, "djangocms_stories_postcontent")
 
 

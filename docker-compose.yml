@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: builder
     image: vitrina-app:latest
     command:
       - ./entrypoint.sh

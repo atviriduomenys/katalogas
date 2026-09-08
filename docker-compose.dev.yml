@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: builder
     command:
       - ./auto-entrypoint.sh
     environment:
@@ -49,6 +50,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: builder
     command: celery -A vitrina worker -l info
     environment:
       - REDIS_URL=redis://katalogas-redis:6379/

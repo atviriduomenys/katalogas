@@ -15,8 +15,7 @@ from vitrina.users.factories import UserFactory
 def test_attachments_are_found_through_the_post_not_its_content():
     """Attachments hang off the post; the view's object is the post's content.
 
-    scripts/migrate_news.py stored every news attachment against the post
-    itself. A lookup keyed on the content object asks for a different content
+    The one-off news import stored every attachment against the post itself. A lookup keyed on the content object asks for a different content
     type, finds nothing, and the files vanish from the page without any error.
     """
     config = StoriesConfig.objects.create(namespace="stories", **config_defaults)

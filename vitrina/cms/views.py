@@ -16,8 +16,8 @@ class PolicyView(TemplateView):
 class PostDetailView(BasePostDetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Attachments were stored against the post itself by
-        # scripts/migrate_news.py, and `self.object` is the post's content now,
+        # Attachments were stored against the post itself by the one-off news
+        # import, and `self.object` is the post's content now,
         # a different model with different ids - looking the files up by it
         # finds nothing, and every news attachment disappears from the page.
         post = self.object.post

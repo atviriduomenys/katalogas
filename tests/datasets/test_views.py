@@ -425,7 +425,7 @@ class TestDatasetDetailView:
         assert response.status_code == 200
 
         assert data_service.endpoint_url in response.text
-        assert "http://example.com" in response.text
+        assert 'href="http://example.com"' in response.text
         assert data_service.endpoint_type.title in response.text
         assert endpoint_description_format.title not in response.text
 
@@ -1735,6 +1735,29 @@ class TestDatasetUpdateView:
         dataservice.refresh_from_db()
         assert dataservice.agent == agent
 
+    def test_dataset_update_service_removes_one_of_multiple_endpoint_descriptions(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        dataservice = DatasetServiceFactory(
+            organization=organization,
+            endpoint_url="https://data.gov.lt",
+            endpoint_description=["http://api.data.gov.lt", "http://api2.data.gov.lt"],
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change", kwargs={"pk": dataservice.id})
+
+        form = app.get(url).forms["dataset-form"]
+        form.set("endpoint_description", "", index=0)
+        response = form.submit()
+
+        assert response.status_code == 302
+        dataservice.refresh_from_db()
+        assert list(dataservice.endpoint_description.values_list("download_url", flat=True)) == [
+            "http://api2.data.gov.lt"
+        ]
+        assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
+
 
 class TestDatasetCreateView:
     def test_add_form_no_login(self, app: DjangoTestApp):
@@ -2276,6 +2299,40 @@ class TestDatasetCreateView:
         assert dataset.agent is None
         assert dataset.endpoint_url == "https://data.gov.lt"
         assert not dataset.endpoint_description.exists()
+
+    def test_create_service_with_multiple_endpoint_descriptions(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        contact = ContactFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["endpoint_url"] = "https://data.gov.lt"
+        form["endpoint_description"] = ["http://api.data.gov.lt", "http://api2.data.gov.lt"]
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent is None
+        assert dataset.endpoint_url == "https://data.gov.lt"
+        assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == [
+            "http://api.data.gov.lt",
+            "http://api2.data.gov.lt",
+        ]
+
+        res = app.get(reverse("dataset-rdf-download", args=[dataset.pk]))
+        assert res.status_code == 200
+        assert '<dcat:endpointDescription rdf:resource="http://api.data.gov.lt"/>' in res.text
+        assert '<dcat:endpointDescription rdf:resource="http://api2.data.gov.lt"/>' in res.text
 
     def test_create_without_name(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
@@ -3587,7 +3644,7 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     assert resp.context["history"][0]["user"] == user
 
 
-def _create_service_with_endpoint_description(app: DjangoTestApp, user, url_value: str) -> Dataset:
+def _create_service_with_endpoint_description(app: DjangoTestApp, user, url_value: str | list[str]) -> Dataset:
     organization = OrganizationFactory()
     subclass = DCATResourceSubclassFactory(name="service")
     contact = ContactFactory(organization=organization)
@@ -3633,6 +3690,24 @@ def test_dataset_history_shows_cleared_endpoint_description(app: DjangoTestApp):
 
     assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
     assert "http://api.data.gov.lt" in _get_history_reprs(app, dataset)
+
+
+def test_dataset_history_shows_multiple_endpoint_descriptions_after_removal(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    app.set_user(user)
+    dataset = _create_service_with_endpoint_description(
+        app, user, ["http://api.data.gov.lt", "http://api2.data.gov.lt"]
+    )
+
+    url = reverse("dataset-change", args=[dataset.pk])
+    form = app.get(url).forms["dataset-form"]
+    form.set("endpoint_description", "", index=0)
+    assert form.submit().status_code == 302
+
+    assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == ["http://api2.data.gov.lt"]
+    history_reprs = _get_history_reprs(app, dataset)
+    assert "http://api.data.gov.lt" in history_reprs
+    assert "http://api2.data.gov.lt" in history_reprs
 
 
 class TestDatasetStructureImport:

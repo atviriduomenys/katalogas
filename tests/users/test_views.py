@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import re
+
 import pytest
 from django.test import override_settings
 from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC
@@ -149,6 +151,27 @@ def test_register_with_correct_data(app: DjangoTestApp):
         assert resp.status_code == 302
         assert resp.url == reverse("home")
         assert User.objects.filter(email="test_@test.com").count() == 1
+
+
+@pytest.mark.django_db
+def test_register_sends_activation_link_with_request_scheme(app: DjangoTestApp):
+    with patch("django_recaptcha.fields.client.submit") as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = app.post(
+            reverse("register"),
+            {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": "test_@test.com",
+                "password1": "TestPassword123?",
+                "password2": "TestPassword123?",
+                "agree_to_terms": True,
+                "g-recaptcha-response": "PASSED",
+            },
+        )
+        assert resp.status_code == 302
+        assert len(mail.outbox) == 1
+        assert re.search(r"http://testserver/register/account-confirm-email/[-:\w]+/?", mail.outbox[0].body)
 
 
 @pytest.mark.django_db

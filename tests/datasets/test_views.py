@@ -48,7 +48,15 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.models import Dataset, DatasetAttribution, DatasetStructure, Type, Relation, Attribution
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetAttribution,
+    DatasetStructure,
+    EndpointDescription,
+    Type,
+    Relation,
+    Attribution,
+)
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -3577,6 +3585,54 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     history_action = resp.context["history"][0]["action"]
     assert history_action["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
     assert resp.context["history"][0]["user"] == user
+
+
+def _create_service_with_endpoint_description(app: DjangoTestApp, user, url_value: str) -> Dataset:
+    organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory(name="service")
+    contact = ContactFactory(organization=organization)
+    url = reverse("dataset-add", kwargs={"pk": organization.pk, "subclass_uuid": subclass.pk})
+    form = app.get(url).forms["dataset-form"]
+    form["title"] = "Service title"
+    form["tags"] = "test"
+    form["contact"] = contact.pk
+    form["endpoint_url"] = "https://data.gov.lt"
+    form["endpoint_description"] = url_value
+    assert form.submit().status_code == 302
+    return Dataset.objects.filter(translations__title="Service title").first()
+
+
+def _get_history_reprs(app: DjangoTestApp, dataset: Dataset) -> list[str]:
+    resp = app.get(reverse("dataset-history", args=[dataset.pk]))
+    return [repr_ for entry in resp.context["history"] for repr_, url in entry["action"]["objects"]]
+
+
+def test_dataset_history_shows_replaced_endpoint_description(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    app.set_user(user)
+    dataset = _create_service_with_endpoint_description(app, user, "http://api.data.gov.lt")
+
+    url = reverse("dataset-change", args=[dataset.pk])
+    form = app.get(url).forms["dataset-form"]
+    form["endpoint_description"] = "http://api.updated.gov.lt"
+    assert form.submit().status_code == 302
+
+    assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
+    assert "http://api.data.gov.lt" in _get_history_reprs(app, dataset)
+
+
+def test_dataset_history_shows_cleared_endpoint_description(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    app.set_user(user)
+    dataset = _create_service_with_endpoint_description(app, user, "http://api.data.gov.lt")
+
+    url = reverse("dataset-change", args=[dataset.pk])
+    form = app.get(url).forms["dataset-form"]
+    form["endpoint_description"] = ""
+    assert form.submit().status_code == 302
+
+    assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
+    assert "http://api.data.gov.lt" in _get_history_reprs(app, dataset)
 
 
 class TestDatasetStructureImport:

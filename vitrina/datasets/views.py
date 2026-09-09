@@ -2,6 +2,7 @@ import csv
 import itertools
 import secrets
 import json
+import logging
 import uuid
 from collections import Counter, defaultdict
 from datetime import datetime
@@ -162,6 +163,8 @@ from vitrina.structure.services import (
     get_allowed_visibilities,
 )
 from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
+
+logger = logging.getLogger(__name__)
 
 
 class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
@@ -1339,10 +1342,15 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         attribution_history_objects = self._get_history_objects_for_model(DatasetAttribution)
         relation_history_objects = self._get_history_objects_for_model(DatasetRelation)
 
-        # Issue #2771: show versions of endpoint description URLs linked to this dataset.
-        endpoint_description_ids = list(self.object.endpoint_description.values_list("pk", flat=True))
+        # Issue #2771: show versions of endpoint description URLs ever linked to this
+        # dataset. update_endpoint_description() unlinks old URLs and prunes orphan
+        # rows, so previously linked URLs can only be recovered from the endpoint
+        # description M2M values recorded in historical dataset versions.
+        endpoint_description_ids = set(self.object.endpoint_description.values_list("pk", flat=True))
+        for version in dataset_history_objects:
+            endpoint_description_ids.update(self._get_version_m2m_ids(version, "endpoint_description"))
         endpoint_description_history_objects = Version.objects.get_for_model(EndpointDescription).filter(
-            object_id__in=endpoint_description_ids
+            object_id__in=list(endpoint_description_ids)
         )
 
         history_objects = (
@@ -1368,6 +1376,21 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             ]
 
         return all_versions.filter(pk__in=filtered_versions_ids)
+
+    @staticmethod
+    def _get_version_m2m_ids(version: Version, field_name: str) -> list:
+        try:
+            fields = json.loads(version.serialized_data)[0]["fields"]
+        except (json.JSONDecodeError, IndexError, KeyError, TypeError):
+            logger.warning(
+                "Failed to parse M2M field %s from version %s (pk=%s):",
+                field_name,
+                version,
+                version.pk,
+                exc_info=True,
+            )
+            return []
+        return fields.get(field_name) or []
 
 
 class DatasetStructureImportView(

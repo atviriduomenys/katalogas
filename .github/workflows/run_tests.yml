@@ -36,7 +36,14 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libmagic1
+        # Remove the preinstalled Google Chrome apt repo: its CDN sometimes
+        # serves stale Packages.gz metadata, making apt-get update fail with a
+        # hash sum mismatch and aborting (exit code 100). libmagic1 comes from
+        # the Ubuntu archive, so the Chrome repo isn't needed here (browser
+        # smoke tests are run separately).
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update && sudo apt-get install -y libmagic1
 
       - name: Install dependencies
         run: poetry install

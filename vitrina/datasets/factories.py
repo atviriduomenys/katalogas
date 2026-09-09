@@ -23,6 +23,7 @@ from vitrina.datasets.models import (
     DatasetQualifiedRelation,
     Contact,
     DCATResourceSubclass,
+    EndpointDescription,
     DatasetGroupCategoryUri,
     MeasurementTitle,
     Measurement,
@@ -300,6 +301,7 @@ class DatasetServiceFactory(DjangoModelFactory):
     is_public = True
     access_rights = Dataset.PUBLIC
     version = 1
+    status = Dataset.HAS_DATA
     service = True
     title = factory.Dict(
         {
@@ -354,14 +356,9 @@ class DatasetServiceFactory(DjangoModelFactory):
 
     @factory.post_generation
     def endpoint_description(self, create, extracted, **kwargs) -> None:
-        if not create:
+        if not create or extracted is None:
             return
-        urls = extracted
-        if urls is None:
-            return
-        if isinstance(urls, str):
-            urls = [urls]
-        from vitrina.datasets.models import EndpointDescription
+        urls = [extracted] if isinstance(extracted, str) else extracted
 
         for url in urls:
             description, _ = EndpointDescription.objects.get_or_create(download_url=url)

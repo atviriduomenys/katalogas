@@ -1,3 +1,5 @@
+from importlib import import_module
+
 from io import StringIO
 
 import pytest
@@ -222,3 +224,64 @@ def test_the_remap_survives_a_blog_with_no_posts():
     migration = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
 
     migration.remap_file_resources(global_apps, {}, Post, Post)
+
+
+def _fake_model(label):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(_meta=SimpleNamespace(label_lower=label))
+
+
+def _run_wrapper_with(monkeypatch, fake_migration):
+    """Drive the mirrored migration's wrapper with a stand-in upstream."""
+    module = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
+    copied, remapped = [], []
+
+    monkeypatch.setattr(module.upstream, "copy_data", lambda *args: copied.append(args))
+    monkeypatch.setattr(module.upstream, "migrate_from_blog_to_stories", fake_migration)
+    monkeypatch.setattr(module, "remap_file_resources", lambda *args: remapped.append(args))
+
+    return module, copied, remapped
+
+
+def test_the_wrapper_remaps_attachments_only_for_the_post_model(monkeypatch):
+    """Upstream calls copy_data per model; only the Post pass carries our ids.
+
+    Nothing else runs this wrapper - the tests around it call
+    remap_generic_relations directly - so a change in the callback's arguments
+    would first be noticed while migrating production.
+    """
+    module = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
+    pk_maps = {"Post": {1: 11}}
+    post = _fake_model("djangocms_stories.post")
+    category = _fake_model("djangocms_stories.postcategory")
+
+    def fake_migration(apps, schema_editor):
+        module.upstream.copy_data(pk_maps, False, _fake_model("djangocms_blog.blogcategory"), category)
+        module.upstream.copy_data(pk_maps, False, _fake_model("djangocms_blog.post"), post)
+
+    module, copied, remapped = _run_wrapper_with(monkeypatch, fake_migration)
+    module.migrate_from_blog_to_stories(apps="apps", schema_editor=None)
+
+    # Upstream still sees both passes, unchanged.
+    assert len(copied) == 2
+    # Ours runs once, for the post, and is handed the map upstream filled.
+    assert len(remapped) == 1
+    assert remapped[0][1] is pk_maps
+    assert remapped[0][3] is post
+
+
+def test_the_wrapper_puts_upstreams_copy_data_back(monkeypatch):
+    """Including when the migration blows up: the patch outlives the failure."""
+    module = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
+
+    def fake_migration(apps, schema_editor):
+        raise RuntimeError("First run 'python manage migrate djangocms_blog'.")
+
+    module, _, _ = _run_wrapper_with(monkeypatch, fake_migration)
+    patched = module.upstream.copy_data
+
+    with pytest.raises(RuntimeError):
+        module.migrate_from_blog_to_stories(apps="apps", schema_editor=None)
+
+    assert module.upstream.copy_data is patched

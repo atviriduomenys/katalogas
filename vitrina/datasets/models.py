@@ -321,7 +321,7 @@ class Dataset(Resource):
         verbose_name=_("Duomenų tvarkytojas"),
     )
 
-    # This is an internal field, not related to DCAT `adms:status` user for
+    # This is an internal field, not related to DCAT `adms:status` used for
     # `dcat:Distribution` and `cpsv:PublicService.`
     # See: https://github.com/atviriduomenys/katalogas/issues/1779
     status = models.CharField(

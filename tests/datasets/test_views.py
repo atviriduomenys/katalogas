@@ -3664,6 +3664,10 @@ def _get_history_reprs(app: DjangoTestApp, dataset: Dataset) -> list[str]:
     return [repr_ for entry in resp.context["history"] for repr_, url in entry["action"]["objects"]]
 
 
+def _history_reprs_contain(reprs: list[str], repr_: str) -> bool:
+    return any(r == repr_ for r in reprs)
+
+
 def test_dataset_history_shows_replaced_endpoint_description(app: DjangoTestApp):
     user = ManagerFactory(is_staff=True)
     app.set_user(user)
@@ -3675,7 +3679,7 @@ def test_dataset_history_shows_replaced_endpoint_description(app: DjangoTestApp)
     assert form.submit().status_code == 302
 
     assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
-    assert "http://api.data.gov.lt" in _get_history_reprs(app, dataset)
+    assert _history_reprs_contain(_get_history_reprs(app, dataset), "http://api.data.gov.lt")
 
 
 def test_dataset_history_shows_cleared_endpoint_description(app: DjangoTestApp):
@@ -3689,7 +3693,7 @@ def test_dataset_history_shows_cleared_endpoint_description(app: DjangoTestApp):
     assert form.submit().status_code == 302
 
     assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
-    assert "http://api.data.gov.lt" in _get_history_reprs(app, dataset)
+    assert _history_reprs_contain(_get_history_reprs(app, dataset), "http://api.data.gov.lt")
 
 
 def test_dataset_history_shows_multiple_endpoint_descriptions_after_removal(app: DjangoTestApp):
@@ -3706,8 +3710,8 @@ def test_dataset_history_shows_multiple_endpoint_descriptions_after_removal(app:
 
     assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == ["http://api2.data.gov.lt"]
     history_reprs = _get_history_reprs(app, dataset)
-    assert "http://api.data.gov.lt" in history_reprs
-    assert "http://api2.data.gov.lt" in history_reprs
+    assert _history_reprs_contain(history_reprs, "http://api.data.gov.lt")
+    assert _history_reprs_contain(history_reprs, "http://api2.data.gov.lt")
 
 
 class TestDatasetStructureImport:

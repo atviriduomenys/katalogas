@@ -18,6 +18,12 @@ PASSWORD = "Kat-Smoke-2026!aZ9"
 
 COORDINATOR_EMAIL = "vssa.coordinator@example.com"
 MANAGER_EMAIL = "vssa.manager@example.com"
+RESOURCE_MANAGER_EMAIL = "vssa.resource.manager@example.com"
+
+# Representative.RESOURCE_MANAGER — the only resource role the wizard (DCAT
+# forms) accepts, since it is gated by is_organization_resource_manager().
+RESOURCE_MANAGER_ROLE = "Duomenų išteklių tvarkytojas"
+RESOURCE_COORDINATOR_ROLE = "Duomenų išteklių koordinatorius"
 
 VSSA_TITLE = "Valstybės skaitmeninių sprendimų agentūra"
 VSSA_REG_CODE = "188772433"
@@ -240,9 +246,12 @@ def create_wizard_resource(
     their initialization, which makes the flow flaky.
     """
     page.goto(f"/orgs/{org_pk}/wizard/")
-    # The org form is auto-loaded over htmx; once it is in, htmx and Alpine
-    # are up (and x-cloak'ed tree nodes can be expanded).
-    page.wait_for_selector("#wizard-main-pane #wizard-fragment-form")
+    # The wizard bundle (htmx, Alpine) loads deferred; Alpine strips x-cloak
+    # from the tree children as it starts, so their visibility proves the
+    # shell is interactive. Do not wait for the auto-loaded organization
+    # form: OrganizationUpdateView is coordinator-only, so a resource
+    # manager gets the organization page swapped into the pane instead.
+    page.wait_for_selector(".wizard-tree-children:not([x-cloak])")
     # Expand the whole tree so the target row is visible regardless of depth.
     page.locator(".wizard-tree-expand-toggle").click()
     row = page.locator(f'.wizard-tree-node[data-node-key="{parent_key}"] > .wizard-tree-row')
@@ -267,9 +276,7 @@ def create_wizard_resource(
     add_tag(page, "tags", TAG)
     select_org(page, "organization", org_pk)
     page.locator("#wizard-save-btn").click()
-    page.wait_for_selector(
-        "#wizard-main-pane .notification.is-success, #wizard-main-pane .notification.is-danger"
-    )
+    page.wait_for_selector("#wizard-main-pane .notification.is-success, #wizard-main-pane .notification.is-danger")
     errors = page.locator("#wizard-main-pane .notification.is-danger").all_inner_texts()
     assert not errors, f"Wizard creation of {title!r} failed: {errors}"
     # The success swap keeps the form marked dirty for a short grace period;
@@ -281,6 +288,22 @@ def create_wizard_resource(
 def member_listed(page, org_pk: int, email: str) -> bool:
     page.goto(f"/orgs/{org_pk}/members/")
     return page.locator(f'table tr:has-text("{email}")').count() > 0
+
+
+def ensure_member(admin_page, org_pk: int, email: str, role_label: str) -> None:
+    """Make sure `email` is an organization member with the given role.
+
+    Both the check and the add run in the admin session: the members list is
+    only visible to coordinator roles, so e.g. a resource manager cannot
+    verify its own membership."""
+    if member_listed(admin_page, org_pk, email):
+        return
+    admin_page.goto(f"/orgs/{org_pk}/members/add/")
+    admin_page.fill('input[name="email"]', email)
+    admin_page.select_option('select[name="role"]', label=role_label)
+    admin_page.locator("#submit-id-submit").click()
+    admin_page.wait_for_load_state("networkidle")
+    assert member_listed(admin_page, org_pk, email), f"Member {email!r} was not added with the {role_label!r} role"
 
 
 # --------------------------------------------------------------------------- #
@@ -295,6 +318,8 @@ def test_register_and_login_all_roles(page, admin_page):
     ensure_user(page, admin_page, COORDINATOR_EMAIL, PASSWORD)
     assert "/login/" not in page.url
     ensure_user(page, admin_page, MANAGER_EMAIL, PASSWORD)
+    assert "/login/" not in page.url
+    ensure_user(page, admin_page, RESOURCE_MANAGER_EMAIL, PASSWORD)
     assert "/login/" not in page.url
 
 
@@ -357,15 +382,7 @@ def test_resource_coordinator_role(page, admin_page):
     """The admin grants the resource coordinator role to the manager."""
     ensure_user(page, admin_page, MANAGER_EMAIL, PASSWORD)
     org_pk = ensure_org(page, admin_page)
-    if member_listed(page, org_pk, MANAGER_EMAIL):
-        return
-
-    admin_page.goto(f"/orgs/{org_pk}/members/add/")
-    admin_page.fill('input[name="email"]', MANAGER_EMAIL)
-    admin_page.select_option('select[name="role"]', label="Duomenų išteklių koordinatorius")
-    admin_page.locator("#submit-id-submit").click()
-    admin_page.wait_for_load_state("networkidle")
-    assert member_listed(page, org_pk, MANAGER_EMAIL), "Manager is not listed as an organization member"
+    ensure_member(admin_page, org_pk, MANAGER_EMAIL, RESOURCE_COORDINATOR_ROLE)
 
 
 # --------------------------------------------------------------------------- #
@@ -393,8 +410,12 @@ def test_resource_registration_inline(page, admin_page):
 
 
 def test_resource_registration_wizard(page, admin_page):
-    ensure_user(page, admin_page, MANAGER_EMAIL, PASSWORD)
+    """Resources are registered through the wizard (DCAT forms), which is
+    gated by is_organization_resource_manager(); the resource manager role
+    ('Duomenų išteklių tvarkytojas') is used instead of the superuser."""
+    ensure_user(page, admin_page, RESOURCE_MANAGER_EMAIL, PASSWORD)
     org_pk = ensure_org(page, admin_page)
+    ensure_member(admin_page, org_pk, RESOURCE_MANAGER_EMAIL, RESOURCE_MANAGER_ROLE)
 
     for key in ("dvms", "dcat"):
         parent_pk = ensure_is_root(page, org_pk, IS_TITLES[key])

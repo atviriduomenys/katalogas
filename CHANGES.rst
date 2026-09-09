@@ -4,6 +4,28 @@ Changes
 v 1.25.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/1824
+
+- Upgrade django-cms 3.11 -> 5.0, and with it ``djangocms-blog`` -> ``djangocms-stories`` and
+  ``djangocms-text-ckeditor`` -> ``djangocms-text``. Pages and articles are versioned now: an
+  edit creates a draft and the published page keeps serving until the draft is published.
+- Move the story data across on the first boot after the upgrade. ``scripts/migrate_djangocms.sh``
+  reads the database state, runs the one-time ``djangocms-blog`` to ``djangocms-stories`` stage
+  only while it is pending, and hands over to the ordinary ``migrate`` afterwards. It refuses to
+  start on a database whose page tree is still on the django-cms 3 schema: that conversion runs
+  from a separate django-cms 4.1 image before deployment, and migrating without it would take the
+  schema past the point where the conversion can still run.
+- Stop the side menu and the navigation from listing pages that are not published. Versioning
+  makes an unpublished page a real state rather than an absence, and the menus were reading the
+  page tree without asking.
+- Keep flash messages visible to staff. They were hidden whenever the cms toolbar was available,
+  which is every page for every staff user, and they were never marked read either - so a saved
+  dataset or a rejected form said nothing, forever.
+- Scrub story text in ``scripts/anonymize.py`` on either schema, including article bodies that
+  the upgrade moves out of ``post_text`` and into text plugins. Organisation ``website`` is
+  anonymised too: it is free text, and a production dump was carrying a real contact address in
+  it.
+
 
 
 v 1.24.0 (2026-08-21)

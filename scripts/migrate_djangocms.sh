@@ -23,7 +23,7 @@ case "${upgrade_state}" in
         ;;
     legacy_pages)
         echo "The page tree is still on the django-cms 3 schema. It has to go through the" >&2
-        echo "3 -> 4 conversion first (see notes/migrations/djangocms); migrating now would" >&2
+        echo "3 -> 4 conversion first (see notes/migrations/djangocms/README.md); migrating now would" >&2
         echo "move the schema past the point where that conversion can run. Refusing." >&2
         exit 1
         ;;

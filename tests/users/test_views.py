@@ -1,6 +1,9 @@
 from unittest.mock import patch
 
+import re
+
 import pytest
+from django.test import override_settings
 from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
@@ -36,6 +39,7 @@ def test_login_with_wrong_credentials(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
     form = app.get(reverse("login")).forms["login-form"]
     form["username"] = "test@test.com"
@@ -49,6 +53,7 @@ def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_viisp_flag_reset_on_email_login(app: DjangoTestApp, user: User):
     user.is_viisp_login = True
     user.viisp_company_code = "123"
@@ -149,6 +154,27 @@ def test_register_with_correct_data(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_register_sends_activation_link_with_request_scheme(app: DjangoTestApp):
+    with patch("django_recaptcha.fields.client.submit") as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = app.post(
+            reverse("register"),
+            {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": "test_@test.com",
+                "password1": "TestPassword123?",
+                "password2": "TestPassword123?",
+                "agree_to_terms": True,
+                "g-recaptcha-response": "PASSED",
+            },
+        )
+        assert resp.status_code == 302
+        assert len(mail.outbox) == 1
+        assert re.search(r"http://testserver/register/account-confirm-email/[-:\w]+/?", mail.outbox[0].body)
+
+
+@pytest.mark.django_db
 def test_register_with_representative(app: DjangoTestApp):
     organization = OrganizationFactory()
     rep = RepresentativeFactory.create(
@@ -216,6 +242,7 @@ def test_change_password_with_wrong_user(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_change_password_with_correct_user(app: DjangoTestApp):
     user = User.objects.create_user(email="testas1@testas.com", password="testas123")
     app.set_user(user)
@@ -332,6 +359,7 @@ def test_account_login_alias_redirects_to_login(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+@override_settings(USE_OTP_VALIDATION=True)
 def test_login_second_time(app: DjangoTestApp):
     user = User.objects.create_user(email="testas1@testas.com", password="testas123", status=User.ACTIVE)
     app.set_user(user)

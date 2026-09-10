@@ -3137,7 +3137,7 @@ def test_edp_dcat_ap_rdf_starts_with_xml_declaration(app: DjangoTestApp):
 def test_edp_dcat_ap_rdf_drops_whitespace_uris(app: DjangoTestApp):
     Dataset.objects.all().delete()
     bad = "https://www.migracija.lt, https://migracija.lrv.lt"
-    DatasetFactory(
+    DatasetServiceFactory(
         access_rights=Dataset.PUBLIC,
         organization=OrganizationFactory(
             title="Migracija",
@@ -3146,7 +3146,7 @@ def test_edp_dcat_ap_rdf_drops_whitespace_uris(app: DjangoTestApp):
         ),
         landing_page=bad,
         endpoint_url=bad,
-        endpoint_description=bad,
+        endpoint_description=[bad],
     )
 
     res = app.get("/edp/dcat-ap.rdf")
@@ -3172,9 +3172,10 @@ def test_edp_dcat_ap_rdf_drops_whitespace_uris(app: DjangoTestApp):
 def test_edp_dcat_ap_rdf_keeps_internal_endpoint_urls(app: DjangoTestApp):
     Dataset.objects.all().delete()
     internal_url = "http://ext-db:8888/orawsv/SISTEMA_WS/WS_ESERVICES_PROVIDER?WSDL"
-    DatasetFactory(
+    DatasetServiceFactory(
         access_rights=Dataset.PUBLIC,
         service=True,
+        status=Dataset.HAS_DATA,
         endpoint_url=internal_url,
         endpoint_description=internal_url,
     )

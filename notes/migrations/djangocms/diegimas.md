@@ -302,7 +302,7 @@ select count(*) from information_schema.tables where table_name like 'djangocms_
 
 ---
 
-## 5. cms 5.0 diegimas (image A)
+## 5. cms 5.0 diegimas (image B — leidimas)
 
 Diegiama **įprastai**. `entrypoint.sh` per `scripts/migrate_djangocms.sh` pirmiausia patikrina bazės
 būseną: po 3 žingsnio ji `complete`, tad paleidžiamas įprastas `migrate`, kuris pritaiko

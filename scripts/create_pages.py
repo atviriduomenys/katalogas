@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.db import transaction
 from djangocms_stories.cms_appconfig import StoriesConfig, config_defaults
+from djangocms_versioning.constants import DRAFT
 from djangocms_versioning.models import Version
 
 
@@ -143,6 +144,27 @@ def get_or_create_stories_config():
     return config
 
 
+def _finish_what_a_broken_run_left(page, is_home, superuser):
+    """Repair a page an earlier, interrupted run left half done.
+
+    Runs from before each page got its own transaction could stop between
+    create_page and publish. Only a page with no published content at all is
+    published here: one that is published and has a newer draft belongs to
+    somebody editing it, and publishing that would put their work live.
+    """
+    if is_home and not page.is_home:
+        with transaction.atomic():
+            page.set_as_homepage()
+        print(f"  Made '{page.get_title()}' the home page, which an earlier run left undone")
+    if PageContent.objects.filter(page=page, language=LANGUAGE).exists():
+        return
+    draft = PageContent.admin_manager.filter(page=page, language=LANGUAGE).first()
+    version = Version.objects.get_for_content(draft) if draft else None
+    if version is not None and version.state == DRAFT:
+        version.publish(user=superuser)
+        print(f"  Published the draft an earlier run left behind for '{page.get_title()}'")
+
+
 def run():
     site = Site.objects.get_current()
     User = get_user_model()
@@ -179,6 +201,9 @@ def run():
             existing = Page.objects.filter(urls__slug=slug, urls__language=LANGUAGE, site=site).first()
             if existing:
                 by_slug[slug] = existing
+                _finish_what_a_broken_run_left(existing, is_home, superuser)
+                if is_home:
+                    home_page = existing
             print(f"  Skipping '{title}' — slug {slug!r} already exists")
             continue
 
@@ -186,30 +211,31 @@ def run():
         if parent_slug and parent is None:
             raise SystemExit(f"'{title}' asks for parent {parent_slug!r}, which is not in the tree above it")
 
-        page = create_page(
-            title=title,
-            template=TEMPLATE,
-            language=LANGUAGE,
-            slug=slug,
-            in_navigation=in_navigation,
-            site=site,
-            created_by=superuser,
-            parent=parent,
-            apphook="StoriesApp" if attach_stories else None,
-            apphook_namespace=stories_config.namespace if attach_stories else None,
-            overwrite_url=overwrite_url,
-        )
-        by_slug[slug] = page
-
-        if is_home:
-            # cms locks the tree roots while it rewrites the descendants' paths,
-            # and that lock needs a transaction of its own.
-            with transaction.atomic():
+        # One transaction per page. create_page commits on its own, so a failure
+        # before publish() used to leave a draft that every later run skipped. It
+        # is also the transaction set_as_homepage() needs: cms locks the tree roots
+        # while it rewrites the descendants' paths.
+        with transaction.atomic():
+            page = create_page(
+                title=title,
+                template=TEMPLATE,
+                language=LANGUAGE,
+                slug=slug,
+                in_navigation=in_navigation,
+                site=site,
+                created_by=superuser,
+                parent=parent,
+                apphook="StoriesApp" if attach_stories else None,
+                apphook_namespace=stories_config.namespace if attach_stories else None,
+                overwrite_url=overwrite_url,
+            )
+            if is_home:
                 page.set_as_homepage()
+            content = PageContent.admin_manager.get(page=page, language=LANGUAGE)
+            Version.objects.get_for_content(content).publish(user=superuser)
+        by_slug[slug] = page
+        if is_home:
             home_page = page
-        content = PageContent.admin_manager.get(page=page, language=LANGUAGE)
-        version = Version.objects.get_for_content(content)
-        version.publish(user=superuser)
 
         label = f"slug={slug!r}"
         if parent_slug:

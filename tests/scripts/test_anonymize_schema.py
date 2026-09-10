@@ -1,14 +1,15 @@
-"""The anonymizer has to find the story text in either schema.
+"""The anonymizer has to find the story text, and stop when it cannot.
 
-django-cms 5 moved it: djangocms-blog's translation rows became
-djangocms-stories content rows. `dataset` resolves a missing table lazily, so
-reaching for the wrong name scrubs nothing and says nothing - the dump goes out
-with every article's real title and text in it.
+After the django-cms 5 upgrade story text lives in djangocms-stories content
+rows only. `dataset` resolves a missing table lazily, so reaching for the wrong
+name scrubs nothing and says nothing - the dump goes out with every article's
+real title and text in it. A pre-upgrade dump, or one left by an upgrade that
+stopped half way, is refused rather than half scrubbed.
 """
 
 import pytest
 
-from scripts.anonymize import STORY_CONTENT_TABLE, _story_content_table
+from scripts.anonymize import LEGACY_STORY_TABLE, STORY_CONTENT_TABLE, _story_content_table
 
 
 class FakeDatabase:
@@ -30,6 +31,16 @@ def test_stops_on_a_database_without_it():
         _story_content_table(db)
 
     assert STORY_CONTENT_TABLE in str(stop.value)
+
+
+def test_stops_on_a_database_an_upgrade_left_half_done():
+    """Both tables standing: scrubbing only the stories one would ship the legacy text."""
+    db = FakeDatabase("organization", STORY_CONTENT_TABLE, LEGACY_STORY_TABLE)
+
+    with pytest.raises(SystemExit) as stop:
+        _story_content_table(db)
+
+    assert LEGACY_STORY_TABLE in str(stop.value)
 
 
 def test_every_listed_table_has_a_function_to_anonymize_it():

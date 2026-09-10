@@ -13,6 +13,8 @@ from typer import Argument, Option, confirm, run
 # Story text lives in djangocms-stories content rows. Before the django-cms 5
 # upgrade it was djangocms-blog translation rows; that schema is gone.
 STORY_CONTENT_TABLE = "djangocms_stories_postcontent"
+# What a django-cms 5 upgrade that stopped half way leaves standing next to it.
+LEGACY_STORY_TABLE = "djangocms_blog_post_translation"
 
 
 def _story_content_table(db: Database) -> str:
@@ -23,10 +25,19 @@ def _story_content_table(db: Database) -> str:
     back a dump that still carries every article's real title and text. A
     pre-upgrade dump now lands here too, and refusing is the right answer - it
     holds story text this script no longer knows how to reach.
+
+    A database carrying both tables stops too: scrubbing the stories half and
+    passing the legacy half through would be the quietest leak of all.
     """
     if STORY_CONTENT_TABLE not in db.tables:
         raise SystemExit(
             f"This database has no {STORY_CONTENT_TABLE}. Story text would go out unscrubbed, so nothing was changed."
+        )
+    if LEGACY_STORY_TABLE in db.tables:
+        raise SystemExit(
+            f"This database still has {LEGACY_STORY_TABLE}, left by a django-cms 5 upgrade that did "
+            "not finish. This script only scrubs the djangocms-stories schema, so that text would go "
+            "out as it is - nothing was changed."
         )
     return STORY_CONTENT_TABLE
 

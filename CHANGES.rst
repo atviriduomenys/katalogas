@@ -14,17 +14,21 @@ https://github.com/atviriduomenys/katalogas/issues/1824
   only while it is pending, and hands over to the ordinary ``migrate`` afterwards. It refuses to
   start on a database whose page tree is still on the django-cms 3 schema: that conversion runs
   from a separate django-cms 4.1 image before deployment, and migrating without it would take the
-  schema past the point where the conversion can still run.
+  schema past the point where the conversion can still run. The procedure, the 4.1 image and
+  an A/B check of the content are in ``notes/migrations/djangocms/``.
 - Stop the side menu and the navigation from listing pages that are not published. Versioning
   makes an unpublished page a real state rather than an absence, and the menus were reading the
   page tree without asking.
 - Keep flash messages visible to staff. They were hidden whenever the cms toolbar was available,
   which is every page for every staff user, and they were never marked read either - so a saved
   dataset or a rejected form said nothing, forever.
-- Scrub story text in ``scripts/anonymize.py`` on either schema, including article bodies that
-  the upgrade moves out of ``post_text`` and into text plugins. Organisation ``website`` is
-  anonymised too: it is free text, and a production dump was carrying a real contact address in
-  it.
+- Scrub story text in ``scripts/anonymize.py`` on either schema, and in text plugins for any
+  config that keeps its articles in placeholders - this portal keeps them in ``post_text``.
+  Organisation ``website`` is anonymised too: it is free text, and a production dump was
+  carrying a real contact address in it.
+- Anonymise ``adp_cms_page`` in ``scripts/anonymize.py``. Its function read ``news_item``
+  instead, so the old portal's CMS pages went out unscrubbed, news items were scrubbed twice,
+  and ``dataset`` added a ``description`` column to ``news_item`` in every dump.
 
 
 

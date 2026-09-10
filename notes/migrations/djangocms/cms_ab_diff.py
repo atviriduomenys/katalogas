@@ -122,6 +122,11 @@ def compare(a, b):
         ra, rb = posts_a[key], posts_b[key]
         if ra["published"] and not rb["published"]:
             blocking.append(f"NAUJIENA nukrito į draft: slug={key[0]!r} lang={key[1]}")
+        elif not ra["published"] and rb["published"]:
+            blocking.append(
+                f"NAUJIENA NETIKĖTAI PUBLIKUOTA: slug={key[0]!r} lang={key[1]} (A: ne, B: published) "
+                f"— nepublikuota naujiena išlįstų į svetainę"
+            )
         if ra["date_published"] != rb["date_published"]:
             blocking.append(
                 f"NAUJIENOS data pasikeitė: slug={key[0]!r} "

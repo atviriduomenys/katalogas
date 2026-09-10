@@ -12,9 +12,9 @@ STORIES_DATA_MIGRATION = ("djangocms_stories", "0002_auto_20250618_1556")
 
 def get_upgrade_state(*, tables, applied_migrations):
     # Checked first, and on its own: a django-cms 3 database also carries the
-    # legacy blog tables, so without this it reads as merely "pending" and the
-    # ordinary migrate that follows walks the page schema past the point where
-    # the cms4_migration conversion can still run.
+    # legacy blog tables, so without this it would read as merely "pending" -
+    # refused either way, but told about the blog stage when what it lacks is
+    # the whole 4.1 tool run.
     if LEGACY_PAGE_TABLE in tables:
         return "legacy_pages"
 
@@ -31,7 +31,7 @@ def get_upgrade_state(*, tables, applied_migrations):
 
 
 class Command(BaseCommand):
-    help = "Report whether the one-time djangocms-blog data migration is needed."
+    help = "Report where the database stands in the django-cms 5 upgrade."
 
     def handle(self, *args, **options):
         with connection.cursor() as cursor:

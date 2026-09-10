@@ -290,9 +290,10 @@ būseną: po 3 žingsnio ji `complete`, tad paleidžiamas įprastas `migrate`, k
 Trukmė: migracijos ir portalo pakilimas kartu — apie **3,5 min** (repeticijoje 212 s;
 `entrypoint.sh` dar prasuka webpack build'ą, `collectstatic` ir `rebuild_search`).
 
-> Jei 5.0 image'as vis dėlto pasileistų ant bazės, dar nepraėjusios 3 žingsnio, jis nemigruos:
-> `migrate_djangocms.sh` randa `cms_title`, sustoja su būsena `legacy_pages`, ir konteineris nepakyla.
-> Tai apsauga, ne kelias — grįžk prie 3 žingsnio.
+> Jei 5.0 image'as vis dėlto pasileistų ant bazės, 3 žingsnio nebaigusios, jis nemigruos:
+> `migrate_djangocms.sh` randa `cms_title` (`legacy_pages`) arba neperkeltas blog lenteles
+> (`pending`), sustoja, ir konteineris nepakyla. Pats leidimas duomenų neperkelia. Tai apsauga, ne
+> kelias — grįžk prie 3 žingsnio.
 
 ---
 

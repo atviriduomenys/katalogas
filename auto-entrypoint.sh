@@ -7,7 +7,8 @@ npm run build || echo "⚠️ Webpack build (partially) failed, continuing..."
 cd ..
 
 python3 manage.py collectstatic --noinput
-# The helper runs the one-time legacy blog stage when required, then all migrations.
+# The helper refuses a database the django-cms 4.1 migration tool has not finished
+# with, then runs all migrations.
 # Temporary: #2795 puts the plain migrate call back once every environment is past
 # the upgrade, and the helper goes with it.
 ./scripts/migrate_djangocms.sh || exit 1

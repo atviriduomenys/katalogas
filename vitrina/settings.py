@@ -177,8 +177,9 @@ INSTALLED_APPS = [
     "vitrina.search",
 ]
 
-# djangocms-stories bundles the legacy app solely for its one-time data migration.
-# scripts/migrate_djangocms.sh enables it only while that migration is pending.
+# djangocms-stories bundles the legacy app solely for its one-time data migration,
+# which runs from the django-cms 4.1 migration tool with DJANGOCMS_BLOG_MIGRATION=1
+# (notes/migrations/djangocms/diegimas.md, step 3). The release never turns it on.
 if env.bool("DJANGOCMS_BLOG_MIGRATION", default=False):
     INSTALLED_APPS.insert(INSTALLED_APPS.index("djangocms_stories"), "djangocms_blog")
 

@@ -31,8 +31,8 @@ def test_a_django_cms_3_database_is_refused_before_anything_else():
     """cms_title means the 3 -> 4 conversion has not run.
 
     Such a database carries the legacy blog tables too, so without this it
-    would read as "pending" and the migrate that follows would take the page
-    schema past the point where cms4_migration still works.
+    would read as "pending" - refused either way, but told about the blog stage
+    when what it lacks is the whole 4.1 tool run.
     """
     state = get_upgrade_state(
         tables={"cms_title", "djangocms_blog_post"},

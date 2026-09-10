@@ -6,7 +6,7 @@
 >
 > Rašyta 2026-08-05, kai #2646 dar bandė šokti į 5.0 vienu žingsniu. Nuo tada #2646 šį skaidymą
 > įgyvendina: 5.0 leidimo image'as ir atskiras 4.1 migracijos įrankis, o `scripts/migrate_djangocms.sh`
-> atsisako migruoti bazę, kuri dar turi `cms_title`, t. y. nepraėjo 1 etapo. Vietos, aprašančios
+> atsisako migruoti bazę, kuri nepraėjo 1 etapo: dar turi `cms_title` arba neperkeltas blog lenteles. Vietos, aprašančios
 > tuometinę #2646 būseną, pažymėtos; lentelių stulpelis „#2646" rodo, kas jau padaryta (2026-09).
 
 ## Esmė: atnaujinimas yra TRIJŲ etapų, ne vieno
@@ -152,7 +152,8 @@ djangocms-alias = "^3.0.0"
 ```
 
 `djangocms_4_migration` leidimo `INSTALLED_APPS` nėra. Shim'o sąlyga ir `aldryn-apphooks-config` lieka,
-kol #2795 jų neišims: leidimo image'as irgi moka blog → stories etapą, jei bazei jo dar reikia.
+kol #2795 jų neišims, nes įrankio image'as build'inamas iš leidimo commit'o. Pats leidimas blog → stories
+etapo nevykdo: bazę, kuriai jo dar reikia, atmeta (`pending`).
 
 ### Kodo pakeitimai (CMS 5 API — `TreeNode` nebėra)
 

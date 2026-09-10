@@ -1,4 +1,4 @@
-# django-cms 3.10 → 5.0 migracija
+# django-cms 3.11 → 5.0 migracija
 
 Baigta. Vienkartinė mechanika — būsenos patikra paleidžiant konteinerį, blog → stories suderinamumo
 programa, migracijų veidrodis — išimta #2795.

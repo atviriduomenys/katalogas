@@ -45,9 +45,11 @@ Tuščios bazės variantas, į kurį rodo `scripts/ui/README.md`: žinomas nedid
 lengva patikrinti akimis.
 
     git checkout devel                 # senas cms 3 kodas; su #2784 jame yra ir scripts/ui/
-    python manage.py migrate
-    python manage.py createsuperuser
-    python scripts/ui/create_organization.py    # ir kiti skriptai iš „Any portal" stulpelio
+    poetry install
+    poetry run python manage.py migrate
+    poetry run python manage.py createsuperuser        # skriptams reikia būtent superuser'io
+    poetry run playwright install chromium
+    poetry run python scripts/ui/create_organization.py   # ir kiti iš „Any portal" stulpelio
     pg_dump -Fc ... > baseline.dump
 
 Portalas turi veikti, o prisijungimo duomenys ir vienkartinių kodų išjungimas aprašyti

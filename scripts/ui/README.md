@@ -82,13 +82,13 @@ Playwright arrives with the development dependencies (`pytest-playwright`), so `
 brings the driver. The browser is a separate download:
 
 ```bash
-playwright install chromium
+poetry run playwright install chromium
 ```
 
 Each script then runs on its own:
 
 ```bash
-python scripts/ui/create_organization.py
+poetry run python scripts/ui/create_organization.py
 ```
 
 ## What a script expects
@@ -96,7 +96,9 @@ python scripts/ui/create_organization.py
 - The portal running on `http://localhost:8000`, or `VITRINA_UI_URL` pointing elsewhere.
 - The django-cms Site named `localhost`, or `VITRINA_UI_SITE` naming it. `stories_images.py`
   reaches the stories through the admin's site link, and a deployment names that after itself.
-- An account with rights to reach the admin, passed in the environment:
+- A **superuser** account, passed in the environment. Rights to reach the admin are not enough:
+  creating an organisation is superuser-only (`OrganizationCreateView.has_permission`), so with any
+  other account `create_organization.py` never sees "Nauja organizacija" and times out:
 
   ```bash
   export VITRINA_UI_EMAIL=...
@@ -128,12 +130,12 @@ python scripts/ui/create_organization.py
   past the highest number already there.
 
 Scripts that stop mid-way usually mean the admin markup moved. Re-record with
-`playwright codegen http://localhost:8000` rather than patching the selectors by hand.
+`poetry run playwright codegen http://localhost:8000` rather than patching the selectors by hand.
 
 ## `content_frame` is a property
 
 `page.locator("iframe").content_frame.get_by_role(...)` is correct and is what
-`playwright codegen` emits. Review tooling keeps reporting it as a method that has to be called;
+`poetry run playwright codegen` emits. Review tooling keeps reporting it as a method that has to be called;
 it is not:
 
 ```python

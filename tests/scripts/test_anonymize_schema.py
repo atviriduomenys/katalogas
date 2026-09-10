@@ -135,3 +135,25 @@ def test_the_plugin_scrub_skips_a_database_without_text_plugins(tmp_path):
     db.query("CREATE TABLE organization (id integer primary key)")
 
     _scrub_story_plugins(db)
+
+
+def test_old_portal_pages_are_scrubbed_in_their_own_table():
+    """_anonymize_adp_cms_page used to read news_item.
+
+    The old portal's pages then went out untouched, news items were scrubbed
+    twice, and dataset - which creates any column it is asked to write - added
+    a description column to news_item in every dump.
+    """
+    from unittest.mock import Mock
+
+    from faker import Faker
+
+    from scripts.anonymize import _anonymize_adp_cms_page
+
+    pages = FakeTable([{"id": 1, "title": "Tikras puslapis", "body": "<p>Tikras</p>"}])
+    news = FakeTable([{"id": 7, "title": "Naujiena"}])
+
+    _anonymize_adp_cms_page({"adp_cms_page": pages, "news_item": news}, Faker(), Mock(), {})
+
+    assert [row["id"] for row in pages.updates] == [1]
+    assert news.updates == []

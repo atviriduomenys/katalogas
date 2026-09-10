@@ -215,7 +215,7 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
 
 
 def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["news_item"]
+    objects: Table = db["adp_cms_page"]
     pk_name = "id"
     for record in objects.all():
         data = {

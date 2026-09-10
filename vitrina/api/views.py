@@ -2,10 +2,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from django.db.utils import IntegrityError
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.templatetags.static import static
 from django.utils import timezone
+from django.views.decorators.http import require_safe
 from django.apps import apps
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
@@ -50,6 +53,9 @@ from vitrina.api.serializers import (
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.orgs.models import Organization
+from vitrina.projects.models import Project
+from vitrina.projects.services import get_projects
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.structure.models import Metadata
@@ -784,3 +790,55 @@ def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
 
 def edp_dcat_ap_restricted_rdf(request: HttpRequest) -> HttpResponse:
     return render_rdf_response(request, Dataset.edp_restricted.all(), only_link_rendered_datasets=True)
+
+
+STATS_SCOPES = ("public", "all")
+
+
+@require_safe
+def stats(request: HttpRequest) -> JsonResponse:
+    """Aggregate counters for the landing page.
+
+    ``scope=public`` counts what an anonymous visitor can reach in this instance.
+    ``scope=all`` counts everything registered in it, regardless of access rights;
+    an instance holding restricted data would otherwise report zero.
+
+    Neither variant looks at the requesting user, so the response is the same for
+    everyone and safe to store in a shared cache.
+    """
+    scope = request.GET.get("scope", "public")
+    if scope not in STATS_SCOPES:
+        return JsonResponse(
+            {"error": "Unsupported scope '%s'. Use one of: %s." % (scope, ", ".join(STATS_SCOPES))},
+            status=400,
+        )
+
+    not_deleted = {"deleted__isnull": True, "deleted_on__isnull": True}
+
+    if scope == "public":
+        organizations = Organization.public.count()
+        # AnonymousUser on purpose, not request.user: the counter must match what
+        # the dataset list shows to a visitor who is not logged in, and it must be
+        # the same number for everybody so that it can be cached.
+        datasets = Dataset.restricted.for_user(AnonymousUser()).count()
+        projects = get_projects(AnonymousUser(), approved_only=True).count()
+    else:
+        organizations = Organization.objects.filter(**not_deleted).count()
+        datasets = Dataset.objects.filter(organization_id__isnull=False, **not_deleted).count()
+        # Only approved use cases are counted in either scope: an unapproved one
+        # has not been reviewed yet and should not appear in a public counter.
+        projects = Project.objects.filter(status=Project.APPROVED, **not_deleted).count()
+
+    response = JsonResponse(
+        {
+            "scope": scope,
+            "organizations": organizations,
+            "datasets": datasets,
+            "projects": projects,
+        }
+    )
+    # The landing page is served from another host, and the payload is aggregate
+    # counts only, so it is exposed to any origin.
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Cache-Control"] = "public, max-age=300"
+    return response

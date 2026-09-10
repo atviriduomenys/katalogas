@@ -1,6 +1,6 @@
 # AGENTS.md — Katalogas (data.gov.lt)
 
-Lithuania's open data catalogue. Django 4.2 / Python 3.11 / django-cms / PostgreSQL 14.
+Lithuania's open data catalogue. Django 4.2 / Python 3.11 / django-cms / PostgreSQL 18.
 
 ## Specifications implemented
 
@@ -85,6 +85,7 @@ Nix dev shell available (`nix develop`) — provides Python, Poetry, Node, and a
 
 - Services must be running: `docker compose up -d`
 - `poetry run pytest -vvra --tb=short` — full suite ~10-15 min
+- Browser-only smoke tests against a running instance (no DB access): `poetry run pytest smoketests --base-url=http://localhost:8000` — requires a DEBUG instance with fake-VIISP, admin `test@test.com`/`test`, `USE_OTP_VALIDATION=False`
 - Single test: `poetry run pytest -vvra --tb=short tests/path/to/test.py::test_name`
 - Use pytest style test functions, not `unittest.TestCase` classes.
 - Follow TDD: write the test first, verify it fails, then implement the fix.

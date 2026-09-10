@@ -63,6 +63,8 @@ class SentMailAdmin(RevisionCommentVersionAdmin):
         "email_content_shortened",
         "email_sent",
     )
+    search_fields = ("recipient", "email_subject")
+    ordering = ("-created",)
 
     def recipient_list(self, obj):
         if len(obj.recipient) >= 50:

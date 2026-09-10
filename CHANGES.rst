@@ -1,7 +1,7 @@
 Changes
 #######
 
-v 1.25.0 (current)
+v 1.26.0 (current)
 ==================
 
 https://github.com/atviriduomenys/katalogas/issues/1824
@@ -25,6 +25,50 @@ https://github.com/atviriduomenys/katalogas/issues/1824
   the upgrade moves out of ``post_text`` and into text plugins. Organisation ``website`` is
   anonymised too: it is free text, and a production dump was carrying a real contact address in
   it.
+
+
+
+v 1.25.0 (2026-09-10)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2791
+
+- Show the "Tvarkyti IS metaduomenis" button and open the IS metadata wizard for the resource
+  coordinator, the resource manager and the superuser. The button asked for two conditions that
+  no single role met, so nobody reached the wizard, although its forms already accepted these
+  users. Staff without ``is_superuser`` stays outside the wizard shell.
+- Do not offer "Redaguoti organizaciją" to the two resource roles: the wizard opens the same form
+  from its root node. Nobody loses access, and nothing changes for the open data roles.
+- Send a logged out visitor of a wizard URL to the login page again, with ``next`` intact.
+- Stop the wizard requesting the organization form for a user who may not edit the organization,
+  which answered a redirect that HTMX swapped into the pane as a whole page. A short note takes
+  its place, and the root node still returns the pane to the organization state.
+- Replace ``is_organization_resource_manager`` with ``can_manage_is_metadata``, add
+  ``can_edit_organization_details``, and gather the four wizard views' access rules into
+  ``WizardAccessMixin``.
+
+https://github.com/atviriduomenys/katalogas/issues/2793
+
+- Upgrade PostgreSQL to `18`. `docker-compose.yml` and `docker-compose-test.yml`
+  used `14`, `docker-compose.dev.yml` and `docker-compose.template.yml` used `16`.
+  All four now use `18`. `14` reaches end of life 2026-11-12.
+- Pin `PGDATA` to `/var/lib/postgresql/data` in every compose file. The `postgres:18`
+  image no longer defaults there, so the existing mounts would stop being the data
+  directory and an empty database would be initialised inside the container.
+- **Existing data directories are not upgraded in place.** `postgres:18` refuses a
+  directory written by `14`, so dump before switching, move the old directory aside,
+  then restore into the new one::
+
+      docker compose exec postgres pg_dump -U adp -Fc adp-dev > adp-dev.dump
+      docker compose down
+      sudo mv var/postgres var/postgres-pg14
+      docker compose up -d postgres
+      docker compose exec -T postgres pg_restore -U adp -d adp-dev --no-owner < adp-dev.dump
+      python manage.py migrate --skip-checks
+
+  Keep `var/postgres-pg14` until the new database is verified - it is the rollback.
+  Remote servers need the same, with the dump taken before the upgrade: `14` restores
+  onto `18`, but `18` does not restore onto `14`.
 
 
 
@@ -55,6 +99,12 @@ https://github.com/atviriduomenys/katalogas/issues/2771
 - Hide the deprecated "API specifikacijos formatas" (``endpoint_description_type``) field from
   service forms, detail pages, and administration while preserving existing database values and
   API output.
+- Raise the ``dcat:endpointDescription`` (``endpoint_description``) cardinality from 0..1 to 0..n.
+  The single ``CharField`` is replaced by a many-to-many relation to the new ``EndpointDescription``
+  model, so a data service can expose several API specifications at once. Legacy values are copied
+  into the new relation by the ``0047_endpoint_description_multivalue`` migration. Orphan
+  ``EndpointDescription`` rows (no longer linked to any dataset) are pruned on every update and on
+  dataset deletion.
 
 https://github.com/atviriduomenys/katalogas/issues/2722
 

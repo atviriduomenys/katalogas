@@ -28,6 +28,7 @@ from vitrina.datasets.factories import (
     ContactFactory,
     DatasetAttributionFactory,
     DatasetFactory,
+    DatasetServiceFactory,
     DatasetQualifiedRelationFactory,
     DatasetRelationFactory,
     DCATResourceSubclassFactory,
@@ -316,7 +317,9 @@ class TestDcatDatasetCreateView:
         assert dataset.organization == org
         assert dataset.title == "Service All Fields"
         assert dataset.endpoint_url == "https://api.example.com"
-        assert dataset.endpoint_description == "https://api.example.com/spec"
+        assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == [
+            "https://api.example.com/spec"
+        ]
         assert dataset.access_rights == Dataset.RESTRICTED
         assert dataset.landing_page == "https://example.com/service"
         assert dataset.contact == contact
@@ -890,11 +893,10 @@ class TestDcatDatasetUpdateView:
         org = OrganizationFactory()
         new_org = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
-        dataset = DatasetFactory(
+        dataset = DatasetServiceFactory(
             organization=org,
             subclass=subclass,
             is_public=False,
-            service=True,
             endpoint_url="https://api.example.com",
             endpoint_description="https://api.example.com/spec",
         )
@@ -1080,7 +1082,9 @@ class TestDcatDatasetUpdateView:
         dataset.refresh_from_db()
         assert dataset.title == "Updated Service Title"
         assert dataset.endpoint_url == "https://api.updated.com"
-        assert dataset.endpoint_description == "https://api.updated.com/spec"
+        assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == [
+            "https://api.updated.com/spec"
+        ]
         assert dataset.access_rights == Dataset.RESTRICTED
         assert dataset.landing_page == "https://example.com/updated-svc"
         assert dataset.contact == contact

@@ -2,6 +2,7 @@ import csv
 import itertools
 import secrets
 import json
+import logging
 import uuid
 from collections import Counter, defaultdict
 from datetime import datetime
@@ -128,6 +129,7 @@ from vitrina.datasets.models import (
     Contact,
     DatasetExcludedGroups,
     DCATResourceSubclass,
+    EndpointDescription,
 )
 from vitrina.classifiers.models import (
     Category,
@@ -161,6 +163,8 @@ from vitrina.structure.services import (
     get_allowed_visibilities,
 )
 from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
+
+logger = logging.getLogger(__name__)
 
 
 class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
@@ -920,7 +924,6 @@ class DatasetCreateView(
         else:
             self.object.endpoint_url = None
             self.object.endpoint_type = None
-            self.object.endpoint_description = None
             self.object.service = False
         if subclass.name == DCATResourceSubclass.SERIES:
             self.object.series = True
@@ -996,6 +999,9 @@ class DatasetCreateView(
 
         if documentation_urls := form.cleaned_data.get("documentation"):
             self.object.update_documentation(documentation_urls)
+
+        if endpoint_description_urls := form.cleaned_data.get("endpoint_description"):
+            self.object.update_endpoint_description(endpoint_description_urls)
 
         if service_type := form.cleaned_data.get("service_type"):
             self.object.service_type.set(service_type)
@@ -1217,6 +1223,9 @@ class DatasetUpdateView(
         if "documentation" in form.changed_data:
             self.object.update_documentation(form.cleaned_data["documentation"])
 
+        if "endpoint_description" in form.changed_data:
+            self.object.update_endpoint_description(form.cleaned_data.get("endpoint_description") or [])
+
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
 
@@ -1333,6 +1342,17 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         attribution_history_objects = self._get_history_objects_for_model(DatasetAttribution)
         relation_history_objects = self._get_history_objects_for_model(DatasetRelation)
 
+        # Issue #2771: show versions of endpoint description URLs ever linked to this
+        # dataset. update_endpoint_description() unlinks old URLs and prunes orphan
+        # rows, so previously linked URLs can only be recovered from the endpoint
+        # description M2M values recorded in historical dataset versions.
+        endpoint_description_ids = set(self.object.endpoint_description.values_list("pk", flat=True))
+        for version in dataset_history_objects:
+            endpoint_description_ids.update(self._get_version_m2m_ids(version, "endpoint_description"))
+        endpoint_description_history_objects = Version.objects.get_for_model(EndpointDescription).filter(
+            object_id__in=list(endpoint_description_ids)
+        )
+
         history_objects = (
             property_history_objects
             | model_history_objects
@@ -1341,6 +1361,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             | dataset_distribution_history_objects
             | attribution_history_objects
             | relation_history_objects
+            | endpoint_description_history_objects
         )
         return history_objects.order_by("-revision__date_created")
 
@@ -1355,6 +1376,21 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             ]
 
         return all_versions.filter(pk__in=filtered_versions_ids)
+
+    @staticmethod
+    def _get_version_m2m_ids(version: Version, field_name: str) -> list:
+        try:
+            fields = json.loads(version.serialized_data)[0]["fields"]
+        except (json.JSONDecodeError, IndexError, KeyError, TypeError):
+            logger.warning(
+                "Failed to parse M2M field %s from version %s (pk=%s):",
+                field_name,
+                version,
+                version.pk,
+                exc_info=True,
+            )
+            return []
+        return fields.get(field_name) or []
 
 
 class DatasetStructureImportView(

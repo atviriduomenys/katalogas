@@ -20,6 +20,30 @@ https://github.com/atviriduomenys/katalogas/issues/2791
   ``can_edit_organization_details``, and gather the four wizard views' access rules into
   ``WizardAccessMixin``.
 
+https://github.com/atviriduomenys/katalogas/issues/2793
+
+- Upgrade PostgreSQL to `18`. `docker-compose.yml` and `docker-compose-test.yml`
+  used `14`, `docker-compose.dev.yml` and `docker-compose.template.yml` used `16`.
+  All four now use `18`. `14` reaches end of life 2026-11-12.
+- Pin `PGDATA` to `/var/lib/postgresql/data` in every compose file. The `postgres:18`
+  image no longer defaults there, so the existing mounts would stop being the data
+  directory and an empty database would be initialised inside the container.
+- **Existing data directories are not upgraded in place.** `postgres:18` refuses a
+  directory written by `14`, so dump before switching, move the old directory aside,
+  then restore into the new one::
+
+      docker compose exec postgres pg_dump -U adp -Fc adp-dev > adp-dev.dump
+      docker compose down
+      sudo mv var/postgres var/postgres-pg14
+      docker compose up -d postgres
+      docker compose exec -T postgres pg_restore -U adp -d adp-dev --no-owner < adp-dev.dump
+      python manage.py migrate --skip-checks
+
+  Keep `var/postgres-pg14` until the new database is verified - it is the rollback.
+  Remote servers need the same, with the dump taken before the upgrade: `14` restores
+  onto `18`, but `18` does not restore onto `14`.
+
+
 
 v 1.24.0 (2026-08-21)
 ==================

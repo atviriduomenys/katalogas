@@ -48,6 +48,7 @@ def get_datasets_for_rdf(qs, only_link_rendered_datasets: bool = False):
         .prefetch_related("translations")
         .prefetch_related("datasetdistribution_set")
         .prefetch_related("datasetdistribution_set__format")
+        .prefetch_related("endpoint_description")
         .order_by("published")
     )
     for dataset in datasets:
@@ -94,7 +95,7 @@ def get_datasets_for_rdf(qs, only_link_rendered_datasets: bool = False):
             "service": dataset.service,
             "endpoint_url": _safe_uri(dataset.endpoint_url),
             "endpoint_type": _get_format(dataset.endpoint_type),
-            "endpoint_description": _safe_uri(dataset.endpoint_description),
+            "endpoint_description": [uri for url in dataset.get_endpoint_descriptions() if (uri := _safe_uri(url))],
             "related_datasets": (
                 _get_rel_dataset(relation)
                 for relation in service_relations

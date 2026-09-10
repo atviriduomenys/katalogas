@@ -58,7 +58,8 @@ class DatasetAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     search_fields = ("translations__title",)
     list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
-    readonly_fields = ("uuid",)
+    # Issue #2771: new multi-value field is shown read-only in admin.
+    readonly_fields = ("uuid", "endpoint_description")
 
     def has_change_permission(self, request, obj=None):
         """Control who can edit datasets"""

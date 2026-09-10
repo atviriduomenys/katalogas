@@ -162,7 +162,7 @@ class TestServiceResourceForm:
         data = {
             "agent": agent,
             "endpoint_url": "http://www.example.com",
-            "endpoint_description": "http://www.example.com",
+            "endpoint_description": ["http://www.example.com"],
             "access_rights": Dataset.PUBLIC,
         }
 
@@ -270,7 +270,7 @@ class TestServiceResourceForm:
 
         data = {
             "endpoint_url": internal_url,
-            "endpoint_description": internal_url,
+            "endpoint_description": [internal_url],
             "access_rights": Dataset.PUBLIC,
         }
 
@@ -286,7 +286,7 @@ class TestServiceResourceForm:
 
         data = {
             "endpoint_url": "N/A",
-            "endpoint_description": "N/A",
+            "endpoint_description": ["N/A"],
             "access_rights": Dataset.PUBLIC,
         }
 

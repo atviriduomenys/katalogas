@@ -192,7 +192,7 @@ def _anonymize_djangocms_stories_postcontent(
     db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
 ) -> None:
     """Story text."""
-    _anonymize_story_content(db, pbar, "djangocms_stories_postcontent")
+    _anonymize_story_content(db, pbar, STORY_CONTENT_TABLE)
 
 
 def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:

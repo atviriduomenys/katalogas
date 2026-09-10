@@ -90,7 +90,9 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     the time 0003 executes there is nothing to read, and on a fresh database
     the group comes out empty.
 
-    This runs after every migrate and is a no-op once the group is in order.
+    This runs after every migrate. It returns as soon as the group has any
+    djangocms_stories permission - deliberately not the full set, so a permission
+    an administrator has since taken away stays away.
     django.contrib.auth creates permissions on the same signal, and
     djangocms_stories is listed before vitrina.cms in INSTALLED_APPS, so its
     permissions are already in place by the time this fires.

@@ -78,12 +78,10 @@ Steps 8 and 9 need the folder from step 7; step 9 needs the stories from step 6.
 
 ## Running one
 
-Playwright is deliberately not a project dependency - only these scripts want it, and they
-are run by hand a few times a year. Install it separately, browser included: the pip package
-brings the driver, the second command fetches Chromium.
+Playwright arrives with the development dependencies (`pytest-playwright`), so `poetry install`
+brings the driver. The browser is a separate download:
 
 ```bash
-pip install playwright
 playwright install chromium
 ```
 

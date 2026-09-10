@@ -155,11 +155,11 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
         pbar.update(1)
 
 
-# Story bodies do not always live in a column. `migrate_post_text_to_placeholder`
-# moves them into text plugins and empties post_text, so from then on scrubbing
-# the column alone leaves the article itself in the dump. Only plugins hanging
-# off story content are touched; page content is a separate matter this script
-# has never covered.
+# Story text lives in post_text as long as STORIES_USE_PLACEHOLDER is off, which
+# is how this portal runs. A config switched to placeholder mode keeps its text in
+# text plugins instead, and scrubbing the column alone would then leave the article
+# in the dump - so plugins hanging off story content are blanked too. Page content
+# is a separate matter this script has never covered.
 STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"), ("djangocms_blog", "post"))
 
 

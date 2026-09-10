@@ -108,10 +108,10 @@ def _story_plugin_database(path):
 
 
 def test_story_plugin_bodies_are_scrubbed_on_both_schemas(tmp_path):
-    """The article body lives in a plugin once the migration moves it there.
+    """A config in placeholder mode keeps its article text in text plugins.
 
-    From then on this SQL is the only thing standing between the real text and
-    the dump, and it is reached through three joins - exactly the shape that
+    For such a config this SQL is the only thing standing between the real text
+    and the dump, and it is reached through three joins - exactly the shape that
     breaks quietly when a column is renamed.
     """
     from scripts.anonymize import _scrub_story_plugins

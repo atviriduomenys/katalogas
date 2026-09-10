@@ -1,4 +1,4 @@
-# django-cms 3.10 → 5.0: patikrintas atnaujinimo receptas
+# django-cms 3.11 → 5.0: patikrintas atnaujinimo receptas
 
 > **Statusas:** patikrinta gyvai 2026-08-05 ant **anonimizuotos prod kopijos** (`adp-prod-2026-03-19`,
 > 39 MB → 381 MB, 59 CMS puslapiai, 47 naujienos, 154 plugin'ai).
@@ -11,7 +11,7 @@
 
 ## Esmė: atnaujinimas yra TRIJŲ etapų, ne vieno
 
-Į 5.0 iš 3.10 vienu šuoliu nešokama. 2026-08 PR #2646 bandė būtent tai ir todėl lūžo ties
+Į 5.0 iš 3.11 vienu šuoliu nešokama. 2026-08 PR #2646 bandė būtent tai ir todėl lūžo ties
 `cms.0037_merge_page_treenode` (`duplicate key ... cms_page_path_key` arba `AssertionError`).
 
 **Kodėl.** CMS 3 kiekvienas puslapis egzistuoja dviem eilutėm (draft + public), bet abi dalijasi
@@ -38,7 +38,7 @@ etapų kodą į vieną šuolį; dabar 4.1 etapas vyksta atskirame įrankio image
   migracijos lūžta ant senienų, kurių test bazėje nėra.
 - Kontrolinis `pg_dump` po kiekvieno etapo — kitaip klaida gale reiškia viską iš pradžių.
 
-## 1 etapas: 3.10 → 4.1 (+ blog → stories)
+## 1 etapas: 3.11 → 4.1 (+ blog → stories)
 
 ### Priklausomybės
 
@@ -128,6 +128,10 @@ DJANGOCMS_BLOG_MIGRATION=0 manage.py remove_unlinked_placeholders
 > Paleidus pvz. `migrate djangocms_blog` pirma, kartu pritaikomos `cms.0028–0033`, o `0031` išmeta
 > `publisher_is_draft` — draft/public informacija dingsta dar prieš tai, kai `migration_preparation`
 > spėja ją išsaugoti.
+>
+> Antroji komanda — paprastas `migrate`: stories `0002` blog tvarką tikrina tik vykdymo metu, o
+> surūšiuotas lapų planavimas garantuoja, kad `djangocms_blog` eina pirmas (žr. [diegimas](diegimas.md),
+> 3 žingsnis).
 
 ### Rezultatas po 1 etapo (patikrinta)
 

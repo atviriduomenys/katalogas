@@ -12,7 +12,7 @@
 **Rollback'o nėra.** Versioning migracijos atgal nesisuka. Vienintelis kelias atgal — atkurti bazę
 iš backup'o. Todėl 2 žingsnis (patikrintas backup'as) nėra formalumas.
 
-**Kodėl reikia dviejų žingsnių, o ne vieno diegimo:** bazė iš cms 3.10 į 5.0 tiesiai nemigruoja, ji
+**Kodėl reikia dviejų žingsnių, o ne vieno diegimo:** bazė iš cms 3.11 į 5.0 tiesiai nemigruoja, ji
 privalo pereiti per 4.1. Portalui per 4.1 eiti nereikia — 4.1 aplinka naudojama tik kaip įrankis
 bazei ir svetaine niekada netampa.
 
@@ -133,6 +133,10 @@ services:
 > 'djangocms_blog.admin'`). Repeticijoje taip ir nutiko. Su `!reset []` kodas ateina iš image'o,
 > kaip ir turi.
 
+> ⚠️ **Šį override naudok tik su `run --rm`.** `docker compose ... up` su juo iškeltų portalą iš 4.1
+> image'o: po 3 žingsnio `entrypoint.sh` rastų būseną `complete` ir paleistų svetainę ant cms 4.1 su
+> cms 5 kodu. Apsauga to nesustabdo — ji saugo bazę, ne portalą.
+
 ir komandas leisk taip. `docker-compose.yml` servisui nurodo `command: ./entrypoint.sh`, o `run` su savo
 komanda jį pakeičia, tad `entrypoint.sh` nesisuks; `--entrypoint ""` — draudimas, jei kas nors compose'e
 jį perkeltų į `entrypoint:`:
@@ -144,6 +148,11 @@ $COMPOSE run --rm -e DJANGOCMS_BLOG_MIGRATION=1 --entrypoint "" vitrina \
 ```
 
 Taip visi adresai, tinklas ir kintamieji ateina iš tos pačios vietos, iš kurios juos gauna portalas.
+
+> **Serviso vardai priklauso nuo aplinkos.** Čia rašoma `vitrina` ir `postgres`, kaip
+> `docker-compose.yml`. Review aplinkose (`docker-compose.template.yml`) jie vadinasi `katalogas-<šaka>`
+> ir `katalogas-<šaka>-database`, `docker-compose.dev.yml` Postgres — `katalogas-database`. Pakeisk juos
+> ir override'e, ir komandose.
 
 Postgres, Elasticsearch ir Redis turi suktis viso proceso metu. Portalas — ne.
 
@@ -181,12 +190,19 @@ select count(*) from djangocms_blog_post;           -- pvz. 47
 
 ## 2. Backup'as
 
+`pg_dump` turi būti ne senesnis už serverį. Nuo PostgreSQL 18 atnaujinimo (#2794) host'o klientas
+dažnai senesnis ir tiesiog atsisako dirbti, tad leisk tą, kuris ateina su serveriu:
+
 ```sh
-pg_dump -Fc -d "$DATABASE_URL" > pries-cms5-$(date +%F-%H%M).dump
+# Postgres sukasi compose'e (serviso vardas priklauso nuo aplinkos, žr. aukščiau)
+docker compose exec -T <postgres-servisas> sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+  > pries-cms5-$(date +%F-%H%M).dump
+# kitaip — serverio versijos klientas iš image'o
+docker run --rm --network host postgres:18 pg_dump -Fc -d "$DATABASE_URL" > pries-cms5-$(date +%F-%H%M).dump
 ```
 
 **Patikrink, kad jis atsikuria** — atkurk į laikiną bazę ir įsitikink, kad lentelių kiekis sutampa.
-Neatkurtas backup'as nėra backup'as.
+Neatkurtas backup'as nėra backup'as. `pg_restore` — tas pats: serverio versijos.
 
 ---
 
@@ -252,6 +268,11 @@ Kiekviena turi baigtis **exit 0**. Trukmė kartu — apie **2 min** (repeticijoj
 **Tvarka svarbi.** `migration_preparation` privalo eiti pirma. Paleidus bet kokį kitą `migrate`
 anksčiau, kartu pritaikomos `cms.0028`–`0033`, o `0031` sunaikina draft/public informaciją dar
 prieš tai, kai ji išsaugoma.
+
+Antroji komanda — **paprastas** `migrate`, ne `migrate djangocms_stories`. Stories `0002` nuo blog
+migracijų nepriklauso: ji tik vykdymo metu tikrina, ar `djangocms_blog.0051` jau pritaikyta, ir kitaip
+meta `RuntimeError`. Migruojant visą grafą Django lapus planuoja surūšiuotai, tad `djangocms_blog`
+suspėja prieš `djangocms_stories`. Susiaurinus komandą iki vienos programos, ta tvarka nebegarantuota.
 
 ---
 
@@ -343,6 +364,6 @@ Vienintelis būdas:
 
 1. Sustabdyti portalą
 2. Atkurti bazę iš 2 žingsnio backup'o
-3. Sudiegti ankstesnį (cms 3.10) leidimą
+3. Sudiegti ankstesnį (cms 3.11) leidimą
 
 Viskas, kas suvesta po įšaldymo pradžios, prarandama — todėl įšaldymas ir yra būtinas.

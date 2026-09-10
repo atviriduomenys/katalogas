@@ -1,10 +1,12 @@
-# django-cms 3.10 → 5.0 migracija
+# django-cms 3.11 → 5.0 migracija
 
 Viskas, kas susiję su vienkartiniu django-cms atnaujinimu, vienoje vietoje. Į šį katalogą rodo ir
 `scripts/migrate_djangocms.sh`: kai leidimo konteineris atsisako migruoti bazę, kurios 4.1 migracijos
 įrankis dar nesutvarkė — cms 3 → 4 konversijos ar blog → stories perkėlimo — jis siunčia čia.
 
 Susiję: #1824 (užduotis) · PR #2646 (atnaujinimas) · PR #2795 (išvalymas po migracijos).
+
+Šaltinis — django-cms **3.11.11**: tiek rodo `devel` `poetry.lock`, nors `pyproject.toml` rašo `^3.10.1`.
 
 ## Kas čia yra
 

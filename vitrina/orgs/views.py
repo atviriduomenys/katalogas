@@ -105,7 +105,8 @@ from vitrina.orgs.services import (
     has_perm,
     Action,
     hash_api_key,
-    is_organization_resource_manager,
+    can_edit_organization_details,
+    can_manage_is_metadata,
     manage_subscriptions_for_representative,
     pre_representative_delete,
     remove_representative_subscription,
@@ -142,9 +143,6 @@ class OrganizationBaseViewMixin:
         context_data["can_view_contacts"] = has_perm(self.request.user, Action.VIEW, Contact, self.organization)
         context_data["can_update_organization"] = has_perm(
             self.request.user, Action.UPDATE, Representative, self.organization
-        )
-        context_data["is_information_system_administrator"] = is_organization_resource_manager(
-            self.request.user, self.organization
         )
         context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
@@ -519,6 +517,11 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, OrganizationBas
             language_code=self.request.LANGUAGE_CODE,
         )
         context_data["parent_links"].update({None: _("Informacija")})
+        # Only this page draws the buttons, so these queries stay off every other organization page.
+        context_data["can_manage_is_metadata"] = can_manage_is_metadata(self.request.user, self.organization)
+        context_data["can_edit_organization_details"] = can_edit_organization_details(
+            self.request.user, self.organization
+        )
         return context_data
 
 

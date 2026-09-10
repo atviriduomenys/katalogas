@@ -255,3 +255,53 @@ Run a single test:
 
     Running the full test suite takes approximately 10 to 15 minutes on a fast
     computer.
+
+Smoke tests
+***********
+
+Smoke tests drive a *running* Katalogas instance exclusively through the
+browser (Playwright/Chromium) — they do not access the database directly.
+They register users through the UI, confirm them via e-mails recorded in the
+SentMail admin, and exercise organization, resource (dataset, information
+system, data service), agent, and admin flows. The instance must run with
+``DEBUG`` enabled (fake VIISP login) and provide the admin account from
+``docker-compose.yml`` (``test@test.com`` / ``test``).
+
+To run the smoke tests against a freshly initialized (empty) database:
+
+#. Reset the database (stop the app containers first so active connections
+   do not block the drop):
+
+   .. code:: sh
+
+       docker compose stop vitrina celery
+       docker exec katalogas-postgres-1 psql -U adp -d postgres -c 'DROP DATABASE "adp-dev";'
+       docker exec katalogas-postgres-1 psql -U adp -d postgres -c 'CREATE DATABASE "adp-dev" OWNER adp;'
+
+#. Re-initialize and restart the app containers (the container entrypoint
+   runs migrations and rebuilds the search index):
+
+   .. code:: sh
+
+       docker compose start vitrina celery
+       DJANGO_SUPERUSER_EMAIL=test@test.com DJANGO_SUPERUSER_PASSWORD=test \
+         python manage.py createsuperuser --noinput
+
+   (Run ``manage.py`` inside ``nix develop`` or the container.)
+
+#. Wait until the login page responds (the entrypoint needs a minute or two
+   to build webpack assets and migrate), then run the suite:
+
+   .. code:: sh
+
+       pytest smoketests --base-url=http://localhost:8000 -vvra --tb=short
+
+All tests are idempotent — they create missing data on first run and reuse
+it afterwards, so they can also be pointed at an already running instance:
+
+.. code:: sh
+
+    pytest smoketests --base-url=http://localhost:8000
+
+Pass ``--headed`` (together with a display) to watch the browser while the
+tests run.

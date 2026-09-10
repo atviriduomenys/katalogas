@@ -1,13 +1,83 @@
 Changes
 #######
 
-v 1.25.0 (current)
+v 1.26.0 (current)
 ==================
+
+https://github.com/atviriduomenys/katalogas/issues/1824
+
+- Upgrade django-cms 3.11 -> 5.0, and with it ``djangocms-blog`` -> ``djangocms-stories`` and
+  ``djangocms-text-ckeditor`` -> ``djangocms-text``. Pages and articles are versioned now: an
+  edit creates a draft and the published page keeps serving until the draft is published.
+- Move the story data across on the first boot after the upgrade. ``scripts/migrate_djangocms.sh``
+  reads the database state, runs the one-time ``djangocms-blog`` to ``djangocms-stories`` stage
+  only while it is pending, and hands over to the ordinary ``migrate`` afterwards. It refuses to
+  start on a database whose page tree is still on the django-cms 3 schema: that conversion runs
+  from a separate django-cms 4.1 image before deployment, and migrating without it would take the
+  schema past the point where the conversion can still run. The procedure, the 4.1 image and
+  an A/B check of the content are in ``notes/migrations/djangocms/``.
+- Stop the side menu and the navigation from listing pages that are not published. Versioning
+  makes an unpublished page a real state rather than an absence, and the menus were reading the
+  page tree without asking.
+- Keep flash messages visible to staff. They were hidden whenever the cms toolbar was available,
+  which is every page for every staff user, and they were never marked read either - so a saved
+  dataset or a rejected form said nothing, forever.
+- Scrub story text in ``scripts/anonymize.py`` on either schema, and in text plugins for any
+  config that keeps its articles in placeholders - this portal keeps them in ``post_text``.
+  Organisation ``website`` is anonymised too: it is free text, and a production dump was
+  carrying a real contact address in it.
+- Anonymise ``adp_cms_page`` in ``scripts/anonymize.py``. Its function read ``news_item``
+  instead, so the old portal's CMS pages went out unscrubbed, news items were scrubbed twice,
+  and ``dataset`` added a ``description`` column to ``news_item`` in every dump.
+
+
+
+v 1.25.0 (2026-09-10)
+=====================
+
+https://github.com/atviriduomenys/katalogas/issues/2791
+
+- Show the "Tvarkyti IS metaduomenis" button and open the IS metadata wizard for the resource
+  coordinator, the resource manager and the superuser. The button asked for two conditions that
+  no single role met, so nobody reached the wizard, although its forms already accepted these
+  users. Staff without ``is_superuser`` stays outside the wizard shell.
+- Do not offer "Redaguoti organizaciją" to the two resource roles: the wizard opens the same form
+  from its root node. Nobody loses access, and nothing changes for the open data roles.
+- Send a logged out visitor of a wizard URL to the login page again, with ``next`` intact.
+- Stop the wizard requesting the organization form for a user who may not edit the organization,
+  which answered a redirect that HTMX swapped into the pane as a whole page. A short note takes
+  its place, and the root node still returns the pane to the organization state.
+- Replace ``is_organization_resource_manager`` with ``can_manage_is_metadata``, add
+  ``can_edit_organization_details``, and gather the four wizard views' access rules into
+  ``WizardAccessMixin``.
+
+https://github.com/atviriduomenys/katalogas/issues/2793
+
+- Upgrade PostgreSQL to `18`. `docker-compose.yml` and `docker-compose-test.yml`
+  used `14`, `docker-compose.dev.yml` and `docker-compose.template.yml` used `16`.
+  All four now use `18`. `14` reaches end of life 2026-11-12.
+- Pin `PGDATA` to `/var/lib/postgresql/data` in every compose file. The `postgres:18`
+  image no longer defaults there, so the existing mounts would stop being the data
+  directory and an empty database would be initialised inside the container.
+- **Existing data directories are not upgraded in place.** `postgres:18` refuses a
+  directory written by `14`, so dump before switching, move the old directory aside,
+  then restore into the new one::
+
+      docker compose exec postgres pg_dump -U adp -Fc adp-dev > adp-dev.dump
+      docker compose down
+      sudo mv var/postgres var/postgres-pg14
+      docker compose up -d postgres
+      docker compose exec -T postgres pg_restore -U adp -d adp-dev --no-owner < adp-dev.dump
+      python manage.py migrate --skip-checks
+
+  Keep `var/postgres-pg14` until the new database is verified - it is the rollback.
+  Remote servers need the same, with the dump taken before the upgrade: `14` restores
+  onto `18`, but `18` does not restore onto `14`.
 
 
 
 v 1.24.0 (2026-08-21)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2785
 
@@ -33,6 +103,12 @@ https://github.com/atviriduomenys/katalogas/issues/2771
 - Hide the deprecated "API specifikacijos formatas" (``endpoint_description_type``) field from
   service forms, detail pages, and administration while preserving existing database values and
   API output.
+- Raise the ``dcat:endpointDescription`` (``endpoint_description``) cardinality from 0..1 to 0..n.
+  The single ``CharField`` is replaced by a many-to-many relation to the new ``EndpointDescription``
+  model, so a data service can expose several API specifications at once. Legacy values are copied
+  into the new relation by the ``0047_endpoint_description_multivalue`` migration. Orphan
+  ``EndpointDescription`` rows (no longer linked to any dataset) are pruned on every update and on
+  dataset deletion.
 
 https://github.com/atviriduomenys/katalogas/issues/2722
 
@@ -93,7 +169,7 @@ https://github.com/atviriduomenys/katalogas/issues/1825
 
 
 v 1.23.0 (2026-08-03)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2755
 
@@ -193,6 +269,7 @@ https://github.com/atviriduomenys/katalogas/issues/2632
 
 - Prefix log records with the authenticated user's ID (``user ID: <id>``), falling back to ``anonymous`` for unauthenticated requests and background tasks.
 - Add a request-scoped logging context (``vitrina.log_context``) and ``LogContextMiddleware`` so additional details can be surfaced in logs later.
+
 DVMS-514
 
 - Fix insufficient file upload validation (CWE-434): block ``.xhtml`` (``application/xhtml+xml``) uploads,
@@ -213,7 +290,7 @@ https://github.com/atviriduomenys/katalogas/issues/2736
 
 
 v 1.22.0 (2026-06-30)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/pull/2707
 
@@ -318,7 +395,7 @@ https://github.com/atviriduomenys/katalogas/issues/2642
 - Remove the dead jQuery ``.show-reply-form`` handler from the comments component.
 
 v 1.21.0 (2026-05-18)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2563
 
@@ -349,7 +426,7 @@ https://github.com/atviriduomenys/katalogas/issues/2607
  - Fixed an issue where importing a structure with name errors deletes the draft version.
 
 v 1.20.0 (2026-05-12)
-==================
+=====================
 
 https://github.com/atviriduomenys/spinta/issues/1874
 
@@ -364,11 +441,11 @@ https://github.com/atviriduomenys/katalogas/issues/2589
 https://github.com/atviriduomenys/katalogas/issues/2595
 
 - Overrides `python manage.py makemessages` command to automatically include `-l en -l lt --no-location` if not provided
-- Overrides `python manage.py compilemessages` command to automatically include `-l en -l lt ` if not provided
+- Overrides `python manage.py compilemessages` command to automatically include `-l en -l lt` if not provided
 - Change all Lithuanian translation of "Distribution" to single term - "Pateiktis" (in line with DCAT-AP-LT)
 
 v 1.19.0 (2026-04-29)
-==================
+=====================
 
 Improvements:
 
@@ -386,7 +463,7 @@ https://github.com/atviriduomenys/katalogas/issues/2558
 - Removed the early return that was blocking non-superusers from updating Organizations as Representatives.
 
 v 1.18.0 (2026-04-15)
-==================
+=====================
 
 Improvements:
 
@@ -464,13 +541,13 @@ https://github.com/atviriduomenys/katalogas/issues/2541
   if uri is valid URI to EU Vocabulary Authority Tables.
 
 v 1.17.1 (2026-03-30)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/1828
 - Publisher and creator changes.
 
 v 1.17.0 (2026-03-27)
-==================
+=====================
 
 Bug fixes:
 
@@ -519,7 +596,7 @@ https://github.com/atviriduomenys/katalogas/issues/2335
 
 
 v 1.16.0 (2026-03-16)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2321
 
@@ -573,11 +650,11 @@ Security: Fix open Dependabot vulnerability alerts across pip and npm dependenci
 https://github.com/atviriduomenys/katalogas/issues/2363
 
 - Introduce DatasetAccessMixin to centralize dataset access control logic
-previously scattered across viewsets.
+  previously scattered across viewsets.
 - `is_open_data_representative` – checks whether the current user or
-organization role has open data access
+  organization role has open data access
 - `_filter_queryset_by_access` – filters datasets based on access rights
-appropriate to the user or role
+  appropriate to the user or role
 - `_check_dataset_access` – raises `PermissionDenied` for inaccessible datasets
 - Changed Dataset access_right default value to PUBLIC from CONFIDENTIAL
 
@@ -604,7 +681,7 @@ https://github.com/atviriduomenys/katalogas/issues/2467
 - Comments for `Base` manifest rows are now imported & displayed correctly in Catalog & after export.
 
 v 1.15.0 (2026-02-27)
-==================
+=====================
 
 Bug fixes:
 
@@ -630,7 +707,7 @@ https://github.com/atviriduomenys/katalogas/issues/2257
 - Index query optimization to fix N+1 problem.
 
 v 1.14.1 (2026-02-23)
-==================
+=====================
 
 Bug fixes:
 
@@ -639,7 +716,7 @@ https://github.com/atviriduomenys/katalogas/issues/2397
 - Fix url for `Dataset` landing page.
 
 v 1.14.0 (2026-02-17)
-==================
+=====================
 
 Improvements:
 
@@ -685,7 +762,7 @@ https://github.com/atviriduomenys/katalogas/issues/2382
 - `NoneType` object has no attribute `is_draft` fix.
 
 v 1.13.0 (2026-01-26)
-==================
+=====================
 
 Improvements:
 
@@ -746,7 +823,7 @@ https://github.com/atviriduomenys/katalogas/issues/2031
 - Refactor `CreateMemberView.form_valid` function into service.
 
 v 1.12.1 (2026-01-19)
-==================
+=====================
 
 Bug fixes:
 
@@ -755,7 +832,7 @@ https://github.com/atviriduomenys/spinta/issues/1630
 - Fix import logic when resource params were imported as dataset params.
 
 v 1.12.0 (2026-01-15)
-==================
+=====================
 
 Improvements
 
@@ -815,23 +892,23 @@ https://github.com/atviriduomenys/katalogas/issues/2244
 - Bump `spinta` version to latest 0.2dev13.
 
 v 1.11.3 (2026-01-05)
-==================
+=====================
 
 - Revert `CustomSignalProcessor`.
 
 v 1.11.2 (2025-12-18)
-==================
+=====================
 
 - Add missing 0012 migration for `vitrina_smart_contracts`.
 - Remove `vitrina_datasets` 0037 migration.
 
 v 1.11.1 (2025-12-18)
-==================
+=====================
 
 - Add reverse function for 0037 migration in `vitrina_datasets`.
 
 v 1.11 (2025-12-16)
-==================
+===================
 
 Bug fixes:
 
@@ -840,7 +917,7 @@ Bug fixes:
 - Make a `Representative.can_make_agreements` boolean field non-nullable.
 
 v 1.10 (2025-12-11)
-==================
+===================
 
 Bug fixes:
 
@@ -859,6 +936,7 @@ https://github.com/atviriduomenys/katalogas/issues/1925
 
 - Remove `save()` from `Representative` model.
 - Update elasticsearch indices from `Representative` and `DataDistribution` model.
+
 Improvements:
 
 https://github.com/atviriduomenys/katalogas/issues/2040
@@ -884,13 +962,12 @@ https://github.com/atviriduomenys/katalogas/issues/2124
 
 - Adds new "internal media" directory for non public uploaded files. It works same way as Django media files, but uses `INTERNAL_MEDIA_ROOT` and `INTERNAL_MEDIA_URL` settings.
 - Adds new endpoint for downloading uploaded smart contract files. In production, file is returned via `X-Accel-Redirect` header
-- Additional Nginx configuration is needed:
-    ```
-    location /internal-static {
-        internal;
-        alias /internal-static;
-    }
-    ```
+- Additional Nginx configuration is needed::
+
+      location /internal-static {
+          internal;
+          alias /internal-static;
+      }
 
 Security improvements:
 
@@ -1133,12 +1210,14 @@ Learning material should have an option to upload a file.
 
 https://github.com/atviriduomenys/katalogas/issues/1818
 Introduced `DistributionStatus` into the distribution form
+
     - Created `DistributionStatus` `ConceptSchema` (migration)
     - Created new instances in `Concept` which connect to the created `ConceptSchema`.
     - Made a data correction, so that old distributions get this `Status` field.
 
 https://github.com/atviriduomenys/katalogas/issues/1780
 Changed ENUM values for access rights:
+
     - Added value confidential.
     - Changed translations by the specification.
 
@@ -1147,6 +1226,7 @@ Introduce scripts to export users dump and to execute SQL queries; improved anon
 
 https://github.com/atviriduomenys/spinta/issues/1415
 Some additional improvements for the synchronization:
+
     - Added new fields for Dataset API that conforms to the UAPI: `service` & `series`.
     - Added `parent_id` to the API to be able to add hierarchy via the API.
     - Fixed a bug where the translations were not setting properly.
@@ -1154,9 +1234,11 @@ Some additional improvements for the synchronization:
 
 https://github.com/atviriduomenys/katalogas/issues/1812
 Upgrade Django 3.2 -> Django 4.2:
+
     - Changed `delete(..)` methods to `form_valid(..)` in all `DeleteView` views.
     - Changed some model `save(..)` methods to automatically update fields, if `update_fields` are used.
     - Few smaller fixes for deprecated features.
+
 Fix `AgreementGeneratePdf` view errors by adding missing urls to context. Also reuse `base_form.html` instead of custom one.
 
 https://github.com/atviriduomenys/katalogas/issues/1758

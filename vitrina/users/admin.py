@@ -8,7 +8,6 @@ from allauth.account.models import (
     EmailConfirmation,
     EmailConfirmationHMAC,
 )
-from allauth.utils import build_absolute_uri
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.contenttypes.models import ContentType
@@ -321,7 +320,7 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
         )
         confirmation = EmailConfirmationHMAC(email_address)
         url = reverse("account_confirm_email", args=[confirmation.key])
-        activate_url = build_absolute_uri(request, url)
+        activate_url = request.build_absolute_uri(url)
         email(
             [email_address.email],
             "confirm_email",
@@ -422,7 +421,7 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
                 )
                 confirmation = EmailConfirmationHMAC(email_address)
                 url = reverse("account_confirm_email", args=[confirmation.key])
-                activate_url = build_absolute_uri(request, url)
+                activate_url = request.build_absolute_uri(url)
                 email(
                     [email_address.email],
                     "confirm_updated_email",

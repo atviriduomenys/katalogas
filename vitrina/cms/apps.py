@@ -1,6 +1,7 @@
-from django.apps import AppConfig
+from django.apps import AppConfig, apps
 from django.db import transaction
-from django.db.models.signals import post_delete, post_migrate, post_save
+from django.db import connections
+from django.db.models.signals import post_delete, post_migrate, post_save, pre_migrate
 
 BLOG_ADMINISTRATORS = "Blog Administrators"
 
@@ -32,6 +33,13 @@ class CmsConfig(AppConfig):
 
         post_save.connect(_add_default_text_plugin, sender="djangocms_stories.PostContent")
         post_migrate.connect(_sync_blog_administrator_permissions, sender=self)
+        # Once per migrate, before anything is applied: pre_migrate is sent per app,
+        # and cms is the app whose migrations would do the damage.
+        pre_migrate.connect(
+            _refuse_cms3_schema,
+            sender=apps.get_app_config("cms"),
+            dispatch_uid="vitrina_cms.refuse_cms3_schema",
+        )
 
 
 def _add_default_text_plugin(sender, instance, created, **kwargs):
@@ -107,3 +115,31 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     )
     if missing:
         group.permissions.add(*missing)
+
+
+# cms.0032 renamed Title to PageContent, so a database that still has cms_title is
+# on the django-cms 3 schema.
+LEGACY_PAGE_TABLE = "cms_title"
+
+
+def _refuse_cms3_schema(sender, using="default", **kwargs):
+    """Stop migrate before it touches a django-cms 3 database.
+
+    django-cms 5's migrations would take such a page tree past the point where the
+    3 -> 4 conversion can still run, and there is no way back but a backup. The
+    one-time upgrade is over, but the case outlives it: restore a backup from before
+    the upgrade into an environment already on cms 5, forget to roll the image back
+    with it, and the next start - or a migrate run by hand - would do exactly that.
+
+    What stays of the upgrade's own checks after #2795 removed the rest; it costs
+    one query per migrate.
+    """
+    from django.core.management.base import CommandError
+
+    if LEGACY_PAGE_TABLE in connections[using].introspection.table_names():
+        raise CommandError(
+            f"This database still has {LEGACY_PAGE_TABLE}: its page tree is on the django-cms 3 schema. "
+            "Migrating it with django-cms 5 would take it past the point where the 3 -> 4 conversion can "
+            "still run. Roll back to the release that matches it, or convert it first - the procedure is "
+            "in git history: git log -- notes/migrations/djangocms/diegimas.md. Refusing."
+        )

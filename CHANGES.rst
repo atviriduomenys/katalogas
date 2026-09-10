@@ -33,7 +33,7 @@ https://github.com/atviriduomenys/katalogas/issues/1824
 
 
 v 1.25.0 (2026-09-10)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2791
 

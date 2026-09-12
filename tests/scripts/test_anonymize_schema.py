@@ -1,14 +1,15 @@
-"""The anonymizer has to find the story text in either schema.
+"""The anonymizer has to find the story text, and stop when it cannot.
 
-django-cms 5 moved it: djangocms-blog's translation rows became
-djangocms-stories content rows. `dataset` resolves a missing table lazily, so
-reaching for the wrong name scrubs nothing and says nothing - the dump goes out
-with every article's real title and text in it.
+After the django-cms 5 upgrade story text lives in djangocms-stories content
+rows only. `dataset` resolves a missing table lazily, so reaching for the wrong
+name scrubs nothing and says nothing - the dump goes out with every article's
+real title and text in it. A pre-upgrade dump, or one left by an upgrade that
+stopped half way, is refused rather than half scrubbed.
 """
 
 import pytest
 
-from scripts.anonymize import STORY_CONTENT_TABLES, _story_content_tables
+from scripts.anonymize import LEGACY_STORY_TABLE, STORY_CONTENT_TABLE, _story_content_table
 
 
 class FakeDatabase:
@@ -19,38 +20,34 @@ class FakeDatabase:
 def test_finds_the_stories_table():
     db = FakeDatabase("organization", "djangocms_stories_postcontent")
 
-    assert _story_content_tables(db) == ["djangocms_stories_postcontent"]
+    assert _story_content_table(db) == STORY_CONTENT_TABLE
 
 
-def test_finds_the_blog_table_before_the_upgrade():
+def test_stops_on_a_database_without_it():
+    """A pre-upgrade dump lands here now, and refusing is the right answer."""
     db = FakeDatabase("organization", "djangocms_blog_post_translation")
 
-    assert _story_content_tables(db) == ["djangocms_blog_post_translation"]
+    with pytest.raises(SystemExit) as stop:
+        _story_content_table(db)
+
+    assert STORY_CONTENT_TABLE in str(stop.value)
 
 
-def test_takes_both_when_an_upgrade_stopped_half_way():
-    """Taking only the newer one would send the legacy articles out in full."""
-    db = FakeDatabase("organization", "djangocms_stories_postcontent", "djangocms_blog_post_translation")
-
-    assert _story_content_tables(db) == list(STORY_CONTENT_TABLES)
-
-
-def test_stops_when_the_database_has_neither():
-    db = FakeDatabase("organization")
+def test_stops_on_a_database_an_upgrade_left_half_done():
+    """Both tables standing: scrubbing only the stories one would ship the legacy text."""
+    db = FakeDatabase("organization", STORY_CONTENT_TABLE, LEGACY_STORY_TABLE)
 
     with pytest.raises(SystemExit) as stop:
-        _story_content_tables(db)
+        _story_content_table(db)
 
-    for name in STORY_CONTENT_TABLES:
-        assert name in str(stop.value)
+    assert LEGACY_STORY_TABLE in str(stop.value)
 
 
 def test_every_listed_table_has_a_function_to_anonymize_it():
     """The runner looks the function up by table name, so a typo is a crash."""
     import scripts.anonymize as anonymize
 
-    for table in STORY_CONTENT_TABLES:
-        assert hasattr(anonymize, f"_anonymize_{table}")
+    assert hasattr(anonymize, f"_anonymize_{STORY_CONTENT_TABLE}")
 
 
 class FakeTable:
@@ -107,7 +104,7 @@ def _story_plugin_database(path):
     return db
 
 
-def test_story_plugin_bodies_are_scrubbed_on_both_schemas(tmp_path):
+def test_story_plugin_bodies_are_scrubbed(tmp_path):
     """A config in placeholder mode keeps its article text in text plugins.
 
     For such a config this SQL is the only thing standing between the real text
@@ -122,7 +119,6 @@ def test_story_plugin_bodies_are_scrubbed_on_both_schemas(tmp_path):
 
     bodies = {row["cmsplugin_ptr_id"]: row["body"] for row in db.query("SELECT * FROM djangocms_text_text")}
     assert bodies[1] == "<p>example</p>", "djangocms_stories body survived"
-    assert bodies[2] == "<p>example</p>", "djangocms_blog body survived"
     assert bodies[3] == "<p>SLAPTA 3</p>", "a page plugin was scrubbed; only stories are this script's business"
 
 

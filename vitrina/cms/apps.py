@@ -1,6 +1,7 @@
-from django.apps import AppConfig
+from django.apps import AppConfig, apps
 from django.db import transaction
-from django.db.models.signals import post_delete, post_migrate, post_save
+from django.db import connections
+from django.db.models.signals import post_delete, post_migrate, post_save, pre_migrate
 
 BLOG_ADMINISTRATORS = "Blog Administrators"
 
@@ -32,6 +33,13 @@ class CmsConfig(AppConfig):
 
         post_save.connect(_add_default_text_plugin, sender="djangocms_stories.PostContent")
         post_migrate.connect(_sync_blog_administrator_permissions, sender=self)
+        # Once per migrate, before anything is applied: pre_migrate is sent per app,
+        # and cms is the app whose migrations would do the damage.
+        pre_migrate.connect(
+            _refuse_cms3_schema,
+            sender=apps.get_app_config("cms"),
+            dispatch_uid="vitrina_cms.refuse_cms3_schema",
+        )
 
 
 def _add_default_text_plugin(sender, instance, created, **kwargs):
@@ -74,25 +82,24 @@ def _add_default_text_plugin(sender, instance, created, **kwargs):
 
 
 def _sync_blog_administrator_permissions(sender, **kwargs):
-    """Point the Blog Administrators group at the djangocms_stories permissions.
+    """Fill the Blog Administrators group with the djangocms_stories permissions.
 
     `vitrina/users/migrations/0003` fills this group by reading the permissions
     of the blog app. A migration cannot get this right: permissions for a
     model are created by `post_migrate`, once every migration has run, so at
-    the time 0003 executes there is nothing to read. On a fresh database the
-    group therefore comes out empty, and on production it is still holding the
-    24 djangocms_blog permissions 0003 gave it back when that app existed -
-    dead rows now that `vitrina/cms/admin.py` asks for djangocms_stories ones.
+    the time 0003 executes there is nothing to read, and on a fresh database
+    the group comes out empty.
 
-    This runs after every migrate and is a no-op once the group is in order.
+    This runs after every migrate. It returns as soon as the group has any
+    djangocms_stories permission - deliberately not the full set, so a permission
+    an administrator has since taken away stays away.
     django.contrib.auth creates permissions on the same signal, and
     djangocms_stories is listed before vitrina.cms in INSTALLED_APPS, so its
     permissions are already in place by the time this fires.
 
-    The other group 0003 creates, CMS Administrators, needs no such repair: its
-    four cms.title permissions have no successor, because PageContent declares
-    `default_permissions = []`. Its page permissions survive the upgrade
-    untouched.
+    The other group 0003 creates, CMS Administrators, needs nothing: its four
+    cms.title permissions have no successor, because PageContent declares
+    `default_permissions = []`, and its page permissions stand on their own.
     """
     from django.contrib.auth.models import Group, Permission
 
@@ -100,12 +107,9 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     if group is None:
         return
 
-    stale = group.permissions.filter(content_type__app_label="djangocms_blog")
-    granted = group.permissions.filter(content_type__app_label="djangocms_stories")
-
-    # Repair once, then leave the group alone. Re-granting the whole set on every
+    # Fill once, then leave the group alone. Re-granting the whole set on every
     # migrate would undo any permission an administrator has since taken away.
-    if granted.exists() and not stale.exists():
+    if group.permissions.filter(content_type__app_label="djangocms_stories").exists():
         return
 
     missing = Permission.objects.filter(content_type__app_label="djangocms_stories").exclude(
@@ -113,5 +117,31 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     )
     if missing:
         group.permissions.add(*missing)
-    if stale:
-        group.permissions.remove(*stale)
+
+
+# cms.0032 renamed Title to PageContent, so a database that still has cms_title is
+# on the django-cms 3 schema.
+LEGACY_PAGE_TABLE = "cms_title"
+
+
+def _refuse_cms3_schema(sender, using="default", **kwargs):
+    """Stop migrate before it touches a django-cms 3 database.
+
+    django-cms 5's migrations would take such a page tree past the point where the
+    3 -> 4 conversion can still run, and there is no way back but a backup. The
+    one-time upgrade is over, but the case outlives it: restore a backup from before
+    the upgrade into an environment already on cms 5, forget to roll the image back
+    with it, and the next start - or a migrate run by hand - would do exactly that.
+
+    What stays of the upgrade's own checks after #2795 removed the rest; it costs
+    one query per migrate.
+    """
+    from django.core.management.base import CommandError
+
+    if LEGACY_PAGE_TABLE in connections[using].introspection.table_names():
+        raise CommandError(
+            f"This database still has {LEGACY_PAGE_TABLE}: its page tree is on the django-cms 3 schema. "
+            "Migrating it with django-cms 5 would take it past the point where the 3 -> 4 conversion can "
+            "still run. Roll back to the release that matches it, or convert it first - the procedure is "
+            "in git history: git log -- notes/migrations/djangocms/diegimas.md. Refusing."
+        )

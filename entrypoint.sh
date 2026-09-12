@@ -7,11 +7,9 @@ npm run build || echo "⚠️ Webpack build (partially) failed, continuing..."
 cd ..
 
 python3 manage.py collectstatic --noinput
-# The helper refuses a database the django-cms 4.1 migration tool has not finished
-# with, then runs all migrations.
-# Temporary: #2795 puts the plain migrate call back once every environment is past
-# the upgrade, and the helper goes with it.
-./scripts/migrate_djangocms.sh || exit 1
+# --skip-checks bypasses the URL system check that queries the Site table before migrations run,
+# which causes Site.DoesNotExist on a fresh database (django-cms bootstrapping issue).
+python3 manage.py migrate --skip-checks -v 2 || exit 1
 python3 manage.py rebuild_search
 
 if [[ $RUN_MODE == "DEVELOPMENT" ]]; then

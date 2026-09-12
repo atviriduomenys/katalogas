@@ -7,7 +7,23 @@ from django.utils import timezone
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import NewsletterSubscriber
 from vitrina.messages.signals import send_monthly_newsletter
-from djangocms_blog.models import Post, BlogConfig
+from vitrina.users.factories import UserFactory
+from djangocms_stories.models import Post, PostContent
+from djangocms_versioning.constants import DRAFT, PUBLISHED
+from djangocms_versioning.models import Version
+
+
+def make_blog_post(date_published, title="Test Blog", slug="test-blog", state=PUBLISHED):
+    """Create a story post whose content is in the given versioning state.
+
+    The version has to be created explicitly: `PostContent.objects` returns
+    published content only, so content without a PUBLISHED version is invisible
+    to the newsletter, which is exactly what `state=DRAFT` exercises.
+    """
+    post = Post.objects.create(date_published=date_published)
+    content = PostContent.admin_manager.create(post=post, title=title, slug=slug, language="lt")
+    Version.objects.create(content=content, created_by=UserFactory(), state=state)
+    return post
 
 
 @pytest.fixture
@@ -27,16 +43,10 @@ def subscriber():
 
 @pytest.mark.django_db
 @patch("vitrina.messages.signals.email")
-@patch("djangocms_blog.models.Post.get_absolute_url")
+@patch("djangocms_stories.models.PostContent.get_absolute_url")
 def test_newsletter_with_blog_and_dataset(mock_get_absolute_url, mock_email, last_month, subscriber):
     mock_get_absolute_url.return_value = "/blog/test-blog/"
-    Post.objects.create(
-        title="Test Blog",
-        slug="test-blog",
-        publish=True,
-        date_published=last_month,
-        app_config=BlogConfig.objects.create(namespace="blog"),
-    )
+    make_blog_post(last_month, title="Test Blog", slug="test-blog")
 
     Dataset.objects.create(
         title="Test Dataset",
@@ -77,13 +87,25 @@ def test_deleted_on_dataset_not_sent(last_month, subscriber):
 
 @pytest.mark.django_db
 @patch("vitrina.messages.signals.email")
-def test_unpublished_blog_post_not_included(mock_email, last_month, subscriber):
-    Post.objects.create(
-        title="Hidden Post",
-        slug="hidden-post",
-        publish=False,
-        date_published=last_month,
-    )
+def test_blog_post_without_publish_date_not_included(mock_email, last_month, subscriber):
+    # A post with no date_published won't match the last-month date filter
+    make_blog_post(None, title="Hidden Post", slug="hidden-post")
+
+    count = send_monthly_newsletter.send(sender=None)[0][1]
+    assert count == 0
+
+
+@pytest.mark.django_db
+@patch("vitrina.messages.signals.email")
+@patch("djangocms_stories.models.PostContent.get_absolute_url")
+def test_draft_blog_post_not_included(mock_get_absolute_url, mock_email, last_month, subscriber):
+    """A post that is still a draft must never reach the newsletter.
+
+    Regression guard: reading through `admin_manager` instead of `objects`
+    bypasses versioning and mails out unpublished stories.
+    """
+    mock_get_absolute_url.return_value = "/blog/draft-post/"
+    make_blog_post(last_month, title="Draft Post", slug="draft-post", state=DRAFT)
 
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 0
@@ -115,10 +137,7 @@ def test_multiple_subscribers_all_get_newsletter(mock_email, last_month):
 
 @pytest.mark.django_db
 @patch("vitrina.messages.signals.email")
-@patch("djangocms_blog.models.Post.get_absolute_url")
-def test_more_than_3_datasets_splits_correctly(mock_get_absolute_url, mock_email, last_month, subscriber):
-    mock_get_absolute_url.return_value = "/blog/test/"
-
+def test_more_than_3_datasets_splits_correctly(mock_email, last_month, subscriber):
     for i in range(5):
         Dataset.objects.create(
             title=f"Dataset {i + 1}",
@@ -233,17 +252,10 @@ def test_email_sending_failure_continues(mock_email, last_month):
 
 @pytest.mark.django_db
 @patch("vitrina.messages.signals.email")
-@patch("djangocms_blog.models.Post.get_absolute_url")
+@patch("djangocms_stories.models.PostContent.get_absolute_url")
 def test_context_structure_blog_posts(mock_get_absolute_url, mock_email, last_month, subscriber):
     mock_get_absolute_url.return_value = "/blog/test-post/"
-
-    Post.objects.create(
-        title="Test Blog Post",
-        slug="test-post",
-        publish=True,
-        date_published=last_month,
-        app_config=BlogConfig.objects.create(namespace="blog"),
-    )
+    make_blog_post(last_month, title="Test Blog Post", slug="test-post")
 
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
@@ -363,16 +375,10 @@ def test_domain_in_context(mock_email, last_month, subscriber):
 
 @pytest.mark.django_db
 @patch("vitrina.messages.signals.email")
-@patch("djangocms_blog.models.Post.get_absolute_url")
+@patch("djangocms_stories.models.PostContent.get_absolute_url")
 def test_only_blog_posts_no_datasets(mock_get_absolute_url, mock_email, last_month, subscriber):
     mock_get_absolute_url.return_value = "/blog/only-blog/"
-    Post.objects.create(
-        title="Only Blog Post",
-        slug="only-blog",
-        publish=True,
-        date_published=last_month,
-        app_config=BlogConfig.objects.create(namespace="blog"),
-    )
+    make_blog_post(last_month, title="Only Blog Post", slug="only-blog")
 
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1

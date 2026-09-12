@@ -20,7 +20,7 @@ def _load(path):
 
 
 def _key(row):
-    # Tapatybė — medžio kelias, ne URL. URL kelias tapatybei netinka: netransliuotas
+    # Tapatybė — medžio kelias, ne URL. URL kelias tapatybei netinka: neišverstas
     # puslapis duoda tuščią kelią ir susiduria su šakniniu (rasta prod duomenyse).
     return (row.get("tree_path"), row.get("language"))
 

@@ -68,7 +68,7 @@ def _pages_cms3(languages):
                     "language": lang,
                     # tree_path = medžio (materialized path) reikšmė. Tai vienintelis tapatybės
                     # laukas, kurį migracija garantuotai išsaugo: cms.0037 būtent node.path
-                    # nukopijuoja į Page.path. URL kelias tam netinka — netransliuotas puslapis
+                    # nukopijuoja į Page.path. URL kelias tam netinka — neišverstas puslapis
                     # duoda tuščią kelią ir susiduria su šakniniu.
                     "tree_path": node.path if node else None,
                     "slug": page.get_slug(language=lang, fallback=False),

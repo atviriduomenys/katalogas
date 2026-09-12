@@ -192,7 +192,7 @@ docker compose exec -T vitrina python - < notes/migrations/djangocms/cms_ab_mani
 python3 notes/migrations/djangocms/cms_ab_diff.py manifest-a.json manifest-b.json
 ```
 
-**Tapatybė — medžio kelias** (`node.path` → `page.path`), ne URL: netransliuotas puslapis duoda
+**Tapatybė — medžio kelias** (`node.path` → `page.path`), ne URL: neišverstas puslapis duoda
 tuščią URL ir susiduria su šakniniu (rasta prod duomenyse). Manifestas taip pat **sujungia**
 published ir draft `PageContent` tam pačiam puslapiui+kalbai — kitaip palyginimas melagingai rodo
 „nukrito į draft" (versionavime tai normalu: 9 tokie atvejai).

@@ -15,7 +15,7 @@ from utils import browser_page
 def run(playwright: Playwright) -> None:
     with browser_page(playwright) as page:
         page.locator("#adp-landing-numbers div").filter(has_text="Organizacijos").click()
-        page.get_by_role("link", name="Org1").click()
+        page.get_by_role("link", name="Org1", exact=True).click()
         page.get_by_role("link", name="Tvarkytojai").click()
         page.get_by_role("link", name="Pridėti narį").click()
         page.get_by_role("textbox", name="El. paštas *").click()

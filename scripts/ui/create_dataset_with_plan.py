@@ -20,7 +20,7 @@ PLAN_DEADLINE = (date.today() + timedelta(days=60)).isoformat()
 def run(playwright: Playwright) -> None:
     with browser_page(playwright) as page:
         page.get_by_role("link", name="Organizacijos").click()
-        page.get_by_role("link", name="Org1").click()
+        page.get_by_role("link", name="Org1", exact=True).click()
         page.locator("#main-content").get_by_role("link", name="Duomenų ištekliai").click()
         page.get_by_role("link", name="Pridėti duomenų išteklių").click()
         page.get_by_text("Koncepcinė klasė, aprašanti").click()

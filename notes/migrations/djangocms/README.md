@@ -15,7 +15,6 @@ Susiję: #1824 (užduotis) · PR #2646 (atnaujinimas) · PR #2795 (išvalymas po
 | [`receptas.md`](receptas.md) | programuotojui | Kodėl migracija trijų etapų, kokios priklausomybės kiekvienam etapui, kas pakeista kode |
 | [`diegimas.md`](diegimas.md) | diegiančiam | Žingsnis po žingsnio TEST/PROD aplinkoje: backup'as, 4.1 įrankis, 5.0 leidimas, patikros |
 | [`cms_ab_manifest.py`](cms_ab_manifest.py), [`cms_ab_diff.py`](cms_ab_diff.py) | abiem | Priėmimo patikra: tos pačios formos manifestas iš bazės prieš ir po, ir jų palyginimas |
-| `migration dev v4.sh`, `utils.sh` | istorijai | Pirmojo bandymo darbo žurnalas. **Ne skriptas** — žr. žemiau |
 
 ## Eiga
 
@@ -58,14 +57,10 @@ Portalas turi veikti, o prisijungimo duomenys ir vienkartinių kodų išjungimas
 `scripts/ui/README.md`. Blog → stories dalies taip nepatikrinsi: naujienų skriptai reikalauja jau
 atnaujinto admin'o, tad senų įrašų tuščioje bazėje nebus. Tam reikia prod kopijos.
 
-## Darbo žurnalas (`migration dev v4.sh`)
+## Pirmasis bandymas
 
-Pirmojo bandymo užrašai: kaip dev aplinka buvo vedama per visus etapus, su iškrova po kiekvieno.
-Vertingas kaip žemėlapis, bet **nevykdomas**:
+Pirmojo bandymo darbo žurnalas (`migration dev v4.sh` ir `utils.sh`) iš katalogo išimtas: vykdyti jo nebuvo
+galima — jis rėmėsi commit'ais, egzistavusiais tik autoriaus kompiuteryje, — tad jis tik painiojo. Tą patį
+kelią atkartojamai aprašo `receptas.md` ir `diegimas.md`. Žurnalas liko git istorijoje:
 
-- `git checkout G1` ir septyni `cherry-pick` rodo į commit'us, kurių nėra nei GitHub'e, nei jokioje šakoje —
-  jie egzistavo tik autoriaus kompiuteryje;
-- turi alternatyvas ir žymas „iki čia padaryta", keičia `settings.py` per `sed`;
-- `utils.sh` funkcija `clean_db` daro `DROP SCHEMA public CASCADE` vietinei dev bazei.
-
-Atkartojamas to paties kelio variantas yra `receptas.md` + `diegimas.md`. Žurnalą išima #2795.
+    git log --full-history -- "notes/migrations/djangocms/migration dev v4.sh"

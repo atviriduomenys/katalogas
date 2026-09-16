@@ -12,6 +12,8 @@ https://github.com/atviriduomenys/katalogas/issues/2799
   the environment page and as ``agent_id`` in ``credentials.cfg``. The UAPI Agent endpoint returns
   it as ``instance_uri``.
 - Assign the identifier to existing environments, archived ones included, in a data migration.
+  **The migration cannot be reversed.** Rolling ``vitrina_uapi`` back past ``0009`` would drop
+  every identifier, and applying it again would issue new ones that no deployed agent knows.
 - Keep the stored identifier on every save. Reverting an environment in admin to a version saved before
   this release would otherwise give it a new one, and the ``agent_id`` the agent already has would
   stop matching.

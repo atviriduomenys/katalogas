@@ -1,9 +1,12 @@
+import uuid
+
 import pytest
 from django.db import IntegrityError
 
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.uapi.models import Agent, AgentEnvironment, RequestHistory
 from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory, RequestHistoryFactory
+from vitrina.uapi.utils.utils import AGENT_INSTANCE_URI_PREFIX
 from vitrina.datasets.factories import DatasetFactory
 
 
@@ -73,6 +76,31 @@ class TestAgentEnvironment:
         assert AgentEnvironment.objects.count() == 3
         assert AgentEnvironment.objects.not_archived().count() == 1
         assert AgentEnvironment.objects.not_archived().first() == agent_env_not_archived
+
+    def test_instance_uri_generated_for_each_environment(self):
+        agent_env_1 = AgentEnvironmentFactory()
+        agent_env_2 = AgentEnvironmentFactory()
+
+        for agent_env in (agent_env_1, agent_env_2):
+            assert agent_env.instance_uri.startswith(AGENT_INSTANCE_URI_PREFIX)
+            uuid.UUID(agent_env.instance_uri.removeprefix(AGENT_INSTANCE_URI_PREFIX))
+        assert agent_env_1.instance_uri != agent_env_2.instance_uri
+
+    def test_instance_uri_not_changed_on_save(self):
+        agent_env = AgentEnvironmentFactory()
+        instance_uri = agent_env.instance_uri
+
+        agent_env.is_enabled = False
+        agent_env.save()
+        agent_env.refresh_from_db()
+
+        assert agent_env.instance_uri == instance_uri
+
+    def test_instance_uri_unique(self):
+        agent_env = AgentEnvironmentFactory()
+
+        with pytest.raises(IntegrityError):
+            AgentEnvironmentFactory(instance_uri=agent_env.instance_uri)
 
 
 class TestRequestHistory:

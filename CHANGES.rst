@@ -4,6 +4,14 @@ Changes
 v 1.26.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2799
+
+- Give every agent environment a Spinta instance identifier, ``AgentEnvironment.instance_uri``
+  (``https://data.gov.lt/id/dcat/Agent/<uuid>``), for Spinta to use as the ``aud`` claim instead of
+  the client id. It is generated when the environment is created, never changes, and is shown on
+  the environment page and as ``agent_id`` in ``credentials.cfg``. The UAPI Agent endpoint returns
+  it as ``instance_uri``.
+- Assign the identifier to existing environments, archived ones included, in a data migration.
 
 
 v 1.25.0 (2026-09-10)

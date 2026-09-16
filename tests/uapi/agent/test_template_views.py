@@ -13,6 +13,7 @@ from vitrina.uapi.models import Agent, RequestHistory, Environment, AgentEnviron
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
+from vitrina.uapi.utils.utils import AGENT_INSTANCE_URI_PREFIX
 
 
 pytestmark = pytest.mark.django_db
@@ -454,6 +455,7 @@ class TestAgentEnvCreate:
         agent_environment = AgentEnvironment.objects.filter(agent=agent).first()
 
         assert agent_environment.oauth_client_id == mocked_id
+        assert agent_environment.instance_uri.startswith(AGENT_INSTANCE_URI_PREFIX)
         assert agent_environment.auth_server_url == data["auth_server_url"]
         assert agent_environment.api_gate_server_url == data["api_gate_server_url"]
         assert agent_environment.agent_address == data["agent_address"]
@@ -544,10 +546,14 @@ class TestAgentEnvUpdate:
             "agent_address": "https://agent2.example.com",
         }
 
-        response = app.post(url, data)
+        instance_uri = agent_environment.instance_uri
+
+        response = app.post(url, {**data, "instance_uri": "https://example.com/other"})
 
         assert response.status_code == HTTPStatus.FOUND
         agent_environment.refresh_from_db()
+
+        assert agent_environment.instance_uri == instance_uri
 
         assert agent_environment.auth_server_url == data["auth_server_url"]
         assert agent_environment.api_gate_server_url == data["api_gate_server_url"]
@@ -691,6 +697,8 @@ class TestAgentEnvDetail:
         assert response.status_code == HTTPStatus.OK
         assert response.context["agent_environment"] == agent_environment
         assert not response.context["secret"]
+        credentials = response.html.find(id="credentials-text").get_text()
+        assert f"agent_id = {agent_environment.instance_uri}\n" in credentials
 
     @pytest.mark.parametrize("is_archived_agent", [True, False])
     def test_archived_agent(

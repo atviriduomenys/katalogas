@@ -31,6 +31,7 @@ class UAPIAgentEnvSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
             "is_enabled",
             "services",
             "organization",
+            "instance_uri",
             "oauth_client_id",
             "environment",
             "auth_server_url",

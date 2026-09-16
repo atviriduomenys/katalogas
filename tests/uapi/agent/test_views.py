@@ -57,6 +57,7 @@ class TestList:
                     "is_enabled": agent_environment.is_enabled,
                     "services": list(agent_environment.agent.services.values_list("pk", flat=True)),
                     "organization": agent_environment.agent.organization_id,
+                    "instance_uri": agent_environment.instance_uri,
                     "oauth_client_id": agent_environment.oauth_client_id,
                     "environment": agent_environment.environment,
                     "auth_server_url": agent_environment.auth_server_url,

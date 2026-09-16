@@ -6835,6 +6835,16 @@ msgstr "Open data publish URL"
 msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
 msgstr "URL, where open data is published to"
 
+msgid "Agento identifikatorius"
+msgstr "Agent identifier"
+
+msgid ""
+"Spintos instancijos identifikatorius, sugeneruojamas sukuriant aplinką. "
+"Agentas jį naudoja kaip prieigos rakto `aud` reikšmę."
+msgstr ""
+"Spinta instance identifier, generated when the environment is created. The "
+"agent uses it as the `aud` value of the access token."
+
 msgid "Autorizacijos kliento identifikatorius"
 msgstr "Authorization client identifier"
 

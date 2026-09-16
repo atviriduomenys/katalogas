@@ -37,9 +37,10 @@ class AgentEnvAdmin(RevisionCommentVersionAdmin):
         "agent__title",
         "agent__organization__title",
         "environment",
+        "instance_uri",
     ]
     list_display = ["environment", "agent"]
-    readonly_fields = ["synchronized_at", "is_last_sync_successful", "oauth_client_id"]
+    readonly_fields = ["synchronized_at", "is_last_sync_successful", "instance_uri", "oauth_client_id"]
     autocomplete_fields = ["agent"]
 
 

@@ -1,6 +1,9 @@
+import json
 import uuid
 
 import pytest
+import reversion
+from reversion.models import Version
 from django.db import IntegrityError
 
 from vitrina.orgs.factories import OrganizationFactory
@@ -94,6 +97,35 @@ class TestAgentEnvironment:
         agent_env.save()
         agent_env.refresh_from_db()
 
+        assert agent_env.instance_uri == instance_uri
+
+    def test_instance_uri_cannot_be_changed_on_save(self):
+        agent_env = AgentEnvironmentFactory()
+        instance_uri = agent_env.instance_uri
+
+        agent_env.instance_uri = f"{AGENT_INSTANCE_URI_PREFIX}{uuid.uuid4()}"
+        agent_env.save()
+        agent_env.refresh_from_db()
+
+        assert agent_env.instance_uri == instance_uri
+
+    def test_instance_uri_kept_when_version_without_field_reverted(self):
+        agent_env = AgentEnvironmentFactory(is_enabled=True)
+        instance_uri = agent_env.instance_uri
+        with reversion.create_revision():
+            agent_env.save()
+        version = Version.objects.get_for_object(agent_env).get()
+        # A version saved before the 0008-0010 migrations has no `instance_uri`.
+        serialized_data = json.loads(version.serialized_data)
+        del serialized_data[0]["fields"]["instance_uri"]
+        version.serialized_data = json.dumps(serialized_data)
+        version.save(update_fields=["serialized_data"])
+        AgentEnvironment.objects.filter(pk=agent_env.pk).update(is_enabled=False)
+
+        Version.objects.get(pk=version.pk).revert()
+        agent_env.refresh_from_db()
+
+        assert agent_env.is_enabled
         assert agent_env.instance_uri == instance_uri
 
     def test_instance_uri_unique(self):

@@ -17,14 +17,11 @@ from djangocms_versioning.models import Version
 
 
 LANGUAGE = "lt"
-# Spelled out rather than left to INHERIT: the pages that have no parent have
-# nothing to inherit from, and django-cms would fall back to the first entry in
-# CMS_TEMPLATES, which is this one anyway.
+# Root pages have nothing to inherit from, and this is CMS_TEMPLATES[0] anyway.
 TEMPLATE = "pages/page.html"
 
-# Matches the configuration on production, including the template prefix - that
-# is what makes the stories views use vitrina/cms/post_*.html instead of the
-# package's own templates.
+# Matches production. template_prefix is what makes the stories views use
+# vitrina/cms/post_*.html.
 STORIES_CONFIG = {
     "namespace": "Blog",
     "app_title": "Blog",

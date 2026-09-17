@@ -10,10 +10,7 @@ from tqdm import tqdm
 from typer import Argument, Option, confirm, run
 
 
-# The story text changed table in the django-cms 5 upgrade: djangocms-blog's
-# translation rows became djangocms-stories content rows. The columns are the
-# same, so the same scrubbing fits either one - only the names have to be
-# chosen when the script runs.
+# Either schema may be in front of us: the columns are the same, the name is not.
 STORY_CONTENT_TABLES = ("djangocms_stories_postcontent", "djangocms_blog_post_translation")
 
 
@@ -68,6 +65,7 @@ def main(
         "dataset_migrate",
         "dataset",
         "cms_page",
+        *(["cms_pagecontent"] if "cms_pagecontent" in db.tables else []),
         "account_emailconfirmation",
         "socialaccount_socialaccount",
         "socialaccount_socialtoken",
@@ -112,8 +110,6 @@ def main(
             func = sys.modules[__name__].__dict__[f"_anonymize_{table}"]
             func(db, fake, pbar, users)
 
-    # Once, not per table: it goes by the plugin's content type, so it covers
-    # both schemas in one pass.
     _scrub_story_plugins(db)
 
 
@@ -126,10 +122,7 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
             "email": fake.email(),
             "phone": fake.phone_number(),
             "address": fake.address(),
-            # Free text people fill in by hand, so it holds whatever they felt
-            # like typing - a production copy had a real contact address sitting
-            # in it. The url itself is public information and worth nothing to a
-            # test fixture, so it goes rather than being inspected.
+            # Free text: a production dump had a contact address in here.
             "website": fake.url(),
         }
         objects.update(data, [pk_name])
@@ -155,11 +148,8 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
         pbar.update(1)
 
 
-# Story text lives in post_text as long as STORIES_USE_PLACEHOLDER is off, which
-# is how this portal runs. A config switched to placeholder mode keeps its text in
-# text plugins instead, and scrubbing the column alone would then leave the article
-# in the dump - so plugins hanging off story content are blanked too. Page content
-# is a separate matter this script has never covered.
+# Empty on this portal - STORIES_USE_PLACEHOLDER is off, so article text lives
+# in post_text. A config with placeholders on keeps it here instead.
 STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"), ("djangocms_blog", "post"))
 
 
@@ -357,6 +347,15 @@ def _anonymize_dataset(db: Database, fake: Faker, pbar: tqdm, users: dict[str, d
 
 def _anonymize_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["cms_page"]
+    pk_name = "id"
+    for record in objects.all():
+        data = {pk_name: record[pk_name], "changed_by": fake.first_name(), "created_by": fake.first_name()}
+        objects.update(data, [pk_name])
+        pbar.update(1)
+
+
+def _anonymize_cms_pagecontent(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    objects: Table = db["cms_pagecontent"]
     pk_name = "id"
     for record in objects.all():
         data = {pk_name: record[pk_name], "changed_by": fake.first_name(), "created_by": fake.first_name()}

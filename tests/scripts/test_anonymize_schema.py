@@ -45,6 +45,23 @@ def test_stops_when_the_database_has_neither():
         assert name in str(stop.value)
 
 
+def test_page_content_keeps_no_editor_names():
+    """cms 5 repeats created_by and changed_by on page content, not just on the page."""
+    from unittest.mock import Mock
+
+    from faker import Faker
+
+    from scripts.anonymize import _anonymize_cms_pagecontent
+
+    contents = FakeTable([{"id": 1, "created_by": "vardas.pavarde", "changed_by": "kitas.redaktorius"}])
+
+    _anonymize_cms_pagecontent({"cms_pagecontent": contents}, Faker(), Mock(), {})
+
+    written = contents.updates[0]
+    assert set(written) == {"id", "created_by", "changed_by"}
+    assert "vardas.pavarde" not in " ".join(str(v) for v in written.values())
+
+
 def test_every_listed_table_has_a_function_to_anonymize_it():
     """The runner looks the function up by table name, so a typo is a crash."""
     import scripts.anonymize as anonymize

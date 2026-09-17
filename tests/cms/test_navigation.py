@@ -30,9 +30,7 @@ def make_page(title, slug, user, parent=None, published=True, in_navigation=True
     return page
 
 
-# `_render_menu` is what `show_menu` calls on a cache miss. Going through it
-# directly keeps these tests about the menu itself rather than about caching,
-# which `test_navigation_tags.py` covers.
+# Straight to `_render_menu`: these tests are about the menu, not about caching.
 
 
 @pytest.mark.django_db
@@ -110,8 +108,7 @@ def test_child_renders_with_its_own_title_and_url(user):
 
     html = _render_menu("lt")
 
-    # The menu yields Page objects; reading the title or the URL off a menu
-    # node attribute would render both of these empty.
+    # Menu nodes carry neither title nor url - both would come back empty.
     assert "navbar-dropdown" in html
     assert child.get_menu_title() in html
     assert f'href="{child.get_absolute_url()}"' in html
@@ -125,8 +122,7 @@ def test_page_published_in_two_languages_yields_one_id(user):
 
     ids = list(_published_nav_page_ids("lt"))
 
-    # There is one PageContent per language and the versioning manager joins to
-    # the version table, so without distinct() the same id comes back twice.
+    # The versioning manager joins the version table, so ids repeat without distinct().
     assert ids == [page.pk]
 
 
@@ -141,8 +137,7 @@ def test_page_published_only_in_another_language_is_hidden(user):
 
     html = _render_menu("lt")
 
-    # The menu is cached per language, so it must be built per language too -
-    # otherwise this points Lithuanian readers at a page they cannot see.
+    # Cached per language, so it has to be built per language.
     assert visible.get_menu_title() in html
     assert "English only" not in html
     assert english_only.pk not in list(_published_nav_page_ids("lt"))

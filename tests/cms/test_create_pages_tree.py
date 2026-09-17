@@ -30,8 +30,7 @@ def test_slugs_are_unique():
 def test_exactly_one_page_is_the_home_page():
     homes = [page["slug"] for page in _pages() if page.get("is_home")]
 
-    # More than one and the last wins silently; none and the blog ends up at
-    # /home/blog/ instead of /blog/, as production has it.
+    # Two home pages and the last wins silently; none and the blog moves to /home/blog/.
     assert homes == ["home"]
 
 

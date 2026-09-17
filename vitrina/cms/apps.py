@@ -20,9 +20,8 @@ class CmsConfig(AppConfig):
 
         post_save.connect(_clear, sender=Page, dispatch_uid="vitrina_cms.clear_menu_cache")
         post_delete.connect(_clear, sender=Page, dispatch_uid="vitrina_cms.clear_menu_cache")
-        # Publishing and unpublishing are what change the menu now, and neither
-        # writes to Page - the state lives on the version of the page content,
-        # so the two signals above never fire for it.
+        # Publishing does not write to Page - the state lives on the page content's
+        # version - so the two signals above never fire for it.
         post_version_operation.connect(
             _clear,
             sender=PageContent,
@@ -59,8 +58,7 @@ def _add_default_text_plugin(sender, instance, created, **kwargs):
     if siblings.exists():
         return
 
-    # With placeholders off the article is rendered from post_text and this hint
-    # is never shown, so writing it only leaves an unused placeholder behind.
+    # With placeholders off the hint is never shown, only left behind.
     config = instance.post.app_config if instance.post_id else None
     if not (config and config.use_placeholder):
         return
@@ -103,8 +101,7 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     stale = group.permissions.filter(content_type__app_label="djangocms_blog")
     granted = group.permissions.filter(content_type__app_label="djangocms_stories")
 
-    # Repair once, then leave the group alone. Re-granting the whole set on every
-    # migrate would undo any permission an administrator has since taken away.
+    # Repair once: re-granting on every migrate would undo an administrator's change.
     if granted.exists() and not stale.exists():
         return
 

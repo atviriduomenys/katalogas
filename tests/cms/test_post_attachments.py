@@ -41,8 +41,7 @@ def test_attachments_are_found_through_the_post_not_its_content():
 
     assert list(context["files"]) == [attachment]
 
-    # And the lookup the view used to do returns nothing, which is why this
-    # went unnoticed: no error, just an article with its attachments gone.
+    # The old lookup returns nothing: no error, just an article without its files.
     assert not FileResource.objects.filter(
         content_type=ContentType.objects.get_for_model(content),
         object_id=content.pk,
@@ -129,9 +128,7 @@ def test_the_wrapper_remaps_attachments_only_for_the_post_model(monkeypatch):
     module, copied, remapped = _run_wrapper_with(monkeypatch, fake_migration)
     module.migrate_from_blog_to_stories(apps="apps", schema_editor=None)
 
-    # Upstream still sees both passes, unchanged.
     assert len(copied) == 2
-    # Ours runs once, for the post, and is handed the map upstream filled.
     assert len(remapped) == 1
     assert remapped[0][1] is pk_maps
     assert remapped[0][3] is post

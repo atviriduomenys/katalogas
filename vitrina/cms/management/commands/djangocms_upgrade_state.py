@@ -11,10 +11,8 @@ STORIES_DATA_MIGRATION = ("djangocms_stories", "0002_auto_20250618_1556")
 
 
 def get_upgrade_state(*, tables, applied_migrations):
-    # Checked first, and on its own: a django-cms 3 database also carries the
-    # legacy blog tables, so without this it would read as merely "pending" -
-    # refused either way, but told about the blog stage when what it lacks is
-    # the whole 4.1 tool run.
+    # Checked first: a cms 3 database carries the blog tables too, and "pending" would
+    # name the wrong missing step.
     if LEGACY_PAGE_TABLE in tables:
         return "legacy_pages"
 

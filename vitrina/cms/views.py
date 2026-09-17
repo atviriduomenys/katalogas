@@ -16,10 +16,8 @@ class PolicyView(TemplateView):
 class PostDetailView(BasePostDetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Attachments were stored against the post itself by the one-off news
-        # import, and `self.object` is the post's content now,
-        # a different model with different ids - looking the files up by it
-        # finds nothing, and every news attachment disappears from the page.
+        # Attachments hang off the post, while `self.object` is its content - a different
+        # model with different ids, so a lookup by it silently finds nothing.
         post = self.object.post
         context["files"] = FileResource.objects.filter(
             content_type=ContentType.objects.get_for_model(post),

@@ -1,18 +1,19 @@
-"""A/B manifesto generatorius django-cms 3 -> 5 migracijos validavimui (DAS-428).
+"""A/B manifest generator for validating the django-cms 3 -> 5 migration (DAS-428).
 
-Kodėl manifestas, o ne SQL palyginimas: stendų schemos skirtingos
-(`djangocms_blog_*` vs `djangocms_stories_*`, `cms_title` vs `cms_pagecontent`),
-tad ta pati užklausa ten neveiks. Šis skriptas iš abiejų pusių generuoja
-**vienodos formos** JSON, ir lyginami manifestai, ne lentelės.
+A manifest rather than an SQL comparison, because the two sides do not share a
+schema (`djangocms_blog_*` vs `djangocms_stories_*`, `cms_title` vs
+`cms_pagecontent`): the same query cannot run on both. This script emits JSON of
+the **same shape** from either side, and it is the manifests that get compared.
 
-Paleidimas (abiejuose stenduose vienodai). Python skaito failą iš standartinės įvesties, tad
-konteineryje jo nereikia, o `vitrina` importuojama iš konteinerio darbinio katalogo:
+Run it the same way on both sides. Python reads the file from stdin, so it does
+not have to exist inside the container, and `vitrina` is imported from the
+container's working directory:
 
     docker compose exec -T vitrina python - < notes/migrations/djangocms/cms_ab_manifest.py > manifest-a.json
 
-Svarbiausias tikrinamas dalykas — `published` laukas. Tyliausias migracijos gedimas:
-publikuotas puslapis po versioning migracijos nukrenta į DRAFT ir dingsta iš svetainės
-be jokios klaidos. Manifeste tai matosi kaip published: true -> false.
+The field that matters most is `published`. The quietest way this migration can
+fail is a published page dropping to DRAFT and disappearing from the site
+without an error; in the manifest that shows up as published: true -> false.
 """
 
 import json
@@ -37,7 +38,7 @@ def _detect_stack():
 
 
 def _plugin_counts(placeholders, language):
-    """Plugin'ų kiekiai pagal tipą — {"TextPlugin": 3, "SideMenuPlugin": 1}."""
+    """Plugin counts per type - {"TextPlugin": 3, "SideMenuPlugin": 1}."""
     counts = {}
     for ph in placeholders:
         try:
@@ -55,7 +56,7 @@ def _pages_cms3(languages):
     from cms.models import Page
 
     rows = []
-    # Public tree: CMS 3 laiko draft/public poras, mums rūpi tai, ką mato lankytojas.
+    # The public tree: CMS 3 keeps draft/public pairs, and what a visitor sees is the public one.
     for page in Page.objects.filter(publisher_is_draft=False).order_by("node__path"):
         node = page.node
         parent_node = node.get_parent() if node else None
@@ -66,10 +67,10 @@ def _pages_cms3(languages):
             rows.append(
                 {
                     "language": lang,
-                    # tree_path = medžio (materialized path) reikšmė. Tai vienintelis tapatybės
-                    # laukas, kurį migracija garantuotai išsaugo: cms.0037 būtent node.path
-                    # nukopijuoja į Page.path. URL kelias tam netinka — neišverstas puslapis
-                    # duoda tuščią kelią ir susiduria su šakniniu.
+                    # The materialized tree path is the one identity the migration is
+                    # guaranteed to preserve: cms.0037 copies node.path into Page.path.
+                    # The URL path will not do - an untranslated page has an empty one
+                    # and collides with the root.
                     "tree_path": node.path if node else None,
                     "slug": page.get_slug(language=lang, fallback=False),
                     "path": page.get_path(language=lang, fallback=False),
@@ -121,13 +122,13 @@ def _pages_cms5(languages):
     rows = []
     for page in Page.objects.order_by("path"):
         parent = page.parent
-        # admin_manager: kitaip nematytume nepublikuotų PageContent, o mums svarbu
-        # užfiksuoti ir juos - būtent jų atsiradimas reikštų nutylėtą regresiją.
+        # admin_manager, or unpublished PageContent stays invisible - and one appearing
+        # where the A side had none is exactly the regression worth recording.
         #
-        # Grupuojam pagal kalbą: versionavime tam pačiam puslapiui ta pačia kalba gali
-        # egzistuoti IR published, IR draft PageContent (kai prieš migraciją buvo
-        # neišsaugotų redagavimų). A pusėje tai buvo viena eilutė, tad sujungiam - kitaip
-        # raktas dubliuotųsi ir palyginimas melagingai rodytų „nukrito į draft".
+        # Grouped by language: under versioning one page in one language can hold a
+        # published AND a draft PageContent (when edits were left unsaved before the
+        # migration). The A side had a single row, so they are merged here - otherwise
+        # the key would repeat and the comparison would falsely report a drop to draft.
         by_language = {}
         for content in PageContent.admin_manager.filter(page=page):
             by_language.setdefault(content.language, []).append(content)
@@ -136,13 +137,13 @@ def _pages_cms5(languages):
             if languages and lang not in languages:
                 continue
             published = [c for c in contents if _content_state(c) == PUBLISHED]
-            # Atstovas — publikuota versija, jei tokia yra; kitaip naujausia.
+            # The published version represents the page, or the newest one if there is none.
             content = published[0] if published else max(contents, key=lambda c: c.pk)
             is_published = page.pk in published_ids and bool(published)
             rows.append(
                 {
                     "language": lang,
-                    # cms5 pusėje medžio kelias jau gyvena pačiame Page (TreeNode sulietas).
+                    # On cms 5 the tree path lives on Page itself (TreeNode was merged in).
                     "tree_path": page.path,
                     "slug": page.get_slug(language=lang, fallback=False),
                     "path": page.get_path(language=lang, fallback=False),
@@ -150,8 +151,8 @@ def _pages_cms5(languages):
                     "parent_path": parent.get_path(language=lang, fallback=True) if parent else None,
                     "depth": page.depth,
                     "published": is_published,
-                    # Neišsaugoti juodraščiai šalia publikuotos versijos — ne gedimas,
-                    # bet verta matyti: būtent juos migracija ir turi išsaugoti.
+                    # Unsaved drafts next to a published version are not a failure, but
+                    # they are worth seeing: preserving them is part of the job.
                     "draft_versions": len(contents) - len(published),
                     "in_navigation": content.in_navigation,
                     "template": content.template,
@@ -196,17 +197,18 @@ def _is_published_version(obj):
     return _content_state(obj) == PUBLISHED
 
 
-# --------------------------------------------------------------------------- bendra
+# --------------------------------------------------------------------------- shared
 
 def _iso(value):
     return value.isoformat() if value is not None and hasattr(value, "isoformat") else None
 
 
 def _author(user):
-    """Autorių lyginam pagal prisijungimo vardą, ne pk — pk gali pasislinkti perkeliant.
+    """Authors are compared by login name, not pk - a pk can shift when data is moved.
 
-    `get_username()`, ne `.username`: portalo `User` turi `username = None` ir prisijungia el. paštu, tad
-    `.username` visur būtų None, o autoriaus pasikeitimo patikra — tuščia.
+    `get_username()` and not `.username`: this portal's `User` has `username = None`
+    and logs in by email, so `.username` would be None everywhere and the check for a
+    changed author would compare nothing.
     """
     return user.get_username() if user is not None else None
 

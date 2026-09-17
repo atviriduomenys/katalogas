@@ -1,6 +1,7 @@
 import pytest
 from cms.api import add_plugin, create_page, create_page_content
 from cms.models import PageContent
+from django.template.loader import render_to_string
 
 from vitrina.cms.cms_plugins import SideMenuPlugin
 from vitrina.users.factories import UserFactory
@@ -124,8 +125,6 @@ def test_no_empty_heading_when_the_parent_is_not_published(user):
     Rendering it anyway leaves <a href=""> with no text, which sends the reader
     back to the page they are already on.
     """
-    from django.template.loader import render_to_string
-
     root = make_page("Šaknis", "saknis", user, published=False)
     page = make_page("Puslapis", "puslapis", user, parent=root)
     sibling = make_page("Brolis", "brolis", user, parent=root)

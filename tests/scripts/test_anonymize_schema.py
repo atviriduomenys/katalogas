@@ -6,9 +6,21 @@ reaching for the wrong name scrubs nothing and says nothing - the dump goes out
 with every article's real title and text in it.
 """
 
-import pytest
+from unittest.mock import Mock
 
-from scripts.anonymize import STORY_CONTENT_TABLES, _story_content_tables
+import dataset
+import pytest
+from faker import Faker
+
+from scripts import anonymize
+from scripts.anonymize import (
+    STORY_CONTENT_TABLES,
+    _anonymize_adp_cms_page,
+    _anonymize_cms_pagecontent,
+    _anonymize_organization,
+    _scrub_story_plugins,
+    _story_content_tables,
+)
 
 
 class FakeDatabase:
@@ -47,12 +59,6 @@ def test_stops_when_the_database_has_neither():
 
 def test_page_content_keeps_no_editor_names():
     """cms 5 repeats created_by and changed_by on page content, not just on the page."""
-    from unittest.mock import Mock
-
-    from faker import Faker
-
-    from scripts.anonymize import _anonymize_cms_pagecontent
-
     contents = FakeTable([{"id": 1, "created_by": "vardas.pavarde", "changed_by": "kitas.redaktorius"}])
 
     _anonymize_cms_pagecontent({"cms_pagecontent": contents}, Faker(), Mock(), {})
@@ -64,8 +70,6 @@ def test_page_content_keeps_no_editor_names():
 
 def test_every_listed_table_has_a_function_to_anonymize_it():
     """The runner looks the function up by table name, so a typo is a crash."""
-    import scripts.anonymize as anonymize
-
     for table in STORY_CONTENT_TABLES:
         assert hasattr(anonymize, f"_anonymize_{table}")
 
@@ -86,12 +90,6 @@ class FakeTable:
 
 def test_organizations_lose_every_field_people_type_contacts_into():
     """website is free text, and a production copy had a real address in it."""
-    from unittest.mock import Mock
-
-    from faker import Faker
-
-    from scripts.anonymize import _anonymize_organization
-
     table = FakeTable([{"id": 1, "email": "tikras@istaiga.lt", "website": "kontaktai@istaiga.lt"}])
     db = {"organization": table}
     fake = Faker()
@@ -106,8 +104,6 @@ def test_organizations_lose_every_field_people_type_contacts_into():
 
 def _story_plugin_database(path):
     """The four tables the plugin scrub joins, with one row of each kind."""
-    import dataset
-
     db = dataset.connect(f"sqlite:///{path}")
     db.query("CREATE TABLE django_content_type (id integer primary key, app_label text, model text)")
     db.query("CREATE TABLE cms_placeholder (id integer primary key, content_type_id integer)")
@@ -131,8 +127,6 @@ def test_story_plugin_bodies_are_scrubbed_on_both_schemas(tmp_path):
     and the dump, and it is reached through three joins - exactly the shape that
     breaks quietly when a column is renamed.
     """
-    from scripts.anonymize import _scrub_story_plugins
-
     db = _story_plugin_database(tmp_path / "probe.db")
 
     _scrub_story_plugins(db)
@@ -144,10 +138,6 @@ def test_story_plugin_bodies_are_scrubbed_on_both_schemas(tmp_path):
 
 
 def test_the_plugin_scrub_skips_a_database_without_text_plugins(tmp_path):
-    import dataset
-
-    from scripts.anonymize import _scrub_story_plugins
-
     db = dataset.connect(f"sqlite:///{tmp_path / 'empty.db'}")
     db.query("CREATE TABLE organization (id integer primary key)")
 
@@ -161,12 +151,6 @@ def test_old_portal_pages_are_scrubbed_in_their_own_table():
     twice, and dataset - which creates any column it is asked to write - added
     a description column to news_item in every dump.
     """
-    from unittest.mock import Mock
-
-    from faker import Faker
-
-    from scripts.anonymize import _anonymize_adp_cms_page
-
     pages = FakeTable([{"id": 1, "title": "Tikras puslapis", "body": "<p>Tikras</p>"}])
     news = FakeTable([{"id": 7, "title": "Naujiena"}])
 

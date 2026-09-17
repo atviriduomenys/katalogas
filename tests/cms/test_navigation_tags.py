@@ -1,11 +1,13 @@
 import pytest
 from cms.api import create_page
+from cms.models import PageContent
 from django.core.cache import cache
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils.translation import get_language
 
 from vitrina.templatetags.navigation_tags import menu_cache_key, show_menu
+from vitrina.users.factories import UserFactory
 
 
 @pytest.mark.django_db
@@ -36,10 +38,6 @@ def test_show_menu_cache_clears_when_a_page_is_published(django_capture_on_commi
     Under versioning the state sits on the version of the page content, so the
     post_save and post_delete receivers on Page never see a publish.
     """
-    from cms.models import PageContent
-
-    from vitrina.users.factories import UserFactory
-
     user = UserFactory()
     page = create_page("Naujas puslapis", "pages/page.html", get_language(), created_by=user, in_navigation=True)
     content = PageContent.admin_manager.filter(page=page, language=get_language()).first()

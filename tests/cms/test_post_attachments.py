@@ -1,7 +1,8 @@
 from importlib import import_module
-
+from types import SimpleNamespace
 
 import pytest
+from django.apps import apps as global_apps
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory
 from djangocms_stories.cms_appconfig import StoriesConfig, config_defaults
@@ -82,18 +83,12 @@ def test_the_remap_survives_a_blog_with_no_posts():
     nothing, so the "Post" key is never created - and reaching for it directly
     would end the deployment with a KeyError before anything else ran.
     """
-    from importlib import import_module
-
-    from django.apps import apps as global_apps
-
     migration = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
 
     migration.remap_file_resources(global_apps, {}, Post, Post)
 
 
 def _fake_model(label):
-    from types import SimpleNamespace
-
     return SimpleNamespace(_meta=SimpleNamespace(label_lower=label))
 
 

@@ -10,6 +10,8 @@ class CmsConfig(AppConfig):
     label = "vitrina_cms"
 
     def ready(self):
+        # apps.py is imported before the app registry is ready, so every import
+        # that reaches a model has to sit inside a function - here and below.
         from cms.models import Page, PageContent
         from djangocms_versioning.signals import post_version_operation
 

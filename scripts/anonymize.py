@@ -122,7 +122,6 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
             "email": fake.email(),
             "phone": fake.phone_number(),
             "address": fake.address(),
-            # Free text: a production dump had a contact address in here.
             "website": fake.url(),
         }
         objects.update(data, [pk_name])

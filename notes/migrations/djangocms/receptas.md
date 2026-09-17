@@ -222,8 +222,8 @@ published ir draft `PageContent` tam pačiam puslapiui+kalbai — kitaip palygin
   `djangocms_stories_postcontent` po jo, ir abi, jei atnaujinimas sustojo pusiaukelėje. Valo ir tekstą
   plugin'uose, jei kuri konfigūracija laikytų straipsnius placeholder'iuose. Pataisa keliauja **kartu su
   atnaujinimu**, ne po jo — kitaip pirmas dump'as po go-live liktų be veikiančio anonimizavimo.
-- ~~`scripts/migrate_news.py` ir `scripts/migrate_pages.py` remiasi `djangocms_blog`~~ — sprendimas: juos
-  ištrina #2795, istorija lieka git'e.
+- ~~`scripts/migrate_news.py` ir `scripts/migrate_pages.py` remiasi `djangocms_blog`~~ — **ištrinti**;
+  istorija lieka git'e.
 
 ### ⚠️ `anonymize.py` — trys defektai, rasti taisant (2026-08-05)
 

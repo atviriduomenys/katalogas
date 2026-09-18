@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
 
-from djangocms_text_ckeditor.fields import HTMLFormField
+from djangocms_text.fields import HTMLFormField
 
 from vitrina.cms.forms import DeploymentAdminForm
 from vitrina.cms.models import Deployment

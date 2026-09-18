@@ -113,6 +113,13 @@ poetry run ruff format .
 
 - No typechecker configured
 
+## Code style
+
+### Comments and docstrings
+
+- Keep comments and docstrings short, one or two lines.
+- Add comments only where necessary, where it's not obvious. 
+
 ## GitHub
 
 - Use `gh` to access GitHub (issues, PRs, releases, etc.)

@@ -36,9 +36,20 @@ standartinės įvesties, o `vitrina` importuojama iš konteinerio darbinio katal
     docker compose exec -T vitrina python - < notes/migrations/djangocms/cms_ab_manifest.py > manifest-b.json
     python3 notes/migrations/djangocms/cms_ab_diff.py manifest-a.json manifest-b.json
 
-Taip tą patį failą galima paleisti ir prieš seną (`devel`, cms 3) kodą, kuriame jo nėra. Palyginimas grąžina
+Taip tą patį failą galima paleisti ir prieš seną (cms 3) kodą, kuriame jo nėra.
+
+Repeticijai iš dump'o: prieš manifestą A atvesk bazę į paskutinio cms 3 leidimo būseną (`migrate` su cms 3
+image'u) — dump'as gali būti senesnis už kodą, o prod diegimo metu bus būtent tokioje būsenoje. Palyginimas grąžina
 `exit 1`, jei pažeistas bent vienas blokuojantis kriterijus — dingęs puslapis, publikuotas → juodraštis,
 pasikeitęs URL, dingęs redirect'as ar naujiena.
+
+## Repeticija 2026-09-21
+
+Ant anonimizuotos prod kopijos (dump'as 2026-08-19), su tagu `cms4-migration-tool` ir devel `e97a36a4`:
+visos šešios įrankio komandos praėjo (83 s), cms 5 `migrate` — taip pat (19 s, `cms.0037` be klaidų).
+A/B: vienintelis blokuojantis skirtumas — žinomas „Legislation" atvejis (`diegimas.md`, 8 žingsnis).
+Visi 53 publikuoti puslapiai abiem kalbomis ir 54 naujienos atsidaro, 5 nepublikuotos grąžina 404,
+5 priedai liko prie savo naujienų, 5xx klaidų nebuvo.
 
 ## Bazinė būsena dev aplinkoje
 

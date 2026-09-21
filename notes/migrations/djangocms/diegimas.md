@@ -47,7 +47,8 @@ ir plugin'ų kodo liesti nereikėjo, nes svetainė iš šio image'o nekeliama:
 | `vitrina/settings.py` | `djangocms_4_migration` į `INSTALLED_APPS`; `CMS_MIGRATION_USER_ID` |
 
 Patikrinta 2026-09-21: #2646 kodas su cms 4.1 įsikelia be pakeitimų — Django setup, admin'as ir URL'ai
-kyla, visos šešios 3 žingsnio komandos yra. Pačios migracijos ant prod kopijos su šiuo tagu dar neleistos.
+kyla, visos šešios 3 žingsnio komandos yra. Repeticija ant prod kopijos su šiuo tagu praėjo tą pačią
+dieną (žr. [README](README.md)).
 Bet kuriai `manage.py` komandai reikia pasiekiamo Redis — be jo krenta jau įkeliant programas.
 
 **Jei tagą reikėtų sukurti iš naujo** (pvz., prieš migraciją į leidimą patektų cms ar stories kodo
@@ -119,6 +120,8 @@ services:
   vitrina:
     image: katalogas-cms4-migration:<data>
     volumes: !reset []          # BUTINA, zr. zemiau
+    environment:
+      - CMS_MIGRATION_USER_ID=<id>   # BUTINA, zr. 0 zingsni
 ```
 
 > ⚠️ **`!reset` reikia Docker Compose ≥ 2.24.4** (`docker compose version`). Senesnis jo nesupranta.
@@ -150,7 +153,7 @@ Taip visi adresai, tinklas ir kintamieji ateina iš tos pačios vietos, iš kuri
 > ir `katalogas-<šaka>-database`, `docker-compose.dev.yml` Postgres — `katalogas-database`. Pakeisk juos
 > ir override'e, ir komandose.
 
-Postgres, Elasticsearch ir Redis turi suktis viso proceso metu. Portalas — ne.
+Postgres ir Redis turi suktis viso proceso metu — be Redis krenta bet kuri `manage.py` komanda. Portalas — ne.
 
 Reikia dar: vietos backup'ui ir laiko jį atkurti, jei prireiktų.
 
@@ -164,15 +167,24 @@ Ar bazei apskritai reikia 4.1 žingsnio:
 select count(*) from (select node_id from cms_page group by node_id having count(*) > 1) t;
 ```
 
-- **> 0** — draft/public poros yra, 4.1 žingsnis **būtinas**. Prod kopijoje buvo `29`.
+- **> 0** — draft/public poros yra, 4.1 žingsnis **būtinas**. Repeticijoje (2026-09-21) buvo `31`.
 - **0** — porų nėra; sustok ir pasitikslink, ar bazė tikrai cms 3 būsenos.
 
 Užsirašyk pradinius skaičius — jų prireiks tikrinant:
 
 ```sql
-select count(*) from cms_page;                      -- pvz. 59
-select count(*) from cms_treenode;                  -- pvz. 30
-select count(*) from djangocms_blog_post;           -- pvz. 47
+select count(*) from cms_page;                      -- repeticijoje 63
+select count(*) from cms_treenode;                  -- 32
+select count(*) from djangocms_blog_post;           -- 59
+```
+
+**Migracijos naudotojas.** Įrankis versijas priskiria puslapio autoriui pagal `cms_page.created_by`, o kai
+jo neranda — naudotojui `CMS_MIGRATION_USER_ID` (numatytas `1`). Jei tokio naudotojo nėra, migracija
+krenta **vidury 3 žingsnio**, kai grįžti jau nebėra kur. Išsirink esamą administratorių ir įrašyk jo id
+į `docker-compose.migration.yml`:
+
+```sql
+select id, email from "user" where is_superuser and is_active order by id;
 ```
 
 ---
@@ -213,7 +225,7 @@ BEGIN
   FOR r IN
     SELECT c.relname AS seq, t.relname AS tbl, a.attname AS col
     FROM pg_class c
-    JOIN pg_depend d ON d.objid = c.oid AND d.deptype = 'a'
+    JOIN pg_depend d ON d.objid = c.oid AND d.deptype IN ('a', 'i')
     JOIN pg_class t ON t.oid = d.refobjid
     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
     WHERE c.relkind = 'S'
@@ -255,7 +267,11 @@ $COMPOSE run --rm -e DJANGOCMS_BLOG_MIGRATION=0 --entrypoint "" vitrina python m
 $COMPOSE run --rm -e DJANGOCMS_BLOG_MIGRATION=0 --entrypoint "" vitrina python manage.py remove_unlinked_placeholders
 ```
 
-Kiekviena turi baigtis **exit 0**. Trukmė kartu — apie **2 min** (repeticijoje 116 s).
+Kiekviena turi baigtis **exit 0**. Trukmė kartu — apie **1,5 min** (repeticijoje 2026-09-21 — 83 s).
+
+Įspėjimai `User … not found, falling back` reiškia, kad puslapio autoriaus nerasta ir versija priskirta
+migracijos naudotojui. Anonimizuotoje kopijoje taip nutinka visiems puslapiams; tikroje bazėje — tik tiems,
+kurių autorius ištrintas.
 
 > **Jei kuri nors krenta — STOP.** Netaisyk vietoje ir nebandyk paleisti kitos. Bazė yra tarpinėje
 > būsenoje: `cms.0031` jau išmetusi `publisher_is_draft`, tad nei pirmyn, nei atgal. Atkurk iš
@@ -281,13 +297,13 @@ select count(*) from (select node_id from cms_page group by node_id having count
 **Privalo būti `0`.** Jei ne — nejudėk toliau, `cms.0037` kris.
 
 ```sql
-select count(*) from cms_page;                          -- turi sumažėti maždaug per pusę (59 -> 30)
-select count(*) from cms_treenode;                      -- nepakitęs (30)
-select count(*) from djangocms_stories_post;            -- tiek, kiek buvo blog postų (47)
+select count(*) from cms_page;                          -- turi sumažėti maždaug per pusę (63 -> 32)
+select count(*) from cms_treenode;                      -- nepakitęs (32)
+select count(*) from djangocms_stories_post;            -- tiek, kiek buvo blog postų (59)
 select state, count(*) from djangocms_versioning_version group by state;
 ```
 
-Versijų būsenose turi būti ir `published`, ir `draft` (pvz. 94 / 16). Jei `published` nėra — turinys
+Versijų būsenose turi būti ir `published`, ir `draft` (repeticijoje 107 / 15). Jei `published` nėra — turinys
 po diegimo dings iš svetainės; **stok ir atkurk iš backup'o**.
 
 Blog lentelių nebeturi likti:
@@ -317,9 +333,9 @@ Trukmė: migracijos ir portalo pakilimas kartu — apie **3,5 min** (repeticijoj
 ## 6. Patikra po 5.0
 
 ```sql
-select count(*) from cms_page;                    -- toks pat kaip po 4 žingsnio (30)
-select count(*) from cms_pagecontent;             -- pvz. 63
-select count(*) from djangocms_stories_post;      -- nepakitęs (47)
+select count(*) from cms_page;                    -- toks pat kaip po 4 žingsnio (32)
+select count(*) from cms_pagecontent;             -- repeticijoje 63
+select count(*) from djangocms_stories_post;      -- nepakitęs (59)
 ```
 
 `cms_treenode` po `cms.0037` nebenaudojama — `Page` pats tampa medžio mazgu.
@@ -350,7 +366,11 @@ Turinio redaktorius peržiūri, ar turinys nepasikeitė. Ką tikrinti pirmiausia
 **Prod kopijoje vienintelis realus turinio pokytis buvo:** puslapis, turėjęs tuščią `en` vertimą (be
 pavadinimo ir slug'o), po migracijos gavo adresą `more/regulation/regulations` ir pavadinimą
 „Legislation". Migracijos paketas tai daro sąmoningai — pataiso seną defektą, bet **URL pasikeičia**.
-Verta patikrinti, ar nėra daugiau tokių puslapių, ir ar nauji adresai priimtini.
+Verta patikrinti, ar nėra daugiau tokių puslapių, ir ar nauji adresai priimtini. A/B palyginimas dėl jo
+grąžina `exit 1` (SLUG ir URL pasikeitė) — tai laukiama.
+
+A/B gali rodyti ir **naują puslapį B pusėje**, kuris B pusėje `published: false`. Tai niekada nepublikuotas
+juodraštis: A mato tik viešą medį, o B — ir juodraščius. Repeticijoje toks buvo vienas (`0007`, en).
 
 ---
 

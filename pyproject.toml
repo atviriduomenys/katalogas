@@ -10,7 +10,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.11"
 Django = "^4.2.29"
-django-cms = "^5.0.0"
+django-cms = ">=4.1,<5"
 django-sekizai = "^3.0.1"
 django-filer = "^3.3.0"
 djangocms-text = "^0.9.2"
@@ -71,10 +71,11 @@ django-flags = "^5.1.0"
 
 spinta = "^1.0.0"
 djangocms-versioning = "^2.5.1"
-djangocms-alias = "^3.0.0"
+djangocms-alias = "<3"
 # Pinned exactly: MIGRATION_MODULES points django at local copies of this
 # package's migrations, so a release that adds one would be skipped silently.
 djangocms-stories = "0.9.3"
+djangocms-4-migration = {git = "https://github.com/django-cms/djangocms-4-migration.git", rev = "1b2037c9521cf32111bcf36a6bdf5cb784bff233"}
 # Bundled djangocms-blog migrations import this during the one-time upgrade.
 aldryn-apphooks-config = "^0.7.0"
 djangocms-file = "^3.0.1"

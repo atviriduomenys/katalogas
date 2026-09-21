@@ -11,6 +11,7 @@ ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends  \
+    git \
     libcairo2-dev  \
     libcairo2  \
     pkg-config \

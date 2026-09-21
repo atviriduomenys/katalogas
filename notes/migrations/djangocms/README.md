@@ -57,6 +57,17 @@ Portalas turi veikti, o prisijungimo duomenys ir vienkartinių kodų išjungimas
 `scripts/ui/README.md`. Blog → stories dalies taip nepatikrinsi: naujienų skriptai reikalauja jau
 atnaujinto admin'o, tad senų įrašų tuščioje bazėje nebus. Tam reikia prod kopijos.
 
+## Nauja aplinka be duomenų
+
+Tuščiai bazei 4.1 įrankio nereikia: `scripts/migrate_djangocms.sh` ją atpažįsta kaip `fresh` ir tiesiog
+paleidžia migracijas. Puslapių medį, kokį turi produkcija, ir naujienų (stories) konfigūraciją tada sukuria:
+
+    poetry run python manage.py createsuperuser        # puslapiai publikuojami jo vardu
+    poetry run python scripts/create_pages.py
+
+Veikia tik su cms 5 kodu (#2646 ir vėliau). Puslapių, kurių slug jau yra, neliečia, tad paleisti pakartotinai
+saugu — taip ir pabaigiamas nutrūkęs paleidimas.
+
 ## Pirmasis bandymas
 
 Pirmojo bandymo darbo žurnalas (`migration dev v4.sh` ir `utils.sh`) iš katalogo išimtas: vykdyti jo nebuvo

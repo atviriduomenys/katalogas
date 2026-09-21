@@ -51,17 +51,19 @@ kyla, visos šešios 3 žingsnio komandos yra. Repeticija ant prod kopijos su š
 dieną (žr. [README](README.md)).
 Bet kuriai `manage.py` komandai reikia pasiekiamo Redis — be jo krenta jau įkeliant programas.
 
-**Jei tagą reikėtų sukurti iš naujo** (pvz., prieš migraciją į leidimą patektų cms ar stories kodo
-pakeitimų), tas pats nuo naujo leidimo commit'o. Tagas šakos nereikalauja — ji ištrinama, o tagas
-commit'ą išlaiko:
+**Jei įrankį reikėtų sukurti iš naujo** (pvz., prieš migraciją į leidimą patektų cms ar stories kodo
+pakeitimų) — tas pats nuo naujo leidimo commit'o, bet **su nauju tago vardu**. Esamo neperrašyk:
+`cms4-migration-tool` jau naudotas repeticijoje, ir tas pats vardas, rodantis į kitą kodą, panaikintų
+atsekamumą, iš ko buvo subuild'intas kuris image'as. Build'ink iš naujojo ir jį įrašyk čia. Tagas šakos
+nereikalauja — ji ištrinama, o tagas commit'ą išlaiko:
 
 ```sh
 git checkout -b tmp-cms4-tool <leidimo commit'as>
 # ... trijų failų pakeitimai, kaip lentelėje ...
 poetry lock                                 # po pyproject.toml pakeitimo
 git commit -am "django-cms 4.1 migration tool"
-git tag -f cms4-migration-tool
-git push -f origin cms4-migration-tool      # stumiamas TIK tagas, ne šaka
+git tag cms4-migration-tool-2
+git push origin cms4-migration-tool-2       # stumiamas TIK tagas, ne šaka
 git branch -D tmp-cms4-tool
 ```
 
@@ -216,11 +218,12 @@ Neatkurtas backup'as nėra backup'as. `pg_restore` — tas pats: serverio versij
 
 ## 2b. Sekų suvienodinimas
 
-Prieš migruojant suvienodink `SERIAL` sekas su realiais duomenimis:
+Prieš migruojant pastumk sekas, kurios atsilieka nuo duomenų — ir `serial`, ir `identity` (jas kuria Django 4.1+).
+Seka judinama tik į priekį ir tik tada, kai kita jos reikšmė susidurtų su esama eilute:
 
 ```sql
 DO $$
-DECLARE r record;
+DECLARE r record; mx bigint; lv bigint; called boolean; moved int := 0;
 BEGIN
   FOR r IN
     SELECT c.relname AS seq, t.relname AS tbl, a.attname AS col
@@ -230,13 +233,20 @@ BEGIN
     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
     WHERE c.relkind = 'S'
   LOOP
-    EXECUTE format('SELECT setval(%L, COALESCE((SELECT MAX(%I) FROM %I), 1))', r.seq, r.col, r.tbl);
+    EXECUTE format('SELECT MAX(%I) FROM %I', r.col, r.tbl) INTO mx;
+    EXECUTE format('SELECT last_value, is_called FROM %I', r.seq) INTO lv, called;
+    -- Only forward, and only when the next value would collide with existing data.
+    IF mx IS NOT NULL AND (mx > lv OR (mx = lv AND NOT called)) THEN
+      PERFORM setval(quote_ident(r.seq)::regclass, mx);
+      moved := moved + 1;
+    END IF;
   END LOOP;
+  RAISE NOTICE 'pastumta sekų: %', moved;
 END $$;
 ```
 
 **Kodėl.** Tai **saugiklis, ne būtina pataisa**. Švariame kelyje (atkurta iš prod dump'o) sekos
-būna tvarkingos ir šis žingsnis nieko nekeičia — repeticijoje `max` ir seka jau sutapo.
+būna tvarkingos ir šis žingsnis nieko nekeičia (`pastumta sekų: 0`) — repeticijoje taip ir buvo.
 
 Bet jei bazė atkuriama iš **tarpinio** backup'o, sekos gali atsilikti, ir tada migracijos krenta su
 `duplicate key value violates unique constraint "django_migrations_pkey"`, paskui
@@ -247,7 +257,7 @@ Pasitikrink, kad suvienodinta:
 
 ```sql
 select max(id), (select last_value from django_migrations_id_seq) from django_migrations;
--- abu skaiciai turi sutapti
+-- antras skaicius ne mazesnis uz pirma
 ```
 
 ---

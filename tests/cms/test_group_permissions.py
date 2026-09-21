@@ -1,17 +1,7 @@
 import pytest
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.models import ContentType
 
 from vitrina.cms.apps import BLOG_ADMINISTRATORS, _sync_blog_administrator_permissions
-
-
-def blog_era_permission(codename="change_post"):
-    """A permission the way it looks on production: left over from djangocms_blog."""
-    content_type, _ = ContentType.objects.get_or_create(app_label="djangocms_blog", model="post")
-    permission, _ = Permission.objects.get_or_create(
-        content_type=content_type, codename=codename, defaults={"name": codename}
-    )
-    return permission
 
 
 @pytest.mark.django_db
@@ -22,17 +12,6 @@ def test_migrations_leave_the_group_ready_to_use():
 
     assert stories.exists()
     assert set(group.permissions.values_list("pk", flat=True)) >= set(stories.values_list("pk", flat=True))
-
-
-@pytest.mark.django_db
-def test_blog_era_permissions_are_replaced():
-    group = Group.objects.get(name=BLOG_ADMINISTRATORS)
-    group.permissions.set([blog_era_permission()])
-
-    _sync_blog_administrator_permissions(sender=None)
-
-    assert not group.permissions.filter(content_type__app_label="djangocms_blog").exists()
-    assert group.permissions.filter(content_type__app_label="djangocms_stories").exists()
 
 
 @pytest.mark.django_db

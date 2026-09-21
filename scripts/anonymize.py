@@ -10,22 +10,27 @@ from tqdm import tqdm
 from typer import Argument, Option, confirm, run
 
 
-# Either schema may be in front of us: the columns are the same, the name is not.
-STORY_CONTENT_TABLES = ("djangocms_stories_postcontent", "djangocms_blog_post_translation")
+# The djangocms-blog schema is gone; only an upgrade that stopped half way leaves it standing.
+STORY_CONTENT_TABLE = "djangocms_stories_postcontent"
+LEGACY_STORY_TABLE = "djangocms_blog_post_translation"
 
 
-def _story_content_tables(db: Database) -> list[str]:
-    """All story tables present, not the first: a half-finished upgrade leaves both.
+def _story_content_table(db: Database) -> str:
+    """The story content table, or stop: `dataset` would silently scrub a missing one.
 
-    None at all stops the run - `dataset` would silently scrub nothing.
+    A pre-upgrade or half-upgraded database is refused too - its legacy text would go out as is.
     """
-    present = [name for name in STORY_CONTENT_TABLES if name in db.tables]
-    if not present:
+    if STORY_CONTENT_TABLE not in db.tables:
         raise SystemExit(
-            "This database has neither " + " nor ".join(STORY_CONTENT_TABLES) + ". "
-            "Story text would go out unscrubbed, so nothing was changed."
+            f"This database has no {STORY_CONTENT_TABLE}. Story text would go out unscrubbed, so nothing was changed."
         )
-    return present
+    if LEGACY_STORY_TABLE in db.tables:
+        raise SystemExit(
+            f"This database still has {LEGACY_STORY_TABLE}, left by a django-cms 5 upgrade that did "
+            "not finish. This script only scrubs the djangocms-stories schema, so that text would go "
+            "out as it is - nothing was changed."
+        )
+    return STORY_CONTENT_TABLE
 
 
 def main(
@@ -45,7 +50,7 @@ def main(
         "organization",
         "adp_cms_page",
         "news_item",
-        *_story_content_tables(db),
+        _story_content_table(db),
         "reversion_version",
         "api_description",
         "vitrina_datasets_contact",
@@ -142,7 +147,7 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
 
 # Empty on this portal - STORIES_USE_PLACEHOLDER is off, so article text lives
 # in post_text. A config with placeholders on keeps it here instead.
-STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"), ("djangocms_blog", "post"))
+STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"),)
 
 
 def _scrub_story_plugins(db: Database) -> None:
@@ -166,18 +171,11 @@ def _scrub_story_plugins(db: Database) -> None:
     )
 
 
-def _anonymize_djangocms_blog_post_translation(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
-) -> None:
-    """Story text before the django-cms 5 upgrade."""
-    _anonymize_story_content(db, pbar, "djangocms_blog_post_translation")
-
-
 def _anonymize_djangocms_stories_postcontent(
     db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
 ) -> None:
-    """Story text after it."""
-    _anonymize_story_content(db, pbar, "djangocms_stories_postcontent")
+    """Story text."""
+    _anonymize_story_content(db, pbar, STORY_CONTENT_TABLE)
 
 
 def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:

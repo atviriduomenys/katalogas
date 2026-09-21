@@ -1,6 +1,7 @@
-from django.apps import AppConfig
+from django.apps import AppConfig, apps
 from django.db import transaction
-from django.db.models.signals import post_delete, post_migrate, post_save
+from django.db import connections
+from django.db.models.signals import post_delete, post_migrate, post_save, pre_migrate
 
 BLOG_ADMINISTRATORS = "Blog Administrators"
 
@@ -33,6 +34,13 @@ class CmsConfig(AppConfig):
 
         post_save.connect(_add_default_text_plugin, sender="djangocms_stories.PostContent")
         post_migrate.connect(_sync_blog_administrator_permissions, sender=self)
+        # Once per migrate, before anything is applied: pre_migrate is sent per app,
+        # and cms is the app whose migrations would do the damage.
+        pre_migrate.connect(
+            _refuse_cms3_schema,
+            sender=apps.get_app_config("cms"),
+            dispatch_uid="vitrina_cms.refuse_cms3_schema",
+        )
 
 
 def _add_default_text_plugin(sender, instance, created, **kwargs):
@@ -68,7 +76,7 @@ def _add_default_text_plugin(sender, instance, created, **kwargs):
 
 
 def _sync_blog_administrator_permissions(sender, **kwargs):
-    """Swap the Blog Administrators group's djangocms_blog permissions for djangocms_stories ones.
+    """Fill the Blog Administrators group with the djangocms_stories permissions.
 
     Migration 0003 can't: permissions only exist after post_migrate, which this listens to.
     """
@@ -78,11 +86,8 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     if group is None:
         return
 
-    stale = group.permissions.filter(content_type__app_label="djangocms_blog")
-    granted = group.permissions.filter(content_type__app_label="djangocms_stories")
-
-    # Repair once: re-granting on every migrate would undo an administrator's change.
-    if granted.exists() and not stale.exists():
+    # Fill once: re-granting on every migrate would undo an administrator's change.
+    if group.permissions.filter(content_type__app_label="djangocms_stories").exists():
         return
 
     missing = Permission.objects.filter(content_type__app_label="djangocms_stories").exclude(
@@ -90,5 +95,24 @@ def _sync_blog_administrator_permissions(sender, **kwargs):
     )
     if missing:
         group.permissions.add(*missing)
-    if stale:
-        group.permissions.remove(*stale)
+
+
+# cms.0032 renamed Title to PageContent, so a database that still has cms_title is
+# on the django-cms 3 schema.
+LEGACY_PAGE_TABLE = "cms_title"
+
+
+def _refuse_cms3_schema(sender, using="default", **kwargs):
+    """Stop migrate before it touches a django-cms 3 database, e.g. a restored pre-upgrade backup.
+
+    cms 5 would take its page tree past the point where the 3 -> 4 conversion can still run.
+    """
+    from django.core.management.base import CommandError
+
+    if LEGACY_PAGE_TABLE in connections[using].introspection.table_names():
+        raise CommandError(
+            f"This database still has {LEGACY_PAGE_TABLE}: its page tree is on the django-cms 3 schema. "
+            "Migrating it with django-cms 5 would take it past the point where the 3 -> 4 conversion can "
+            "still run. Roll back to the release that matches it, or convert it first - the procedure is "
+            "in git history: git log -- notes/migrations/djangocms/diegimas.md. Refusing."
+        )

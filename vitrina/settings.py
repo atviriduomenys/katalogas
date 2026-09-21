@@ -177,15 +177,6 @@ INSTALLED_APPS = [
     "vitrina.search",
 ]
 
-# Bundled by djangocms-stories only for its one-time data migration, which runs from
-# the django-cms 4.1 tool (DJANGOCMS_BLOG_MIGRATION=1); the release never turns it on.
-if env.bool("DJANGOCMS_BLOG_MIGRATION", default=False):
-    INSTALLED_APPS.insert(INSTALLED_APPS.index("djangocms_stories"), "djangocms_blog")
-
-MIGRATION_MODULES = {
-    "djangocms_stories": "vitrina.cms.stories_migrations",
-}
-
 SERIALIZATION_MODULES = {
     "xml": "tagulous.serializers.xml_serializer",
     "json": "tagulous.serializers.json",

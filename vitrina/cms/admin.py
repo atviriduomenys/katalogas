@@ -124,16 +124,14 @@ admin.site.register(PublishedReport, PublishedReportAdmin)
 admin.site.register(Deployment, DeploymentAdmin)
 
 
-# The story post admin lives here, not in `vitrina.users`: `vitrina.users` has to be
-# loaded before `cms`, but this admin has to be loaded after `djangocms_stories.admin`.
-# `vitrina.cms` is listed after `djangocms_stories` in INSTALLED_APPS, so both hold.
+# Here, not in `vitrina.users`: that app loads before `cms`, while this admin has
+# to load after `djangocms_stories.admin`. INSTALLED_APPS order satisfies both.
 admin.site.unregister(Post)
 
 
 @admin.register(Post)
 class CustomPostAdmin(OriginalPostAdmin):
     def has_module_permission(self, request):
-        """Only Blog Administrators can see the blog section"""
         return request.user.has_perm("djangocms_stories.view_post")
 
     def has_add_permission(self, request):

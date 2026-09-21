@@ -43,7 +43,7 @@
                         {% if post.post.app_config.use_placeholder %}
                             {% render_placeholder post.content %}
                         {% else %}
-                            {{ post.post_text|safe }}
+                            {{ post.post_text }}
                         {% endif %}
                     </div>
                     {% if files %}

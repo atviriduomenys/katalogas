@@ -1,8 +1,6 @@
 """migrate refuses a django-cms 3 database, long after the upgrade itself.
 
-A backup from before the upgrade, restored into an environment already on
-django-cms 5, would otherwise be migrated past the point of no return by the
-next start or by a migrate run by hand.
+A pre-upgrade backup restored on cms 5 would otherwise be migrated past the point of no return.
 """
 
 import pytest

@@ -11,3 +11,12 @@ Receptas, diegimo instrukcija, A/B patikros įrankiai ir pirmojo bandymo darbo �
 istorijoje (PR #2646). Surasti:
 
     git log -- notes/migrations/djangocms/diegimas.md
+
+## Nauja aplinka be duomenų
+
+Puslapių medį, kokį turi produkcija, ir naujienų (stories) konfigūraciją tuščioje bazėje sukuria:
+
+    poetry run python manage.py createsuperuser        # puslapiai publikuojami jo vardu
+    poetry run python scripts/create_pages.py
+
+Puslapių, kurių slug jau yra, neliečia, tad paleisti pakartotinai saugu — taip ir pabaigiamas nutrūkęs paleidimas.

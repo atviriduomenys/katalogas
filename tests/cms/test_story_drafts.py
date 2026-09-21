@@ -40,11 +40,9 @@ def test_a_new_story_gets_the_editor_hint():
 
 @pytest.mark.django_db
 def test_editing_a_published_story_keeps_the_article():
-    """Versioning copies the content row first and its placeholders after.
+    """Versioning copies the content row before its placeholders.
 
-    A receiver that reaches for the placeholder in between creates a second
-    one, and that empty one wins - the editor opens the draft and finds the
-    hint text where the article should be.
+    Touching the placeholder in between creates an empty one that wins over the article.
     """
     user = UserFactory()
     version = make_published_story(user)
@@ -58,11 +56,7 @@ def test_editing_a_published_story_keeps_the_article():
 
 @pytest.mark.django_db
 def test_no_hint_when_the_config_renders_post_text():
-    """With placeholders off the hint is never displayed, so it is not written.
-
-    post_detail.html falls back to post_text for such configs; a hint plugin
-    would only leave an unused placeholder behind.
-    """
+    """With placeholders off the hint would never be shown, so it is not written."""
     config = StoriesConfig.objects.create(namespace="off", **{**config_defaults, "use_placeholder": False})
     post = Post.objects.create(app_config=config)
 

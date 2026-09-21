@@ -16,9 +16,7 @@ from djangocms_versioning.models import Version
 def make_blog_post(date_published, title="Test Blog", slug="test-blog", state=PUBLISHED):
     """Create a story post whose content is in the given versioning state.
 
-    The version has to be created explicitly: `PostContent.objects` returns
-    published content only, so content without a PUBLISHED version is invisible
-    to the newsletter, which is exactly what `state=DRAFT` exercises.
+    The version is explicit: `PostContent.objects` sees PUBLISHED content only.
     """
     post = Post.objects.create(date_published=date_published)
     content = PostContent.admin_manager.create(post=post, title=title, slug=slug, language="lt")
@@ -99,11 +97,7 @@ def test_blog_post_without_publish_date_not_included(mock_email, last_month, sub
 @patch("vitrina.messages.signals.email")
 @patch("djangocms_stories.models.PostContent.get_absolute_url")
 def test_draft_blog_post_not_included(mock_get_absolute_url, mock_email, last_month, subscriber):
-    """A post that is still a draft must never reach the newsletter.
-
-    Regression guard: reading through `admin_manager` instead of `objects`
-    bypasses versioning and mails out unpublished stories.
-    """
+    """A draft must never reach the newsletter - `admin_manager` would let it through."""
     mock_get_absolute_url.return_value = "/blog/draft-post/"
     make_blog_post(last_month, title="Draft Post", slug="draft-post", state=DRAFT)
 

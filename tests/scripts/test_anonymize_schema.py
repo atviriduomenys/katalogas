@@ -1,15 +1,24 @@
 """The anonymizer has to find the story text, and stop when it cannot.
 
-After the django-cms 5 upgrade story text lives in djangocms-stories content
-rows only. `dataset` resolves a missing table lazily, so reaching for the wrong
-name scrubs nothing and says nothing - the dump goes out with every article's
-real title and text in it. A pre-upgrade dump, or one left by an upgrade that
-stopped half way, is refused rather than half scrubbed.
+`dataset` would silently scrub a missing table; pre-upgrade and half-upgraded dumps are refused.
 """
 
-import pytest
+from unittest.mock import Mock
 
-from scripts.anonymize import LEGACY_STORY_TABLE, STORY_CONTENT_TABLE, _story_content_table
+import dataset
+import pytest
+from faker import Faker
+
+from scripts import anonymize
+from scripts.anonymize import (
+    LEGACY_STORY_TABLE,
+    STORY_CONTENT_TABLE,
+    _anonymize_adp_cms_page,
+    _anonymize_cms_pagecontent,
+    _anonymize_organization,
+    _scrub_story_plugins,
+    _story_content_table,
+)
 
 
 class FakeDatabase:
@@ -43,10 +52,19 @@ def test_stops_on_a_database_an_upgrade_left_half_done():
     assert LEGACY_STORY_TABLE in str(stop.value)
 
 
+def test_page_content_keeps_no_editor_names():
+    """cms 5 repeats created_by and changed_by on page content, not just on the page."""
+    contents = FakeTable([{"id": 1, "created_by": "vardas.pavarde", "changed_by": "kitas.redaktorius"}])
+
+    _anonymize_cms_pagecontent({"cms_pagecontent": contents}, Faker(), Mock(), {})
+
+    written = contents.updates[0]
+    assert set(written) == {"id", "created_by", "changed_by"}
+    assert "vardas.pavarde" not in " ".join(str(v) for v in written.values())
+
+
 def test_every_listed_table_has_a_function_to_anonymize_it():
     """The runner looks the function up by table name, so a typo is a crash."""
-    import scripts.anonymize as anonymize
-
     assert hasattr(anonymize, f"_anonymize_{STORY_CONTENT_TABLE}")
 
 
@@ -66,12 +84,6 @@ class FakeTable:
 
 def test_organizations_lose_every_field_people_type_contacts_into():
     """website is free text, and a production copy had a real address in it."""
-    from unittest.mock import Mock
-
-    from faker import Faker
-
-    from scripts.anonymize import _anonymize_organization
-
     table = FakeTable([{"id": 1, "email": "tikras@istaiga.lt", "website": "kontaktai@istaiga.lt"}])
     db = {"organization": table}
     fake = Faker()
@@ -86,8 +98,6 @@ def test_organizations_lose_every_field_people_type_contacts_into():
 
 def _story_plugin_database(path):
     """The four tables the plugin scrub joins, with one row of each kind."""
-    import dataset
-
     db = dataset.connect(f"sqlite:///{path}")
     db.query("CREATE TABLE django_content_type (id integer primary key, app_label text, model text)")
     db.query("CREATE TABLE cms_placeholder (id integer primary key, content_type_id integer)")
@@ -105,14 +115,7 @@ def _story_plugin_database(path):
 
 
 def test_story_plugin_bodies_are_scrubbed(tmp_path):
-    """A config in placeholder mode keeps its article text in text plugins.
-
-    For such a config this SQL is the only thing standing between the real text
-    and the dump, and it is reached through three joins - exactly the shape that
-    breaks quietly when a column is renamed.
-    """
-    from scripts.anonymize import _scrub_story_plugins
-
+    """Placeholder-mode configs keep article text in text plugins, reached through three joins."""
     db = _story_plugin_database(tmp_path / "probe.db")
 
     _scrub_story_plugins(db)
@@ -123,10 +126,6 @@ def test_story_plugin_bodies_are_scrubbed(tmp_path):
 
 
 def test_the_plugin_scrub_skips_a_database_without_text_plugins(tmp_path):
-    import dataset
-
-    from scripts.anonymize import _scrub_story_plugins
-
     db = dataset.connect(f"sqlite:///{tmp_path / 'empty.db'}")
     db.query("CREATE TABLE organization (id integer primary key)")
 
@@ -134,18 +133,7 @@ def test_the_plugin_scrub_skips_a_database_without_text_plugins(tmp_path):
 
 
 def test_old_portal_pages_are_scrubbed_in_their_own_table():
-    """_anonymize_adp_cms_page used to read news_item.
-
-    The old portal's pages then went out untouched, news items were scrubbed
-    twice, and dataset - which creates any column it is asked to write - added
-    a description column to news_item in every dump.
-    """
-    from unittest.mock import Mock
-
-    from faker import Faker
-
-    from scripts.anonymize import _anonymize_adp_cms_page
-
+    """_anonymize_adp_cms_page scrubs adp_cms_page, and leaves news_item alone."""
     pages = FakeTable([{"id": 1, "title": "Tikras puslapis", "body": "<p>Tikras</p>"}])
     news = FakeTable([{"id": 7, "title": "Naujiena"}])
 

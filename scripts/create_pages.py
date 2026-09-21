@@ -17,14 +17,11 @@ from djangocms_versioning.models import Version
 
 
 LANGUAGE = "lt"
-# Spelled out rather than left to INHERIT: the pages that have no parent have
-# nothing to inherit from, and django-cms would fall back to the first entry in
-# CMS_TEMPLATES, which is this one anyway.
+# Root pages have nothing to inherit from, and this is CMS_TEMPLATES[0] anyway.
 TEMPLATE = "pages/page.html"
 
-# Matches the configuration on production, including the template prefix - that
-# is what makes the stories views use vitrina/cms/post_*.html instead of the
-# package's own templates.
+# Matches production. template_prefix is what makes the stories views use
+# vitrina/cms/post_*.html.
 STORIES_CONFIG = {
     "namespace": "Blog",
     "app_title": "Blog",
@@ -32,13 +29,8 @@ STORIES_CONFIG = {
     "template_prefix": "vitrina/cms",
 }
 
-# The page tree as production has it. Order matters: a parent has to be created
-# before the children that name it.
-#
-# "Home" is not a page anyone sees - / is served by vitrina.views.home, a plain
-# Django view registered before cms.urls. It exists to be the root of the tree:
-# marking it home strips its slug from its descendants, which is why the blog
-# lives at /blog/ rather than /home/blog/.
+# The page tree as production has it. "Home" is marked home so its slug drops out of
+# its descendants' URLs (/blog/, not /home/blog/); / itself is vitrina.views.home.
 PAGES = [
     {"title": "Home", "slug": "home", "is_home": True},
     {"title": "Blog", "slug": "blog", "parent": "home", "stories_config": True},
@@ -89,8 +81,7 @@ PAGES = [
     {"title": "Kontaktai", "slug": "contacts", "parent": "more", "in_navigation": True},
     {"title": "Kiti AD portalai", "slug": "other", "parent": "more", "in_navigation": True},
     {"title": "SPARQL paieška", "slug": "sparql-paieska", "parent": "more", "in_navigation": True},
-    # Production overrides this one's url: the page sits under "more" but answers
-    # at /partner/api/1/.
+    # Sits under "more", but production answers it at /partner/api/1/.
     {
         "title": "API",
         "slug": "partnerapi1",
@@ -145,12 +136,9 @@ def get_or_create_stories_config():
 
 
 def _finish_what_a_broken_run_left(page, is_home, superuser):
-    """Repair a page an earlier, interrupted run left half done.
+    """Publish a page an interrupted run left as a draft with no published version.
 
-    Runs from before each page got its own transaction could stop between
-    create_page and publish. Only a page with no published content at all is
-    published here: one that is published and has a newer draft belongs to
-    somebody editing it, and publishing that would put their work live.
+    A published page with a newer draft is someone's edit, so it is left alone.
     """
     if is_home and not page.is_home:
         with transaction.atomic():
@@ -211,10 +199,8 @@ def run():
         if parent_slug and parent is None:
             raise SystemExit(f"'{title}' asks for parent {parent_slug!r}, which is not in the tree above it")
 
-        # One transaction per page. create_page commits on its own, so a failure
-        # before publish() used to leave a draft that every later run skipped. It
-        # is also the transaction set_as_homepage() needs: cms locks the tree roots
-        # while it rewrites the descendants' paths.
+        # One transaction per page: create_page commits on its own, so a failure before
+        # publish() left a draft that every later run skipped. set_as_homepage needs it too.
         with transaction.atomic():
             page = create_page(
                 title=title,

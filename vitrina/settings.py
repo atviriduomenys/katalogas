@@ -786,8 +786,7 @@ TAGULOUS_AUTOCOMPLETE_JS = (
 )
 TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}
 
-# djangocms_versioning, djangocms_alias and djangocms_stories are already listed
-# in INSTALLED_APPS above, in an order that satisfies both constraints:
-# vitrina.users before cms, and vitrina.cms after djangocms_stories.
+# djangocms_versioning, djangocms_alias and djangocms_stories are listed above, ordered
+# so that vitrina.users comes before cms and vitrina.cms after djangocms_stories.
 CMS_CONFIRM_VERSION4 = True
 DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"

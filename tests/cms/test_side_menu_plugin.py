@@ -1,6 +1,7 @@
 import pytest
 from cms.api import add_plugin, create_page, create_page_content
 from cms.models import PageContent
+from django.template.loader import render_to_string
 
 from vitrina.cms.cms_plugins import SideMenuPlugin
 from vitrina.users.factories import UserFactory
@@ -119,13 +120,7 @@ def test_children_published_only_in_another_language_are_hidden(user):
 
 @pytest.mark.django_db
 def test_no_empty_heading_when_the_parent_is_not_published(user):
-    """The heading links to the parent, so with no parent there is nothing to link.
-
-    Rendering it anyway leaves <a href=""> with no text, which sends the reader
-    back to the page they are already on.
-    """
-    from django.template.loader import render_to_string
-
+    """No parent to link to, no heading: an empty <a href=""> leads back to this page."""
     root = make_page("Šaknis", "saknis", user, published=False)
     page = make_page("Puslapis", "puslapis", user, parent=root)
     sibling = make_page("Brolis", "brolis", user, parent=root)
@@ -136,6 +131,5 @@ def test_no_empty_heading_when_the_parent_is_not_published(user):
 
     html = render_to_string("pages/side_menu.html", context)
     assert 'href=""' not in html
-    # And no heading element at all: an empty <h1> is still a heading to anyone
-    # navigating by them.
+    # An empty <h1> is still a heading to anyone navigating by them.
     assert "panel-heading" not in html

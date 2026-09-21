@@ -1,14 +1,6 @@
-"""Compares two A/B manifests (DAS-428) against the acceptance criteria in plan ch. 6.
+"""Compare A/B manifests (before/after the migration); exit 1 on any blocking difference.
 
     python3 notes/migrations/djangocms/cms_ab_diff.py manifest-a.json manifest-b.json
-
-A = the reference (devel code, no cms5 migration), B = the candidate (#2646 merged
-plus the migrations). Exits 1 when any criterion is broken, so CI or a script can
-use it.
-
-Not everything is compared with everything: a differing `title` is not in itself a
-failure (the migration may normalise whitespace), while `published: true -> false`
-is. Hence the split into BLOCKING and informational.
 """
 
 import json
@@ -21,8 +13,7 @@ def _load(path):
 
 
 def _key(row):
-    # Identity is the tree path, not the URL: an untranslated page has an empty URL
-    # path and collides with the root (seen in production data).
+    # Tree path, not URL: an untranslated page has an empty URL path, same as the root.
     return (row.get("tree_path"), row.get("language"))
 
 
@@ -31,11 +22,7 @@ def _post_key(row):
 
 
 def _index(rows, keyfunc):
-    """Indexes by key and SHOUTS if the key is not unique.
-
-    Overwriting silently is the most dangerous failure here: a lost row would show
-    up as "dropped to draft", or a missing page would go unnoticed entirely.
-    """
+    """Index by key; a duplicate raises, as overwriting would hide a lost page."""
     index = {}
     for row in rows:
         key = keyfunc(row)
@@ -103,8 +90,7 @@ def compare(a, b):
         if ra["title"] != rb["title"]:
             info.append(f"title: path={key[0]!r} {ra['title']!r} -> {rb['title']!r}")
 
-        # A lost redirect is not cosmetic: a page that used to send the reader elsewhere
-        # now serves an empty one. That is how it was found - a crawl showed 964 B replies.
+        # A lost redirect leaves an empty page (how it was found: a crawl of 964 B replies).
         if ra["redirect"] and not rb["redirect"]:
             blocking.append(
                 f"REDIRECT GONE: path={key[0]!r} lang={key[1]} {ra['redirect']!r} -> None "

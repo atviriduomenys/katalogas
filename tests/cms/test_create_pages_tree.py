@@ -1,8 +1,6 @@
-"""The page tree in scripts/create_pages.py has to stay usable.
+"""scripts/create_pages.py needs parents before children, unique slugs and one home page.
 
-The script builds pages in the order they are listed and looks parents up by
-slug, so a child listed above its parent, a repeated slug or a second home page
-all break it - and only when someone runs it against an empty database.
+Otherwise it breaks, and only when run against an empty database.
 """
 
 from collections import Counter

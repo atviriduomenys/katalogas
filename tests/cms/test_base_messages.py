@@ -5,11 +5,7 @@ from django.test import RequestFactory
 
 
 class FakeToolbar:
-    """A staff toolbar, as cms builds one for every request a staff user makes.
-
-    The two methods are what `{% cms_toolbar %}` calls once show_toolbar is on;
-    rendering the real toolbar needs a request cycle this test has no use for.
-    """
+    """A staff toolbar stub: the two methods `{% cms_toolbar %}` calls."""
 
     def __init__(self, *, edit_mode_active):
         self.show_toolbar = True
@@ -34,12 +30,9 @@ def render(edit_mode_active):
 
 @pytest.mark.django_db
 def test_staff_still_see_flash_messages_outside_the_editor():
-    """`show_toolbar` is true for every staff user on every page.
+    """show_toolbar is true for every staff user, so hiding messages on it hides them site-wide.
 
-    Hiding the messages whenever it is true takes them away site-wide - a saved
-    dataset, a rejected form, a changed password - and because the list is then
-    never iterated, Django never marks them read and they come back on every
-    following request.
+    Never iterated, they are never marked read either, and come back on every request.
     """
     assert "Įrašas išsaugotas" in render(edit_mode_active=False)
 
@@ -51,10 +44,5 @@ def test_messages_step_aside_for_the_editing_toolbar():
 
 @pytest.mark.django_db
 def test_the_page_carries_no_template_comment_markup():
-    """`{# #}` is single-line only.
-
-    Django's lexer matches it without DOTALL, so a comment written across
-    several lines is not a comment at all - it goes out to every visitor as
-    page text.
-    """
+    """`{# #}` is single-line only: a multi-line one goes out as page text."""
     assert "{#" not in render(edit_mode_active=False)

@@ -36,15 +36,9 @@ class CmsConfig(AppConfig):
 
 
 def _add_default_text_plugin(sender, instance, created, **kwargs):
-    """Put a hint in the editor when a story is written for the first time.
+    """Put a hint in the editor when a story is first written.
 
-    Only then. Versioning makes a draft out of a published story by creating a
-    new content row and copying the placeholders afterwards, and this receiver
-    runs in between. Reading `instance.content` at that moment creates a second
-    "content" placeholder, which then wins over the copied one - the editor
-    opens the draft, finds this boilerplate instead of the article, and
-    publishing it would put the boilerplate on the site. So leave alone any
-    content that already has a sibling in the same language.
+    Skipped for a new draft of an existing story: its placeholders are copied after this runs.
     """
     if not created:
         return
@@ -74,25 +68,9 @@ def _add_default_text_plugin(sender, instance, created, **kwargs):
 
 
 def _sync_blog_administrator_permissions(sender, **kwargs):
-    """Point the Blog Administrators group at the djangocms_stories permissions.
+    """Swap the Blog Administrators group's djangocms_blog permissions for djangocms_stories ones.
 
-    `vitrina/users/migrations/0003` fills this group by reading the permissions
-    of the blog app. A migration cannot get this right: permissions for a
-    model are created by `post_migrate`, once every migration has run, so at
-    the time 0003 executes there is nothing to read. On a fresh database the
-    group therefore comes out empty, and on production it is still holding the
-    24 djangocms_blog permissions 0003 gave it back when that app existed -
-    dead rows now that `vitrina/cms/admin.py` asks for djangocms_stories ones.
-
-    This runs after every migrate and is a no-op once the group is in order.
-    django.contrib.auth creates permissions on the same signal, and
-    djangocms_stories is listed before vitrina.cms in INSTALLED_APPS, so its
-    permissions are already in place by the time this fires.
-
-    The other group 0003 creates, CMS Administrators, needs no such repair: its
-    four cms.title permissions have no successor, because PageContent declares
-    `default_permissions = []`. Its page permissions survive the upgrade
-    untouched.
+    Migration 0003 can't: permissions only exist after post_migrate, which this listens to.
     """
     from django.contrib.auth.models import Group, Permission
 

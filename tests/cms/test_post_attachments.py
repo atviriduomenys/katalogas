@@ -18,11 +18,7 @@ from vitrina.users.factories import UserFactory
 
 @pytest.mark.django_db
 def test_attachments_are_found_through_the_post_not_its_content():
-    """Attachments hang off the post; the view's object is the post's content.
-
-    The one-off news import stored every attachment against the post itself. A lookup keyed on the content object asks for a different content
-    type, finds nothing, and the files vanish from the page without any error.
-    """
+    """Attachments hang off the post, not its content - a lookup by content finds nothing."""
     config = StoriesConfig.objects.create(namespace="stories", **config_defaults)
     post = Post.objects.create(app_config=config)
     content = PostContent.admin_manager.create(post=post, title="Naujiena", slug="naujiena", language="lt")
@@ -77,12 +73,7 @@ def test_legacy_attachments_are_remapped_to_the_new_post_ids():
 
 @pytest.mark.django_db
 def test_the_remap_survives_a_blog_with_no_posts():
-    """Upstream only records the id map while copying rows.
-
-    A database that still has the blog tables but nothing in them copies
-    nothing, so the "Post" key is never created - and reaching for it directly
-    would end the deployment with a KeyError before anything else ran.
-    """
+    """Empty blog tables never put a "Post" key in the id map; that must not be a KeyError."""
     migration = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
 
     migration.remap_file_resources(global_apps, {}, Post, Post)
@@ -105,12 +96,7 @@ def _run_wrapper_with(monkeypatch, fake_migration):
 
 
 def test_the_wrapper_remaps_attachments_only_for_the_post_model(monkeypatch):
-    """Upstream calls copy_data per model; only the Post pass carries our ids.
-
-    Nothing else runs this wrapper - the tests around it call
-    remap_generic_relations directly - so a change in the callback's arguments
-    would first be noticed while migrating production.
-    """
+    """Only the Post pass carries our ids, and nothing but a real migration runs this wrapper."""
     module = import_module("vitrina.cms.stories_migrations.0002_auto_20250618_1556")
     pk_maps = {"Post": {1: 11}}
     post = _fake_model("djangocms_stories.post")

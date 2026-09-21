@@ -1,9 +1,6 @@
 """The anonymizer has to find the story text in either schema.
 
-django-cms 5 moved it: djangocms-blog's translation rows became
-djangocms-stories content rows. `dataset` resolves a missing table lazily, so
-reaching for the wrong name scrubs nothing and says nothing - the dump goes out
-with every article's real title and text in it.
+`dataset` resolves a missing table lazily, so a wrong name scrubs nothing, silently.
 """
 
 from unittest.mock import Mock
@@ -121,12 +118,7 @@ def _story_plugin_database(path):
 
 
 def test_story_plugin_bodies_are_scrubbed_on_both_schemas(tmp_path):
-    """A config in placeholder mode keeps its article text in text plugins.
-
-    For such a config this SQL is the only thing standing between the real text
-    and the dump, and it is reached through three joins - exactly the shape that
-    breaks quietly when a column is renamed.
-    """
+    """Placeholder-mode configs keep article text in text plugins, reached through three joins."""
     db = _story_plugin_database(tmp_path / "probe.db")
 
     _scrub_story_plugins(db)
@@ -145,12 +137,7 @@ def test_the_plugin_scrub_skips_a_database_without_text_plugins(tmp_path):
 
 
 def test_old_portal_pages_are_scrubbed_in_their_own_table():
-    """_anonymize_adp_cms_page used to read news_item.
-
-    The old portal's pages then went out untouched, news items were scrubbed
-    twice, and dataset - which creates any column it is asked to write - added
-    a description column to news_item in every dump.
-    """
+    """_anonymize_adp_cms_page scrubs adp_cms_page, and leaves news_item alone."""
     pages = FakeTable([{"id": 1, "title": "Tikras puslapis", "body": "<p>Tikras</p>"}])
     news = FakeTable([{"id": 7, "title": "Naujiena"}])
 

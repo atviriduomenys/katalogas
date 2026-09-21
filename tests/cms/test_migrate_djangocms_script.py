@@ -1,8 +1,6 @@
-"""The container's migration gate, driven through a fake python3.
+"""The branches of scripts/migrate_djangocms.sh, driven through a fake python3.
 
-scripts/migrate_djangocms.sh asks manage.py for the upgrade state and decides
-whether to migrate at all. The state function has tests of its own; these pin
-the shell branches, which nothing else exercises.
+The state function has its own tests; nothing else exercises the shell.
 """
 
 import os

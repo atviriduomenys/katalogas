@@ -29,9 +29,8 @@ STORIES_CONFIG = {
     "template_prefix": "vitrina/cms",
 }
 
-# The page tree as production has it. "Home" is not a page anyone sees - / is
-# served by vitrina.views.home - but marking it home strips its slug from its
-# descendants, which is why the blog lives at /blog/ and not /home/blog/.
+# The page tree as production has it. "Home" is marked home so its slug drops out of
+# its descendants' URLs (/blog/, not /home/blog/); / itself is vitrina.views.home.
 PAGES = [
     {"title": "Home", "slug": "home", "is_home": True},
     {"title": "Blog", "slug": "blog", "parent": "home", "stories_config": True},
@@ -137,12 +136,9 @@ def get_or_create_stories_config():
 
 
 def _finish_what_a_broken_run_left(page, is_home, superuser):
-    """Repair a page an earlier, interrupted run left half done.
+    """Publish a page an interrupted run left as a draft with no published version.
 
-    Runs from before each page got its own transaction could stop between
-    create_page and publish. Only a page with no published content at all is
-    published here: one that is published and has a newer draft belongs to
-    somebody editing it, and publishing that would put their work live.
+    A published page with a newer draft is someone's edit, so it is left alone.
     """
     if is_home and not page.is_home:
         with transaction.atomic():

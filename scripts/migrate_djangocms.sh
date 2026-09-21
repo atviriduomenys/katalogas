@@ -2,21 +2,11 @@
 
 set -euo pipefail
 
-# Lives only as long as the django-cms 5 upgrade does. Once no database reports
-# a pending or legacy state, #2795 deletes this file and the entrypoints call
-# migrate directly again. Both entrypoints share it meanwhile, so the state check
-# cannot drift between them.
-#
-# It moves no data itself. The page tree's 3 -> 4 conversion and the blog ->
-# stories move both run from the django-cms 4.1 migration tool before deployment;
-# this only checks that they have, and refuses a database where they have not.
+# Temporary: #2795 deletes this once no database reports a pending or legacy state.
+# Moves no data - only refuses a database the django-cms 4.1 tool has not migrated.
 
-# --skip-checks, here and in every manage.py call below: the URL system check
-# queries the Site table before migrations have run, so on a fresh database it
-# fails with Site.DoesNotExist. A django-cms bootstrapping problem, not ours.
-#
-# tail: anything an app prints while loading would otherwise land in the value
-# and send us to the "unknown state" branch, where the container refuses to boot.
+# --skip-checks: the URL system check queries Site before migrations run, and fails on a fresh database.
+# tail: anything printed while apps load would otherwise end up in the state.
 upgrade_state="$(python3 manage.py djangocms_upgrade_state --skip-checks | tail -n1)"
 
 case "${upgrade_state}" in

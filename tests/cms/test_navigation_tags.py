@@ -33,11 +33,7 @@ def test_show_menu_cache_clears_when_a_page_changes(django_capture_on_commit_cal
 
 @pytest.mark.django_db
 def test_show_menu_cache_clears_when_a_page_is_published(django_capture_on_commit_callbacks):
-    """Publishing has to invalidate the menu, and it never touches Page.
-
-    Under versioning the state sits on the version of the page content, so the
-    post_save and post_delete receivers on Page never see a publish.
-    """
+    """Publishing must clear the menu cache; it changes the version, not the Page."""
     user = UserFactory()
     page = create_page("Naujas puslapis", "pages/page.html", get_language(), created_by=user, in_navigation=True)
     content = PageContent.admin_manager.filter(page=page, language=get_language()).first()

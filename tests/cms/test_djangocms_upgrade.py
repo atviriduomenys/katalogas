@@ -32,12 +32,7 @@ def test_fresh_database_does_not_need_the_legacy_migration_stage():
 
 
 def test_a_django_cms_3_database_is_refused_before_anything_else():
-    """cms_title means the 3 -> 4 conversion has not run.
-
-    Such a database carries the legacy blog tables too, so without this it
-    would read as "pending" - refused either way, but told about the blog stage
-    when what it lacks is the whole 4.1 tool run.
-    """
+    """A cms 3 database has the blog tables too; it must read as legacy_pages, not "pending"."""
     state = get_upgrade_state(
         tables={"cms_title", "djangocms_blog_post"},
         applied_migrations=set(),
@@ -62,10 +57,9 @@ def test_custom_stories_data_migration_runs_after_file_resources_exist():
 
 
 def test_mirrored_stories_migrations_match_the_installed_package():
-    """MIGRATION_MODULES replaces the app's migrations with the copies here.
+    """MIGRATION_MODULES replaces the app's migrations with these copies.
 
-    Django then loads only these, so a migration added by a djangocms-stories
-    release would be skipped silently and its column would simply never appear.
+    A migration added upstream would be skipped silently, so the two lists must match.
     """
 
     def names(module):

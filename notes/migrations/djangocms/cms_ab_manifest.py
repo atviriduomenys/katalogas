@@ -1,19 +1,6 @@
-"""A/B manifest generator for validating the django-cms 3 -> 5 migration (DAS-428).
-
-A manifest rather than an SQL comparison, because the two sides do not share a
-schema (`djangocms_blog_*` vs `djangocms_stories_*`, `cms_title` vs
-`cms_pagecontent`): the same query cannot run on both. This script emits JSON of
-the **same shape** from either side, and it is the manifests that get compared.
-
-Run it the same way on both sides. Python reads the file from stdin, so it does
-not have to exist inside the container, and `vitrina` is imported from the
-container's working directory:
+"""Pages and articles as same-shape JSON from either schema (cms 3 or 5), for cms_ab_diff.py.
 
     docker compose exec -T vitrina python - < notes/migrations/djangocms/cms_ab_manifest.py > manifest-a.json
-
-The field that matters most is `published`. The quietest way this migration can
-fail is a published page dropping to DRAFT and disappearing from the site
-without an error; in the manifest that shows up as published: true -> false.
 """
 
 import json
@@ -67,10 +54,8 @@ def _pages_cms3(languages):
             rows.append(
                 {
                     "language": lang,
-                    # The materialized tree path is the one identity the migration is
-                    # guaranteed to preserve: cms.0037 copies node.path into Page.path.
-                    # The URL path will not do - an untranslated page has an empty one
-                    # and collides with the root.
+                    # The one identity the migration preserves (cms.0037 copies node.path to Page.path);
+                    # the URL path won't do - an untranslated page's is empty.
                     "tree_path": node.path if node else None,
                     "slug": page.get_slug(language=lang, fallback=False),
                     "path": page.get_path(language=lang, fallback=False),
@@ -122,13 +107,8 @@ def _pages_cms5(languages):
     rows = []
     for page in Page.objects.order_by("path"):
         parent = page.parent
-        # admin_manager, or unpublished PageContent stays invisible - and one appearing
-        # where the A side had none is exactly the regression worth recording.
-        #
-        # Grouped by language: under versioning one page in one language can hold a
-        # published AND a draft PageContent (when edits were left unsaved before the
-        # migration). The A side had a single row, so they are merged here - otherwise
-        # the key would repeat and the comparison would falsely report a drop to draft.
+        # admin_manager, so unpublished content shows up too. Grouped by language: one page can
+        # hold a published and a draft version, which the A side has as a single row.
         by_language = {}
         for content in PageContent.admin_manager.filter(page=page):
             by_language.setdefault(content.language, []).append(content)
@@ -151,8 +131,7 @@ def _pages_cms5(languages):
                     "parent_path": parent.get_path(language=lang, fallback=True) if parent else None,
                     "depth": page.depth,
                     "published": is_published,
-                    # Unsaved drafts next to a published version are not a failure, but
-                    # they are worth seeing: preserving them is part of the job.
+                    # Unsaved drafts beside the published version: not a failure, but worth seeing.
                     "draft_versions": len(contents) - len(published),
                     "in_navigation": content.in_navigation,
                     "template": content.template,
@@ -204,11 +183,9 @@ def _iso(value):
 
 
 def _author(user):
-    """Authors are compared by login name, not pk - a pk can shift when data is moved.
+    """Login name, not pk, which can shift when data is moved.
 
-    `get_username()` and not `.username`: this portal's `User` has `username = None`
-    and logs in by email, so `.username` would be None everywhere and the check for a
-    changed author would compare nothing.
+    get_username(): this portal's User has username = None and logs in by email.
     """
     return user.get_username() if user is not None else None
 

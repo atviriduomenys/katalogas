@@ -15,16 +15,9 @@ STORY_CONTENT_TABLES = ("djangocms_stories_postcontent", "djangocms_blog_post_tr
 
 
 def _story_content_tables(db: Database) -> list[str]:
-    """Every one of these this database has - not just the first.
+    """All story tables present, not the first: a half-finished upgrade leaves both.
 
-    Stopping matters here: `dataset` resolves a missing table lazily, so asking
-    for the wrong one iterates nothing, reports no error, and hands back a dump
-    that still carries every article's real title and text.
-
-    Taking the first would be just as quiet a leak. A half-finished upgrade
-    leaves both tables standing - djangocms_upgrade_state calls that state
-    inconsistent and refuses to boot on it - and the legacy one holds the same
-    articles, so scrub whatever is present.
+    None at all stops the run - `dataset` would silently scrub nothing.
     """
     present = [name for name in STORY_CONTENT_TABLES if name in db.tables]
     if not present:

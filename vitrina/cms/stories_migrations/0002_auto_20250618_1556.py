@@ -11,10 +11,7 @@ upstream = import_module("djangocms_stories.migrations.0002_auto_20250618_1556")
 def remap_file_resources(apps, pk_maps, source_model, target_model):
     """Move the news attachments onto the ids the posts were copied to.
 
-    pk_maps.get, not pk_maps["Post"]: upstream fills that key inside its
-    per-row loop, so a database that has the blog tables but no posts in them
-    never gets one, and asking for it directly would end the deployment with a
-    KeyError.
+    pk_maps.get: upstream only creates the "Post" key while copying rows, so no posts, no key.
     """
     ContentType = apps.get_model("contenttypes", "ContentType")
     FileResource = apps.get_model("vitrina_cms", "FileResource")

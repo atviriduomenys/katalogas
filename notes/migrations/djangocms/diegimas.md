@@ -34,39 +34,33 @@ leidimui. Nieko naujo.
 priklausomybėmis, pažymėtas atskiru vardu, pvz. `cms4-migration-tool`. Į `vX.Y.Z` schemą jis
 nepatenka, nes tai ne leidimas.
 
-**Kas jį sukuria:** programuotojas, rengiantis migraciją, **vieną kartą**. 2026-09 jo dar nėra —
-`cms4-migration-tool` tagas nesukurtas.
+**Tagas jau yra:** `cms4-migration-tool` → commit'as `8219b5b2`, sukurtas 2026-09-21 nuo `devel`
+`e97a36a4` (sumerginta #2646). Kurti iš naujo nereikia — tiesiog build'ink iš jo (žr. žemiau).
 
-**Ką tas commit'as keičia.** Tai ne atskiras projektas, o tas pats katalogas su kitomis priklausomybėmis
-ir minimaliais pakeitimais, kad Django pakiltų ir migracijos pravažiuotų. Navigacijos ir plugin'ų kodo
-liesti **nereikia**, nes svetainė iš šio image'o nekeliama.
-
-Pirminėje versijoje tai buvo devyni failai, ~73 eilutės. Didžioji dalis jau yra #2646 ir į įrankį ateina
-kartu su leidimo commit'u: stories importai `vitrina/cms/urls.py` ir `views.py`, naujienlaiškio
-filtravimas `vitrina/messages/signals.py`, `User.version` → `model_version` su migracija `0007`, Post
-admin'o perkėlimas į `vitrina/cms/admin.py`, blog shim'as (`DJANGOCMS_BLOG_MIGRATION`),
-`CMS_CONFIRM_VERSION4`, `DJANGOCMS_VERSIONING_USERNAME_FIELD`, `django-taggit-autosuggest` ir
-`aldryn-apphooks-config`. Įrankio commit'ui lieka:
+**Kas jame pakeista**, palyginti su leidimo kodu — tas pats katalogas, tik su 4.1 bibliotekomis. Navigacijos
+ir plugin'ų kodo liesti nereikėjo, nes svetainė iš šio image'o nekeliama:
 
 | Failas | Kas |
 |---|---|
-| `pyproject.toml`, `poetry.lock` | django-cms `>=4.1,<5`, **djangocms-alias `<3`**, `djangocms-4-migration` iš git prikaltu commit'u (žr. [receptą](receptas.md)) |
-| `docker/Dockerfile` | pridėti `git` į apt sąrašą — be jo poetry neparsiųs git priklausomybės |
+| `pyproject.toml`, `poetry.lock` | django-cms `>=4.1,<5` (→ 4.1.11), **djangocms-alias `<3`** (→ 2.0.5), `djangocms-4-migration` iš git prikaltu commit'u (žr. [receptą](receptas.md)) |
+| `docker/Dockerfile` | `git` apt sąraše — be jo poetry neparsiųs git priklausomybės |
 | `vitrina/settings.py` | `djangocms_4_migration` į `INSTALLED_APPS`; `CMS_MIGRATION_USER_ID` |
 
-> ⚠️ **Dar nepatikrinta.** Django bet kuriai `manage.py` komandai įkelia visas programas — ir `admin.py`,
-> ir `apps.py`. #2646 kodas rašytas cms 5, tad ar jis įsikels po cms 4.1, parodys tik pirmas image'o
-> build'as. Tai pirmas repeticijos klausimas; jei ne, įrankio commit'as turės daugiau pakeitimų.
+Patikrinta 2026-09-21: #2646 kodas su cms 4.1 įsikelia be pakeitimų — Django setup, admin'as ir URL'ai
+kyla, visos šešios 3 žingsnio komandos yra. Pačios migracijos ant prod kopijos su šiuo tagu dar neleistos.
+Bet kuriai `manage.py` komandai reikia pasiekiamo Redis — be jo krenta jau įkeliant programas.
 
-**Kaip sukuriamas.** Tagas nepriklauso nuo šakos, tad šakos laikyti nereikia — ji ištrinama, o tagas
+**Jei tagą reikėtų sukurti iš naujo** (pvz., prieš migraciją į leidimą patektų cms ar stories kodo
+pakeitimų), tas pats nuo naujo leidimo commit'o. Tagas šakos nereikalauja — ji ištrinama, o tagas
 commit'ą išlaiko:
 
 ```sh
 git checkout -b tmp-cms4-tool <leidimo commit'as>
-# ... devynių failų pakeitimai ...
+# ... trijų failų pakeitimai, kaip lentelėje ...
+poetry lock                                 # po pyproject.toml pakeitimo
 git commit -am "django-cms 4.1 migration tool"
-git tag cms4-migration-tool
-git push origin cms4-migration-tool        # stumiamas TIK tagas, ne šaka
+git tag -f cms4-migration-tool
+git push -f origin cms4-migration-tool      # stumiamas TIK tagas, ne šaka
 git branch -D tmp-cms4-tool
 ```
 
@@ -127,6 +121,8 @@ services:
     volumes: !reset []          # BUTINA, zr. zemiau
 ```
 
+> ⚠️ **`!reset` reikia Docker Compose ≥ 2.24.4** (`docker compose version`). Senesnis jo nesupranta.
+>
 > ⚠️ **`volumes: !reset []` nepamiršk.** `docker-compose.yml` turi `- ".:/app"`, t. y. host'o
 > katalogas užklojamas ant image'o kodo. Be šios eilutės konteineris paims 4.1 bibliotekas, bet
 > **kodą — aplinkos**, tad migracijos suksis su cms 3 kodu ir kris (`No module named

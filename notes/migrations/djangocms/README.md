@@ -19,8 +19,8 @@ Susiję: #1824 (užduotis) · PR #2646 (atnaujinimas) · PR #2795 (išvalymas po
 ## Eiga
 
 1. Perskaityk `receptas.md` — kodėl eiliškumas toks griežtas ir kodėl atsukti negalima.
-2. Sukurk 4.1 migracijos įrankio image'ą (`diegimas.md`, „Ko reikia turėti prieš pradedant"). Jo dar
-   nėra: `cms4-migration-tool` tagas nesukurtas.
+2. Subuild'ink 4.1 migracijos įrankio image'ą iš tago `cms4-migration-tool` (`diegimas.md`, „Ko reikia
+   turėti prieš pradedant"). Tagas sukurtas 2026-09-21, nuo `devel` su sumerginta #2646.
 3. Repeticija ant anonimizuotos prod kopijos pagal `diegimas.md`, su A/B manifestais prieš ir po.
    Priėmimo kriterijus ne „pakilo", o „migracija iš prod formos bazės praėjo ir turinys išliko".
 4. Tik tada TEST, paskui PROD — ta pačia instrukcija.

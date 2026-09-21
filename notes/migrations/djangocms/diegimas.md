@@ -34,39 +34,36 @@ leidimui. Nieko naujo.
 priklausomybėmis, pažymėtas atskiru vardu, pvz. `cms4-migration-tool`. Į `vX.Y.Z` schemą jis
 nepatenka, nes tai ne leidimas.
 
-**Kas jį sukuria:** programuotojas, rengiantis migraciją, **vieną kartą**. 2026-09 jo dar nėra —
-`cms4-migration-tool` tagas nesukurtas.
+**Tagas jau yra:** `cms4-migration-tool` → commit'as `8219b5b2`, sukurtas 2026-09-21 nuo `devel`
+`e97a36a4` (sumerginta #2646). Kurti iš naujo nereikia — tiesiog build'ink iš jo (žr. žemiau).
 
-**Ką tas commit'as keičia.** Tai ne atskiras projektas, o tas pats katalogas su kitomis priklausomybėmis
-ir minimaliais pakeitimais, kad Django pakiltų ir migracijos pravažiuotų. Navigacijos ir plugin'ų kodo
-liesti **nereikia**, nes svetainė iš šio image'o nekeliama.
-
-Pirminėje versijoje tai buvo devyni failai, ~73 eilutės. Didžioji dalis jau yra #2646 ir į įrankį ateina
-kartu su leidimo commit'u: stories importai `vitrina/cms/urls.py` ir `views.py`, naujienlaiškio
-filtravimas `vitrina/messages/signals.py`, `User.version` → `model_version` su migracija `0007`, Post
-admin'o perkėlimas į `vitrina/cms/admin.py`, blog shim'as (`DJANGOCMS_BLOG_MIGRATION`),
-`CMS_CONFIRM_VERSION4`, `DJANGOCMS_VERSIONING_USERNAME_FIELD`, `django-taggit-autosuggest` ir
-`aldryn-apphooks-config`. Įrankio commit'ui lieka:
+**Kas jame pakeista**, palyginti su leidimo kodu — tas pats katalogas, tik su 4.1 bibliotekomis. Navigacijos
+ir plugin'ų kodo liesti nereikėjo, nes svetainė iš šio image'o nekeliama:
 
 | Failas | Kas |
 |---|---|
-| `pyproject.toml`, `poetry.lock` | django-cms `>=4.1,<5`, **djangocms-alias `<3`**, `djangocms-4-migration` iš git prikaltu commit'u (žr. [receptą](receptas.md)) |
-| `docker/Dockerfile` | pridėti `git` į apt sąrašą — be jo poetry neparsiųs git priklausomybės |
+| `pyproject.toml`, `poetry.lock` | django-cms `>=4.1,<5` (→ 4.1.11), **djangocms-alias `<3`** (→ 2.0.5), `djangocms-4-migration` iš git prikaltu commit'u (žr. [receptą](receptas.md)) |
+| `docker/Dockerfile` | `git` apt sąraše — be jo poetry neparsiųs git priklausomybės |
 | `vitrina/settings.py` | `djangocms_4_migration` į `INSTALLED_APPS`; `CMS_MIGRATION_USER_ID` |
 
-> ⚠️ **Dar nepatikrinta.** Django bet kuriai `manage.py` komandai įkelia visas programas — ir `admin.py`,
-> ir `apps.py`. #2646 kodas rašytas cms 5, tad ar jis įsikels po cms 4.1, parodys tik pirmas image'o
-> build'as. Tai pirmas repeticijos klausimas; jei ne, įrankio commit'as turės daugiau pakeitimų.
+Patikrinta 2026-09-21: #2646 kodas su cms 4.1 įsikelia be pakeitimų — Django setup, admin'as ir URL'ai
+kyla, visos šešios 3 žingsnio komandos yra. Repeticija ant prod kopijos su šiuo tagu praėjo tą pačią
+dieną (žr. [README](README.md)).
+Bet kuriai `manage.py` komandai reikia pasiekiamo Redis — be jo krenta jau įkeliant programas.
 
-**Kaip sukuriamas.** Tagas nepriklauso nuo šakos, tad šakos laikyti nereikia — ji ištrinama, o tagas
-commit'ą išlaiko:
+**Jei įrankį reikėtų sukurti iš naujo** (pvz., prieš migraciją į leidimą patektų cms ar stories kodo
+pakeitimų) — tas pats nuo naujo leidimo commit'o, bet **su nauju tago vardu**. Esamo neperrašyk:
+`cms4-migration-tool` jau naudotas repeticijoje, ir tas pats vardas, rodantis į kitą kodą, panaikintų
+atsekamumą, iš ko buvo subuild'intas kuris image'as. Build'ink iš naujojo ir jį įrašyk čia. Tagas šakos
+nereikalauja — ji ištrinama, o tagas commit'ą išlaiko:
 
 ```sh
 git checkout -b tmp-cms4-tool <leidimo commit'as>
-# ... devynių failų pakeitimai ...
+# ... trijų failų pakeitimai, kaip lentelėje ...
+poetry lock                                 # po pyproject.toml pakeitimo
 git commit -am "django-cms 4.1 migration tool"
-git tag cms4-migration-tool
-git push origin cms4-migration-tool        # stumiamas TIK tagas, ne šaka
+git tag cms4-migration-tool-2
+git push origin cms4-migration-tool-2       # stumiamas TIK tagas, ne šaka
 git branch -D tmp-cms4-tool
 ```
 
@@ -125,8 +122,12 @@ services:
   vitrina:
     image: katalogas-cms4-migration:<data>
     volumes: !reset []          # BUTINA, zr. zemiau
+    environment:
+      - CMS_MIGRATION_USER_ID=<id>   # BUTINA, zr. 0 zingsni
 ```
 
+> ⚠️ **`!reset` reikia Docker Compose ≥ 2.24.4** (`docker compose version`). Senesnis jo nesupranta.
+>
 > ⚠️ **`volumes: !reset []` nepamiršk.** `docker-compose.yml` turi `- ".:/app"`, t. y. host'o
 > katalogas užklojamas ant image'o kodo. Be šios eilutės konteineris paims 4.1 bibliotekas, bet
 > **kodą — aplinkos**, tad migracijos suksis su cms 3 kodu ir kris (`No module named
@@ -154,7 +155,7 @@ Taip visi adresai, tinklas ir kintamieji ateina iš tos pačios vietos, iš kuri
 > ir `katalogas-<šaka>-database`, `docker-compose.dev.yml` Postgres — `katalogas-database`. Pakeisk juos
 > ir override'e, ir komandose.
 
-Postgres, Elasticsearch ir Redis turi suktis viso proceso metu. Portalas — ne.
+Postgres ir Redis turi suktis viso proceso metu — be Redis krenta bet kuri `manage.py` komanda. Portalas — ne.
 
 Reikia dar: vietos backup'ui ir laiko jį atkurti, jei prireiktų.
 
@@ -168,15 +169,24 @@ Ar bazei apskritai reikia 4.1 žingsnio:
 select count(*) from (select node_id from cms_page group by node_id having count(*) > 1) t;
 ```
 
-- **> 0** — draft/public poros yra, 4.1 žingsnis **būtinas**. Prod kopijoje buvo `29`.
+- **> 0** — draft/public poros yra, 4.1 žingsnis **būtinas**. Repeticijoje (2026-09-21) buvo `31`.
 - **0** — porų nėra; sustok ir pasitikslink, ar bazė tikrai cms 3 būsenos.
 
 Užsirašyk pradinius skaičius — jų prireiks tikrinant:
 
 ```sql
-select count(*) from cms_page;                      -- pvz. 59
-select count(*) from cms_treenode;                  -- pvz. 30
-select count(*) from djangocms_blog_post;           -- pvz. 47
+select count(*) from cms_page;                      -- repeticijoje 63
+select count(*) from cms_treenode;                  -- 32
+select count(*) from djangocms_blog_post;           -- 59
+```
+
+**Migracijos naudotojas.** Įrankis versijas priskiria puslapio autoriui pagal `cms_page.created_by`, o kai
+jo neranda — naudotojui `CMS_MIGRATION_USER_ID` (numatytas `1`). Jei tokio naudotojo nėra, migracija
+krenta **vidury 3 žingsnio**, kai grįžti jau nebėra kur. Išsirink esamą administratorių ir įrašyk jo id
+į `docker-compose.migration.yml`:
+
+```sql
+select id, email from "user" where is_superuser and is_active order by id;
 ```
 
 ---
@@ -208,27 +218,35 @@ Neatkurtas backup'as nėra backup'as. `pg_restore` — tas pats: serverio versij
 
 ## 2b. Sekų suvienodinimas
 
-Prieš migruojant suvienodink `SERIAL` sekas su realiais duomenimis:
+Prieš migruojant pastumk sekas, kurios atsilieka nuo duomenų — ir `serial`, ir `identity` (jas kuria Django 4.1+).
+Seka judinama tik į priekį ir tik tada, kai kita jos reikšmė susidurtų su esama eilute:
 
 ```sql
 DO $$
-DECLARE r record;
+DECLARE r record; mx bigint; lv bigint; called boolean; moved int := 0;
 BEGIN
   FOR r IN
     SELECT c.relname AS seq, t.relname AS tbl, a.attname AS col
     FROM pg_class c
-    JOIN pg_depend d ON d.objid = c.oid AND d.deptype = 'a'
+    JOIN pg_depend d ON d.objid = c.oid AND d.deptype IN ('a', 'i')
     JOIN pg_class t ON t.oid = d.refobjid
     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
     WHERE c.relkind = 'S'
   LOOP
-    EXECUTE format('SELECT setval(%L, COALESCE((SELECT MAX(%I) FROM %I), 1))', r.seq, r.col, r.tbl);
+    EXECUTE format('SELECT MAX(%I) FROM %I', r.col, r.tbl) INTO mx;
+    EXECUTE format('SELECT last_value, is_called FROM %I', r.seq) INTO lv, called;
+    -- Only forward, and only when the next value would collide with existing data.
+    IF mx IS NOT NULL AND (mx > lv OR (mx = lv AND NOT called)) THEN
+      PERFORM setval(quote_ident(r.seq)::regclass, mx);
+      moved := moved + 1;
+    END IF;
   END LOOP;
+  RAISE NOTICE 'pastumta sekų: %', moved;
 END $$;
 ```
 
 **Kodėl.** Tai **saugiklis, ne būtina pataisa**. Švariame kelyje (atkurta iš prod dump'o) sekos
-būna tvarkingos ir šis žingsnis nieko nekeičia — repeticijoje `max` ir seka jau sutapo.
+būna tvarkingos ir šis žingsnis nieko nekeičia (`pastumta sekų: 0`) — repeticijoje taip ir buvo.
 
 Bet jei bazė atkuriama iš **tarpinio** backup'o, sekos gali atsilikti, ir tada migracijos krenta su
 `duplicate key value violates unique constraint "django_migrations_pkey"`, paskui
@@ -239,7 +257,7 @@ Pasitikrink, kad suvienodinta:
 
 ```sql
 select max(id), (select last_value from django_migrations_id_seq) from django_migrations;
--- abu skaiciai turi sutapti
+-- antras skaicius ne mazesnis uz pirma
 ```
 
 ---
@@ -259,7 +277,11 @@ $COMPOSE run --rm -e DJANGOCMS_BLOG_MIGRATION=0 --entrypoint "" vitrina python m
 $COMPOSE run --rm -e DJANGOCMS_BLOG_MIGRATION=0 --entrypoint "" vitrina python manage.py remove_unlinked_placeholders
 ```
 
-Kiekviena turi baigtis **exit 0**. Trukmė kartu — apie **2 min** (repeticijoje 116 s).
+Kiekviena turi baigtis **exit 0**. Trukmė kartu — apie **1,5 min** (repeticijoje 2026-09-21 — 83 s).
+
+Įspėjimai `User … not found, falling back` reiškia, kad puslapio autoriaus nerasta ir versija priskirta
+migracijos naudotojui. Anonimizuotoje kopijoje taip nutinka visiems puslapiams; tikroje bazėje — tik tiems,
+kurių autorius ištrintas.
 
 > **Jei kuri nors krenta — STOP.** Netaisyk vietoje ir nebandyk paleisti kitos. Bazė yra tarpinėje
 > būsenoje: `cms.0031` jau išmetusi `publisher_is_draft`, tad nei pirmyn, nei atgal. Atkurk iš
@@ -285,13 +307,13 @@ select count(*) from (select node_id from cms_page group by node_id having count
 **Privalo būti `0`.** Jei ne — nejudėk toliau, `cms.0037` kris.
 
 ```sql
-select count(*) from cms_page;                          -- turi sumažėti maždaug per pusę (59 -> 30)
-select count(*) from cms_treenode;                      -- nepakitęs (30)
-select count(*) from djangocms_stories_post;            -- tiek, kiek buvo blog postų (47)
+select count(*) from cms_page;                          -- turi sumažėti maždaug per pusę (63 -> 32)
+select count(*) from cms_treenode;                      -- nepakitęs (32)
+select count(*) from djangocms_stories_post;            -- tiek, kiek buvo blog postų (59)
 select state, count(*) from djangocms_versioning_version group by state;
 ```
 
-Versijų būsenose turi būti ir `published`, ir `draft` (pvz. 94 / 16). Jei `published` nėra — turinys
+Versijų būsenose turi būti ir `published`, ir `draft` (repeticijoje 107 / 15). Jei `published` nėra — turinys
 po diegimo dings iš svetainės; **stok ir atkurk iš backup'o**.
 
 Blog lentelių nebeturi likti:
@@ -321,9 +343,9 @@ Trukmė: migracijos ir portalo pakilimas kartu — apie **3,5 min** (repeticijoj
 ## 6. Patikra po 5.0
 
 ```sql
-select count(*) from cms_page;                    -- toks pat kaip po 4 žingsnio (30)
-select count(*) from cms_pagecontent;             -- pvz. 63
-select count(*) from djangocms_stories_post;      -- nepakitęs (47)
+select count(*) from cms_page;                    -- toks pat kaip po 4 žingsnio (32)
+select count(*) from cms_pagecontent;             -- repeticijoje 63
+select count(*) from djangocms_stories_post;      -- nepakitęs (59)
 ```
 
 `cms_treenode` po `cms.0037` nebenaudojama — `Page` pats tampa medžio mazgu.
@@ -354,7 +376,11 @@ Turinio redaktorius peržiūri, ar turinys nepasikeitė. Ką tikrinti pirmiausia
 **Prod kopijoje vienintelis realus turinio pokytis buvo:** puslapis, turėjęs tuščią `en` vertimą (be
 pavadinimo ir slug'o), po migracijos gavo adresą `more/regulation/regulations` ir pavadinimą
 „Legislation". Migracijos paketas tai daro sąmoningai — pataiso seną defektą, bet **URL pasikeičia**.
-Verta patikrinti, ar nėra daugiau tokių puslapių, ir ar nauji adresai priimtini.
+Verta patikrinti, ar nėra daugiau tokių puslapių, ir ar nauji adresai priimtini. A/B palyginimas dėl jo
+grąžina `exit 1` (SLUG ir URL pasikeitė) — tai laukiama.
+
+A/B gali rodyti ir **naują puslapį B pusėje**, kuris B pusėje `published: false`. Tai niekada nepublikuotas
+juodraštis: A mato tik viešą medį, o B — ir juodraščius. Repeticijoje toks buvo vienas (`0007`, en).
 
 ---
 

@@ -10,6 +10,24 @@ from tqdm import tqdm
 from typer import Argument, Option, confirm, run
 
 
+# Either schema may be in front of us: the columns are the same, the name is not.
+STORY_CONTENT_TABLES = ("djangocms_stories_postcontent", "djangocms_blog_post_translation")
+
+
+def _story_content_tables(db: Database) -> list[str]:
+    """All story tables present, not the first: a half-finished upgrade leaves both.
+
+    None at all stops the run - `dataset` would silently scrub nothing.
+    """
+    present = [name for name in STORY_CONTENT_TABLES if name in db.tables]
+    if not present:
+        raise SystemExit(
+            "This database has neither " + " nor ".join(STORY_CONTENT_TABLES) + ". "
+            "Story text would go out unscrubbed, so nothing was changed."
+        )
+    return present
+
+
 def main(
     uri: str = Argument(..., help=("Database URI (postgresql://user:pass@host:port/db)")),
     yes: bool = Option(False, help="Do not ask anything, just do it"),
@@ -27,7 +45,7 @@ def main(
         "organization",
         "adp_cms_page",
         "news_item",
-        "djangocms_blog_post_translation",
+        *_story_content_tables(db),
         "reversion_version",
         "api_description",
         "vitrina_datasets_contact",
@@ -40,6 +58,7 @@ def main(
         "dataset_migrate",
         "dataset",
         "cms_page",
+        *(["cms_pagecontent"] if "cms_pagecontent" in db.tables else []),
         "account_emailconfirmation",
         "socialaccount_socialaccount",
         "socialaccount_socialtoken",
@@ -84,9 +103,11 @@ def main(
             func = sys.modules[__name__].__dict__[f"_anonymize_{table}"]
             func(db, fake, pbar, users)
 
+    _scrub_story_plugins(db)
+
 
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["djangocms_blog_post_translation"]
+    objects: Table = db["organization"]
     pk_name = "id"
     for record in objects.all():
         data = {
@@ -94,15 +115,14 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
             "email": fake.email(),
             "phone": fake.phone_number(),
             "address": fake.address(),
+            "website": fake.url(),
         }
         objects.update(data, [pk_name])
         pbar.update(1)
 
 
-def _anonymize_djangocms_blog_post_translation(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
-) -> None:
-    objects: Table = db["djangocms_blog_post_translation"]
+def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
+    objects: Table = db[table]
     pk_name = "id"
     for record in objects.all():
         data = {
@@ -118,6 +138,46 @@ def _anonymize_djangocms_blog_post_translation(
         }
         objects.update(data, [pk_name])
         pbar.update(1)
+
+
+# Empty on this portal - STORIES_USE_PLACEHOLDER is off, so article text lives
+# in post_text. A config with placeholders on keeps it here instead.
+STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"), ("djangocms_blog", "post"))
+
+
+def _scrub_story_plugins(db: Database) -> None:
+    if "djangocms_text_text" not in db.tables:
+        return
+
+    conditions = " OR ".join(
+        f"(ct.app_label = '{app_label}' AND ct.model = '{model}')" for app_label, model in STORY_CONTENT_TYPES
+    )
+    db.query(
+        f"""
+        UPDATE djangocms_text_text SET body = '<p>example</p>'
+        WHERE cmsplugin_ptr_id IN (
+            SELECT plugin.id
+            FROM cms_cmsplugin plugin
+            JOIN cms_placeholder placeholder ON placeholder.id = plugin.placeholder_id
+            JOIN django_content_type ct ON ct.id = placeholder.content_type_id
+            WHERE {conditions}
+        )
+        """
+    )
+
+
+def _anonymize_djangocms_blog_post_translation(
+    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
+) -> None:
+    """Story text before the django-cms 5 upgrade."""
+    _anonymize_story_content(db, pbar, "djangocms_blog_post_translation")
+
+
+def _anonymize_djangocms_stories_postcontent(
+    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
+) -> None:
+    """Story text after it."""
+    _anonymize_story_content(db, pbar, "djangocms_stories_postcontent")
 
 
 def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
@@ -137,7 +197,7 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
 
 
 def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["news_item"]
+    objects: Table = db["adp_cms_page"]
     pk_name = "id"
     for record in objects.all():
         data = {
@@ -279,6 +339,15 @@ def _anonymize_dataset(db: Database, fake: Faker, pbar: tqdm, users: dict[str, d
 
 def _anonymize_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["cms_page"]
+    pk_name = "id"
+    for record in objects.all():
+        data = {pk_name: record[pk_name], "changed_by": fake.first_name(), "created_by": fake.first_name()}
+        objects.update(data, [pk_name])
+        pbar.update(1)
+
+
+def _anonymize_cms_pagecontent(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    objects: Table = db["cms_pagecontent"]
     pk_name = "id"
     for record in objects.all():
         data = {pk_name: record[pk_name], "changed_by": fake.first_name(), "created_by": fake.first_name()}

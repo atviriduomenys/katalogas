@@ -7,9 +7,9 @@ npm run build || echo "⚠️ Webpack build (partially) failed, continuing..."
 cd ..
 
 python3 manage.py collectstatic --noinput
-# --skip-checks bypasses the URL system check that queries the Site table before migrations run,
-# which causes Site.DoesNotExist on a fresh database (django-cms bootstrapping issue).
-python3 manage.py migrate --skip-checks -v 2 || exit 1
+# Refuses a database the django-cms 4.1 migration tool has not finished, then migrates.
+# Temporary: #2795 goes back to a plain migrate once every environment is upgraded.
+./scripts/migrate_djangocms.sh || exit 1
 python3 manage.py rebuild_search
 export DJANGO_SUPERUSER_EMAIL=test@test.com; export DJANGO_SUPERUSER_USERNAME=test@test.com; export DJANGO_SUPERUSER_PASSWORD=test; python manage.py createsuperuser --noinput || True
 
@@ -18,4 +18,3 @@ if [[ $RUN_MODE == "DEVELOPMENT" ]]; then
 else
   gunicorn -b 0.0.0.0:8000 vitrina.wsgi:application --log-file=-
 fi
-

@@ -42,6 +42,10 @@ https://github.com/atviriduomenys/katalogas/issues/2799
 - Keep the stored identifier on every save. Reverting an environment in admin to a version saved before
   this release would otherwise give it a new one, and the ``agent_id`` the agent already has would
   stop matching.
+- Stop admin deleting agents and agent environments; archive them instead, as the app already does.
+  Recovering a deleted environment from a version saved before this release would issue a new
+  identifier. An organization that has agents can no longer be deleted in admin either, because
+  its agents would be deleted with it.
 
 
 v 1.25.0 (2026-09-10)

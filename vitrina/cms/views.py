@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.views.generic import TemplateView, DetailView
-from djangocms_blog.views import PostDetailView as BasePostDetailView
+from djangocms_stories.views import PostDetailView as BasePostDetailView
 from django.utils.translation import gettext_lazy as _
 
 
@@ -16,9 +16,12 @@ class PolicyView(TemplateView):
 class PostDetailView(BasePostDetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Attachments hang off the post, while `self.object` is its content - a different
+        # model with different ids, so a lookup by it silently finds nothing.
+        post = self.object.post
         context["files"] = FileResource.objects.filter(
-            content_type=ContentType.objects.get_for_model(self.object),
-            object_id=self.object.pk,
+            content_type=ContentType.objects.get_for_model(post),
+            object_id=post.pk,
         )
         return context
 

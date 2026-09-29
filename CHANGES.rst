@@ -46,6 +46,8 @@ https://github.com/atviriduomenys/katalogas/issues/2799
   Recovering a deleted environment from a version saved before this release would issue a new
   identifier. An organization that has agents can no longer be deleted in admin either, because
   its agents would be deleted with it.
+- Move agents to the remaining organization when organizations are merged; they used to be deleted with
+  the merged one. A merge is refused if both organizations have active agents with the same codename.
 
 
 v 1.25.0 (2026-09-10)

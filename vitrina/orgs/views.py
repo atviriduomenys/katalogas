@@ -13,6 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
+from django.db import transaction
 from django.db.models import Q, Count, QuerySet, Case, When, IntegerField
 from django.forms import BaseForm
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponseBase
@@ -2925,11 +2926,29 @@ class ConfirmOrganizationMergeView(PermissionRequiredMixin, TemplateView):
             _("Finansavimo planai"): self.organization.financingplan_set.all(),
             _("Planai (organizacija paslaugų gavėjas)"): self.organization.receiver_plans.all(),
             _("Planai (organizacija paslaugų teikėjas)"): self.organization.publisher_plans.all(),
+            _("Agentai"): self.organization.agent_set.all(),
         }
 
         return context
 
     def post(self, request, *args, **kwargs):
+        # Active agent codenames are unique per organization, so moving a clashing agent would fail midway.
+        clashing_agents = self.organization.agent_set.not_archived().filter(
+            codename__in=self.merge_organization.agent_set.not_archived().values("codename")
+        )
+        if clashing_agents.exists():
+            messages.error(
+                request,
+                _("Organizacijų sujungti negalima, nes abi turi agentų tokiais pačiais pavadinimais: %(agents)s.")
+                % {"agents": ", ".join(str(agent) for agent in clashing_agents)},
+            )
+            return redirect(request.path)
+
+        with transaction.atomic():
+            self._merge()
+        return redirect(reverse("organization-detail", args=[self.merge_organization.pk]))
+
+    def _merge(self) -> None:
         # Merge Dataset objects
         for obj in self.organization.dataset_set.all():
             obj.organization = self.merge_organization
@@ -2990,6 +3009,11 @@ class ConfirmOrganizationMergeView(PermissionRequiredMixin, TemplateView):
             obj.provider = self.merge_organization
             obj.save()
 
+        # Merge Agent objects, their environments and `instance_uri` must survive the merge
+        for obj in self.organization.agent_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
         self.organization.delete()
 
         request_assignments = RequestAssignment.objects.filter(organization=self.organization)
@@ -3002,7 +3026,6 @@ class ConfirmOrganizationMergeView(PermissionRequiredMixin, TemplateView):
             else:
                 request_assignment.organization = self.merge_organization
                 request_assignment.save()
-        return redirect(reverse("organization-detail", args=[self.merge_organization.pk]))
 
 
 class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):

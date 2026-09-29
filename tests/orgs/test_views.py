@@ -37,6 +37,7 @@ from vitrina.requests.factories import RequestFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
 from vitrina.smart_contracts.models import SmartContractTemplate
+from vitrina.uapi.factories import AgentEnvironmentFactory, AgentFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -764,6 +765,44 @@ def test_organization_merge(app: DjangoTestApp):
             content_type=ContentType.objects.get_for_model(merge_organization), object_id=merge_organization.pk
         )
     ) == [representative]
+
+
+def test_organization_merge_moves_agents(app: DjangoTestApp):
+    app.set_user(UserFactory(is_superuser=True))
+    organization = OrganizationFactory()
+    merge_organization = OrganizationFactory()
+    agent_environment = AgentEnvironmentFactory(agent__organization=organization)
+    instance_uri = agent_environment.instance_uri
+
+    form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
+        "confirm-merge-form"
+    ]
+    form.submit()
+
+    agent_environment.refresh_from_db()
+    assert agent_environment.agent.organization == merge_organization
+    assert agent_environment.instance_uri == instance_uri
+
+
+def test_organization_merge_refused_when_agent_codenames_clash(app: DjangoTestApp):
+    app.set_user(UserFactory(is_superuser=True))
+    organization = OrganizationFactory()
+    merge_organization = OrganizationFactory()
+    agent = AgentFactory(organization=organization, title="Agentas")
+    AgentFactory(organization=merge_organization, title="Agentas")
+    dataset = DatasetFactory(organization=organization)
+
+    form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
+        "confirm-merge-form"
+    ]
+    resp = form.submit()
+
+    assert resp.url == reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])
+    assert Organization.objects.filter(pk=organization.pk).exists()
+    agent.refresh_from_db()
+    dataset.refresh_from_db()
+    assert agent.organization == organization
+    assert dataset.organization == organization
 
 
 def test_organization_open_plans(app: DjangoTestApp):

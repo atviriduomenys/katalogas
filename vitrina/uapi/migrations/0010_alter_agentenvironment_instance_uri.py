@@ -1,7 +1,7 @@
 from django.db import migrations, models
 
 import vitrina.uapi.utils.utils
-from vitrina.uapi.utils.utils import generate_agent_instance_uri
+from vitrina.uapi.utils.utils import generate_agent_uri
 
 
 def lock_and_assign_missing_instance_uris(apps, schema_editor):
@@ -13,7 +13,7 @@ def lock_and_assign_missing_instance_uris(apps, schema_editor):
     schema_editor.execute(f"LOCK TABLE {table} IN SHARE ROW EXCLUSIVE MODE")
 
     for agent_environment in AgentEnvironment.objects.filter(instance_uri__isnull=True).only("pk"):
-        agent_environment.instance_uri = generate_agent_instance_uri()
+        agent_environment.instance_uri = generate_agent_uri()
         agent_environment.save(update_fields=["instance_uri"])
 
 
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             model_name="agentenvironment",
             name="instance_uri",
             field=models.CharField(
-                default=vitrina.uapi.utils.utils.generate_agent_instance_uri,
+                default=vitrina.uapi.utils.utils.generate_agent_uri,
                 editable=False,
                 help_text="Agento aplinkos identifikatorius, sugeneruojamas sukuriant aplinką. Naudojamas kaip prieigos rakto `aud` reikšmė.",
                 max_length=255,

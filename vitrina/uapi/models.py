@@ -4,7 +4,7 @@ from functools import cached_property
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
 from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTPMethods, Environment
-from vitrina.uapi.utils.utils import generate_agent_instance_uri
+from vitrina.uapi.utils.utils import generate_agent_uri
 from django.utils.translation import gettext_lazy as _
 
 
@@ -120,12 +120,12 @@ class AgentEnvironment(UUIDBaseModel):
         default="https://get.data.gov.lt/",
         help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys."),
     )
-    instance_uri = models.CharField(
+    uri = models.CharField(
         verbose_name=_("Agento identifikatorius"),
         max_length=255,
         unique=True,
         editable=False,
-        default=generate_agent_instance_uri,
+        default=generate_agent_uri,
         help_text=_(
             "Agento aplinkos identifikatorius, sugeneruojamas sukuriant aplinką. "
             "Naudojamas kaip prieigos rakto `aud` reikšmė."

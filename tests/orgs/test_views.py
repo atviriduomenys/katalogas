@@ -772,7 +772,7 @@ def test_organization_merge_moves_agents(app: DjangoTestApp):
     organization = OrganizationFactory()
     merge_organization = OrganizationFactory()
     agent_environment = AgentEnvironmentFactory(agent__organization=organization)
-    instance_uri = agent_environment.instance_uri
+    uri = agent_environment.uri
 
     form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
         "confirm-merge-form"
@@ -781,7 +781,7 @@ def test_organization_merge_moves_agents(app: DjangoTestApp):
 
     agent_environment.refresh_from_db()
     assert agent_environment.agent.organization == merge_organization
-    assert agent_environment.instance_uri == instance_uri
+    assert agent_environment.uri == uri
 
 
 def test_organization_merge_refused_when_agent_codenames_clash(app: DjangoTestApp):

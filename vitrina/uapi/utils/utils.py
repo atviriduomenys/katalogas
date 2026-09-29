@@ -2,7 +2,7 @@ import uuid
 from urllib.parse import urlparse
 
 # Agento aplinkos identifikatorius, naudojamas kaip JWT `aud` reikšmė.
-AGENT_INSTANCE_URI_PREFIX = "https://data.gov.lt/id/dcat/Agent/"
+AGENT_URI_PREFIX = "https://data.gov.lt/id/dcat/Agent/"
 
 
 def extract_type_from_url(url: str) -> str:
@@ -12,5 +12,5 @@ def extract_type_from_url(url: str) -> str:
     return path if path.startswith("/uapi/") else ""
 
 
-def generate_agent_instance_uri() -> str:
-    return f"{AGENT_INSTANCE_URI_PREFIX}{uuid.uuid4()}"
+def generate_agent_uri() -> str:
+    return f"{AGENT_URI_PREFIX}{uuid.uuid4()}"

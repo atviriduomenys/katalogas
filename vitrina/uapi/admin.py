@@ -51,7 +51,7 @@ class AgentEnvAdmin(RevisionCommentVersionAdmin):
     def has_delete_permission(self, request: HttpRequest, obj: AgentEnvironment | None = None) -> bool:
         # Environments are archived, never deleted: the app has deletion switched off too. Recovering a
         # deleted environment from a version saved before `instance_uri` existed would issue a new
-        # identifier, and the `agent_id` a deployed agent holds would stop matching.
+        # identifier, and the `resource` a deployed agent holds would stop matching.
         return False
 
 

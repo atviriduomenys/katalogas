@@ -1,7 +1,7 @@
 import uuid
 from urllib.parse import urlparse
 
-# Spintos instancijos identifikatorius, kurį Spinta naudoja kaip JWT `aud` reikšmę.
+# Agento aplinkos identifikatorius, naudojamas kaip JWT `aud` reikšmė.
 AGENT_INSTANCE_URI_PREFIX = "https://data.gov.lt/id/dcat/Agent/"
 
 

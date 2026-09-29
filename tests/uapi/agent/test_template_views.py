@@ -698,7 +698,7 @@ class TestAgentEnvDetail:
         assert response.context["agent_environment"] == agent_environment
         assert not response.context["secret"]
         credentials = response.html.find(id="credentials-text").get_text()
-        assert f"agent_id = {agent_environment.instance_uri}\n" in credentials
+        assert f"resource = {agent_environment.instance_uri}\n" in credentials
 
     @pytest.mark.parametrize("is_archived_agent", [True, False])
     def test_archived_agent(

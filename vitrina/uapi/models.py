@@ -127,8 +127,8 @@ class AgentEnvironment(UUIDBaseModel):
         editable=False,
         default=generate_agent_instance_uri,
         help_text=_(
-            "Spintos instancijos identifikatorius, sugeneruojamas sukuriant aplinką. "
-            "Agentas jį naudoja kaip prieigos rakto `aud` reikšmę."
+            "Agento aplinkos identifikatorius, sugeneruojamas sukuriant aplinką. "
+            "Naudojamas kaip prieigos rakto `aud` reikšmė."
         ),
     )
     oauth_client_id = models.CharField(

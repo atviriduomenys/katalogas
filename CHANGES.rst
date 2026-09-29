@@ -31,16 +31,16 @@ https://github.com/atviriduomenys/katalogas/issues/1824
 
 https://github.com/atviriduomenys/katalogas/issues/2799
 
-- Give every agent environment a Spinta instance identifier, ``AgentEnvironment.instance_uri``
-  (``https://data.gov.lt/id/dcat/Agent/<uuid>``), for Spinta to use as the ``aud`` claim instead of
+- Give every agent environment an identifier, ``AgentEnvironment.instance_uri``
+  (``https://data.gov.lt/id/dcat/Agent/<uuid>``), for the agent to use as the ``aud`` claim instead of
   the client id. It is generated when the environment is created, never changes, and is shown on
-  the environment page and as ``agent_id`` in ``credentials.cfg``. The UAPI Agent endpoint returns
+  the environment page and as ``resource`` in ``credentials.cfg``. The UAPI Agent endpoint returns
   it as ``instance_uri``.
 - Assign the identifier to existing environments, archived ones included, in a data migration.
   **The migration cannot be reversed.** Rolling ``vitrina_uapi`` back past ``0009`` would drop
   every identifier, and applying it again would issue new ones that no deployed agent knows.
 - Keep the stored identifier on every save. Reverting an environment in admin to a version saved before
-  this release would otherwise give it a new one, and the ``agent_id`` the agent already has would
+  this release would otherwise give it a new one, and the ``resource`` the agent already has would
   stop matching.
 - Stop admin deleting agents and agent environments; archive them instead, as the app already does.
   Recovering a deleted environment from a version saved before this release would issue a new

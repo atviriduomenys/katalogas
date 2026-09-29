@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 default=vitrina.uapi.utils.utils.generate_agent_instance_uri,
                 editable=False,
-                help_text="Spintos instancijos identifikatorius, sugeneruojamas sukuriant aplinką. Agentas jį naudoja kaip prieigos rakto `aud` reikšmę.",
+                help_text="Agento aplinkos identifikatorius, sugeneruojamas sukuriant aplinką. Naudojamas kaip prieigos rakto `aud` reikšmė.",
                 max_length=255,
                 unique=True,
                 verbose_name="Agento identifikatorius",

@@ -10,7 +10,7 @@ from vitrina.uapi.models import AgentEnvironment
 def keep_instance_uri(sender: type[AgentEnvironment], instance: AgentEnvironment, **kwargs: Any) -> None:
     """Keep the stored `instance_uri` on every save, raw ones included.
 
-    Spinta checks the `aud` claim against this value, so it must never change. Reverting a django-reversion
+    The agent checks the `aud` claim against this value, so it must never change. Reverting a django-reversion
     version bypasses `Model.save()`, and a version saved before the field existed would otherwise bring a
     freshly generated default.
     """

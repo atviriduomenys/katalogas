@@ -42,15 +42,15 @@ class AgentEnvAdmin(RevisionCommentVersionAdmin):
         "agent__title",
         "agent__organization__title",
         "environment",
-        "instance_uri",
+        "uri",
     ]
     list_display = ["environment", "agent"]
-    readonly_fields = ["synchronized_at", "is_last_sync_successful", "instance_uri", "oauth_client_id"]
+    readonly_fields = ["synchronized_at", "is_last_sync_successful", "uri", "oauth_client_id"]
     autocomplete_fields = ["agent"]
 
     def has_delete_permission(self, request: HttpRequest, obj: AgentEnvironment | None = None) -> bool:
         # Environments are archived, never deleted: the app has deletion switched off too. Recovering a
-        # deleted environment from a version saved before `instance_uri` existed would issue a new
+        # deleted environment from a version saved before the identifier existed would issue a new
         # identifier, and the `resource` a deployed agent holds would stop matching.
         return False
 

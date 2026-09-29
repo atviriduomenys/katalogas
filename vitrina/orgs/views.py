@@ -3009,7 +3009,7 @@ class ConfirmOrganizationMergeView(PermissionRequiredMixin, TemplateView):
             obj.provider = self.merge_organization
             obj.save()
 
-        # Merge Agent objects, their environments and `instance_uri` must survive the merge
+        # Merge Agent objects, their environments and `uri` must survive the merge
         for obj in self.organization.agent_set.all():
             obj.organization = self.merge_organization
             obj.save()

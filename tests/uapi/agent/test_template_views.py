@@ -4,6 +4,7 @@ import factory
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from django.test import override_settings
 from django.urls import reverse, resolve
 from django_webtest import DjangoTestApp
 from vitrina.uapi import AgentType
@@ -697,8 +698,46 @@ class TestAgentEnvDetail:
         assert response.status_code == HTTPStatus.OK
         assert response.context["agent_environment"] == agent_environment
         assert not response.context["secret"]
+
+    @override_settings(OAUTH_RESOURCE_URI="https://data.gov.lt/uapi/")
+    def test_credentials_point_to_catalog(
+        self,
+        app: DjangoTestApp,
+        representative_user: User,
+        organization: Organization,
+        agent_environment: AgentEnvironment,
+    ):
+        app.set_user(representative_user)
+
+        response = app.get(reverse("agent-env-detail", args=[organization.pk, agent_environment.pk]))
+
         credentials = response.html.find(id="credentials-text").get_text()
-        assert f"resource = {agent_environment.uri}\n" in credentials
+        assert "resource = https://data.gov.lt/uapi/\n" in credentials
+        assert "resource_server = http://testserver/uapi/\n" in credentials
+        assert f"client = {agent_environment.oauth_client_id}\n" in credentials
+        assert agent_environment.uri not in credentials
+        assert "client_id =" not in credentials
+        assert "organization" not in credentials
+
+    @override_settings(
+        OAUTH_SERVER_HOST="https://auth.example.com",
+        OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL="https://auth.example.com/keys",
+    )
+    def test_config_has_agent_environment_uri(
+        self,
+        app: DjangoTestApp,
+        representative_user: User,
+        organization: Organization,
+        agent_environment: AgentEnvironment,
+    ):
+        app.set_user(representative_user)
+
+        response = app.get(reverse("agent-env-detail", args=[organization.pk, agent_environment.pk]))
+
+        config = response.html.find(id="config-text").get_text()
+        assert f"resource: {agent_environment.uri}\n" in config
+        assert "token_issuer: https://auth.example.com\n" in config
+        assert "token_validation_keys_download_url: https://auth.example.com/keys\n" in config
 
     @pytest.mark.parametrize("is_archived_agent", [True, False])
     def test_archived_agent(

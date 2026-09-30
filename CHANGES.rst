@@ -34,8 +34,12 @@ https://github.com/atviriduomenys/katalogas/issues/2799
 - Give every agent environment an identifier, ``AgentEnvironment.uri``
   (``https://data.gov.lt/id/dcat/Agent/<uuid>``), for the agent to use as the ``aud`` claim instead of
   the client id. It is generated when the environment is created, never changes, and is shown on
-  the environment page and as ``resource`` in ``credentials.cfg``. The UAPI Agent endpoint returns
-  it as ``uri``.
+  the environment page and as ``resource`` in ``config.yml``. The UAPI Agent endpoint returns it as
+  ``uri``.
+- ``credentials.cfg`` now describes the Catalog as the resource server: ``resource`` is the new
+  ``OAUTH_RESOURCE_URI`` setting and ``resource_server`` points to ``/uapi/``. The unused ``client_id``,
+  ``organization`` and ``organization_type`` options are gone. ``config.yml`` is filled from the environment:
+  ``env``, ``resource``, ``token_issuer`` and ``token_validation_keys_download_url``.
 - Assign the identifier to existing environments, archived ones included, in a data migration.
   **The migration cannot be reversed.** Rolling ``vitrina_uapi`` back past ``0009`` would drop
   every identifier, and applying it again would issue new ones that no deployed agent knows.

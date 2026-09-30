@@ -58,6 +58,8 @@ OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_CACHE_TIMEOUT = int(
     env("OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_CACHE_TIMEOUT", default=7 * 24 * 60 * 60)
 )  # in seconds. Default - one week.
 OAUTH_SERVER_HOST = env("OAUTH_SERVER_HOST")
+# Catalog's own resource identifier, the `aud` of access tokens issued for it.
+OAUTH_RESOURCE_URI = env("OAUTH_RESOURCE_URI", default="https://data.gov.lt/uapi/")
 OAUTH_SERVER_CLIENTS_PATH = env("OAUTH_SERVER_CLIENTS_PATH", default="/auth/clients")
 OAUTH_SERVER_TOKEN_PATH = env("OAUTH_SERVER_TOKEN_PATH", default="/auth/token")
 OAUTH_SERVER_CLIENTS_URL = OAUTH_SERVER_HOST + OAUTH_SERVER_CLIENTS_PATH

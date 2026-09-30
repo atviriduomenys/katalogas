@@ -259,7 +259,9 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
                 "secret": self.request.session.pop("secret", None),
                 "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
                 "auth_server_host": settings.OAUTH_SERVER_HOST,
-                "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
+                "auth_server_keys_url": settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL,
+                "resource_server_url": f"{self.request.scheme}://{self.request.get_host()}/uapi/",
+                "resource_uri": settings.OAUTH_RESOURCE_URI,
                 "request_history": page.object_list,
             }
         )

@@ -142,11 +142,8 @@
                         <code id="credentials-text">
 [default]
 server = {{ auth_server_host }}
-resource_server = {{ resource_server_host }}
-organization = {{ organization.name }}
-organization_type = {{ organization.kind }}
-resource = {{ agent_environment.uri }}
-client_id = {{ agent_environment.oauth_client_id }}
+resource_server = {{ resource_server_url }}
+resource = {{ resource_uri }}
 client = {{ agent_environment.oauth_client_id }}
 secret = {{ secret|default:"******" }}
 scopes =
@@ -187,10 +184,26 @@ scopes =
                     </button>
                     <pre class="u-overflow-x">
                         <code id="config-text">
+env: {{ agent_environment.environment|lower }}
+resource: {{ agent_environment.uri }}
+token_issuer: {{ auth_server_host }}
+token_validation_keys_download_url: {{ auth_server_keys_url }}
+
 backends:
-    AR:
-        type: sql
-        dsn: sqlite:///sqlite.db
+  default:
+    type: memory
+
+manifest: default
+manifests:
+  default:
+    type: csv
+    path: manifest.csv
+    mode: external
+    backend: default
+
+accesslog:
+  type: file
+  file: accesslog.json
                         </code>
                     </pre>
                 </div>

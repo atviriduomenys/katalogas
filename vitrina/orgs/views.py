@@ -2942,7 +2942,9 @@ class ConfirmOrganizationMergeView(PermissionRequiredMixin, TemplateView):
                 _("Organizacijų sujungti negalima, nes abi turi agentų tokiais pačiais pavadinimais: %(agents)s.")
                 % {"agents": ", ".join(str(agent) for agent in clashing_agents)},
             )
-            return redirect(request.path)
+            return redirect(
+                reverse("confirm-organization-merge", args=[self.organization.pk, self.merge_organization.pk])
+            )
 
         with transaction.atomic():
             self._merge()

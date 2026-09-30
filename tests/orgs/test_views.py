@@ -38,6 +38,7 @@ from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
 from vitrina.smart_contracts.models import SmartContractTemplate
 from vitrina.uapi.factories import AgentEnvironmentFactory, AgentFactory
+from vitrina.uapi.models import AgentEnvironment
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -771,17 +772,19 @@ def test_organization_merge_moves_agents(app: DjangoTestApp):
     app.set_user(UserFactory(is_superuser=True))
     organization = OrganizationFactory()
     merge_organization = OrganizationFactory()
-    agent_environment = AgentEnvironmentFactory(agent__organization=organization)
-    uri = agent_environment.uri
+    agent_environment = AgentEnvironmentFactory(agent__organization=organization, agent__title="Aktyvus")
+    archived_agent_environment = AgentEnvironmentFactory(
+        agent__organization=organization, agent__title="Archyvuotas", agent__is_archived=True
+    )
+    uris = {agent_environment.uri, archived_agent_environment.uri}
 
     form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
         "confirm-merge-form"
     ]
     form.submit()
 
-    agent_environment.refresh_from_db()
-    assert agent_environment.agent.organization == merge_organization
-    assert agent_environment.uri == uri
+    environments = AgentEnvironment.objects.filter(agent__organization=merge_organization)
+    assert {environment.uri for environment in environments} == uris
 
 
 def test_organization_merge_refused_when_agent_codenames_clash(app: DjangoTestApp):

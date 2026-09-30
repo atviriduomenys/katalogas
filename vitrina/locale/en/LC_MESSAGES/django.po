@@ -4036,6 +4036,14 @@ msgstr "Delete scope"
 msgid "Organizacijų sujungimas"
 msgstr "Organization merge"
 
+#, python-format
+msgid ""
+"Organizacijų sujungti negalima, nes abi turi agentų tokiais pačiais "
+"pavadinimais: %(agents)s."
+msgstr ""
+"Organizations cannot be merged because both have agents with the same "
+"names: %(agents)s."
+
 msgid "Ryšiai su duomenų ištekliais"
 msgstr "Relations with resources"
 

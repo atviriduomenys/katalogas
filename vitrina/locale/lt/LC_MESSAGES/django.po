@@ -3723,6 +3723,12 @@ msgstr ""
 msgid "Organizacijų sujungimas"
 msgstr ""
 
+#, python-format
+msgid ""
+"Organizacijų sujungti negalima, nes abi turi agentų tokiais pačiais "
+"pavadinimais: %(agents)s."
+msgstr ""
+
 msgid "Ryšiai su duomenų ištekliais"
 msgstr ""
 

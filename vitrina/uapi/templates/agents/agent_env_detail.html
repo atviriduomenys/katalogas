@@ -140,10 +140,10 @@
                     </button>
                     <pre class="u-overflow-x">
                         <code id="credentials-text">
-[default]
-server = {{ auth_server_host }}
-resource_server = {{ resource_server_url }}
-resource = {{ resource_uri }}
+[katalogas]
+auth_server_url = {{ auth_server_url }}
+resource_server_url = {{ resource_server_url }}
+resource_server_id = {{ resource_server_id }}
 client = {{ agent_environment.oauth_client_id }}
 secret = {{ secret|default:"******" }}
 scopes =
@@ -185,8 +185,9 @@ scopes =
                     <pre class="u-overflow-x">
                         <code id="config-text">
 env: {{ agent_environment.environment|lower }}
-resource: {{ agent_environment.uri }}
-token_issuer: {{ auth_server_host }}
+resource_server_id: {{ agent_environment.uri }}
+auth_server_id: {{ auth_server_id }}
+auth_server_url: {{ auth_server_url }}
 token_validation_keys_download_url: {{ auth_server_keys_url }}
 
 backends:

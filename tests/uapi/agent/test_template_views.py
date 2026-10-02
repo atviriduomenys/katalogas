@@ -4,6 +4,7 @@ import factory
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from django.test import override_settings
 from django.urls import reverse, resolve
 from django_webtest import DjangoTestApp
 from vitrina.uapi import AgentType
@@ -13,6 +14,7 @@ from vitrina.uapi.models import Agent, RequestHistory, Environment, AgentEnviron
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
+from vitrina.uapi.utils.utils import AGENT_URI_PREFIX
 
 
 pytestmark = pytest.mark.django_db
@@ -454,6 +456,7 @@ class TestAgentEnvCreate:
         agent_environment = AgentEnvironment.objects.filter(agent=agent).first()
 
         assert agent_environment.oauth_client_id == mocked_id
+        assert agent_environment.uri.startswith(AGENT_URI_PREFIX)
         assert agent_environment.auth_server_url == data["auth_server_url"]
         assert agent_environment.api_gate_server_url == data["api_gate_server_url"]
         assert agent_environment.agent_address == data["agent_address"]
@@ -544,10 +547,14 @@ class TestAgentEnvUpdate:
             "agent_address": "https://agent2.example.com",
         }
 
-        response = app.post(url, data)
+        uri = agent_environment.uri
+
+        response = app.post(url, {**data, "uri": "https://example.com/other"})
 
         assert response.status_code == HTTPStatus.FOUND
         agent_environment.refresh_from_db()
+
+        assert agent_environment.uri == uri
 
         assert agent_environment.auth_server_url == data["auth_server_url"]
         assert agent_environment.api_gate_server_url == data["api_gate_server_url"]
@@ -691,6 +698,52 @@ class TestAgentEnvDetail:
         assert response.status_code == HTTPStatus.OK
         assert response.context["agent_environment"] == agent_environment
         assert not response.context["secret"]
+
+    @override_settings(OAUTH_SERVER_HOST="https://auth.example.com", OAUTH_RESOURCE_URI="https://data.gov.lt/uapi/")
+    def test_credentials_point_to_catalog(
+        self,
+        app: DjangoTestApp,
+        representative_user: User,
+        organization: Organization,
+        agent_environment: AgentEnvironment,
+    ):
+        app.set_user(representative_user)
+
+        response = app.get(reverse("agent-env-detail", args=[organization.pk, agent_environment.pk]))
+
+        credentials = response.html.find(id="credentials-text").get_text()
+        assert "[katalogas]\n" in credentials
+        assert "auth_server_url = https://auth.example.com\n" in credentials
+        assert "resource_server_url = http://testserver/uapi/\n" in credentials
+        assert "resource_server_id = https://data.gov.lt/uapi/\n" in credentials
+        assert f"client = {agent_environment.oauth_client_id}\n" in credentials
+        assert agent_environment.uri not in credentials
+        assert "[default]" not in credentials
+        assert "client_id =" not in credentials
+        assert "organization" not in credentials
+
+    @override_settings(
+        OAUTH_SERVER_ID="https://auth.example.com/id",
+        OAUTH_SERVER_HOST="https://auth.example.com",
+        OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL="https://auth.example.com/keys",
+    )
+    def test_config_has_agent_environment_uri(
+        self,
+        app: DjangoTestApp,
+        representative_user: User,
+        organization: Organization,
+        agent_environment: AgentEnvironment,
+    ):
+        app.set_user(representative_user)
+
+        response = app.get(reverse("agent-env-detail", args=[organization.pk, agent_environment.pk]))
+
+        config = response.html.find(id="config-text").get_text()
+        assert f"resource_server_id: {agent_environment.uri}\n" in config
+        assert "auth_server_id: https://auth.example.com/id\n" in config
+        assert "auth_server_url: https://auth.example.com\n" in config
+        assert "token_validation_keys_download_url: https://auth.example.com/keys\n" in config
+        assert "token_issuer" not in config
 
     @pytest.mark.parametrize("is_archived_agent", [True, False])
     def test_archived_agent(

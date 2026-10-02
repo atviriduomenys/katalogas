@@ -38,6 +38,11 @@
         </div>
 
         <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Agento identifikatorius" %}:</div>
+            <div class="column is-7"><code>{{ agent_environment.uri }}</code></div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Agento adresas" %}:</div>
             <div class="column is-7">{{ agent_environment.agent_address }}</div>
         </div>
@@ -135,12 +140,10 @@
                     </button>
                     <pre class="u-overflow-x">
                         <code id="credentials-text">
-[default]
-server = {{ auth_server_host }}
-resource_server = {{ resource_server_host }}
-organization = {{ organization.name }}
-organization_type = {{ organization.kind }}
-client_id = {{ agent_environment.oauth_client_id }}
+[katalogas]
+auth_server_url = {{ auth_server_url }}
+resource_server_url = {{ resource_server_url }}
+resource_server_id = {{ resource_server_id }}
 client = {{ agent_environment.oauth_client_id }}
 secret = {{ secret|default:"******" }}
 scopes =
@@ -181,10 +184,27 @@ scopes =
                     </button>
                     <pre class="u-overflow-x">
                         <code id="config-text">
+env: {{ agent_environment.environment|lower }}
+resource_server_id: {{ agent_environment.uri }}
+auth_server_id: {{ auth_server_id }}
+auth_server_url: {{ auth_server_url }}
+token_validation_keys_download_url: {{ auth_server_keys_url }}
+
 backends:
-    AR:
-        type: sql
-        dsn: sqlite:///sqlite.db
+  default:
+    type: memory
+
+manifest: default
+manifests:
+  default:
+    type: csv
+    path: manifest.csv
+    mode: external
+    backend: default
+
+accesslog:
+  type: file
+  file: accesslog.json
                         </code>
                     </pre>
                 </div>

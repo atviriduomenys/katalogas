@@ -34,6 +34,35 @@ https://github.com/atviriduomenys/katalogas/issues/1824
   instead, so the old portal's CMS pages went out unscrubbed, news items were scrubbed twice,
   and ``dataset`` added a ``description`` column to ``news_item`` in every dump.
 
+https://github.com/atviriduomenys/katalogas/issues/2799
+
+- Give every agent environment an identifier, ``AgentEnvironment.uri``
+  (``https://data.gov.lt/id/dcat/Agent/<uuid>``), for the agent to use as the ``aud`` claim instead of
+  the client id. It is generated when the environment is created, never changes, and is shown on
+  the environment page and as ``resource_server_id`` in ``config.yml``. The UAPI Agent endpoint returns
+  it as ``uri``.
+- The generated agent configuration uses the option names of Spinta (atviriduomenys/spinta#2048), which
+  keep identifiers apart from URLs. Agents need that Spinta release.
+
+  - ``credentials.cfg``: the section is ``[katalogas]`` (was ``[default]``). ``auth_server_url`` (was
+    ``server``), ``resource_server_url`` pointing to ``/uapi/`` (was ``resource_server``), and
+    ``resource_server_id``, the Catalog's identifier from the new ``OAUTH_RESOURCE_URI`` setting. The unused
+    ``client_id``, ``organization`` and ``organization_type`` options are gone.
+  - ``config.yml`` is filled from the environment: ``env``, ``resource_server_id``, ``auth_server_id``
+    (new ``OAUTH_SERVER_ID`` setting, defaults to ``OAUTH_SERVER_HOST``), ``auth_server_url`` and
+    ``token_validation_keys_download_url``.
+- Assign the identifier to existing environments, archived ones included, in a data migration.
+  **The migration cannot be reversed.** Rolling ``vitrina_uapi`` back past ``0009`` would drop
+  every identifier, and applying it again would issue new ones that no deployed agent knows.
+- Keep the stored identifier on every save. Reverting an environment in admin to a version saved before
+  this release would otherwise give it a new one, and the ``resource_server_id`` the agent already has would
+  stop matching.
+- Stop admin deleting agents and agent environments; archive them instead, as the app already does.
+  Recovering a deleted environment from a version saved before this release would issue a new
+  identifier. An organization that has agents can no longer be deleted in admin either, because
+  its agents would be deleted with it.
+- Move agents to the remaining organization when organizations are merged; they used to be deleted with
+  the merged one. A merge is refused if both organizations have active agents with the same codename.
 
 
 v 1.25.0 (2026-09-10)

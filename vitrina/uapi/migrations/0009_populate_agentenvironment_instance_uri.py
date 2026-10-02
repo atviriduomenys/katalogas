@@ -15,7 +15,7 @@ def assign_instance_uris(apps, schema_editor):
 
 def refuse_rollback(apps, schema_editor):
     # Rolling back past 0008 drops the column, and applying 0009 again would issue new identifiers.
-    # A deployed agent keeps the `resource` it was given, so its tokens would stop matching.
+    # A deployed agent keeps the `resource_server_id` it was given, so its tokens would stop matching.
     raise IrreversibleError(
         "vitrina_uapi.0009 cannot be reversed: AgentEnvironment.instance_uri is the `aud` of deployed agents, "
         "and a rollback would replace every identifier with a new one."

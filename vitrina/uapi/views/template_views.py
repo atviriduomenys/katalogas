@@ -258,8 +258,16 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
                 "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "secret": self.request.session.pop("secret", None),
                 "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
-                "auth_server_host": settings.OAUTH_SERVER_HOST,
-                "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
+                "auth_server_id": settings.OAUTH_SERVER_ID,
+                "auth_server_url": settings.OAUTH_SERVER_HOST,
+                # Without a path the URL is just the auth server host, see `vitrina.api.oauth`.
+                "auth_server_keys_url": (
+                    settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL
+                    if settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH
+                    else None
+                ),
+                "resource_server_url": f"{self.request.scheme}://{self.request.get_host()}/uapi/",
+                "resource_server_id": settings.OAUTH_RESOURCE_URI,
                 "request_history": page.object_list,
             }
         )

@@ -38,7 +38,8 @@ from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
 from vitrina.smart_contracts.models import SmartContractTemplate
 from vitrina.uapi.factories import AgentEnvironmentFactory, AgentFactory
-from vitrina.uapi.models import AgentEnvironment
+from vitrina.orgs.views import ConfirmOrganizationMergeView
+from vitrina.uapi.models import Agent, AgentEnvironment
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -799,6 +800,38 @@ def test_organization_merge_refused_when_agent_codenames_clash(app: DjangoTestAp
         "confirm-merge-form"
     ]
     resp = form.submit()
+
+    assert resp.url == reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])
+    assert Organization.objects.filter(pk=organization.pk).exists()
+    agent.refresh_from_db()
+    dataset.refresh_from_db()
+    assert agent.organization == organization
+    assert dataset.organization == organization
+
+
+def test_organization_merge_refused_when_agent_codenames_clash_after_check(app: DjangoTestApp):
+    app.set_user(UserFactory(is_superuser=True))
+    organization = OrganizationFactory()
+    merge_organization = OrganizationFactory()
+    agent = AgentFactory(organization=organization, title="Agentas")
+    AgentFactory(organization=merge_organization, title="Agentas")
+    dataset = DatasetFactory(organization=organization)
+    form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
+        "confirm-merge-form"
+    ]
+
+    # The clashing agent appears after the check, as if another request created it, so only the constraint catches it.
+    find_clashing_agents = ConfirmOrganizationMergeView.clashing_agents
+    calls = []
+
+    def clashing_agents_after_check(view: ConfirmOrganizationMergeView):
+        calls.append(view)
+        return Agent.objects.none() if len(calls) == 1 else find_clashing_agents(view)
+
+    with patch.object(
+        ConfirmOrganizationMergeView, "clashing_agents", autospec=True, side_effect=clashing_agents_after_check
+    ):
+        resp = form.submit()
 
     assert resp.url == reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])
     assert Organization.objects.filter(pk=organization.pk).exists()

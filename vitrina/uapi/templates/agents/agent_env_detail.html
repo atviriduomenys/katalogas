@@ -188,8 +188,8 @@ env: {{ agent_environment.environment|lower }}
 resource_server_id: {{ agent_environment.uri }}
 auth_server_id: {{ auth_server_id }}
 auth_server_url: {{ auth_server_url }}
-token_validation_keys_download_url: {{ auth_server_keys_url }}
-
+{% if auth_server_keys_url %}token_validation_keys_download_url: {{ auth_server_keys_url }}
+{% endif %}
 backends:
   default:
     type: memory

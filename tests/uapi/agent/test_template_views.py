@@ -725,6 +725,7 @@ class TestAgentEnvDetail:
     @override_settings(
         OAUTH_SERVER_ID="https://auth.example.com/id",
         OAUTH_SERVER_HOST="https://auth.example.com",
+        OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH="/keys",
         OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL="https://auth.example.com/keys",
     )
     def test_config_has_agent_environment_uri(
@@ -744,6 +745,23 @@ class TestAgentEnvDetail:
         assert "auth_server_url: https://auth.example.com\n" in config
         assert "token_validation_keys_download_url: https://auth.example.com/keys\n" in config
         assert "token_issuer" not in config
+
+    @override_settings(
+        OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH="", OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL="https://auth.example.com"
+    )
+    def test_config_without_jwk_download_path(
+        self,
+        app: DjangoTestApp,
+        representative_user: User,
+        organization: Organization,
+        agent_environment: AgentEnvironment,
+    ):
+        app.set_user(representative_user)
+
+        response = app.get(reverse("agent-env-detail", args=[organization.pk, agent_environment.pk]))
+
+        config = response.html.find(id="config-text").get_text()
+        assert "token_validation_keys_download_url" not in config
 
     @pytest.mark.parametrize("is_archived_agent", [True, False])
     def test_archived_agent(

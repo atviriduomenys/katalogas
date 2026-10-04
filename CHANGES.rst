@@ -44,8 +44,8 @@ https://github.com/atviriduomenys/katalogas/issues/2799
     ``resource_server_id``, the Catalog's identifier from the new ``OAUTH_RESOURCE_URI`` setting. The unused
     ``client_id``, ``organization`` and ``organization_type`` options are gone.
   - ``config.yml`` is filled from the environment: ``env``, ``resource_server_id``, ``auth_server_id``
-    (new ``OAUTH_SERVER_ID`` setting, defaults to ``OAUTH_SERVER_HOST``), ``auth_server_url`` and
-    ``token_validation_keys_download_url``.
+    (new ``OAUTH_SERVER_ID`` setting, defaults to ``OAUTH_SERVER_HOST``), ``auth_server_url`` and, when
+    ``OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH`` is set, ``token_validation_keys_download_url``.
 - Assign the identifier to existing environments, archived ones included, in a data migration.
   **The migration cannot be reversed.** Rolling ``vitrina_uapi`` back past ``0009`` would drop
   every identifier, and applying it again would issue new ones that no deployed agent knows.

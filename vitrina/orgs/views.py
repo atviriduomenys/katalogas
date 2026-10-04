@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q, Count, QuerySet, Case, When, IntegerField
 from django.forms import BaseForm
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponseBase
@@ -118,7 +118,7 @@ from vitrina.projects.services import get_projects
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import get_data_from_spinta
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import AGENT_CODENAME_CONSTRAINT, Agent
 from vitrina.users.forms import RepresentativeRegisterForm
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
@@ -2931,23 +2931,32 @@ class ConfirmOrganizationMergeView(PermissionRequiredMixin, TemplateView):
 
         return context
 
-    def post(self, request, *args, **kwargs):
+    def clashing_agents(self) -> QuerySet[Agent]:
         # Active agent codenames are unique per organization, so moving a clashing agent would fail midway.
-        clashing_agents = self.organization.agent_set.not_archived().filter(
+        return self.organization.agent_set.not_archived().filter(
             codename__in=self.merge_organization.agent_set.not_archived().values("codename")
         )
-        if clashing_agents.exists():
-            messages.error(
-                request,
-                _("Organizacijų sujungti negalima, nes abi turi agentų tokiais pačiais pavadinimais: %(agents)s.")
-                % {"agents": ", ".join(str(agent) for agent in clashing_agents)},
-            )
-            return redirect(
-                reverse("confirm-organization-merge", args=[self.organization.pk, self.merge_organization.pk])
-            )
 
-        with transaction.atomic():
-            self._merge()
+    def refuse_merge(self, request, clashing_agents: QuerySet[Agent]):
+        messages.error(
+            request,
+            _("Organizacijų sujungti negalima, nes abi turi agentų tokiais pačiais pavadinimais: %(agents)s.")
+            % {"agents": ", ".join(str(agent) for agent in clashing_agents)},
+        )
+        return redirect(reverse("confirm-organization-merge", args=[self.organization.pk, self.merge_organization.pk]))
+
+    def post(self, request, *args, **kwargs):
+        if (clashing_agents := self.clashing_agents()).exists():
+            return self.refuse_merge(request, clashing_agents)
+
+        try:
+            with transaction.atomic():
+                self._merge()
+        except IntegrityError as error:
+            # Another request may have created or renamed a clashing agent after the check above.
+            if AGENT_CODENAME_CONSTRAINT not in str(error):
+                raise
+            return self.refuse_merge(request, self.clashing_agents())
         return redirect(reverse("organization-detail", args=[self.merge_organization.pk]))
 
     def _merge(self) -> None:

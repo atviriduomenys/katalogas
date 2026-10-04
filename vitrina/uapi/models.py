@@ -8,6 +8,9 @@ from vitrina.uapi.utils.utils import generate_agent_uri
 from django.utils.translation import gettext_lazy as _
 
 
+AGENT_CODENAME_CONSTRAINT = "unique_name_and_organization_for_not_archived_agents"
+
+
 class NotArchivedAgentQueryset(models.QuerySet["Agent"]):
     def not_archived(self) -> models.QuerySet:
         return self.filter(is_archived=False)
@@ -51,7 +54,7 @@ class Agent(UUIDBaseModel):
             models.UniqueConstraint(
                 fields=["codename", "organization"],
                 condition=models.Q(is_archived=False),
-                name="unique_name_and_organization_for_not_archived_agents",
+                name=AGENT_CODENAME_CONSTRAINT,
             )
         ]
 

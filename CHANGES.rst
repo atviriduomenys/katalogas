@@ -20,6 +20,10 @@ https://github.com/atviriduomenys/katalogas/issues/2835
 
 - Open the IS metadata wizard to staff in the new "IS metaduomenų tvarkytojai" group.
 
+https://github.com/atviriduomenys/katalogas/issues/2812
+
+- Take the Saugykla data update date from the models under the distribution link, not from the
+  catalogue structure. A model renamed in Saugykla no longer leaves the date empty.
 
 
 v 1.26.0 (2026-09-30)

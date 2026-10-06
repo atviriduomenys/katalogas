@@ -1,9 +1,11 @@
 import logging
 import time
 from datetime import datetime
+from urllib.parse import urlparse
 
 import reversion
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -87,17 +89,32 @@ def _fetch_spinta_last_modified(distribution: DatasetDistribution) -> datetime |
         logger.debug("Distribution %d has no dataset, skipping.", distribution.pk)
         return None
 
-    models = distribution.dataset.model_set.all()
-    if not models.exists():
-        logger.debug("Distribution %d dataset has no models, skipping.", distribution.pk)
+    model_names = _model_names_from_url(distribution.download_url)
+    if model_names is None:
+        model_names = [model.full_name for model in distribution.dataset.model_set.all()]
+    if not model_names:
+        logger.debug("Distribution %d has no SPINTA models, skipping.", distribution.pk)
         return None
 
     latest: datetime | None = None
-    for model in models:
-        latest_model_datetime = _fetch_model_last_modified(model.full_name, distribution.pk)
+    for model_name in model_names:
+        latest_model_datetime = _fetch_model_last_modified(model_name, distribution.pk)
         if latest_model_datetime and (latest is None or latest_model_datetime > latest):
             latest = latest_model_datetime
     return latest
+
+
+def _model_names_from_url(url: str | None) -> list[str] | None:
+    parsed_url = urlparse(url or "")
+    path = parsed_url.path.strip("/").removesuffix("/:ns")
+    if not path or parsed_url.netloc != urlparse(settings.SPINTA_SERVER_URL).netloc:
+        return None
+    if path.rsplit("/", 1)[-1][:1].isupper():
+        return [path]
+    data = get_data_from_spinta(f"{path}/:ns", timeout=15)
+    if "errors" in data:
+        return None
+    return [item["name"] for item in data.get("_data", []) if not item["name"].endswith("/:ns")]
 
 
 def _fetch_model_last_modified(model_full_name: str, distribution_pk: int) -> datetime | None:

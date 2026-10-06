@@ -11,7 +11,8 @@ class AgentFactory(DjangoModelFactory):
         model = Agent
         django_get_or_create = ("organization", "title")
 
-    title = factory.Faker("word")
+    # Unique, so get_or_create never returns an agent created earlier with the same random word.
+    title = factory.Sequence(lambda n: f"agent-{n}")
     organization = factory.SubFactory(OrganizationFactory)
 
 

@@ -182,7 +182,7 @@ class LearningMaterial(models.Model):
     author_name = models.TextField(blank=True, null=True, verbose_name=_("Autorius"))
     published = models.DateField(blank=True, null=True, verbose_name=_("Publikavimo data"))
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
-    requested = models.IntegerField(blank=True, null=True)
+    requested = models.BooleanField(blank=True, null=True)
     image = FilerImageField(
         null=True,
         blank=True,

@@ -193,6 +193,17 @@ To log into adminer open http://localhost:9000/ in your browser and use credenti
     Password: secret
     Database: adp-dev
 
+Linting database migrations for backward-incompatibility (the same ``Lint migrations`` check that
+CI runs on pull requests) requires postgres to be running. It lints only the migrations
+added since the given base commit (pass your pull request's base branch)::
+
+    poetry run python manage.py lintmigrations --git-commit-id origin/devel --skip-checks
+
+A backward-incompatible migration (dropping/renaming a column, adding a NOT NULL column, etc.) makes
+the command exit non-zero. For a deliberate, reviewed exception, exempt a migration by name with
+``--ignore-name <migration_name>``.
+
+
 Scripts that are run periodically:
 
 - Script that adds holiday dates to database:

@@ -1,0 +1,53 @@
+name: 'Lint migrations'
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+concurrency:
+  group: lint-migrations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-migrations:
+    name: 'Lint migrations'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: adp-dev
+          POSTGRES_USER: adp
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U adp -d adp-dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Lint migrations
+        env:
+          DATABASE_URL: postgres://adp:secret@127.0.0.1:5432/adp-dev
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: poetry run python manage.py lintmigrations --git-commit-id "$BASE_SHA" --skip-checks

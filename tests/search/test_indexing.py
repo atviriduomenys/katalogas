@@ -13,7 +13,7 @@ from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.search import indexing
 from vitrina.search.indexing import dataset_index_queryset, index_dataset, rebuild
 from vitrina.search.models import DatasetSearchDoc, DatasetSearchFacet, RequestSearchDoc
-from vitrina.structure.factories import ModelFactory, PropertyFactory
+from vitrina.structure.factories import MetadataFactory, ModelFactory, PropertyFactory
 
 
 def _build_catalogue(count):
@@ -119,6 +119,15 @@ class TestSearchDataFollowsTheDatabase:
         dataset.save()
 
         assert not DatasetSearchDoc.objects.filter(pk=dataset.pk).exists()
+
+    def test_update_level_refreshes_the_level_facet(self):
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(dataset=dataset, object=model, level=4)
+
+        dataset.update_level()
+
+        assert DatasetSearchFacet.objects.get(dataset=dataset, field="level").value == "4"
 
     def test_request_save_writes_the_search_row(self):
         request = RequestFactory()

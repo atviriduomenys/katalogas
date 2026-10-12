@@ -1947,7 +1947,7 @@ class AddRequestView(
 ):
     model = Dataset
     form_class = AddRequestForm
-    template_name = "base_form.html"
+    template_name = "vitrina/datasets/request_add.html"
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get("pk"))

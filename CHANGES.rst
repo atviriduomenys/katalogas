@@ -4,6 +4,17 @@ Changes
 v 1.27.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/1824
+
+- Remove the one-time django-cms 5 upgrade machinery now that every environment has been through
+  it: ``scripts/migrate_djangocms.sh`` and the ``djangocms_upgrade_state`` command (the
+  entrypoints run ``migrate`` directly again), the ``DJANGOCMS_BLOG_MIGRATION`` switch, the local
+  copy of the ``djangocms-stories`` migrations, ``aldryn-apphooks-config``, and the migration
+  recipe, runbook and A/B tools in ``notes/migrations/djangocms/`` (they are kept in git history).
+- Keep one guard: ``migrate`` refuses a database that still has ``cms_title``, i.e. a django-cms 3
+  schema, such as a pre-upgrade backup restored by mistake.
+- ``scripts/anonymize.py`` only scrubs the ``djangocms-stories`` schema and refuses a pre-upgrade
+  or half-upgraded dump instead of shipping its legacy story text.
 
 
 v 1.26.0 (2026-09-30)

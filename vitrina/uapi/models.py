@@ -4,7 +4,11 @@ from functools import cached_property
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
 from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTPMethods, Environment
+from vitrina.uapi.utils.utils import generate_agent_uri
 from django.utils.translation import gettext_lazy as _
+
+
+AGENT_CODENAME_CONSTRAINT = "unique_name_and_organization_for_not_archived_agents"
 
 
 class NotArchivedAgentQueryset(models.QuerySet["Agent"]):
@@ -50,7 +54,7 @@ class Agent(UUIDBaseModel):
             models.UniqueConstraint(
                 fields=["codename", "organization"],
                 condition=models.Q(is_archived=False),
-                name="unique_name_and_organization_for_not_archived_agents",
+                name=AGENT_CODENAME_CONSTRAINT,
             )
         ]
 
@@ -118,6 +122,17 @@ class AgentEnvironment(UUIDBaseModel):
         blank=True,
         default="https://get.data.gov.lt/",
         help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys."),
+    )
+    uri = models.CharField(
+        verbose_name=_("Agento identifikatorius"),
+        max_length=255,
+        unique=True,
+        editable=False,
+        default=generate_agent_uri,
+        help_text=_(
+            "Agento aplinkos identifikatorius, sugeneruojamas sukuriant aplinką. "
+            "Naudojamas kaip prieigos rakto `aud` reikšmė."
+        ),
     )
     oauth_client_id = models.CharField(
         verbose_name=_("Autorizacijos kliento identifikatorius"),

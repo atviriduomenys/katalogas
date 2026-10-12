@@ -4036,6 +4036,14 @@ msgstr "Delete scope"
 msgid "Organizacijų sujungimas"
 msgstr "Organization merge"
 
+#, python-format
+msgid ""
+"Organizacijų sujungti negalima, nes abi turi agentų tokiais pačiais "
+"pavadinimais: %(agents)s."
+msgstr ""
+"Organizations cannot be merged because both have agents with the same "
+"names: %(agents)s."
+
 msgid "Ryšiai su duomenų ištekliais"
 msgstr "Relations with resources"
 
@@ -6834,6 +6842,16 @@ msgstr "Open data publish URL"
 
 msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
 msgstr "URL, where open data is published to"
+
+msgid "Agento identifikatorius"
+msgstr "Agent identifier"
+
+msgid ""
+"Agento aplinkos identifikatorius, sugeneruojamas sukuriant aplinką. "
+"Naudojamas kaip prieigos rakto `aud` reikšmė."
+msgstr ""
+"Agent environment identifier, generated when the environment is created. "
+"Used as the `aud` value of the access token."
 
 msgid "Autorizacijos kliento identifikatorius"
 msgstr "Authorization client identifier"

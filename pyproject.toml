@@ -104,7 +104,6 @@ django-browser-reload = "^1.10.0"
 requests-mock = "^1.12.1"
 ruff = "^0.12.10"
 djlint = "^1.36.4"
-django-migration-linter = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

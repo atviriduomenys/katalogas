@@ -799,10 +799,3 @@ TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]
 # so that vitrina.users comes before cms and vitrina.cms after djangocms_stories.
 CMS_CONFIRM_VERSION4 = True
 DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"
-
-try:
-    import django_migration_linter  # noqa: F401
-
-    INSTALLED_APPS += ["django_migration_linter"]
-except ImportError:
-    pass

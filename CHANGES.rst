@@ -4,11 +4,6 @@ Changes
 v 1.27.0 (current)
 ==================
 
-https://github.com/atviriduomenys/katalogas/issues/2728
-
-- Add ``django-migration-linter`` (dev dependency) and a ``Lint migrations`` GitHub Actions
-  workflow that runs on pull requests. It lints only the migrations a PR adds (relative to the
-  PR base commit) and fails on backward-incompatible schema changes.
 
 
 v 1.26.0 (2026-09-30)

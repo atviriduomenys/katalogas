@@ -50,7 +50,10 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
     else:
         raise ValueError(_("Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"))
 
-    parent_org: Organization = Organization.objects.filter(title=jurisdiction.name_lt).first()
+    parent_org: Organization = (
+        Organization.objects.filter(title=jurisdiction.name_lt).first()
+        or Organization.objects.filter(jurisdiction=jurisdiction, depth=1, numchild__gt=0).order_by("pk").first()
+    )
     if not parent_org:
         parent_org = Organization.add_root(
             title=jurisdiction.name_lt,

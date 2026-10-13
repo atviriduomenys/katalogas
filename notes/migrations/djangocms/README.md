@@ -12,6 +12,9 @@ istorijoje (PR #2646). Surasti:
 
     git log -- notes/migrations/djangocms/diegimas.md
 
+Paskutinės repeticijos (2026-09-21) rezultatai ir diegimo metu išaiškėję instrukcijos pataisymai — #1824
+komentaruose; pataisyta `diegimas.md` versija — nesujungtame #2802 (šaka `1824-cms4-tool-docs`).
+
 ## Nauja aplinka be duomenų
 
 Puslapių medį, kokį turi produkcija, ir naujienų (stories) konfigūraciją tuščioje bazėje sukuria:

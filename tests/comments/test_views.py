@@ -1255,3 +1255,15 @@ def test_model_comments_exported_together_with_base_model_comments(app: DjangoTe
     assert len(comments) == 2
     assert comment_base in comments
     assert comment_model in comments
+
+
+@pytest.mark.django_db
+def test_reply_hides_parent_author_name(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    author = UserFactory(first_name="Jonas", last_name="Jonaitis")
+    comment = CommentFactory(content_type=ct, object_id=dataset.pk, is_public=True, user=author)
+    CommentFactory(content_type=ct, object_id=dataset.pk, is_public=True, parent=comment)
+    resp = app.get(dataset.get_absolute_url()).follow()
+    assert "Jonaitis" not in resp.text
+    assert "Sistemos naudotojas" in resp.text

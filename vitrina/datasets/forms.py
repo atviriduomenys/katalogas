@@ -855,17 +855,12 @@ class AddProjectForm(forms.ModelForm):
 
 
 class AddRequestForm(forms.ModelForm):
-    search = forms.CharField(
-        label="",
-        required=False,
-        widget=forms.TextInput(attrs={"placeholder": _("Ieškoti poreikių...")}),
-    )
     requests = ModelMultipleChoiceField(
         label=_("Poreikiai"),
         queryset=None,
-        widget=forms.CheckboxSelectMultiple,
         required=True,
         help_text=_("Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų rinkinys."),
+        widget=Select2MultipleWidget(),
     )
 
     class Meta:
@@ -881,7 +876,6 @@ class AddRequestForm(forms.ModelForm):
         self.helper.form_id = "dataset-add-request-form"
         self.fields["requests"].queryset = get_requests(self.user, self.dataset)
         self.helper.layout = Layout(
-            Field("search"),
             Field("requests"),
             Submit("submit", _("Pridėti"), css_class="button is-primary"),
         )

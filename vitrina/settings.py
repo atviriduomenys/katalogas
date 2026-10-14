@@ -621,7 +621,6 @@ CONTENT_SECURITY_POLICY = {
             "https://cdnjs.cloudflare.com",  # CodeMirror
             "https://cdn.jsdelivr.net",  # Chart.js
             "https://unpkg.com",  # Leaflet
-            "https://www.googletagmanager.com",  # Google Tag Manager
         ],
         # TODO: drop 'unsafe-inline' once inline style attributes are removed.
         "style-src": [
@@ -636,10 +635,6 @@ CONTENT_SECURITY_POLICY = {
             "'self'",
             "https://www.google.com",  # reCAPTCHA
             "https://www.gstatic.com",  # reCAPTCHA
-            "https://www.googletagmanager.com",
-            "https://www.google-analytics.com",
-            "https://*.google-analytics.com",
-            "https://*.analytics.google.com",
         ],
         "frame-src": [
             "'self'",

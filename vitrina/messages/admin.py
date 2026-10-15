@@ -1,9 +1,14 @@
+import markdown
 from django.contrib import admin
+from django.core.mail import send_mail
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.messages.models import Subscription, EmailTemplate, SentMail
+from vitrina import settings
+from vitrina.helpers import logger
+from vitrina.messages.forms import MassMailAdminForm
+from vitrina.messages.models import Subscription, EmailTemplate, SentMail, MassMail
 from django.template import Template
 from vitrina.admin import RevisionCommentVersionAdmin
 
@@ -83,6 +88,64 @@ class SentMailAdmin(RevisionCommentVersionAdmin):
     email_content_shortened.short_description = _("Turinys")
 
 
+class MassMailAdmin(RevisionCommentVersionAdmin):
+    list_display = (
+        "send",
+        "recipient_group",
+        "email_subject",
+        "email_content_shortened",
+    )
+    ordering = ("-created",)
+    change_form_template = "vitrina/messages/admin/mass_mail_form.html"
+    list_editable = ("send",)
+    list_display_links = ("recipient_group",)
+    form = MassMailAdminForm
+
+    def email_content_shortened(self, obj):
+        if len(obj.email_content) >= 50:
+            return obj.email_content[:50] + "..."
+        else:
+            return obj.email_content
+
+    email_content_shortened.short_description = _("Turinys")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        if "send" in form.changed_data and obj.send:
+            recipients = [recipient.strip() for recipient in obj.recipients.split(",") if recipient.strip()]
+
+            try:
+                send_mail(
+                    subject=obj.email_subject,
+                    message=obj.email_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=recipients,
+                    html_message=markdown.markdown(obj.email_content),
+                )
+                email_send = True
+            except Exception as e:
+                logger.warning(
+                    "Email was not sent: subject=%s recipients=%s error=%s",
+                    obj.email_subject,
+                    recipients,
+                    e,
+                    exc_info=True,
+                )
+                email_send = False
+
+            SentMail.objects.create(
+                deleted=None,
+                deleted_on=None,
+                version=0,
+                recipient=list(recipients),
+                email_subject=obj.email_subject,
+                email_content=obj.email_content,
+                email_sent=email_send,
+            )
+
+
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(EmailTemplate, EmailTemplateAdmin)
 admin.site.register(SentMail, SentMailAdmin)
+admin.site.register(MassMail, MassMailAdmin)

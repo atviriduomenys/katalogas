@@ -38,6 +38,9 @@
             integrity="sha384-YAshAm4KKjf8V01c4sdNbPYiwU0D0Q82fjMHhKw8VvP0ecY4fxXsZAHxC4r4Ei+T"
             crossorigin="anonymous"></script>
     <script src="{% url 'javascript-catalog' %}"></script>
+    {% if umami_script_url and umami_website_id %}
+        <script defer src="{{ umami_script_url }}" data-website-id="{{ umami_website_id }}"></script>
+    {% endif %}
     {% include "component/favicon.html" %}
     {% block meta %}{% endblock %}
     {% block head %}{% endblock %}

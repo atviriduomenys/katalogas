@@ -73,3 +73,25 @@ services:
       - redis
       - postgres
     restart: always
+  umami:
+    image: ghcr.io/umami-software/umami:3.4.0
+    restart: always
+    init: true
+    environment:
+      DATABASE_URL: postgresql://umami:secret@umami-db:5432/umami
+      APP_SECRET: local-umami-secret
+    ports:
+      - 127.0.0.1:3000:3000
+    depends_on:
+      - umami-db
+
+  umami-db:
+    image: postgres:18
+    restart: always
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: secret
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - ./var/umami-postgres:/var/lib/postgresql/data

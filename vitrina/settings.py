@@ -15,6 +15,7 @@ import json
 import os
 import environ
 from pathlib import Path
+from urllib.parse import urlsplit
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 
@@ -234,6 +235,7 @@ TEMPLATES = [
                 "sekizai.context_processors.sekizai",
                 "cms.context_processors.cms_settings",
                 "vitrina.context_processors.current_domain",
+                "vitrina.context_processors.umami",
             ],
         },
     },
@@ -649,6 +651,15 @@ CONTENT_SECURITY_POLICY = {
         "form-action": ["'self'"],
     },
 }
+
+UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="")
+UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
+
+_umami_url = urlsplit(UMAMI_SCRIPT_URL)
+if _umami_url.netloc:
+    _umami_origin = f"{_umami_url.scheme}://{_umami_url.netloc}" if _umami_url.scheme else _umami_url.netloc
+    CONTENT_SECURITY_POLICY["DIRECTIVES"]["script-src"].append(_umami_origin)
+    CONTENT_SECURITY_POLICY["DIRECTIVES"]["connect-src"].append(_umami_origin)
 
 # --- Strict (nonce-based) CSP, currently shipped REPORT-ONLY ------------------------------------
 # The block above is the ENFORCED policy and still allows 'unsafe-inline'. Below we derive the

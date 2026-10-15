@@ -198,3 +198,42 @@ class NewsletterSubscriber(models.Model):
     class Meta:
         db_table = "newsletter_subscriber"
         constraints = [models.UniqueConstraint(Lower("email"), name="unique_lowercase_email")]
+
+
+class MassMail(models.Model):
+    ORGANIZATIONS = "organizations"
+    COORDINATORS = "coordinators"
+    REGISTERED_USERS = "registered_users"
+    SUBSCRIBERS = "subscribers"
+    OPEN_DATA_COORDINATORS = "open_data_coordinators"
+    OPEN_DATA_COORDINATORS_AND_MANAGERS = "open_data_coordinators_and_managers"
+    RESOURCE_COORDINATORS = "resource_coordinators"
+    RESOURCE_COORDINATORS_AND_MANAGERS = "resource_coordinators_and_managers"
+    RECIPIENT_GROUP_CHOICES = (
+        (ORGANIZATIONS, _("Visos institucijos")),
+        (COORDINATORS, _("Visi koordinatoriai")),
+        (REGISTERED_USERS, _("Visi prisiregistravę naudotojai")),
+        (SUBSCRIBERS, _("Visi prenumeratoriai")),
+        (OPEN_DATA_COORDINATORS, _("Visi atvirų duomenų koordinatoriai")),
+        (OPEN_DATA_COORDINATORS_AND_MANAGERS, _("Visi atvirų duomenų koordinatoriai ir tvarkytojai")),
+        (RESOURCE_COORDINATORS, _("Visi duomenų išteklių koordinatoriai")),
+        (RESOURCE_COORDINATORS_AND_MANAGERS, _("Visi duomenų išteklių koordinatoriai ir tvarkytojai")),
+    )
+
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    recipients = models.TextField(blank=True, null=True, verbose_name=_("Gavėjai"))
+    recipient_group = models.CharField(
+        blank=True, null=True, verbose_name=_("Gavėjų grupė"), max_length=255, choices=RECIPIENT_GROUP_CHOICES
+    )
+    email_subject = models.CharField(blank=True, null=True, verbose_name="Tema", max_length=255)
+    email_content = models.TextField(blank=True, null=True, verbose_name="Turinys")
+    send = models.BooleanField(verbose_name=_("Siųsti"), default=False)
+
+    class Meta:
+        managed = True
+        db_table = "mass_mail"
+        verbose_name = _("Masinis laiško siuntimas")
+        verbose_name_plural = _("Masinis laiškų siuntimas")
+
+    def __str__(self):
+        return self.email_subject or ""

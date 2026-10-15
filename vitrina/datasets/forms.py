@@ -122,14 +122,14 @@ class BaseResourceForm(TranslatableModelForm):
     )
     description = TranslatedField(required=True)
     files = MultipleFilerField(
-        label=_("Dokumentacija"),
+        label=_("Dokumento failas"),
         help_text=_("Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         upload_to=Dataset.UPLOAD_TO,
         allow_empty_file=True,
     )
     documentation = StringListField(
-        label=_("Dokumentacija"),
+        label=_("Nuoroda į dokumentaciją"),
         help_text=_("Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         unique=True,

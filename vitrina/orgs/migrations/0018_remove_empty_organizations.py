@@ -26,6 +26,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_orgs', '0017_alter_representative_role'),
+        ('vitrina_plans', '0004_alter_plandataset_dataset'),
+        ('vitrina_datasets', '0047_endpoint_description_multivalue'),
+        ('vitrina_projects', '0008_alter_project_uuid'),
     ]
 
     operations = [

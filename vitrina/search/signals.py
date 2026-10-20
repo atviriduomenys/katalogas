@@ -3,6 +3,7 @@ from copy import copy
 
 from django.db import transaction
 
+from vitrina.datasets.models import Dataset
 from vitrina.requests.models import RequestObject
 from vitrina.search.indexing import index_dataset, index_request
 
@@ -52,3 +53,21 @@ def index_dataset_on_save(sender, instance, **kwargs):
 
 def index_request_on_save(sender, instance, **kwargs):
     on_commit(lambda: _guarded(_reindex_request, "request", instance))
+
+
+def _reindex_datasets(datasets):
+    for dataset in datasets:
+        _guarded(_reindex_dataset, "dataset", dataset)
+
+
+def index_project_datasets_on_save(sender, instance, **kwargs):
+    on_commit(lambda: _reindex_datasets(instance.datasets.all()))
+
+
+def index_project_datasets_on_link(sender, instance, action, model, pk_set, **kwargs):
+    if action not in ("post_add", "post_remove"):
+        return
+    if isinstance(instance, Dataset):
+        on_commit(lambda: _reindex_datasets([instance]))
+    else:
+        on_commit(lambda: _reindex_datasets(Dataset.objects.filter(pk__in=pk_set)))

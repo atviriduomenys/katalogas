@@ -48,6 +48,7 @@ from vitrina.datasets.managers import (
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
+from vitrina.projects.models import Project
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem, Version
 from vitrina.users.models import User
@@ -870,8 +871,15 @@ class Dataset(Resource):
     def get_request_title_list(self) -> list[str]:
         return [request.title for request in self.dataset_request.all() if request.title]
 
+    def _public_projects(self) -> list[Project]:
+        return [
+            project
+            for project in self.project_set.all()
+            if project.is_public and project.status == Project.APPROVED and not project.deleted
+        ]
+
     def get_project_title_list(self) -> list[str]:
-        return [project.title for project in self.project_set.all()]
+        return [project.title for project in self._public_projects()]
 
     def get_resource_description(self) -> list[str]:
         return [dist.description for dist in self.datasetdistribution_set.all() if dist.description]
@@ -891,7 +899,7 @@ class Dataset(Resource):
         return [request.description for request in self.dataset_request.all() if request.description]
 
     def get_project_title_description(self) -> list[str]:
-        return [project.description for project in self.project_set.all()]
+        return [project.description for project in self._public_projects()]
 
     def get_all_groups(self):
         ids = (

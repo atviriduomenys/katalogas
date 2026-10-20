@@ -177,6 +177,37 @@
                     </div>
                 </div>
             </div>
+            {% if selected_filters %}
+            <div class="buttons">
+                <div class="control">
+                    <div class="tags">
+                        <span class="tag is-white is-medium has-text-dark">{% translate "Pasirinkta" %}:</span>
+                        {% for item in selected_filters %}
+                            <div class="tag is-rounded is-medium is-info is-light px-5 py-4">
+                                <span>
+                                    <span>{{ item.filter_title }}:</span>
+                                    <span class="has-text-weight-bold">
+                                        {% if item.filter_name == 'level' %}
+                                            {% for star in item.value|range %}
+                                                <i class="fas fa-star"></i>
+                                            {% endfor %}
+                                        {% else %}
+                                            {{ item.value }}
+                                        {% endif %}
+                                    </span>
+                                </span>
+                                <a href="{{ item.url }}" class="delete is-small ml-2"></a>
+                            </div>
+                        {% endfor %}
+                        <span class="tag is-white is-medium has-text-dark">
+                            <a href="{{ search_url }}{% if is_organization_list %}?selected_facets=organization_exact:{{ organization.pk }}{% endif %}">
+                                {% translate "Išvalyti visus" %}
+                            </a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             {% for row in rows %}
                 {% get_current_language as LANGUAGE_CODE %}
                 {% if row.dataset %}

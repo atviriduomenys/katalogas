@@ -32,6 +32,7 @@ from django.http import (
     HttpRequest,
     HttpResponseBase,
     Http404,
+    QueryDict,
 )
 from django.http.response import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -262,6 +263,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
         form = context.get("form")
         sorting = self.request.GET.get("sort", None)
         filter_args = (self.request, form, facet_fields)
+        q = form.cleaned_data.get("q", "")
         extra_context = {
             "filters": [
                 Filter(
@@ -376,7 +378,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
             ],
             "group_facet": update_facet_data(self.request, facet_fields, "groups", DatasetGroup),
             "selected_groups": get_selected_value(form, "groups", True, False),
-            "q": form.cleaned_data.get("q", ""),
+            "q": q,
         }
         search_query_dict = dict(self.request.GET.copy())
         if "query" in search_query_dict:
@@ -388,7 +390,8 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
             sort_query_dict.pop("sort")
         sort_query = urlencode(sort_query_dict, True)
 
-        if is_org_dataset_list(self.request):
+        is_organization_list = is_org_dataset_list(self.request)
+        if is_organization_list:
             url = reverse("organization-datasets", args=[self.organization.pk])
             extra_context["organization"] = self.organization
             extra_context["can_view_members"] = has_perm(
@@ -454,6 +457,59 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
         if self.request.GET.get("q") and not sorting:
             sorting = "sort-by-relevance"
         context["sort"] = sorting
+
+        organization_facet = f"organization_exact:{self.organization.pk}" if is_organization_list else None
+        selected_filters = []
+
+        for f in context["filters"]:
+            for item in f.items():
+                if not item.selected:
+                    continue
+
+                filter_url = item.url
+
+                if is_organization_list and organization_facet:
+                    query_params = QueryDict(filter_url.lstrip("?"), mutable=True)
+                    selected_facets = query_params.getlist("selected_facets")
+
+                    if organization_facet not in selected_facets:
+                        query_params.appendlist("selected_facets", organization_facet)
+
+                    filter_url = f"?{query_params.urlencode()}"
+
+                selected_filters.append(
+                    {
+                        "filter_title": f.title,
+                        "filter_name": f.name,
+                        "value": item.title,
+                        "url": filter_url,
+                    }
+                )
+
+        if q:
+            query_params = self.request.GET.copy()
+            query_params.pop("q", None)
+
+            if is_organization_list:
+                organization_facet = f"organization_exact:{self.organization.id}"
+                selected_facets = query_params.getlist("selected_facets")
+
+                if organization_facet not in selected_facets:
+                    query_params.appendlist("selected_facets", organization_facet)
+
+            selected_filters.insert(
+                0,
+                {
+                    "filter_title": _("Paieška"),
+                    "filter_name": "search",
+                    "value": q,
+                    "url": f"?{query_params.urlencode()}",
+                },
+            )
+
+        context["selected_filters"] = selected_filters
+        context["is_organization_list"] = is_organization_list
+
         return context
 
     def get_plan_url(self) -> str | None:

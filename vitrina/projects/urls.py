@@ -5,6 +5,7 @@ from vitrina.projects.views import (
     ProjectDetailView,
     ProjectCreateView,
     ProjectUpdateView,
+    ProjectReviewView,
     ProjectHistoryView,
     ProjectDatasetsView,
     RemoveDatasetView,
@@ -27,6 +28,7 @@ urlpatterns = [
     path("projects/<int:pk>", ProjectDetailView.as_view(), name="project-detail"),
     path("projects/add/", ProjectCreateView.as_view(), name="project-create"),
     path("projects/<int:pk>/change/", ProjectUpdateView.as_view(), name="project-update"),
+    path("projects/<int:pk>/review/", ProjectReviewView.as_view(), name="project-review"),
     path(
         "projects/<int:pk>/history/",
         ProjectHistoryView.as_view(),

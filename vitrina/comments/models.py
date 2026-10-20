@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
 from vitrina.requests.models import Request
+from vitrina.projects.models import Project
 from vitrina.structure.models import Metadata
 
 
@@ -154,6 +155,12 @@ class Comment(models.Model):
         else:
             body_text = self.body
         return body_text
+
+    @property
+    def status_change_text(self) -> str:
+        if self.type != self.STATUS or self.content_type.model != "project":
+            return ""
+        return f"{_('Būsena pakeista')}: {dict(Project.STATUSES).get(self.status, self.status)}"
 
     @staticmethod
     def get_statuses():

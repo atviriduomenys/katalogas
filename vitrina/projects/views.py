@@ -28,11 +28,13 @@ import requests
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.oauth import OAuthClientManagement
 from vitrina.api.services import get_auth_session
+from vitrina.comments.helpers import NEW_COMMENT, send_mail_and_create_tasks_for_subs
+from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
 from vitrina.orgs.forms import ProjectApiKeyRegenerateForm
 from vitrina.orgs.services import has_perm, Action, hash_api_key
-from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCreateForm
+from vitrina.projects.forms import ProjectForm, ProjectReviewForm, ClientCreateForm, ClientScopeCreateForm
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.smart_contracts import AgreementStatuses
@@ -42,6 +44,7 @@ from vitrina.tasks.models import Task
 from vitrina.views import HistoryView
 from vitrina.helpers import get_current_domain
 from vitrina.projects.services import (
+    can_manage_projects,
     can_update_project,
     can_view_project,
     get_projects,
@@ -72,6 +75,8 @@ class ProjectViewBaseMixin:
             {
                 "project": self.project,
                 "can_update_project": can_update_project(self.request.user, self.project),
+                "can_manage_projects": can_manage_projects(self.request.user),
+                "review_form": ProjectReviewForm(self.project),
                 "can_view_agreements": can_view_agreements(self.request.user, self.project),
                 "can_view_clients": can_view_clients(self.request.user, self.project),
                 "can_view_history": can_view_history(self.request.user, self.project),
@@ -233,6 +238,44 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         context_data = super().get_context_data(**kwargs)
         context_data["current_title"] = _("Panaudojimo atvejo redagavimas")
         return context_data
+
+
+class ProjectReviewView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, View):
+    def has_permission(self):
+        return can_manage_projects(self.request.user)
+
+    def post(self, request, pk):
+        form = ProjectReviewForm(self.project, request.POST)
+        if not form.is_valid():
+            messages.error(request, "\n".join(error[0] for error in form.errors.values()))
+            return redirect(self.project)
+
+        status = form.cleaned_data["status"]
+        comment = Comment.objects.create(
+            type=Comment.STATUS,
+            status=status,
+            body=form.cleaned_data["body"],
+            user=request.user,
+            content_type=ContentType.objects.get_for_model(self.project),
+            object_id=self.project.pk,
+            is_public=True,
+        )
+        self.project.status = status
+        self.project.save()
+        send_mail_and_create_tasks_for_subs(
+            NEW_COMMENT,
+            comment.content_type,
+            self.project.pk,
+            request.user,
+            f"{get_current_domain(request)}{self.project.get_absolute_url()}",
+            obj=self.project,
+            text=f"{comment.status_change_text}\n\n{comment.body}".strip(),
+        )
+        if status == Project.APPROVED:
+            messages.success(request, _("Panaudojimo atvejis patvirtintas"))
+        else:
+            messages.success(request, _("Panaudojimo atvejis atmestas"))
+        return redirect(self.project)
 
 
 class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):

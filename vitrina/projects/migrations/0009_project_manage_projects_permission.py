@@ -3,6 +3,11 @@
 from django.db import migrations
 
 GROUP_NAME = "Panaudojimo atvejų tvarkytojai"
+PERMISSIONS = [
+    ("manage_projects", "Gali tvarkyti panaudojimo atvejus"),
+    ("view_project", "Can view project"),
+    ("change_project", "Can change project"),
+]
 
 
 def create_group(apps, schema_editor):
@@ -11,13 +16,14 @@ def create_group(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
 
     content_type, _ = ContentType.objects.get_or_create(app_label="vitrina_projects", model="project")
-    permission, _ = Permission.objects.get_or_create(
-        content_type=content_type,
-        codename="manage_projects",
-        defaults={"name": "Gali tvarkyti panaudojimo atvejus"},
-    )
     group, _ = Group.objects.get_or_create(name=GROUP_NAME)
-    group.permissions.add(permission)
+    for codename, name in PERMISSIONS:
+        permission, _ = Permission.objects.get_or_create(
+            content_type=content_type,
+            codename=codename,
+            defaults={"name": name},
+        )
+        group.permissions.add(permission)
 
 
 def delete_group(apps, schema_editor):

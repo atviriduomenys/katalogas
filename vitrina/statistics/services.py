@@ -41,7 +41,7 @@ def _get_distributions():
 
 def _get_projects():
     return (
-        Project.objects.filter(datasets__pk__isnull=False)
+        Project.public.filter(datasets__pk__isnull=False)
         .annotate(date=F("created__date"), dataset_id=F("datasets__pk"))
         .values("date", "dataset_id")
         .annotate(count=Count("datasets"))

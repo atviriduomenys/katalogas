@@ -17,6 +17,7 @@ from django.views.generic import (
     View,
 )
 from django.views.generic.edit import DeleteView
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -28,7 +29,12 @@ import requests
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.oauth import OAuthClientManagement
 from vitrina.api.services import get_auth_session
-from vitrina.comments.helpers import NEW_COMMENT, send_mail_and_create_tasks_for_subs
+from vitrina.comments.helpers import (
+    NEW_COMMENT,
+    create_subscription,
+    create_task,
+    send_mail_and_create_tasks_for_subs,
+)
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
@@ -62,7 +68,7 @@ logger = logging.getLogger()
 
 class ProjectViewBaseMixin:
     def setup(self, request, *args, **kwargs):
-        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        self.project = get_object_or_404(Project.public, pk=kwargs["pk"])
         return super().setup(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -179,7 +185,7 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
 
 
 class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
-    model = Project
+    queryset = Project.public.all()
     form_class = ProjectForm
     template_name = "base_form.html"
 
@@ -203,9 +209,7 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         return can_update_project(self.request.user, project)
 
     def form_valid(self, form):
-        super().form_valid(form)
-        self.object = form.save(commit=True)
-        self.object.save()
+        self.object = form.save()
         sub_ct = ContentType.objects.get_for_model(self.object)
         subs = Subscription.objects.filter(
             sub_type=Subscription.PROJECT,
@@ -262,6 +266,8 @@ class ProjectReviewView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequ
         )
         self.project.status = status
         self.project.save()
+        create_task(NEW_COMMENT, comment.content_type, self.project.pk, request.user, obj=self.project)
+        create_subscription(request.user, comment)
         send_mail_and_create_tasks_for_subs(
             NEW_COMMENT,
             comment.content_type,
@@ -276,6 +282,40 @@ class ProjectReviewView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequ
         else:
             messages.success(request, _("Panaudojimo atvejis atmestas"))
         return redirect(self.project)
+
+
+class ProjectDeleteView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "confirm_delete.html"
+
+    def has_permission(self):
+        return can_manage_projects(self.request.user)
+
+    def dispatch(self, request, *args, **kwargs):
+        has_data_access = (
+            self.project.agreements.exists()
+            or ApiKey.objects.filter(project=self.project).exists()
+            or self.project.client_set.exists()
+        )
+        if self.has_permission() and has_data_access:
+            messages.error(
+                request,
+                _("Negalima ištrinti panaudojimo atvejo, kuris turi sutarčių, API raktų arba klientų."),
+            )
+            return redirect(self.project)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object"] = self.project
+        context["current_title"] = _("Panaudojimo atvejo ištrynimas")
+        return context
+
+    def post(self, request, pk):
+        self.project.deleted = True
+        self.project.deleted_on = timezone.now()
+        self.project.save()
+        messages.success(request, _("Panaudojimo atvejis ištrintas"))
+        return redirect("project-list")
 
 
 class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):

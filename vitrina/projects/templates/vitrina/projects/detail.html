@@ -34,11 +34,18 @@
                         </div>
                     </div>
                     <div class="level-right">
-                        {% if can_update_project %}
-                            <a href="{% url 'project-update' project.pk %}" class="button is-link">
-                                {% translate "Redaguoti" %}
-                            </a>
-                        {% endif %}
+                        <div class="buttons">
+                            {% if can_update_project %}
+                                <a href="{% url 'project-update' project.pk %}" class="button is-link">
+                                    {% translate "Redaguoti" %}
+                                </a>
+                            {% endif %}
+                            {% if can_manage_projects %}
+                                <a href="{% url 'project-delete' project.pk %}" class="button is-danger is-light">
+                                    {% translate "Ištrinti" %}
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="content">

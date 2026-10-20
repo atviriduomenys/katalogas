@@ -13,7 +13,12 @@ from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
-from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory, UseCaseClientScopeFactory
+from vitrina.projects.factories import (
+    ProjectFactory,
+    ProjectManagerFactory,
+    UseCaseClientFactory,
+    UseCaseClientScopeFactory,
+)
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory
@@ -253,7 +258,7 @@ def test_project_history_view_without_permission(app: DjangoTestApp):
 
 
 def test_project_history_view_with_permission(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
+    user = ProjectManagerFactory()
     project = ProjectFactory()
     app.set_user(user)
 

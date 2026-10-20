@@ -45,15 +45,21 @@ def get_projects(
     return queryset[:limit] if limit else queryset
 
 
+def can_manage_projects(user: User | AnonymousUser) -> bool:
+    if not user.is_authenticated:
+        return False
+    return user.is_superuser or (user.is_staff and user.has_perm("vitrina_projects.manage_projects"))
+
+
 def can_update_project(user: User | AnonymousUser, project: Project) -> bool:
     if not user.is_authenticated:
         return False
 
+    if can_manage_projects(user):
+        return True
+
     if project.organization:
         return project.organization == user.viisp_organization and user.is_representative_of(project.organization, True)
-
-    if user.is_staff or user.is_superuser:
-        return True
 
     return user == project.user
 

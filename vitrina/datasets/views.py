@@ -32,7 +32,6 @@ from django.http import (
     HttpRequest,
     HttpResponseBase,
     Http404,
-    QueryDict,
 )
 from django.http.response import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -145,6 +144,10 @@ from vitrina.helpers import (
     get_stats_filter_options_based_on_model,
     get_current_domain,
     build_page_title_context,
+    FilterItem,
+    get_value_title,
+    get_filter_url,
+    get_date_filter_url,
 )
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
@@ -460,29 +463,59 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
 
         organization_facet = f"organization_exact:{self.organization.pk}" if is_organization_list else None
         selected_filters = []
+        selected_facets = form.selected_facets
+        filters_by_name = {f.name: f for f in context["filters"]}
 
-        for f in context["filters"]:
-            for item in f.items():
-                if not item.selected:
-                    continue
+        for facet in selected_facets:
+            field_name, separator, value = facet.partition(":")
 
-                filter_url = item.url
+            if not separator:
+                continue
 
-                if is_organization_list and organization_facet:
-                    query_params = QueryDict(filter_url.lstrip("?"), mutable=True)
-                    selected_facets = query_params.getlist("selected_facets")
+            filter_obj = filters_by_name.get(field_name.removesuffix("_exact"))
+            if filter_obj is None:
+                continue
 
-                    if organization_facet not in selected_facets:
-                        query_params.appendlist("selected_facets", organization_facet)
+            if is_organization_list and facet == organization_facet:
+                continue
 
-                    filter_url = f"?{query_params.urlencode()}"
+            item = next(
+                (item for item in filter_obj.items() if str(item.value) == value),
+                None,
+            )
 
+            if item is None:
+                url = get_filter_url(self.request, filter_obj.name, value, True)
+                title = get_value_title(filter_obj, value)
+                item = FilterItem(
+                    title=title,
+                    value=value,
+                    count=0,
+                    url=url,
+                    selected=True,
+                )
+
+            selected_filters.append(
+                {
+                    "filter_title": filter_obj.title,
+                    "filter_name": filter_obj.name,
+                    "value": item.title,
+                    "url": item.url,
+                }
+            )
+
+        date_from = form.cleaned_data.get("date_from")
+        date_to = form.cleaned_data.get("date_to")
+        if date_from and date_to:
+            filter_obj = filters_by_name.get("published")
+
+            if filter_obj:
                 selected_filters.append(
                     {
-                        "filter_title": f.title,
-                        "filter_name": f.name,
-                        "value": item.title,
-                        "url": filter_url,
+                        "filter_title": filter_obj.title,
+                        "filter_name": filter_obj.name,
+                        "value": f"{date_from} – {date_to}",
+                        "url": get_date_filter_url(self.request, date_from, date_to, True),
                     }
                 )
 

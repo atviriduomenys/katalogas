@@ -202,6 +202,20 @@ To log into adminer open http://localhost:9000/ in your browser and use credenti
     Password: secret
     Database: adp-dev
 
+To use Umami analytics, open http://localhost:3000/ and log in as `admin` / `umami`. Add a website,
+then set these values in `.env`::
+
+    UMAMI_SCRIPT_URL=http://localhost:3000/script.js
+    UMAMI_WEBSITE_ID=<website id from Umami>
+
+Umami does not count visits from headless browsers.
+
+On test and prod, nginx serves Umami under `/analytics`. The official image cannot use a sub-path, so
+build the server image with the prefix::
+
+    docker build --build-arg BASE_PATH=/analytics -t umami-analytics:3.4.0 \
+        https://github.com/umami-software/umami.git#v3.4.0
+
 Scripts that are run periodically:
 
 - Script that adds holiday dates to database:
@@ -234,9 +248,6 @@ To set up a viisp social account provider:
 
     from cryptography.fernet import Fernet
     key = Fernet.generate_key()
-
-To use google analytics go to http://127.0.0.1:8000/admin/extra_settings/setting/ add setting GOOGLE_ANALYTICS_ID
-and set provided google analytics id.
 
 Testing
 *******

@@ -16,6 +16,7 @@ https://github.com/atviriduomenys/katalogas/issues/1824
   schema, such as a pre-upgrade backup restored by mistake.
 - ``scripts/anonymize.py`` only scrubs the ``djangocms-stories`` schema and refuses a pre-upgrade
   or half-upgraded dump instead of shipping its legacy story text.
+
 https://github.com/atviriduomenys/katalogas/issues/2835
 
 - Open the IS metadata wizard to staff in the new "IS metaduomenų tvarkytojai" group.
@@ -24,6 +25,16 @@ https://github.com/atviriduomenys/katalogas/issues/2812
 
 - Take the Saugykla data update date from the models under the distribution link, not from the
   catalogue structure. A model renamed in Saugykla no longer leaves the date empty.
+
+https://github.com/atviriduomenys/katalogas/issues/2825
+
+- Remove Google Analytics. The property belonged to a former employee, and the script set cookies
+  without consent. The ``GOOGLE_ANALYTICS_ID`` setting is no longer read.
+- Add self-hosted Umami analytics. It uses no cookies and sends no data to third parties. Set
+  ``UMAMI_SCRIPT_URL`` and ``UMAMI_WEBSITE_ID`` in ``.env`` to load the script; without them,
+  the script does not load. On test and prod, nginx serves Umami under ``/analytics``, from an
+  image built with ``BASE_PATH=/analytics`` (see ``README.rst``).
+
 
 
 v 1.26.0 (2026-09-30)

@@ -16,6 +16,10 @@ https://github.com/atviriduomenys/katalogas/issues/1824
   schema, such as a pre-upgrade backup restored by mistake.
 - ``scripts/anonymize.py`` only scrubs the ``djangocms-stories`` schema and refuses a pre-upgrade
   or half-upgraded dump instead of shipping its legacy story text.
+https://github.com/atviriduomenys/katalogas/issues/2835
+
+- Open the IS metadata wizard to staff in the new "IS metaduomenų tvarkytojai" group.
+
 
 
 v 1.26.0 (2026-09-30)

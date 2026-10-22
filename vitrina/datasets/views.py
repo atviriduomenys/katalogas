@@ -274,18 +274,14 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                 ),
                 Filter(
                     *filter_args,
-                    "level",
-                    _("Brandos lygis"),
-                    multiple=False,
-                    is_int=True,
-                ),
-                Filter(
-                    *filter_args,
                     "organization",
                     _("Duomenų skelbėjas"),
                     Organization,
                     multiple=True,
                     is_int=False,
+                    info=_("Duomenų skelbėjas - institucija atsakinga už duomenų publikavimą."),
+                    tab_group="organizations",
+                    group_title=_("Organizacija"),
                 ),
                 Filter(
                     *filter_args,
@@ -294,6 +290,9 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     Organization,
                     multiple=True,
                     is_int=False,
+                    info=_("Duomenų rengėjas - institucija atsakinga už duomenų sukūrimą."),
+                    tab_group="organizations",
+                    group_title=_("Organizacija"),
                 ),
                 Filter(
                     *filter_args,
@@ -303,6 +302,9 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     multiple=True,
                     is_int=False,
                     use_str=True,
+                    default_item_count=0,
+                    expand_text=_("Rodyti sąrašą"),
+                    collapse_text=_("Suskleisti sąrašą"),
                 ),
                 Filter(
                     *filter_args,
@@ -316,11 +318,21 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                 ),
                 Filter(
                     *filter_args,
-                    "groups",
-                    _("Grupė"),
-                    DatasetGroup,
+                    "formats",
+                    _("Formatas"),
+                    Format,
                     multiple=True,
                     is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    "tags",
+                    _("Žymė"),
+                    Dataset.tags.tag_model,
+                    multiple=True,
+                    is_int=False,
+                    use_str=True,
+                    default_item_count=0,
                 ),
                 Filter(
                     *filter_args,
@@ -332,12 +344,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                 ),
                 Filter(
                     *filter_args,
-                    "tags",
-                    _("Žymė"),
-                    Dataset.tags.tag_model,
-                    multiple=True,
-                    is_int=False,
-                    use_str=True,
+                    "level",
+                    _("Brandos lygis"),
+                    multiple=False,
+                    is_int=True,
                 ),
                 Filter(
                     *filter_args,
@@ -354,15 +364,6 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     _("Duomenų ištekliaus rūšis"),
                     choices=Dataset.FILTER_SUBCLASSES,
                     is_int=False,
-                    stats=False,
-                ),
-                Filter(
-                    *filter_args,
-                    "formats",
-                    _("Formatas"),
-                    Format,
-                    multiple=True,
-                    is_int=False,
                 ),
                 DateFilter(
                     self.request,
@@ -373,11 +374,55 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     multiple=False,
                     is_int=False,
                 ),
+                Filter(
+                    *filter_args,
+                    "groups",
+                    _("Grupė"),
+                    DatasetGroup,
+                    multiple=True,
+                    is_int=False,
+                    is_visible=False,
+                ),
             ],
             "group_facet": update_facet_data(self.request, facet_fields, "groups", DatasetGroup),
             "selected_groups": get_selected_value(form, "groups", True, False),
             "q": form.cleaned_data.get("q", ""),
         }
+
+        filter_groups = defaultdict(list)
+        sections = []
+
+        for f in extra_context["filters"]:
+            if not f.is_visible:
+                continue
+
+            if f.tab_group:
+                if f.tab_group not in filter_groups:
+                    group = {
+                        "type": "tabs",
+                        "name": f.tab_group,
+                        "filters": filter_groups[f.tab_group],
+                    }
+                    filter_groups[f.tab_group] = group["filters"]
+                    sections.append(group)
+
+                filter_groups[f.tab_group].append(f)
+            else:
+                sections.append({"type": "filter", "filter": f})
+        extra_context["filter_sections"] = sections
+
+        group_filter = next((f for f in extra_context["filters"] if f.name == "groups"), None)
+        hvd_group = (
+            next(
+                (item for item in group_filter.items() if item.title == "Didelės vertės rinkiniai"),
+                None,
+            )
+            if group_filter
+            else None
+        )
+        context["hvd_group_url"] = hvd_group.url if hvd_group else ""
+        context["hvd_group_selected"] = hvd_group.selected if hvd_group else False
+
         search_query_dict = dict(self.request.GET.copy())
         if "query" in search_query_dict:
             search_query_dict.pop("query")
@@ -2394,6 +2439,23 @@ class DatasetManagementsView(DatasetStatsMixin, DatasetListView):
             return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike")
 
 
+class DatasetSubclassView(DatasetStatsMixin, DatasetListView):
+    title = _("Duomenų ištekliaus rūšis")
+    current_title = _("Duomenų išteklių rūšys")
+    filter = "subclass"
+    filter_choices = Dataset.FILTER_SUBCLASSES
+
+    def get_graph_title(self, indicator):
+        if indicator == "level-average" or indicator == "object-count":
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio rūšį rinkinio įkėlimo datai")
+        else:
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio rūšį laike")
+
+    def get_display_value(self, item):
+        value = super().get_display_value(item)
+        return str(value)
+
+
 class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
     title = _("Brandos lygis")
     current_title = _("Duomenų rinkinių brandos lygiai")
@@ -3554,6 +3616,35 @@ class UpdateDatasetOrgFilters(DatasetFilterItemsView):
             items = []
             for item in filter[0].items():
                 if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {"filter_items": items}
+            context.update(extra_context)
+            return context
+
+
+class UpdateDatasetCreatorFilters(DatasetFilterItemsView):
+    template_name = "vitrina/datasets/creator_filter_items.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        term = self.request.GET.get("term")
+        if term and len(term) > 2:
+            facet_fields = context.get("facets").get("fields")
+            form = context.get("form")
+            filter_args = (self.request, form, facet_fields)
+            creator_filter = Filter(
+                *filter_args,
+                "creator",
+                _("Duomenų rengėjas"),
+                Organization,
+                multiple=True,
+                is_int=False,
+                remove_search_query=True,
+            )
+
+            items = []
+            for item in creator_filter.items():
+                if term.lower() in item.title.lower():
                     items.append(item)
             extra_context = {"filter_items": items}
             context.update(extra_context)

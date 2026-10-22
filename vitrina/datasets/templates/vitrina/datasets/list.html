@@ -110,6 +110,8 @@
                 </p>
             </form>
             <div class="buttons is-right">
+                <a href="{{ hvd_group_url }}" class="button {% if hvd_group_selected %} is-primary {% endif%} is-normal m-t-md is-size-6-mobile">{% translate "Didelės vertės rinkiniai" %}</a>
+
                 {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
                     <a href="{% url 'resource-subclass-add' pk=view.kwargs.pk %}"
                        id="add_dataset"
@@ -369,6 +371,15 @@
                 if (orgFilter.val().length !== 0) {
                     $('.organization_filter_items_body').html('').load(
                         "{% url 'update-dataset-org-filters' %}?q=" + orgFilter.val()
+                    );
+                }
+            });
+
+            let creatorFilter = $('#creator-filter-input');
+            creatorFilter.on('input', function(){
+                if (creatorFilter.val().length !== 0) {
+                    $('.creator_filter_items_body').html('').load(
+                        "{% url 'update-dataset-creator-filters' %}?term=" + creatorFilter.val()
                     );
                 }
             });

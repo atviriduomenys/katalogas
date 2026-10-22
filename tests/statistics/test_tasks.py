@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.statistics.models import DatasetStats
 from vitrina.structure.factories import ModelFactory
@@ -104,3 +105,20 @@ def test_create_dataset_stats_schedule_is_registered():
     from django_celery_beat.models import PeriodicTask
 
     assert PeriodicTask.objects.filter(task="vitrina.statistics.tasks.create_dataset_stats").exists()
+
+
+@pytest.mark.django_db
+def test_build_dataset_stats_resets_project_count_after_soft_delete():
+    from vitrina.statistics.services import build_dataset_stats
+
+    dataset = DatasetFactory()
+    project = ProjectFactory(datasets=[dataset])
+    with patch("vitrina.statistics.services.requests.get", side_effect=requests.RequestException):
+        build_dataset_stats()
+        assert DatasetStats.objects.get(dataset_id=dataset.pk, created=project.created.date()).project_count == 1
+
+        project.deleted = True
+        project.save()
+        build_dataset_stats()
+
+    assert DatasetStats.objects.get(dataset_id=dataset.pk, created=project.created.date()).project_count == 0

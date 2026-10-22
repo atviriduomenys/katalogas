@@ -4,6 +4,27 @@ Changes
 v 1.27.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2836
+
+- Add the "Panaudojimo atvejų tvarkytojai" group (``vitrina_projects.manage_projects``). Its staff
+  members edit, approve, reject and delete any use case. Plain staff can only view use cases now.
+- Approve or reject a use case with two buttons in the sidebar. A reject needs a comment. Approval
+  only marks the use case as reviewed and does not change "Matomas viešai", which the detail page
+  now shows. The author sees the decision as "Būsena pakeista: ..." in the comments and the email.
+- Stop the status change writing a copy of its comment on the request with the same id. Delete the
+  old copies once with ``2836-delete-stray-status-comments.py`` after the deploy.
+- Soft delete a use case from its page. A use case with agreements, API keys or clients cannot be
+  deleted. Restore a deleted use case with the admin action "Atkurti ištrintus panaudojimo
+  atvejus". The admin form does not edit ``deleted`` and ``deleted_on``, and a staff user with only
+  ``view_project`` cannot restore.
+- Do not create API keys for a deleted use case.
+- Keep deleted, hidden, rejected and not reviewed use cases out of the dataset search text, also
+  when a use case loses all its datasets. Run ``rebuild_search`` after the deploy.
+- Do not count deleted use cases in the dataset statistics, and set the count to 0 when the last
+  use case of a dataset is deleted.
+- Save a use case once per edit, and subscribe the reviewer to replies to the review comment.
+- Fix a 500 on a use case comment when the author has no organization.
+
 https://github.com/atviriduomenys/katalogas/issues/1824
 
 - Remove the one-time django-cms 5 upgrade machinery now that every environment has been through
@@ -16,6 +37,7 @@ https://github.com/atviriduomenys/katalogas/issues/1824
   schema, such as a pre-upgrade backup restored by mistake.
 - ``scripts/anonymize.py`` only scrubs the ``djangocms-stories`` schema and refuses a pre-upgrade
   or half-upgraded dump instead of shipping its legacy story text.
+
 https://github.com/atviriduomenys/katalogas/issues/2835
 
 - Open the IS metadata wizard to staff in the new "IS metaduomenų tvarkytojai" group.

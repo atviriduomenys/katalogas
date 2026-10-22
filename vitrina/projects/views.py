@@ -428,7 +428,7 @@ class ProjectPermissionsView(ProjectViewBaseMixin, PermissionRequiredMixin, Temp
 
 class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
     def dispatch(self, request, *args, **kwargs):
-        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        self.project = get_object_or_404(Project.public, pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -436,7 +436,7 @@ class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
 
     def get(self, request, **kwargs):
         project_id = kwargs.get("pk")
-        project = get_object_or_404(Project, pk=project_id)
+        project = self.project
         apikey = ApiKey.objects.filter(project_id=project_id).first()
         permissions = ["_getone", "_getall", "_search", "_changes"]
 

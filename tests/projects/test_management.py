@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.utils import timezone
@@ -221,6 +222,43 @@ def test_admin_restores_deleted_project(app: DjangoTestApp):
     project.refresh_from_db()
     assert not project.deleted
     assert project.deleted_on is None
+
+
+def test_view_only_staff_cannot_restore_project(app: DjangoTestApp):
+    project = ProjectFactory(deleted=True, deleted_on=timezone.now())
+    user = UserFactory(is_staff=True)
+    user.user_permissions.add(
+        Permission.objects.get(codename="view_project", content_type__app_label="vitrina_projects")
+    )
+    app.set_user(user)
+
+    resp = app.get(reverse("admin:vitrina_projects_project_changelist") + "?deleted__exact=1")
+
+    assert "restore_projects" not in resp.text
+    project.refresh_from_db()
+    assert project.deleted
+
+
+def test_admin_form_does_not_edit_deletion(app: DjangoTestApp):
+    project = ProjectFactory()
+    app.set_user(ProjectManagerFactory())
+
+    form = app.get(reverse("admin:vitrina_projects_project_change", args=[project.pk])).forms["project_form"]
+
+    assert "deleted" not in form.fields
+    assert "deleted_on" not in form.fields
+
+
+def test_deleted_project_gets_no_new_api_key(app: DjangoTestApp):
+    project = ProjectFactory(deleted=True, deleted_on=timezone.now())
+    app.set_user(UserFactory(is_superuser=True))
+
+    with patch("vitrina.projects.views.get_auth_session") as auth_session:
+        resp = app.get(reverse("project-permissions-create", args=[project.pk]), expect_errors=True)
+
+    assert resp.status_code == 404
+    assert not auth_session.called
+    assert not ApiKey.objects.filter(project=project).exists()
 
 
 @pytest.mark.parametrize(

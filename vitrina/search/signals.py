@@ -65,7 +65,11 @@ def index_project_datasets_on_save(sender, instance, **kwargs):
 
 
 def index_project_datasets_on_link(sender, instance, action, model, pk_set, **kwargs):
-    if action not in ("post_add", "post_remove"):
+    if action == "pre_clear" and not isinstance(instance, Dataset):
+        instance._cleared_dataset_pks = list(instance.datasets.values_list("pk", flat=True))
+    if action == "post_clear" and not isinstance(instance, Dataset):
+        pk_set = instance.__dict__.pop("_cleared_dataset_pks", [])
+    if action not in ("post_add", "post_remove", "post_clear"):
         return
     if isinstance(instance, Dataset):
         on_commit(lambda: _reindex_datasets([instance]))

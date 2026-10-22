@@ -10,11 +10,11 @@ class ProjectAdmin(RevisionCommentVersionAdmin):
     list_display = ("__str__", "status", "is_public", "deleted")
     list_filter = ("status", "is_public", "deleted")
     search_fields = ("title",)
-    readonly_fields = ("organization", "uuid")
+    readonly_fields = ("organization", "uuid", "deleted", "deleted_on")
     autocomplete_fields = ("datasets",)
     actions = ("restore_projects",)
 
-    @admin.action(description=_("Atkurti ištrintus panaudojimo atvejus"))
+    @admin.action(description=_("Atkurti ištrintus panaudojimo atvejus"), permissions=["change"])
     def restore_projects(self, request: WSGIRequest, queryset: QuerySet) -> None:
         for project in queryset.filter(deleted=True):
             project.deleted = None

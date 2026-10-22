@@ -227,3 +227,18 @@ def test_hidden_project_stays_out_of_dataset_search_text(hidden):
     text = DatasetSearchDoc.objects.get(dataset=dataset).text
     assert "Slaptas panaudojimas" not in text
     assert "Slaptas aprasymas" not in text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("clear_from", ["project", "dataset"])
+def test_cleared_project_link_leaves_dataset_search_text(clear_from):
+    dataset = DatasetFactory()
+    project = ProjectFactory(title="Atsietas panaudojimas", datasets=[dataset])
+    assert "Atsietas panaudojimas" in DatasetSearchDoc.objects.get(dataset=dataset).text
+
+    if clear_from == "project":
+        project.datasets.clear()
+    else:
+        Dataset.objects.get(pk=dataset.pk).project_set.clear()
+
+    assert "Atsietas panaudojimas" not in DatasetSearchDoc.objects.get(dataset=dataset).text

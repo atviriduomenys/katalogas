@@ -156,7 +156,7 @@ Then we can run:
 check queries the Site table before migrations run on a fresh database (a
 django-cms bootstrapping quirk).
 
-On an empty database, the page tree production has and the news (stories)
+On an empty database, the production page tree and the news (stories)
 configuration can be created with (pages are published as the superuser; pages
 whose slug already exists are left alone, so it is safe to run again):
 

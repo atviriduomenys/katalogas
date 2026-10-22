@@ -21,6 +21,18 @@ https://github.com/atviriduomenys/katalogas/issues/2835
 
 - Open the IS metadata wizard to staff in the new "IS metaduomenų tvarkytojai" group.
 
+https://github.com/atviriduomenys/katalogas/issues/2800
+
+- Stop the creation of duplicate parent organizations. The parent lookup used only an exact match
+  of the jurisdiction name, so a small difference in the title (for example two spaces) made a
+  second parent. Now the lookup also finds the parent group of the jurisdiction.
+- Move an organization to a new parent only when its jurisdiction changes. Before, each save of
+  the edit form moved the organization, and the organizations of one ministry divided between
+  two parents.
+- Do not select the organization that moves, or one of its children, as its new parent. A root
+  organization with children that changed to a jurisdiction without a parent group caused an error.
+- Sort the organization tree again after a title change.
+
 https://github.com/atviriduomenys/katalogas/issues/2812
 
 - Take the Saugykla data update date from the models under the distribution link, not from the

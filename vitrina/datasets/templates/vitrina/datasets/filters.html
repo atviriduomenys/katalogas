@@ -151,7 +151,7 @@
                 const safeStatsUrl = getSafeHref(statsUrl);
 
                 if (safeStatsUrl !== null) {
-                    $headingLink.attr('href', safeStatsUrl);
+                    $headingLink[0].setAttribute('href', safeStatsUrl);
                     $headingLink.removeClass('is-disabled');
                 } else {
                     $headingLink.removeAttr('href');

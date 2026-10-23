@@ -123,6 +123,7 @@
                         {% translate "Pridėti vaikinį duomenų išteklių" %}
                     </a>
                 {% endif %}
+                <a href="{{ hvd_group_url }}" class="button {% if hvd_group_selected %} is-primary {% endif%} is-normal m-t-md is-size-6-mobile">{% translate "Didelės vertės rinkiniai" %}</a>
                 <div class="dropdown is-hoverable is-block is-right">
                     <div class="dropdown-trigger">
                         <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
@@ -369,6 +370,15 @@
                 if (orgFilter.val().length !== 0) {
                     $('.organization_filter_items_body').html('').load(
                         "{% url 'update-dataset-org-filters' %}?q=" + orgFilter.val()
+                    );
+                }
+            });
+
+            let creatorFilter = $('#creator-filter-input');
+            creatorFilter.on('input', function(){
+                if (creatorFilter.val().length !== 0) {
+                    $('.creator_filter_items_body').html('').load(
+                        "{% url 'update-dataset-creator-filters' %}?term=" + creatorFilter.val()
                     );
                 }
             });

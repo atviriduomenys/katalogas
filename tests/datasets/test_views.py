@@ -275,6 +275,21 @@ class TestDatasetDetailView:
         resp = app.get(dataset_detail_data["dataset"].get_absolute_url()).follow()
         assert list(resp.context["resources"]) == [dataset_detail_data["dataset_distribution"]]
 
+    def test_dataset_detail_maturity_uses_get_level(self, app: DjangoTestApp):
+        from vitrina.structure.factories import MetadataFactory, ModelFactory
+
+        dataset = DatasetFactory()
+        dataset_metadata = dataset.metadata.first()
+        dataset_metadata.average_level = 2
+        dataset_metadata.save()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(dataset=dataset, object=model, average_level=5)
+
+        resp = app.get(dataset.get_absolute_url()).follow()
+
+        assert dataset.get_level() == 2
+        assert resp.context["data_maturity"] == 2
+
     def test_dataset_detail_description_url_not_double_linkified(self, app: DjangoTestApp):
         url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
         dataset = DatasetFactory(description=f"Duomenu pristatymas: {url}")

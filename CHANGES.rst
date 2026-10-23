@@ -1,7 +1,12 @@
 Changes
 #######
 
-v 1.27.0 (current)
+v 1.28.0 (current)
+==================
+
+
+
+v 1.27.0 (2026-10-23)
 ==================
 
 https://github.com/atviriduomenys/katalogas/issues/2836
@@ -94,6 +99,31 @@ https://github.com/atviriduomenys/katalogas/issues/2728
 - Add ``django-migration-linter`` (dev dependency) and a ``Lint migrations`` GitHub Actions
   workflow that runs on pull requests. It lints only the migrations a PR adds (relative to the
   PR base commit) and fails on backward-incompatible schema changes.
+
+https://github.com/atviriduomenys/katalogas/issues/1659
+
+- Fix a 500 when an admin saves a learning material. ``LearningMaterial.requested`` is a boolean
+  field now, not an integer field.
+
+https://github.com/atviriduomenys/katalogas/issues/2534
+
+- Search the requests in the "Pridėti poreikį" form of a dataset. The list is a searchable select
+  field now, not a long list of checkboxes.
+
+https://github.com/atviriduomenys/katalogas/issues/2560
+
+- The "Duomenų ištekliai" breadcrumb on the add dataset pages goes to the datasets of the
+  organization, not to the full dataset list.
+
+https://github.com/atviriduomenys/katalogas/issues/2518
+
+- Give the two "Dokumentacija" fields of the dataset form different titles: "Dokumento failas" for
+  the file and "Nuoroda į dokumentaciją" for the link.
+
+https://github.com/atviriduomenys/katalogas/issues/2717
+
+- Rename "Paskutinio atnaujinimo data" on the dataset page to "Paskutinio metaduomenų atnaujinimo
+  data". The date shows when the metadata changed, not the data.
 
 
 v 1.26.0 (2026-09-30)

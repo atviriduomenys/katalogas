@@ -867,6 +867,12 @@ msgstr "This field is required."
 msgid "Dokumentacija"
 msgstr "Documentation"
 
+msgid "Dokumento failas"
+msgstr "Document file"
+
+msgid "Nuoroda į dokumentaciją"
+msgstr "Link to documentation"
+
 msgid "Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."
 msgstr ""
 "This property refers to the document about this dataset. Corresponds to "
@@ -1923,6 +1929,12 @@ msgstr "Last update date"
 
 msgid "Kada paskutinį kartą buvo atnaujinti duomenys"
 msgstr "When the data was last updated"
+
+msgid "Paskutinio metaduomenų atnaujinimo data"
+msgstr "Last metadata update date"
+
+msgid "Kada paskutinį kartą buvo atnaujinti metaduomenys"
+msgstr "When the metadata was last updated"
 
 msgid "Naudojimo limitas"
 msgstr "Use limitation"

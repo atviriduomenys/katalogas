@@ -106,15 +106,18 @@
              if (!trimmedUrl) {
                  return false;
              }
-             if (trimmedUrl.startsWith('/') || trimmedUrl.startsWith('?') || trimmedUrl.startsWith('#')) {
+
+             // Allow query/hash-only navigation.
+             if (trimmedUrl.startsWith('?') || trimmedUrl.startsWith('#')) {
                  return true;
              }
-             try {
-                 const parsedUrl = new URL(trimmedUrl, window.location.origin);
-                 return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
-             } catch (e) {
-                 return false;
+
+             // Allow only same-origin relative paths and reject protocol-relative URLs.
+             if (trimmedUrl.startsWith('/')) {
+                 return !trimmedUrl.startsWith('//');
              }
+
+             return false;
          }
 
         $('.filter-tab-link').on('click', function (event) {

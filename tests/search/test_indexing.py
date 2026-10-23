@@ -191,3 +191,54 @@ def test_rebuild_keeps_every_row_readable_while_it_runs():
     assert seen, "the rebuild wrote nothing"
     for visible in seen:
         assert before <= visible, "a row went missing part way through the rebuild"
+
+
+@pytest.mark.django_db
+def test_soft_deleted_project_leaves_dataset_search_text():
+    dataset = DatasetFactory()
+    project = ProjectFactory(title="Unikalus panaudojimas", description="Ypatingas aprasymas", datasets=[dataset])
+    assert "Unikalus panaudojimas" in DatasetSearchDoc.objects.get(dataset=dataset).text
+
+    project.deleted = True
+    project.save()
+    text = DatasetSearchDoc.objects.get(dataset=dataset).text
+    assert "Unikalus panaudojimas" not in text
+    assert "Ypatingas aprasymas" not in text
+
+    project.deleted = None
+    project.save()
+    assert "Unikalus panaudojimas" in DatasetSearchDoc.objects.get(dataset=dataset).text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "hidden",
+    [
+        pytest.param({"is_public": False}, id="not-public"),
+        pytest.param({"status": "REJECTED"}, id="rejected"),
+        pytest.param({"status": "CREATED"}, id="not-reviewed"),
+    ],
+)
+def test_hidden_project_stays_out_of_dataset_search_text(hidden):
+    dataset = DatasetFactory()
+    ProjectFactory(title="Slaptas panaudojimas", description="Slaptas aprasymas", datasets=[dataset], **hidden)
+    index_dataset(Dataset.objects.get(pk=dataset.pk))
+
+    text = DatasetSearchDoc.objects.get(dataset=dataset).text
+    assert "Slaptas panaudojimas" not in text
+    assert "Slaptas aprasymas" not in text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("clear_from", ["project", "dataset"])
+def test_cleared_project_link_leaves_dataset_search_text(clear_from):
+    dataset = DatasetFactory()
+    project = ProjectFactory(title="Atsietas panaudojimas", datasets=[dataset])
+    assert "Atsietas panaudojimas" in DatasetSearchDoc.objects.get(dataset=dataset).text
+
+    if clear_from == "project":
+        project.datasets.clear()
+    else:
+        Dataset.objects.get(pk=dataset.pk).project_set.clear()
+
+    assert "Atsietas panaudojimas" not in DatasetSearchDoc.objects.get(dataset=dataset).text

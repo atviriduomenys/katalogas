@@ -98,26 +98,26 @@
             });
         });
 
-        function isSafeHref(url) {
+        function getSafeHref(url) {
             if (typeof url !== 'string') {
-                return false;
+                return null;
             }
 
             const trimmedUrl = url.trim();
 
             if (!trimmedUrl) {
-                return false;
+                return null;
             }
 
             if (trimmedUrl.startsWith('?') || trimmedUrl.startsWith('#')) {
-                return true;
+                return trimmedUrl;
             }
 
             if (trimmedUrl.startsWith('/')) {
-                return !trimmedUrl.startsWith('//');
+                return trimmedUrl.startsWith('//') ? null : trimmedUrl;
             }
 
-            return false;
+            return null;
         }
 
         $('.filter-tab-link').on('click', function (event) {
@@ -145,9 +145,10 @@
 
             if (hasStats) {
                 const statsUrl = $link.attr('data-stats-url');
+                const safeStatsUrl = getSafeHref(statsUrl);
 
-                if (isSafeHref(statsUrl)) {
-                    $headingLink.attr('href', statsUrl);
+                if (safeStatsUrl !== null) {
+                    $headingLink.attr('href', safeStatsUrl);
                     $headingLink.removeClass('is-disabled');
                 } else {
                     $headingLink.removeAttr('href');

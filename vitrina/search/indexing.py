@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import Exists, OuterRef, Prefetch
 from django.template.loader import render_to_string
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DatasetRelation
 from vitrina.requests.models import Request
 from vitrina.resources.models import DatasetDistribution
 from vitrina.search.models import (
@@ -125,6 +125,10 @@ def dataset_index_queryset():
                 ),
             ),
             Prefetch("dataset_request", queryset=Request.objects.prefetch_related("translations")),
+            Prefetch(
+                "dataset_relations",
+                queryset=DatasetRelation.objects.prefetch_related("relation"),
+            ),
         )
     )
 

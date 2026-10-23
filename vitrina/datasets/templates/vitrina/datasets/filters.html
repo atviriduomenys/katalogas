@@ -109,15 +109,18 @@
                 return null;
             }
 
-            if (trimmedUrl.startsWith('?') || trimmedUrl.startsWith('#')) {
-                return trimmedUrl;
-            }
+            try {
+                const parsed = new URL(trimmedUrl, window.location.origin);
 
-            if (trimmedUrl.startsWith('/')) {
-                return trimmedUrl.startsWith('//') ? null : trimmedUrl;
-            }
+                if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
+                    parsed.origin !== window.location.origin) {
+                    return null;
+                }
 
-            return null;
+                return parsed.pathname + parsed.search + parsed.hash;
+            } catch (e) {
+                return null;
+            }
         }
 
         $('.filter-tab-link').on('click', function (event) {

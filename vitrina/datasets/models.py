@@ -1184,6 +1184,11 @@ class Dataset(Resource):
             ).values_list("organization__pk", flat=True)
         )
 
+    def get_catalogs(self):
+        return list(
+            self.dataset_relations.filter(relation__name=Relation.CATALOG).values_list("part_of__pk", flat=True)
+        )
+
     def published_created_sort(self):
         return self.published or self.created
 

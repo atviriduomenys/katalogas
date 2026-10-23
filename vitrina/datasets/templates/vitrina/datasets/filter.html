@@ -101,7 +101,7 @@
           </div>
           </div>
       {% endfor %}
-        {% if filter.expand and filter.length > filter.default_item_count and filter.name != 'published' %}
+        {% if filter.expand and filter.length > filter.default_item_count %}
         <div>
            <a class="filters-more" id="filter-hidden-{{ forloop.counter }}" data-expand-text="{{ filter.expand_text }}" data-collapse-text="{{ filter.collapse_text }}">{{ filter.expand_text }}</a>
         </div>

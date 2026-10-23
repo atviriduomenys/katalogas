@@ -185,6 +185,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
         "type",
         "access_rights",
         "subclass",
+        "catalog",
     ]
     form_class = DatasetSearchForm
     facet_model = DatasetSearchFacet
@@ -336,11 +337,20 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                 ),
                 Filter(
                     *filter_args,
+                    "catalog",
+                    _("Metaduomenų katalogas"),
+                    Dataset,
+                    multiple=True,
+                    is_int=False,
+                    use_str=True,
+                ),
+                Filter(
+                    *filter_args,
                     "access_rights",
                     _("Prieigos teisės"),
                     choices=Dataset.FILTER_ACCESS_RIGHTS,
                     is_int=False,
-                    expand=False,
+                    default_item_count=0,
                 ),
                 Filter(
                     *filter_args,
@@ -348,6 +358,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     _("Brandos lygis"),
                     multiple=False,
                     is_int=True,
+                    default_item_count=0,
                 ),
                 Filter(
                     *filter_args,
@@ -357,6 +368,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     multiple=False,
                     is_int=True,
                     use_str=True,
+                    default_item_count=0,
                 ),
                 Filter(
                     *filter_args,
@@ -364,6 +376,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     _("Duomenų ištekliaus rūšis"),
                     choices=Dataset.FILTER_SUBCLASSES,
                     is_int=False,
+                    default_item_count=0,
                 ),
                 DateFilter(
                     self.request,
@@ -373,6 +386,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     _("Įkėlimo data"),
                     multiple=False,
                     is_int=False,
+                    default_item_count=0,
                 ),
                 Filter(
                     *filter_args,
@@ -2495,6 +2509,21 @@ class DatasetsCreatorsView(DatasetStatsMixin, DatasetListView):
             return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją rinkinio įkėlimo datai")
         else:
             return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike")
+
+
+class DatasetsCatalogsView(DatasetStatsMixin, DatasetListView):
+    title = _("Metaduomenų katalogas")
+    current_title = _("Metaduomenų katalogas")
+    filter = "catalog"
+    filter_model = Dataset
+
+    def get_graph_title(self, indicator):
+        if indicator == "level-average" or indicator == "object-count":
+            return _(
+                f"{self.get_title_for_indicator(indicator)} pagal rinkinio metaduomenų katalogą rinkinio įkėlimo datai"
+            )
+        else:
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio metaduomenų katalogą laike")
 
 
 class DatasetsTagsView(DatasetStatsMixin, DatasetListView):

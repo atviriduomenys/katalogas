@@ -46,6 +46,7 @@ DATASET_FACETS = {
     "type": lambda dataset: dataset.public_types(),
     "access_rights": lambda dataset: [dataset.access_rights],
     "subclass": lambda dataset: [dataset.subclass.name if dataset.subclass_id else None],
+    "catalog": lambda dataset: dataset.get_catalogs(),
 }
 
 

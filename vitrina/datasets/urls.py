@@ -65,6 +65,7 @@ from vitrina.datasets.views import (
     DatasetChildResourceCreateView,
     UpdateDatasetCreatorFilters,
     DatasetSubclassView,
+    DatasetsCatalogsView,
 )
 
 urlpatterns = [
@@ -171,6 +172,11 @@ urlpatterns = [
         "datasets/stats/creator/",
         DatasetsCreatorsView.as_view(),
         name="dataset-stats-creator",
+    ),
+    path(
+        "datasets/stats/catalog/",
+        DatasetsCatalogsView.as_view(),
+        name="dataset-stats-catalog",
     ),
     path(
         "orgs/<int:pk>/datasets/add/",

@@ -33,11 +33,16 @@
 
 {% for section in filter_sections %}
     {% if section.type == "tabs" %}
-        <nav class="category-panel mb-5 filter-tab-group" id="filter-group-{{ section.name }}">
-            {% with filter=section.filters.0 %}
-                <a id="filter-group-stats"
-                   href="{{ filter.get_stats_url }}"
-                   class="filter-group-heading-link">
+        <nav class="category-panel mb-5 filter-tab-group"
+             id="filter-group-{{ section.name }}">
+
+            {% for filter in section.filters %}
+                <a class="filter-group-heading-link {% if not forloop.first %}is-hidden{% endif %}"
+                   data-stats-tab-target="tab-{{ section.name }}-{{ filter.name }}"
+                   {% if filter.stats %}
+                       href="{% if 'selected_facets' in request.GET or not organization_id %}{{ filter.get_stats_url }}{% else %}{{ filter.get_stats_url }}&selected_facets=organization_exact:{{ organization_id|urlencode }}{% endif %}"
+                   {% endif %}
+                   {% if not filter.stats %}aria-disabled="true"{% endif %}>
                     <p class="category-panel-heading">
                         <span class="icon-text">
                             {% if filter.stats %}
@@ -51,16 +56,14 @@
                         </span>
                     </p>
                 </a>
-            {% endwith %}
-            <div class="tabs is-toggle is-fullwidth mb-0 mt-1 {% if 'stats' in request.path %} is-small {% endif %}">
+            {% endfor %}
+
+            <div class="tabs is-toggle is-fullwidth mb-0 mt-1 {% if 'stats' in request.path %}is-small{% endif %}">
                 <ul>
                     {% for filter in section.filters %}
                         <li class="{% if forloop.first %}is-active{% endif %}">
                             <a class="filter-tab-link"
-                               data-tab-target="tab-{{ section.name }}-{{ filter.name }}"
-                               data-filter-title="{{ filter.title }}"
-                               data-stats-url="{% if 'selected_facets' in request.GET or not organization_id %}{{ filter.get_stats_url }}{% else %}{{ filter.get_stats_url }}&selected_facets=organization_exact:{{ organization_id }}{% endif %}"
-                               data-has-stats="{{ filter.stats|yesno:'true,false' }}">
+                               data-tab-target="tab-{{ section.name }}-{{ filter.name }}">
                                 {{ filter.title }}
                             </a>
                         </li>
@@ -98,31 +101,6 @@
             });
         });
 
-        function getSafeHref(url) {
-            if (typeof url !== 'string') {
-                return null;
-            }
-
-            const trimmedUrl = url.trim();
-
-            if (!trimmedUrl) {
-                return null;
-            }
-
-            try {
-                const parsed = new URL(trimmedUrl, window.location.origin);
-
-                if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
-                    parsed.origin !== window.location.origin) {
-                    return null;
-                }
-
-                return parsed.pathname + parsed.search + parsed.hash;
-            } catch (e) {
-                return null;
-            }
-        }
-
         $('.filter-tab-link').on('click', function (event) {
             event.preventDefault();
 
@@ -135,32 +113,15 @@
 
             $container.find('.filter-tab-content').addClass('is-hidden');
 
-            const $target = $container.find('.filter-tab-content').filter(function () {
+            $container.find('.filter-tab-content').filter(function () {
                 return this.id === targetId;
-            });
+            }).removeClass('is-hidden');
 
-            if ($target.length) {
-                $target.removeClass('is-hidden');
-            }
+            $container.find('.filter-group-heading-link').addClass('is-hidden');
 
-            const hasStats = $link.attr('data-has-stats') === 'true';
-            const $headingLink = $container.find('#filter-group-stats');
-
-            if (hasStats) {
-                const statsUrl = $link.attr('data-stats-url');
-                const safeStatsUrl = getSafeHref(statsUrl);
-
-                if (safeStatsUrl !== null) {
-                    $headingLink[0].setAttribute('href', safeStatsUrl);
-                    $headingLink.removeClass('is-disabled');
-                } else {
-                    $headingLink.removeAttr('href');
-                    $headingLink.addClass('is-disabled');
-                }
-            } else {
-                $headingLink.removeAttr('href');
-                $headingLink.addClass('is-disabled');
-            }
+            $container.find('.filter-group-heading-link').filter(function () {
+                return $(this).attr('data-stats-tab-target') === targetId;
+            }).removeClass('is-hidden');
         });
     });
 </script>

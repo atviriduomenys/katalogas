@@ -99,52 +99,60 @@
         });
 
         function isSafeHref(url) {
-             if (typeof url !== 'string') {
-                 return false;
-             }
-             const trimmedUrl = url.trim();
-             if (!trimmedUrl) {
-                 return false;
-             }
+            if (typeof url !== 'string') {
+                return false;
+            }
 
-             // Allow query/hash-only navigation.
-             if (trimmedUrl.startsWith('?') || trimmedUrl.startsWith('#')) {
-                 return true;
-             }
+            const trimmedUrl = url.trim();
 
-             // Allow only same-origin relative paths and reject protocol-relative URLs.
-             if (trimmedUrl.startsWith('/')) {
-                 return !trimmedUrl.startsWith('//');
-             }
+            if (!trimmedUrl) {
+                return false;
+            }
 
-             return false;
-         }
+            if (trimmedUrl.startsWith('?') || trimmedUrl.startsWith('#')) {
+                return true;
+            }
+
+            if (trimmedUrl.startsWith('/')) {
+                return !trimmedUrl.startsWith('//');
+            }
+
+            return false;
+        }
 
         $('.filter-tab-link').on('click', function (event) {
             event.preventDefault();
 
             const $link = $(this);
             const $container = $link.closest('.filter-tab-group');
-            const targetId = $link.data('tab-target');
+            const targetId = $link.attr('data-tab-target');
 
             $container.find('.tabs li').removeClass('is-active');
             $link.parent('li').addClass('is-active');
 
             $container.find('.filter-tab-content').addClass('is-hidden');
-            $container.find('#' + targetId).removeClass('is-hidden');
+
+            const $target = $container.find('.filter-tab-content').filter(function () {
+                return this.id === targetId;
+            });
+
+            if ($target.length) {
+                $target.removeClass('is-hidden');
+            }
 
             const hasStats = $link.attr('data-has-stats') === 'true';
             const $headingLink = $container.find('#filter-group-stats');
 
             if (hasStats) {
                 const statsUrl = $link.attr('data-stats-url');
-                 if (isSafeHref(statsUrl)) {
-                     $headingLink.attr('href', statsUrl);
-                     $headingLink.removeClass('is-disabled');
-                 } else {
-                     $headingLink.removeAttr('href');
-                     $headingLink.addClass('is-disabled');
-                 }
+
+                if (isSafeHref(statsUrl)) {
+                    $headingLink.attr('href', statsUrl);
+                    $headingLink.removeClass('is-disabled');
+                } else {
+                    $headingLink.removeAttr('href');
+                    $headingLink.addClass('is-disabled');
+                }
             } else {
                 $headingLink.removeAttr('href');
                 $headingLink.addClass('is-disabled');

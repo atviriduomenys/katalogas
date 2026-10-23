@@ -98,6 +98,25 @@
             });
         });
 
+        function isSafeHref(url) {
+             if (typeof url !== 'string') {
+                 return false;
+             }
+             const trimmedUrl = url.trim();
+             if (!trimmedUrl) {
+                 return false;
+             }
+             if (trimmedUrl.startsWith('/') || trimmedUrl.startsWith('?') || trimmedUrl.startsWith('#')) {
+                 return true;
+             }
+             try {
+                 const parsedUrl = new URL(trimmedUrl, window.location.origin);
+                 return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+             } catch (e) {
+                 return false;
+             }
+         }
+
         $('.filter-tab-link').on('click', function (event) {
             event.preventDefault();
 
@@ -115,8 +134,14 @@
             const $headingLink = $container.find('#filter-group-stats');
 
             if (hasStats) {
-                $headingLink.attr('href', $link.attr('data-stats-url'));
-                $headingLink.removeClass('is-disabled');
+                const statsUrl = $link.attr('data-stats-url');
+                 if (isSafeHref(statsUrl)) {
+                     $headingLink.attr('href', statsUrl);
+                     $headingLink.removeClass('is-disabled');
+                 } else {
+                     $headingLink.removeAttr('href');
+                     $headingLink.addClass('is-disabled');
+                 }
             } else {
                 $headingLink.removeAttr('href');
                 $headingLink.addClass('is-disabled');

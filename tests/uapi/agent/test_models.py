@@ -1,9 +1,15 @@
+import json
+import uuid
+
 import pytest
+import reversion
+from reversion.models import Version
 from django.db import IntegrityError
 
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.uapi.models import Agent, AgentEnvironment, RequestHistory
 from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory, RequestHistoryFactory
+from vitrina.uapi.utils.utils import AGENT_URI_PREFIX
 from vitrina.datasets.factories import DatasetFactory
 
 
@@ -73,6 +79,64 @@ class TestAgentEnvironment:
         assert AgentEnvironment.objects.count() == 3
         assert AgentEnvironment.objects.not_archived().count() == 1
         assert AgentEnvironment.objects.not_archived().first() == agent_env_not_archived
+
+    def test_uri_generated_for_each_environment(self):
+        agent_env_1 = AgentEnvironmentFactory()
+        agent_env_2 = AgentEnvironmentFactory()
+
+        for agent_env in (agent_env_1, agent_env_2):
+            assert agent_env.uri.startswith(AGENT_URI_PREFIX)
+            uuid.UUID(agent_env.uri.removeprefix(AGENT_URI_PREFIX))
+        assert agent_env_1.uri != agent_env_2.uri
+
+    def test_uri_not_changed_on_save(self):
+        agent_env = AgentEnvironmentFactory()
+        uri = agent_env.uri
+
+        agent_env.is_enabled = False
+        agent_env.save()
+        agent_env.refresh_from_db()
+
+        assert agent_env.uri == uri
+
+    def test_uri_cannot_be_changed_on_save(self):
+        agent_env = AgentEnvironmentFactory()
+        uri = agent_env.uri
+
+        agent_env.uri = f"{AGENT_URI_PREFIX}{uuid.uuid4()}"
+        agent_env.save()
+        agent_env.refresh_from_db()
+
+        assert agent_env.uri == uri
+
+    # A version saved before 0008 has no identifier, one saved before 0011 has it as `instance_uri`.
+    @pytest.mark.parametrize("old_field_name", [None, "instance_uri"])
+    def test_uri_kept_when_old_version_reverted(self, old_field_name: str | None):
+        agent_env = AgentEnvironmentFactory(is_enabled=True)
+        uri = agent_env.uri
+        with reversion.create_revision():
+            agent_env.save()
+        version = Version.objects.get_for_object(agent_env).get()
+        serialized_data = json.loads(version.serialized_data)
+        fields = serialized_data[0]["fields"]
+        old_uri = fields.pop("uri")
+        if old_field_name:
+            fields[old_field_name] = old_uri
+        version.serialized_data = json.dumps(serialized_data)
+        version.save(update_fields=["serialized_data"])
+        AgentEnvironment.objects.filter(pk=agent_env.pk).update(is_enabled=False)
+
+        Version.objects.get(pk=version.pk).revert()
+        agent_env.refresh_from_db()
+
+        assert agent_env.is_enabled
+        assert agent_env.uri == uri
+
+    def test_uri_unique(self):
+        agent_env = AgentEnvironmentFactory()
+
+        with pytest.raises(IntegrityError):
+            AgentEnvironmentFactory(uri=agent_env.uri)
 
 
 class TestRequestHistory:

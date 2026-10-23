@@ -47,6 +47,11 @@ https://github.com/atviriduomenys/katalogas/issues/2825
   the script does not load. On test and prod, nginx serves Umami under ``/analytics``, from an
   image built with ``BASE_PATH=/analytics`` (see ``README.rst``).
 
+https://github.com/atviriduomenys/katalogas/issues/2822
+
+- Do not show the name of the parent comment author in a reply. The "Atsakymas į" line now uses
+  the same rule as the comment author, so a user without access sees "Sistemos naudotojas".
+
 
 
 v 1.26.0 (2026-09-30)

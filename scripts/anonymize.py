@@ -12,12 +12,12 @@ from tqdm import tqdm
 from typer import Argument, Option, confirm, echo, run
 
 
-_KEEP_PUBLIC_CONTENT = False
-
-
 # The djangocms-blog schema is gone; only an upgrade that stopped half way leaves it standing.
 STORY_CONTENT_TABLE = "djangocms_stories_postcontent"
 LEGACY_STORY_TABLE = "djangocms_blog_post_translation"
+
+# Their rows are still walked with --keep-public-content: drafts are scrubbed, and so are bylines in kept text.
+PUBLIC_CONTENT_TABLES = (STORY_CONTENT_TABLE, "news_item", "adp_cms_page")
 
 
 def _story_content_table(db: Database) -> str:
@@ -62,9 +62,6 @@ def main(
     restore it. So before using this command, make sure to pass correct database
     connection string.
     """
-    global _KEEP_PUBLIC_CONTENT
-    _KEEP_PUBLIC_CONTENT = keep_public_content
-
     if keep_public_content:
         echo(
             "WARNING! --keep-public-content leaves published article and page text as it is. "
@@ -134,7 +131,10 @@ def main(
     with pbar:
         for table in tables:
             func = sys.modules[__name__].__dict__[f"_anonymize_{table}"]
-            func(db, fake, pbar, users)
+            if keep_public_content and table in PUBLIC_CONTENT_TABLES:
+                func(db, fake, pbar, users, keep_public_content=True)
+            else:
+                func(db, fake, pbar, users)
 
     _scrub_story_plugins(db)
 
@@ -206,10 +206,10 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
         pbar.update(1)
 
 
-def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
+def _anonymize_story_content(db: Database, pbar: tqdm, table: str, keep_public_content: bool = False) -> None:
     objects: Table = db[table]
     pk_name = "id"
-    published = _published_story_content_ids(db) if _KEEP_PUBLIC_CONTENT else set()
+    published = _published_story_content_ids(db) if keep_public_content else set()
     for record in objects.all():
         if record[pk_name] in published:
             # Published article: keep the text, but strip the byline embedded in it.
@@ -265,17 +265,27 @@ def _scrub_story_plugins(db: Database) -> None:
 
 
 def _anonymize_djangocms_stories_postcontent(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
+    db: Database,
+    fake: Faker,
+    pbar: tqdm,
+    users: dict[str, dict[str, str | None]],
+    keep_public_content: bool = False,
 ) -> None:
     """Story text."""
-    _anonymize_story_content(db, pbar, STORY_CONTENT_TABLE)
+    _anonymize_story_content(db, pbar, STORY_CONTENT_TABLE, keep_public_content)
 
 
-def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+def _anonymize_news_item(
+    db: Database,
+    fake: Faker,
+    pbar: tqdm,
+    users: dict[str, dict[str, str | None]],
+    keep_public_content: bool = False,
+) -> None:
     objects: Table = db["news_item"]
     pk_name = "id"
     for record in objects.all():
-        if _KEEP_PUBLIC_CONTENT and record.get("is_public") and not record.get("deleted"):
+        if keep_public_content and record.get("is_public") and not record.get("deleted"):
             # Published item: keep the text, drop both byline columns and the byline
             # that the old news migration wrote into the text itself.
             data = {
@@ -299,11 +309,17 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
         pbar.update(1)
 
 
-def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+def _anonymize_adp_cms_page(
+    db: Database,
+    fake: Faker,
+    pbar: tqdm,
+    users: dict[str, dict[str, str | None]],
+    keep_public_content: bool = False,
+) -> None:
     objects: Table = db["adp_cms_page"]
     pk_name = "id"
     for record in objects.all():
-        if _KEEP_PUBLIC_CONTENT and record.get("published") and not record.get("deleted"):
+        if keep_public_content and record.get("published") and not record.get("deleted"):
             pbar.update(1)
             continue
         data = {

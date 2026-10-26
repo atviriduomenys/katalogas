@@ -1,14 +1,15 @@
 """--keep-public-content spares only what the site shows, and never the byline."""
 
+import inspect
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock
 
 import dataset
-import pytest
 from faker import Faker
 
 from scripts import anonymize
 from scripts.anonymize import (
+    PUBLIC_CONTENT_TABLES,
     STORY_CONTENT_TABLE,
     _anonymize_adp_cms_page,
     _anonymize_djangocms_stories_postcontent,
@@ -17,11 +18,6 @@ from scripts.anonymize import (
 
 NOW = datetime.now(timezone.utc).replace(tzinfo=None)
 BYLINE = "<p>Autorius: Jonas Jonaitis</p>"
-
-
-@pytest.fixture
-def keep_public_content(monkeypatch):
-    monkeypatch.setattr(anonymize, "_KEEP_PUBLIC_CONTENT", True)
 
 
 def _stories_database(path, posts):
@@ -63,7 +59,7 @@ def _titles(db):
     return {row["id"]: row["title"] for row in db[STORY_CONTENT_TABLE].all()}
 
 
-def test_only_stories_the_site_shows_keep_their_text(tmp_path, keep_public_content):
+def test_only_stories_the_site_shows_keep_their_text(tmp_path):
     db = _stories_database(
         tmp_path / "stories.db",
         [
@@ -75,15 +71,15 @@ def test_only_stories_the_site_shows_keep_their_text(tmp_path, keep_public_conte
         ],
     )
 
-    _anonymize_djangocms_stories_postcontent(db, Faker(), Mock(), {})
+    _anonymize_djangocms_stories_postcontent(db, Faker(), Mock(), {}, keep_public_content=True)
 
     assert _titles(db) == {1: "PUBLISHED", 2: "example", 3: "example", 4: "example", 5: "example"}
 
 
-def test_a_kept_story_loses_its_byline(tmp_path, keep_public_content):
+def test_a_kept_story_loses_its_byline(tmp_path):
     db = _stories_database(tmp_path / "stories.db", [("PUBLISHED", "published", None, None)])
 
-    _anonymize_djangocms_stories_postcontent(db, Faker(), Mock(), {})
+    _anonymize_djangocms_stories_postcontent(db, Faker(), Mock(), {}, keep_public_content=True)
 
     row = db[STORY_CONTENT_TABLE].find_one(id=1)
     assert row["post_text"] == "<p>Autorius: example, example</p><p>TEKSTAS</p>"
@@ -98,16 +94,16 @@ def test_without_the_flag_every_story_is_scrubbed(tmp_path):
     assert _titles(db) == {1: "example"}
 
 
-def test_without_versioning_no_story_counts_as_published(tmp_path, keep_public_content):
+def test_without_versioning_no_story_counts_as_published(tmp_path):
     db = _stories_database(tmp_path / "stories.db", [("PUBLISHED", "published", None, None)])
     db["djangocms_versioning_version"].drop()
 
-    _anonymize_djangocms_stories_postcontent(db, Faker(), Mock(), {})
+    _anonymize_djangocms_stories_postcontent(db, Faker(), Mock(), {}, keep_public_content=True)
 
     assert _titles(db) == {1: "example"}
 
 
-def test_a_public_news_item_keeps_its_text_but_not_its_author(tmp_path, keep_public_content):
+def test_a_public_news_item_keeps_its_text_but_not_its_author(tmp_path):
     db = dataset.connect(f"sqlite:///{tmp_path / 'news.db'}")
     common = {"body": f"{BYLINE}<p>NAUJIENA</p>", "summary": BYLINE, "author_name": "Ona Onaite", "author": "x"}
     db["news_item"].insert_many(
@@ -118,7 +114,7 @@ def test_a_public_news_item_keeps_its_text_but_not_its_author(tmp_path, keep_pub
         ]
     )
 
-    _anonymize_news_item(db, Faker(), Mock(), {})
+    _anonymize_news_item(db, Faker(), Mock(), {}, keep_public_content=True)
 
     rows = {row["id"]: row for row in db["news_item"].all()}
     assert [rows[pk]["title"] for pk in (1, 2, 3)] == ["PUBLIC", "example", "example"]
@@ -126,7 +122,7 @@ def test_a_public_news_item_keeps_its_text_but_not_its_author(tmp_path, keep_pub
     assert all(row["author_name"] == "example, example" and row["author"] is None for row in rows.values())
 
 
-def test_a_published_but_deleted_page_is_scrubbed(tmp_path, keep_public_content):
+def test_a_published_but_deleted_page_is_scrubbed(tmp_path):
     db = dataset.connect(f"sqlite:///{tmp_path / 'pages.db'}")
     common = {"body": "<p>TEKSTAS</p>", "description": "", "slug": "page"}
     db["adp_cms_page"].insert_many(
@@ -137,6 +133,12 @@ def test_a_published_but_deleted_page_is_scrubbed(tmp_path, keep_public_content)
         ]
     )
 
-    _anonymize_adp_cms_page(db, Faker(), Mock(), {})
+    _anonymize_adp_cms_page(db, Faker(), Mock(), {}, keep_public_content=True)
 
     assert [row["title"] for row in db["adp_cms_page"].all()] == ["PUBLISHED", "example", "example"]
+
+
+def test_every_public_content_table_takes_the_flag():
+    """main() passes keep_public_content to these by name, so a missing parameter is a crash."""
+    for table in PUBLIC_CONTENT_TABLES:
+        assert "keep_public_content" in inspect.signature(getattr(anonymize, f"_anonymize_{table}")).parameters

@@ -4318,6 +4318,8 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         title="Failas 1",
         description="Failas su prieigos nuoroda",
         format=FileFormat(
+            title="CSV",
+            extension="CSV",
             uri=f"{po}/file-type/CSV",
             media_type_uri=f"{iana}/media-types/text/csv",
         ),
@@ -4330,6 +4332,8 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         title="Failas 2",
         description="Failas be prieigos nuorodos",
         format=FileFormat(
+            title="JSON",
+            extension="JSON",
             uri=f"{po}/file-type/JSON",
             media_type_uri=f"{iana}/media-types/application/json",
         ),
@@ -4474,6 +4478,8 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         title="Failas 1",
         description="Failas su prieigos nuoroda",
         format=FileFormat(
+            title="CSV",
+            extension="CSV",
             uri=f"{po}/file-type/CSV",
             media_type_uri=f"{iana}/media-types/text/csv",
         ),
@@ -4486,6 +4492,8 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         title="Failas 2",
         description="Failas be prieigos nuorodos",
         format=FileFormat(
+            title="JSON",
+            extension="JSON",
             uri=f"{po}/file-type/JSON",
             media_type_uri=f"{iana}/media-types/application/json",
         ),

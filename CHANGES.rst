@@ -4,17 +4,14 @@ Changes
 v 1.28.0 (current)
 ==================
 
-DAS-643
+https://github.com/atviriduomenys/katalogas/pull/2769
 
-- Add ``--keep-public-content`` to ``scripts/anonymize.py``. It keeps published stories, news and
-  old portal pages readable, so that content can be reviewed on an anonymized copy; without it
-  every article becomes ``example``. A story counts as published when its version is published
-  and its post is inside the ``date_published`` window; drafts, scheduled, expired, non-public and
-  deleted rows are anonymized as before. Bylines are removed, including the
-  ``<p>Autorius: NAME</p>`` the old news migration wrote into the article text. The kept text is
-  not scanned, so the command warns that it can still contain personal data an editor typed in.
-  Default behaviour is unchanged.
-- Clear ``news_item.author`` too. It was never anonymized.
+- Add ``--keep-public-content`` to ``scripts/anonymize.py``. It keeps the text of published
+  stories, news and old portal pages, so content can be reviewed on an anonymized copy. Drafts,
+  scheduled, expired, non-public and deleted rows are anonymized as before.
+- Remove bylines in both modes, including the ``<p>Autorius: NAME</p>`` in the article text. The
+  kept text is not scanned for personal data, and the command warns about it.
+- Clear ``news_item.author``. It was never anonymized.
 
 
 v 1.27.0 (2026-10-23)

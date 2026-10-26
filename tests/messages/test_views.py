@@ -18,7 +18,7 @@ from vitrina.messages.models import Subscription, NewsletterSubscriber
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
 from vitrina.projects.models import Project
-from vitrina.projects.factories import ProjectFactory
+from vitrina.projects.factories import ProjectFactory, ProjectManagerFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory
@@ -490,7 +490,7 @@ def test_project_update_subscription_email(app: DjangoTestApp, subscription_data
 
     assert len(mail.outbox) == 1
 
-    staff_user = UserFactory(is_staff=True)
+    staff_user = ProjectManagerFactory()
     app.set_user(staff_user)
     project = subscription_data["project"]
 

@@ -113,6 +113,7 @@ class Organization(MP_Node):
 
     class Meta:
         db_table = "organization"
+        permissions = [("manage_is_metadata", _("Gali tvarkyti IS metaduomenis"))]
 
     def __str__(self):
         return self.title

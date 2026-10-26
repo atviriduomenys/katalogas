@@ -1,9 +1,129 @@
 Changes
 #######
 
-v 1.27.0 (current)
+v 1.28.0 (current)
 ==================
 
+
+
+v 1.27.0 (2026-10-23)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2836
+
+- Add the "Panaudojimo atvejų tvarkytojai" group (``vitrina_projects.manage_projects``). Its staff
+  members edit, approve, reject and delete any use case. Plain staff can only view use cases now.
+- Approve or reject a use case with two buttons in the sidebar. A reject needs a comment. Approval
+  only marks the use case as reviewed and does not change "Matomas viešai", which the detail page
+  now shows. The author sees the decision as "Būsena pakeista: ..." in the comments and the email.
+- Stop the status change writing a copy of its comment on the request with the same id. Delete the
+  old copies once with ``2836-delete-stray-status-comments.py`` after the deploy.
+- Soft delete a use case from its page. A use case with agreements, API keys or clients cannot be
+  deleted. Restore a deleted use case with the admin action "Atkurti ištrintus panaudojimo
+  atvejus". The admin form does not edit ``deleted`` and ``deleted_on``, and a staff user with only
+  ``view_project`` cannot restore.
+- Do not create API keys for a deleted use case.
+- Keep deleted, hidden, rejected and not reviewed use cases out of the dataset search text, also
+  when a use case loses all its datasets. Run ``rebuild_search`` after the deploy.
+- Do not count deleted use cases in the dataset statistics, and set the count to 0 when the last
+  use case of a dataset is deleted.
+- Save a use case once per edit, and subscribe the reviewer to replies to the review comment.
+- Fix a 500 on a use case comment when the author has no organization.
+
+https://github.com/atviriduomenys/katalogas/issues/1824
+
+- Remove the one-time django-cms 5 upgrade machinery now that every environment has been through
+  it: ``scripts/migrate_djangocms.sh`` and the ``djangocms_upgrade_state`` command (the
+  entrypoints run ``migrate`` directly again), the ``DJANGOCMS_BLOG_MIGRATION`` switch, the local
+  copy of the ``djangocms-stories`` migrations, ``aldryn-apphooks-config``, and the whole
+  ``notes/migrations/djangocms/`` folder (kept in git history). How to seed the page tree on an
+  empty database with ``scripts/create_pages.py`` moved to ``README.rst``.
+- Keep one guard: ``migrate`` refuses a database that still has ``cms_title``, i.e. a django-cms 3
+  schema, such as a pre-upgrade backup restored by mistake.
+- ``scripts/anonymize.py`` only scrubs the ``djangocms-stories`` schema and refuses a pre-upgrade
+  or half-upgraded dump instead of shipping its legacy story text.
+
+https://github.com/atviriduomenys/katalogas/issues/2835
+
+- Open the IS metadata wizard to staff in the new "IS metaduomenų tvarkytojai" group.
+
+https://github.com/atviriduomenys/katalogas/issues/2800
+
+- Stop the creation of duplicate parent organizations. The parent lookup used only an exact match
+  of the jurisdiction name, so a small difference in the title (for example two spaces) made a
+  second parent. Now the lookup also finds the parent group of the jurisdiction.
+- Move an organization to a new parent only when its jurisdiction changes. Before, each save of
+  the edit form moved the organization, and the organizations of one ministry divided between
+  two parents.
+- Do not select the organization that moves, or one of its children, as its new parent. A root
+  organization with children that changed to a jurisdiction without a parent group caused an error.
+- Sort the organization tree again after a title change.
+
+https://github.com/atviriduomenys/katalogas/issues/2812
+
+- Take the Saugykla data update date from the models under the distribution link, not from the
+  catalogue structure. A model renamed in Saugykla no longer leaves the date empty.
+
+https://github.com/atviriduomenys/katalogas/issues/2825
+
+- Remove Google Analytics. The property belonged to a former employee, and the script set cookies
+  without consent. The ``GOOGLE_ANALYTICS_ID`` setting is no longer read.
+- Add self-hosted Umami analytics. It uses no cookies and sends no data to third parties. Set
+  ``UMAMI_SCRIPT_URL`` and ``UMAMI_WEBSITE_ID`` in ``.env`` to load the script; without them,
+  the script does not load. On test and prod, nginx serves Umami under ``/analytics``, from an
+  image built with ``BASE_PATH=/analytics`` (see ``README.rst``).
+
+https://github.com/atviriduomenys/katalogas/issues/2822
+
+- Do not show the name of the parent comment author in a reply. The "Atsakymas į" line now uses
+  the same rule as the comment author, so a user without access sees "Sistemos naudotojas".
+
+https://github.com/atviriduomenys/katalogas/issues/2726
+
+- Show the same maturity level ("brandos lygis") in the filter, the dataset list, the dataset page
+  and the structure description. The old code truncated the dataset level (3.75 became 3), rounded
+  the model levels, and used a third formula on the dataset page. ``Dataset.update_level()`` now
+  rounds, and the dataset page reads ``Dataset.get_level()``.
+- Refresh the level filter when a structure change sets a new dataset level. Before, the filter kept
+  the old level until the next ``rebuild_search``.
+- Recalculate the stored levels once after deployment. Run this in ``manage.py shell``. It also
+  refreshes the filter::
+
+      from vitrina.datasets.models import Dataset
+
+      for dataset in Dataset.objects.iterator():
+          dataset.update_level()
+
+https://github.com/atviriduomenys/katalogas/issues/2728
+
+- Add ``django-migration-linter`` (dev dependency) and a ``Lint migrations`` GitHub Actions
+  workflow that runs on pull requests. It lints only the migrations a PR adds (relative to the
+  PR base commit) and fails on backward-incompatible schema changes.
+
+https://github.com/atviriduomenys/katalogas/issues/1659
+
+- Fix a 500 when an admin saves a learning material. ``LearningMaterial.requested`` is a boolean
+  field now, not an integer field.
+
+https://github.com/atviriduomenys/katalogas/issues/2534
+
+- Search the requests in the "Pridėti poreikį" form of a dataset. The list is a searchable select
+  field now, not a long list of checkboxes.
+
+https://github.com/atviriduomenys/katalogas/issues/2560
+
+- The "Duomenų ištekliai" breadcrumb on the add dataset pages goes to the datasets of the
+  organization, not to the full dataset list.
+
+https://github.com/atviriduomenys/katalogas/issues/2518
+
+- Give the two "Dokumentacija" fields of the dataset form different titles: "Dokumento failas" for
+  the file and "Nuoroda į dokumentaciją" for the link.
+
+https://github.com/atviriduomenys/katalogas/issues/2717
+
+- Rename "Paskutinio atnaujinimo data" on the dataset page to "Paskutinio metaduomenų atnaujinimo
+  data". The date shows when the metadata changed, not the data.
 
 
 v 1.26.0 (2026-09-30)

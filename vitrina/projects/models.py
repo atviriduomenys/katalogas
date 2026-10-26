@@ -65,6 +65,7 @@ class Project(models.Model):
 
     class Meta:
         db_table = "usecase"
+        permissions = [("manage_projects", _("Gali tvarkyti panaudojimo atvejus"))]
 
     objects = models.Manager()
     public = PublicProjectManager()

@@ -6,13 +6,14 @@ from django.contrib.auth.models import AnonymousUser
 
 
 def visible_projects_filter(user: User | AnonymousUser) -> Q:
+    not_deleted = ~Q(deleted=True)
     public_approved = Q(is_public=True, status=Project.APPROVED)
 
     if not getattr(user, "is_authenticated", False):
-        return public_approved
+        return not_deleted & public_approved
 
     if user.is_staff or user.is_superuser:
-        return Q()
+        return not_deleted
 
     represented_org_ids = user.represented_org_ids
 
@@ -21,7 +22,7 @@ def visible_projects_filter(user: User | AnonymousUser) -> Q:
     is_dataset_representative = Q(datasets__organization_id__in=represented_org_ids)
     query_filter = public_approved | is_owner | is_org_representative | is_dataset_representative
 
-    return query_filter
+    return not_deleted & query_filter
 
 
 def can_view_project(user: User | AnonymousUser, project: Project) -> bool:
@@ -45,15 +46,21 @@ def get_projects(
     return queryset[:limit] if limit else queryset
 
 
+def can_manage_projects(user: User | AnonymousUser) -> bool:
+    if not user.is_authenticated:
+        return False
+    return user.is_superuser or (user.is_staff and user.has_perm("vitrina_projects.manage_projects"))
+
+
 def can_update_project(user: User | AnonymousUser, project: Project) -> bool:
     if not user.is_authenticated:
         return False
 
+    if can_manage_projects(user):
+        return True
+
     if project.organization:
         return project.organization == user.viisp_organization and user.is_representative_of(project.organization, True)
-
-    if user.is_staff or user.is_superuser:
-        return True
 
     return user == project.user
 

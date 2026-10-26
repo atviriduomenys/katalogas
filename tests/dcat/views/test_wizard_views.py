@@ -1,5 +1,6 @@
 import pytest
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
@@ -39,6 +40,22 @@ def _superuser(org):
     return UserFactory(is_superuser=True)
 
 
+def _is_metadata_group_user(is_staff: bool):
+    def make_user(org):
+        user = UserFactory(is_staff=is_staff)
+        user.groups.add(Group.objects.get(name="IS metaduomenų tvarkytojai"))
+        return user
+
+    return make_user
+
+
+_staff = _is_metadata_group_user(is_staff=True)
+
+
+def _staff_outside_group(org):
+    return UserFactory(is_staff=True)
+
+
 def _other_organization_manager(org):
     return _representative(OrganizationFactory(), Representative.RESOURCE_MANAGER).user
 
@@ -56,12 +73,15 @@ DENIED_USERS = [
     pytest.param(_role_user(Representative.OPEN_DATA_COORDINATOR), id="open-data-coordinator"),
     # `has_perm` ignores `deleted`, so only the shell closes for a soft-deleted representative.
     pytest.param(_deleted_resource_manager, id="deleted-resource-manager"),
+    pytest.param(_staff_outside_group, id="staff-outside-group"),
+    pytest.param(_is_metadata_group_user(is_staff=False), id="non-staff-in-group"),
 ]
 
 ALLOWED_USERS = [
     pytest.param(_role_user(Representative.RESOURCE_COORDINATOR), id="resource-coordinator"),
     pytest.param(_role_user(Representative.RESOURCE_MANAGER), id="resource-manager"),
     pytest.param(_superuser, id="superuser"),
+    pytest.param(_staff, id="staff"),
 ]
 
 
@@ -97,9 +117,16 @@ class TestOrganizationWizardView:
 
         assert response.status_code == 200
 
-    def test_pane_asks_for_the_organization_form(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "make_user",
+        [
+            pytest.param(_role_user(Representative.RESOURCE_COORDINATOR), id="resource-coordinator"),
+            pytest.param(_staff, id="staff"),
+        ],
+    )
+    def test_pane_asks_for_the_organization_form(self, app: DjangoTestApp, make_user):
         org = OrganizationFactory()
-        app.set_user(_representative(org, Representative.RESOURCE_COORDINATOR).user)
+        app.set_user(make_user(org))
 
         response = app.get(reverse("organization-wizard", kwargs={"pk": org.pk}))
 
@@ -149,6 +176,8 @@ class TestOrganizationDetailWizardButton:
             pytest.param(_role_user(Representative.RESOURCE_COORDINATOR), True, False, id="resource-coordinator"),
             pytest.param(_role_user(Representative.RESOURCE_MANAGER), True, False, id="resource-manager"),
             pytest.param(_superuser, True, True, id="superuser"),
+            pytest.param(_staff, True, False, id="staff"),
+            pytest.param(_staff_outside_group, False, True, id="staff-outside-group"),
             # Nothing changes for the open data roles: only their coordinator may update the
             # organization, and none of them reaches the wizard.
             pytest.param(_role_user(Representative.OPEN_DATA_COORDINATOR), False, True, id="open-data-coordinator"),

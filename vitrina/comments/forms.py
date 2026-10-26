@@ -7,13 +7,6 @@ from vitrina.comments.models import Comment
 from vitrina.requests.models import Request
 
 
-PROJECT_STATUSES = (
-    (None, _("---------")),
-    (Comment.APPROVED, _("Patvirtintas")),
-    (Comment.REJECTED, _("Atmestas")),
-)
-
-
 class CommentForm(forms.ModelForm):
     body = forms.CharField(widget=forms.Textarea(attrs={"rows": 4}), label=_("Komentaras"))
 
@@ -109,28 +102,4 @@ class RequestCommentForm(CommentForm):
         if not status or (status and status == Comment.REJECTED):
             if not body:
                 self.add_error("body", _("Šis laukas yra privalomas"))
-        return self.cleaned_data
-
-
-class ProjectCommentForm(CommentForm):
-    status = forms.ChoiceField(choices=PROJECT_STATUSES, required=False, label=_("Būsena"))
-
-    class Meta(CommentForm.Meta):
-        fields = (
-            "is_public",
-            "status",
-            "body",
-        )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["body"].required = False
-
-    def clean(self):
-        body = self.cleaned_data.get("body")
-        status = self.cleaned_data.get("status")
-        if not status and not body:
-            self.add_error("body", _("Šis laukas yra privalomas"))
-        if self.obj.status == status:
-            self.add_error("body", _("Dabartinė būsena sutampa su jūsų pateikta"))
         return self.cleaned_data

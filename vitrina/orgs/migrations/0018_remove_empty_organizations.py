@@ -10,6 +10,8 @@ def remove_empty_organizations(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     FinancingPlan = apps.get_model("vitrina_plans", "FinancingPlan")
     Project = apps.get_model("vitrina_projects", "Project")
+    Plan = apps.get_model("vitrina_plans", "Plan")
+    RequestAssignment = apps.get_model("vitrina_requests", "RequestAssignment")
 
     empty_organizations = Organization.objects.annotate(
         trimmed_title=Trim("title")
@@ -18,6 +20,9 @@ def remove_empty_organizations(apps, schema_editor):
     Dataset.objects.filter(organization__in=empty_organizations).update(organization=None)
     Project.objects.filter(organization__in=empty_organizations).update(organization=None)
     FinancingPlan.objects.filter(organization__in=empty_organizations).update(organization=None)
+    Plan.objects.filter(publisher__in=empty_organizations).update(publisher=None)
+    Plan.objects.filter(receiver__in=empty_organizations).delete()
+    RequestAssignment.objects.filter(organization__in=empty_organizations).delete()
 
     empty_organizations.delete()
 
@@ -29,6 +34,8 @@ class Migration(migrations.Migration):
         ('vitrina_plans', '0004_alter_plandataset_dataset'),
         ('vitrina_datasets', '0047_endpoint_description_multivalue'),
         ('vitrina_projects', '0008_alter_project_uuid'),
+        ('vitrina_plans', '0004_alter_plandataset_dataset'),
+        ('vitrina_requests', '0010_alter_requestescalation_stopped_reason'),
     ]
 
     operations = [

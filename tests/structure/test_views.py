@@ -5011,8 +5011,8 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,Country,,,,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,public,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
     structure = DatasetStructureFactory(
@@ -5038,12 +5038,11 @@ def test_manifest_export_openapi(app: DjangoTestApp):
 
     openapi_spec = resp.json
 
-    expected_keys = ["openapi", "info", "externalDocs", "servers", "tags", "components", "paths"]
+    expected_keys = ["openapi", "info", "externalDocs", "tags", "components", "paths"]
     assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
 
     info = openapi_spec["info"]
-    assert info["summary"] == structure.dataset.title, "Info summary should match dataset title"
-    assert info["description"] == structure.dataset.description, "Info description should match dataset description"
+    assert info["description"] == f"{structure.dataset.title}\n\n{structure.dataset.description}"
     assert info["version"] == "1.0.0", "API version should be 1.0.0"
     schemas = set(openapi_spec["components"]["schemas"].keys())
     expected_schemas = {
@@ -5056,12 +5055,10 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     expected_tags = {"utility", "Country"}
     assert tag_names == expected_tags, f"Tags mismatch. Expected: {expected_tags}, Got: {tag_names}"
 
-    utility_paths = {"/version", "/health"}
-    model_paths = {
+    expected_paths = {
         "/datasets/gov/ivpk/adp/Country",
         "/datasets/gov/ivpk/adp/Country/{id}",
     }
-    expected_paths = utility_paths | model_paths
     actual_paths = set(openapi_spec["paths"].keys())
     assert actual_paths == expected_paths, (
         f"Paths mismatch. Missing: {expected_paths - actual_paths}, Extra: {actual_paths - expected_paths}"
@@ -5076,8 +5073,8 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/test/city,,,,,,,,,,,,,,,,,\n"
-        ",,,,City,,,id,,,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n"
+        ",,,,City,,,id,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,public,private,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
     city_structure = DatasetStructureFactory(
@@ -5095,10 +5092,10 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,Country,,,,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,public,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
-        ",,,,,city,ref,/datasets/gov/test/city/City,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,city,ref,/datasets/gov/test/city/City,,,5,,public,private,dct:title,,,,\n"
     )
     dataset = DatasetFactory(metadata="datasets/gov/ivpk/adp")
     structure = DatasetStructureFactory(
@@ -5136,8 +5133,8 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
         ",,rc_wsdl,,,,wsdl,,https://test-data.data.gov.lt/api/v1/rc/get-data/?wsdl,,,,,,,,,,\n"
         ",,get_data,,,,soap,,Get.GetPort.GetPort.GetData,wsdl(rc_wsdl),,,,,,,,,\n"
         ",,,,,,param,action_type,input/ActionType,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,Country,,,,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,public,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
     structure = DatasetStructureFactory(
@@ -5161,7 +5158,7 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
 
     openapi_spec = resp.json
 
-    expected_keys = ["openapi", "info", "externalDocs", "servers", "tags", "components", "paths"]
+    expected_keys = ["openapi", "info", "externalDocs", "tags", "components", "paths"]
     assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
 
 
@@ -5171,9 +5168,9 @@ def test_manifest_export_openapi_with_scopes(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,public,,,,,,\n"
         ",,,,,,scope,public,,open,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,id,integer,,,,5,,public,open,dct:identifier,,Identifikatorius,,\n"
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
@@ -5192,7 +5189,7 @@ def test_manifest_export_openapi_with_scopes(app: DjangoTestApp):
     assert resp.content_type == "application/json"
 
     openapi_spec = resp.json
-    expected_keys = ["openapi", "info", "externalDocs", "servers", "tags", "components", "paths"]
+    expected_keys = ["openapi", "info", "externalDocs", "tags", "components", "paths"]
     assert list(openapi_spec.keys()) == expected_keys
 
     model_paths = {
@@ -5200,6 +5197,40 @@ def test_manifest_export_openapi_with_scopes(app: DjangoTestApp):
         "/datasets/gov/ivpk/adp/Country/{id}",
     }
     assert model_paths <= set(openapi_spec["paths"].keys())
+
+
+@pytest.mark.django_db
+def test_manifest_export_openapi_empty_visibility_is_public(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,size,string,,,,5,,,open,,,,,\n"
+        ",,,,,,enum,,,'SMALL',,,,,,,,,\n"
+        ",,,,,,,,,'BIG',,,,,,,,,\n"
+        ",,,,,secret,string,,,,5,,private,open,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(content_type=ct, object_id=structure.dataset.pk)
+    app.set_user(representative.user)
+    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk, version.pk]))
+
+    assert resp.status_code == HTTPStatus.OK
+    country = resp.json["components"]["schemas"]["Country"]
+    assert {"id", "size"} <= set(country["properties"])
+    assert "secret" not in country["properties"]
+    assert country["properties"]["size"]["enum"][:2] == ["SMALL", "BIG"]
+    assert "/datasets/gov/ivpk/adp/Country" in resp.json["paths"]
 
 
 @pytest.mark.django_db

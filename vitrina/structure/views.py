@@ -1792,7 +1792,7 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
         main_dataset_name = self._get_main_dataset_name(manifest_stream, self.dataset)
 
         manifest_stream.seek(0)
-        manifest_path = ManifestPath(file=self._strip_scope_rows(manifest_stream))
+        manifest_path = ManifestPath(file=self._prepare_for_openapi(manifest_stream))
 
         openapi_spec = create_openapi_manifest(
             manifest_path,
@@ -1804,17 +1804,23 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
         response["Content-Disposition"] = "attachment; filename=manifest.json"
         return response
 
-    def _strip_scope_rows(self, manifest_stream: StringIO) -> StringIO:
-        """Remove scope rows from the manifest — spinta's OpenAPI generator doesn't know this type."""
+    def _prepare_for_openapi(self, manifest_stream: StringIO) -> StringIO:
+        """
+        Remove scope rows, which spinta's OpenAPI generator doesn't know, and treat an empty visibility
+        as public, because spinta leaves out metadata with an empty visibility.
+        """
         reader = csv.DictReader(manifest_stream)
-        filtered = StringIO()
-        writer = csv.DictWriter(filtered, fieldnames=reader.fieldnames)
+        prepared = StringIO()
+        writer = csv.DictWriter(prepared, fieldnames=reader.fieldnames)
         writer.writeheader()
         for row in reader:
-            if row.get("type") != "scope":
-                writer.writerow(row)
-        filtered.seek(0)
-        return filtered
+            if row.get("type") == "scope":
+                continue
+            if not row.get("visibility"):
+                row["visibility"] = "public"
+            writer.writerow(row)
+        prepared.seek(0)
+        return prepared
 
     def _get_main_dataset_name(self, manifest_stream: StringIO, dataset: Dataset) -> str | None:
         """

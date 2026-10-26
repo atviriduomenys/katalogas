@@ -5200,6 +5200,40 @@ def test_manifest_export_openapi_with_scopes(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_manifest_export_openapi_empty_visibility_is_public(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,size,string,,,,5,,,open,,,,,\n"
+        ",,,,,,enum,,,'SMALL',,,,,,,,,\n"
+        ",,,,,,,,,'BIG',,,,,,,,,\n"
+        ",,,,,secret,string,,,,5,,private,open,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(metadata="datasets/gov/ivpk/adp"),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(content_type=ct, object_id=structure.dataset.pk)
+    app.set_user(representative.user)
+    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk, version.pk]))
+
+    assert resp.status_code == HTTPStatus.OK
+    country = resp.json["components"]["schemas"]["Country"]
+    assert {"id", "size"} <= set(country["properties"])
+    assert "secret" not in country["properties"]
+    assert country["properties"]["size"]["enum"][:2] == ["SMALL", "BIG"]
+    assert "/datasets/gov/ivpk/adp/Country" in resp.json["paths"]
+
+
+@pytest.mark.django_db
 def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)

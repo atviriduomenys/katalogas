@@ -21,7 +21,9 @@
                     },
                     dataType: 'json',
                     success: function (response) {
-                        $('#id_recipients').val(response.recipients.join(', '));
+                        if ($('#id_recipient_group').val() === group) {
+                            $('#id_recipients').val(response.recipients.join(', '));
+                        }
                     },
                     error: function (error) {
                         console.error('Failed to fetch recipients:', error);

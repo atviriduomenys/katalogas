@@ -1,6 +1,6 @@
 import markdown
 from django.contrib import admin
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
@@ -114,16 +114,18 @@ class MassMailAdmin(RevisionCommentVersionAdmin):
 
         if "send" in form.changed_data and obj.send:
             recipients = [recipient.strip() for recipient in obj.recipients.split(",") if recipient.strip()]
+            html_content = markdown.markdown(obj.email_content)
+            email = EmailMultiAlternatives(
+                subject=obj.email_subject,
+                body=obj.email_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[],
+                bcc=recipients,
+            )
+            email.attach_alternative(html_content, "text/html")
 
             try:
-                send_mail(
-                    subject=obj.email_subject,
-                    message=obj.email_content,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=recipients,
-                    html_message=markdown.markdown(obj.email_content),
-                )
-                email_send = True
+                email_send = email.send() > 0
             except Exception as e:
                 logger.warning(
                     "Email was not sent: subject=%s recipients=%s error=%s",

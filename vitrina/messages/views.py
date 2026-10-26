@@ -308,7 +308,15 @@ class NewsletterUnsubscribeView(View):
         return render(request, "newsletter/unsubscribed.html")
 
 
-class GroupRecipientsView(View):
+class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    def has_permission(self):
+        user = self.request.user
+        return (
+            user.is_active
+            and user.is_staff
+            and (user.has_perm("vitrina_messages.add_massmail") or user.has_perm("vitrina_messages.change_massmail"))
+        )
+
     def get(self, request):
         group = request.GET.get("group")
         recipients = []
@@ -328,7 +336,9 @@ class GroupRecipientsView(View):
 
         elif group == MassMail.SUBSCRIBERS:
             recipients = (
-                Subscription.objects.filter(user__email__isnull=False).values_list("user__email", flat=True).distinct()
+                Subscription.objects.filter(user__email__isnull=False, email_subscribed=True)
+                .values_list("user__email", flat=True)
+                .distinct()
             )
 
         elif group == MassMail.OPEN_DATA_COORDINATORS:

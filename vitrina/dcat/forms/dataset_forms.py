@@ -298,9 +298,10 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         required=True,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
-    endpoint_description = forms.CharField(
+    endpoint_description = StringListField(
         label=_("Prieigos taško aprašas"),
         required=False,
+        unique=True,
         help_text=_(
             "Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, aprašymas. "
             "Įskaitant jų operacijas, parametrus ir t. t. Atitinka dcat:endpointDescription."
@@ -396,6 +397,11 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         if not self.instance.pk:
             self.fields["access_rights"].initial = Dataset.CONFIDENTIAL
 
+        if self.instance.pk:
+            self.initial["endpoint_description"] = list(
+                self.instance.endpoint_description.values_list("download_url", flat=True)
+            )
+
         self.helper.layout = Layout(
             Field("codename_preview"),
             Field("name"),
@@ -418,6 +424,18 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         )
 
         apply_dynamic_help_texts(self, FormFieldText.DCAT_SERVICE)
+
+    def clean_endpoint_description(self) -> list[str]:
+        urls = self.cleaned_data.get("endpoint_description") or []
+
+        item_errors = validate_urls(urls)
+
+        if any(item_errors):
+            self.fields["endpoint_description"].widget.validation_errors = item_errors
+            # Plain per-item messages (matching the scalar field error wording).
+            raise ValidationError([e.split(": ", 1)[-1] if e else e for e in item_errors if e])
+
+        return sorted(set(urls))
 
 
 class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, DatasetNameMixin, BaseResourceForm):

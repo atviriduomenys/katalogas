@@ -2,7 +2,6 @@ import secrets
 from datetime import datetime
 
 from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
-from allauth.utils import build_absolute_uri
 from django.contrib.sites.models import Site
 from django_otp.views import LoginView as BaseLoginView
 from pandas import period_range
@@ -108,7 +107,7 @@ class RegisterView(CreateView):
             )
             confirmation = EmailConfirmationHMAC(email_address)
             url = reverse("account_confirm_email", args=[confirmation.key])
-            activate_url = build_absolute_uri(request, url)
+            activate_url = request.build_absolute_uri(url)
             email(
                 [email_address.email],
                 "confirm_email",
@@ -320,7 +319,7 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
             )
             confirmation = EmailConfirmationHMAC(email_address)
             url = reverse("account_confirm_email", args=[confirmation.key])
-            activate_url = build_absolute_uri(self.request, url)
+            activate_url = self.request.build_absolute_uri(url)
             email(
                 [email_address.email],
                 "confirm_updated_email",

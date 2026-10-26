@@ -478,7 +478,7 @@
         </div>
         {% endif %}
         {% if metadata.description %}
-        <div><p>{{ metadata.description | markdown | safe }}</p></div>
+        <div>{{ metadata.description | markdown | safe }}</div>
         {% endif %}
 
         {% if model.is_parameterized %}

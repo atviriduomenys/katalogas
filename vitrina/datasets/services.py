@@ -1,8 +1,10 @@
 import secrets
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import List, Any, Dict, Iterable, Mapping, Type
 
 import numpy as np
+from hitcount.models import HitCount
 from django.db import transaction
 from django.conf import settings
 from django.contrib import messages
@@ -11,16 +13,18 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
-from django.db.models import Q, QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.forms import Form
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from itsdangerous import URLSafeSerializer
 
-from vitrina.datasets.models import Dataset, DCATResourceSubclass
+from vitrina.datasets.models import Dataset, DatasetGroup, DCATResourceSubclass
 from vitrina.helpers import get_filter_url, get_current_domain
 from vitrina.api.models import ApiKey
+from vitrina.classifiers.models import Category
 from vitrina.helpers import email
+from vitrina.likes.models import Like
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -776,3 +780,56 @@ class DatasetRepresentativeService:
     def _build_registration_url(self, token: str) -> str:
         path = reverse("representative-register", kwargs={"token": token})
         return f"{get_current_domain(self.request)}{path}"
+
+
+@dataclass
+class DatasetListRow:
+    dataset: Dataset
+    icon: str | None
+    likes: int
+    hits: int
+    groups: list
+    formats: list
+
+
+def build_dataset_rows(datasets: Iterable[Dataset]) -> list[DatasetListRow]:
+    datasets = list(datasets)
+    pks = [dataset.pk for dataset in datasets]
+    if not pks:
+        return []
+
+    content_type = ContentType.objects.get_for_model(Dataset)
+    likes = dict(
+        Like.objects.filter(content_type=content_type, object_id__in=pks)
+        .values_list("object_id")
+        .annotate(total=Count("id"))
+    )
+    hits = dict(HitCount.objects.filter(content_type=content_type, object_pk__in=pks).values_list("object_pk", "hits"))
+
+    group_pks_by_dataset = {dataset.pk: set(dataset.get_group_list()) for dataset in datasets}
+    groups = {
+        group.pk: group
+        for group in DatasetGroup.objects.filter(pk__in=set().union(*group_pks_by_dataset.values()))
+        .prefetch_related("translations")
+        .order_by("created")
+    }
+
+    root_icons = []
+    if any(dataset.category.all() for dataset in datasets):
+        root_icons = Category.root_icons()
+
+    dataservice_formats = None
+    if any(dataset.serves_dataservice_formats() for dataset in datasets):
+        dataservice_formats = list(Dataset.dataservice_formats())
+
+    return [
+        DatasetListRow(
+            dataset=dataset,
+            icon=dataset.get_icon(root_icons),
+            likes=likes.get(dataset.pk, 0),
+            hits=hits.get(dataset.pk, 0),
+            groups=[group for pk, group in groups.items() if pk in group_pks_by_dataset[dataset.pk]],
+            formats=dataset.get_available_formats(dataservice_formats),
+        )
+        for dataset in datasets
+    ]

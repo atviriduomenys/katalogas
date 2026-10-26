@@ -70,11 +70,11 @@
                 </p>
             </div>
             <div class="content dataset-description">
-                <p class="no-margin-bottom">
+                <div class="no-margin-bottom">
                     {% objectlanguage dataset LANGUAGE_CODE %}
                     {{ dataset.description | markdown | safe }}
                 {% endobjectlanguage %}
-            </p>
+            </div>
             {# tags #}
             {% include "./tags.html" %}
             {# main info #}

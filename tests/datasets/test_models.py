@@ -6,6 +6,8 @@ import pytest
 import pytz
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils.html import escape
 
@@ -17,9 +19,10 @@ from vitrina.datasets.factories import (
     ContactFactory,
 )
 from vitrina.datasets import ContactKind
-from vitrina.datasets.models import DCATResourceSubclass, Dataset, Contact
+from vitrina.datasets.models import DCATResourceSubclass, Dataset, Contact, EndpointDescription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
+from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.structure.factories import VersionFactory, ModelFactory, MetadataFactory
 from vitrina.structure.models import VersionStatus, Model as StructureModel, MetadataVersion
 from vitrina.users.factories import UserFactory
@@ -362,21 +365,58 @@ class TestDatasets:
 
     def test_get_endpoint_description_without_agent(self):
         url = "http://www.test.com"
-        data_service = DatasetServiceFactory(endpoint_description=url)
+        data_service = DatasetServiceFactory(endpoint_description=[url])
 
-        description_url = data_service.get_endpoint_description()
+        description_urls = data_service.get_endpoint_descriptions()
 
-        assert description_url == url
+        assert description_urls == [url]
 
     def test_get_endpoint_description_with_agent(self):
         agent = AgentFactory()
         data_service = DatasetServiceFactory(agent=agent)
 
-        endpoint_description = data_service.get_endpoint_description()
+        description_urls = data_service.get_endpoint_descriptions()
 
-        assert endpoint_description == reverse(
+        assert description_urls == [
+            reverse("dataset-structure-export-openapi", args=[data_service.pk, data_service.latest_version().pk])
+        ]
+
+    def test_get_endpoint_description_ordering_with_agent(self):
+        urls = ["http://c.com", "http://a.com"]
+        agent = AgentFactory()
+        data_service = DatasetServiceFactory(agent=agent, endpoint_description=urls)
+
+        description_urls = data_service.get_endpoint_descriptions()
+
+        openapi_url = reverse(
             "dataset-structure-export-openapi", args=[data_service.pk, data_service.latest_version().pk]
         )
+        # The virtual agent URL is merged into the same sorted set, not appended last.
+        assert description_urls == sorted(urls + [openapi_url])
+        assert openapi_url in description_urls
+
+    def test_update_endpoint_description_prunes_orphans(self):
+        old_url = "http://old.example.com/spec"
+        new_url = "http://new.example.com/spec"
+        data_service = DatasetServiceFactory(endpoint_description=[old_url])
+
+        assert EndpointDescription.objects.filter(download_url=old_url).exists()
+
+        data_service.update_endpoint_description([new_url])
+
+        assert not EndpointDescription.objects.filter(download_url=old_url).exists()
+        assert EndpointDescription.objects.filter(download_url=new_url).exists()
+        assert list(data_service.endpoint_description.values_list("download_url", flat=True)) == [new_url]
+
+    def test_post_delete_prunes_orphan_endpoint_descriptions(self):
+        url = "http://orphan.example.com/spec"
+        data_service = DatasetServiceFactory(endpoint_description=[url])
+
+        assert EndpointDescription.objects.filter(download_url=url).exists()
+
+        data_service.delete()
+
+        assert not EndpointDescription.objects.filter(download_url=url).exists()
 
 
 class TestDCATResourceSubclass:
@@ -571,3 +611,18 @@ class TestDatasetGetJsonLd:
         assert "</script>" not in json_ld
         assert "<script>" not in json_ld
         assert json.loads(json_ld)["name"] == title
+
+
+@pytest.mark.django_db
+def test_distinct_formats_reads_the_distributions_once():
+    dataset = DatasetFactory()
+    for index in range(5):
+        DatasetDistributionFactory(dataset=dataset, format=FileFormat(title=f"F{index}", extension=f"E{index}"))
+    ModelFactory(metadata_version__dataset=dataset)
+
+    fresh = Dataset.objects.get(pk=dataset.pk)
+    with CaptureQueriesContext(connection) as queries:
+        fresh.distinct_formats
+
+    reads = [query for query in queries.captured_queries if 'FROM "dataset_distribution"' in query["sql"]]
+    assert len(reads) == 1, f"distinct_formats read the distributions {len(reads)} times"

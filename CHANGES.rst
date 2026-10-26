@@ -1,8 +1,233 @@
 Changes
 #######
 
-v 1.24.0 (current)
+v 1.28.0 (current)
 ==================
+
+DAS-643
+
+- Add ``--keep-public-content`` to ``scripts/anonymize.py``. It keeps published stories, news and
+  old portal pages readable, so that content can be reviewed on an anonymized copy; without it
+  every article becomes ``example``. A story counts as published when its version is published
+  and its post is inside the ``date_published`` window; drafts, scheduled, expired, non-public and
+  deleted rows are anonymized as before. Bylines are removed, including the
+  ``<p>Autorius: NAME</p>`` the old news migration wrote into the article text. The kept text is
+  not scanned, so the command warns that it can still contain personal data an editor typed in.
+  Default behaviour is unchanged.
+- Clear ``news_item.author`` too. It was never anonymized.
+
+
+v 1.27.0 (2026-10-23)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2836
+
+- Add the "Panaudojimo atvejų tvarkytojai" group (``vitrina_projects.manage_projects``). Its staff
+  members edit, approve, reject and delete any use case. Plain staff can only view use cases now.
+- Approve or reject a use case with two buttons in the sidebar. A reject needs a comment. Approval
+  only marks the use case as reviewed and does not change "Matomas viešai", which the detail page
+  now shows. The author sees the decision as "Būsena pakeista: ..." in the comments and the email.
+- Stop the status change writing a copy of its comment on the request with the same id. Delete the
+  old copies once with ``2836-delete-stray-status-comments.py`` after the deploy.
+- Soft delete a use case from its page. A use case with agreements, API keys or clients cannot be
+  deleted. Restore a deleted use case with the admin action "Atkurti ištrintus panaudojimo
+  atvejus". The admin form does not edit ``deleted`` and ``deleted_on``, and a staff user with only
+  ``view_project`` cannot restore.
+- Do not create API keys for a deleted use case.
+- Keep deleted, hidden, rejected and not reviewed use cases out of the dataset search text, also
+  when a use case loses all its datasets. Run ``rebuild_search`` after the deploy.
+- Do not count deleted use cases in the dataset statistics, and set the count to 0 when the last
+  use case of a dataset is deleted.
+- Save a use case once per edit, and subscribe the reviewer to replies to the review comment.
+- Fix a 500 on a use case comment when the author has no organization.
+
+https://github.com/atviriduomenys/katalogas/issues/1824
+
+- Remove the one-time django-cms 5 upgrade machinery now that every environment has been through
+  it: ``scripts/migrate_djangocms.sh`` and the ``djangocms_upgrade_state`` command (the
+  entrypoints run ``migrate`` directly again), the ``DJANGOCMS_BLOG_MIGRATION`` switch, the local
+  copy of the ``djangocms-stories`` migrations, ``aldryn-apphooks-config``, and the whole
+  ``notes/migrations/djangocms/`` folder (kept in git history). How to seed the page tree on an
+  empty database with ``scripts/create_pages.py`` moved to ``README.rst``.
+- Keep one guard: ``migrate`` refuses a database that still has ``cms_title``, i.e. a django-cms 3
+  schema, such as a pre-upgrade backup restored by mistake.
+- ``scripts/anonymize.py`` only scrubs the ``djangocms-stories`` schema and refuses a pre-upgrade
+  or half-upgraded dump instead of shipping its legacy story text.
+
+https://github.com/atviriduomenys/katalogas/issues/2835
+
+- Open the IS metadata wizard to staff in the new "IS metaduomenų tvarkytojai" group.
+
+https://github.com/atviriduomenys/katalogas/issues/2800
+
+- Stop the creation of duplicate parent organizations. The parent lookup used only an exact match
+  of the jurisdiction name, so a small difference in the title (for example two spaces) made a
+  second parent. Now the lookup also finds the parent group of the jurisdiction.
+- Move an organization to a new parent only when its jurisdiction changes. Before, each save of
+  the edit form moved the organization, and the organizations of one ministry divided between
+  two parents.
+- Do not select the organization that moves, or one of its children, as its new parent. A root
+  organization with children that changed to a jurisdiction without a parent group caused an error.
+- Sort the organization tree again after a title change.
+
+https://github.com/atviriduomenys/katalogas/issues/2812
+
+- Take the Saugykla data update date from the models under the distribution link, not from the
+  catalogue structure. A model renamed in Saugykla no longer leaves the date empty.
+
+https://github.com/atviriduomenys/katalogas/issues/2825
+
+- Remove Google Analytics. The property belonged to a former employee, and the script set cookies
+  without consent. The ``GOOGLE_ANALYTICS_ID`` setting is no longer read.
+- Add self-hosted Umami analytics. It uses no cookies and sends no data to third parties. Set
+  ``UMAMI_SCRIPT_URL`` and ``UMAMI_WEBSITE_ID`` in ``.env`` to load the script; without them,
+  the script does not load. On test and prod, nginx serves Umami under ``/analytics``, from an
+  image built with ``BASE_PATH=/analytics`` (see ``README.rst``).
+
+https://github.com/atviriduomenys/katalogas/issues/2822
+
+- Do not show the name of the parent comment author in a reply. The "Atsakymas į" line now uses
+  the same rule as the comment author, so a user without access sees "Sistemos naudotojas".
+
+https://github.com/atviriduomenys/katalogas/issues/2726
+
+- Show the same maturity level ("brandos lygis") in the filter, the dataset list, the dataset page
+  and the structure description. The old code truncated the dataset level (3.75 became 3), rounded
+  the model levels, and used a third formula on the dataset page. ``Dataset.update_level()`` now
+  rounds, and the dataset page reads ``Dataset.get_level()``.
+- Refresh the level filter when a structure change sets a new dataset level. Before, the filter kept
+  the old level until the next ``rebuild_search``.
+- Recalculate the stored levels once after deployment. Run this in ``manage.py shell``. It also
+  refreshes the filter::
+
+      from vitrina.datasets.models import Dataset
+
+      for dataset in Dataset.objects.iterator():
+          dataset.update_level()
+
+https://github.com/atviriduomenys/katalogas/issues/2728
+
+- Add ``django-migration-linter`` (dev dependency) and a ``Lint migrations`` GitHub Actions
+  workflow that runs on pull requests. It lints only the migrations a PR adds (relative to the
+  PR base commit) and fails on backward-incompatible schema changes.
+
+https://github.com/atviriduomenys/katalogas/issues/1659
+
+- Fix a 500 when an admin saves a learning material. ``LearningMaterial.requested`` is a boolean
+  field now, not an integer field.
+
+https://github.com/atviriduomenys/katalogas/issues/2534
+
+- Search the requests in the "Pridėti poreikį" form of a dataset. The list is a searchable select
+  field now, not a long list of checkboxes.
+
+https://github.com/atviriduomenys/katalogas/issues/2560
+
+- The "Duomenų ištekliai" breadcrumb on the add dataset pages goes to the datasets of the
+  organization, not to the full dataset list.
+
+https://github.com/atviriduomenys/katalogas/issues/2518
+
+- Give the two "Dokumentacija" fields of the dataset form different titles: "Dokumento failas" for
+  the file and "Nuoroda į dokumentaciją" for the link.
+
+https://github.com/atviriduomenys/katalogas/issues/2717
+
+- Rename "Paskutinio atnaujinimo data" on the dataset page to "Paskutinio metaduomenų atnaujinimo
+  data". The date shows when the metadata changed, not the data.
+
+
+v 1.26.0 (2026-09-30)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/1824
+
+- Upgrade django-cms 3.11 -> 5.0, and with it ``djangocms-blog`` -> ``djangocms-stories`` and
+  ``djangocms-text-ckeditor`` -> ``djangocms-text``. Pages and articles are versioned now: an
+  edit creates a draft and the published page keeps serving until the draft is published.
+- Refuse to migrate a database that has not been through the one-time django-cms 4.1 migration
+  tool. The page tree's 3 -> 4 conversion and the ``djangocms-blog`` -> ``djangocms-stories`` data
+  move both run from that separate image before deployment; ``scripts/migrate_djangocms.sh``
+  checks the database state on every start and stops on anything the tool has not finished,
+  rather than taking the schema past the point where the conversion can still run. The procedure,
+  the 4.1 image and an A/B check of the content are in ``notes/migrations/djangocms/``.
+- Stop the side menu and the navigation from listing pages that are not published. Versioning
+  makes an unpublished page a real state rather than an absence, and the menus were reading the
+  page tree without asking.
+- Keep flash messages visible to staff. They were hidden whenever the cms toolbar was available,
+  which is every page for every staff user, and they were never marked read either - so a saved
+  dataset or a rejected form said nothing, forever.
+- Scrub story text in ``scripts/anonymize.py`` on either schema, and in text plugins for any
+  config that keeps its articles in placeholders - this portal keeps them in ``post_text``.
+  Organisation ``website`` is anonymised too: it is free text, and a production dump was
+  carrying a real contact address in it.
+- Anonymise ``adp_cms_page`` in ``scripts/anonymize.py``. Its function read ``news_item``
+  instead, so the old portal's CMS pages went out unscrubbed, news items were scrubbed twice,
+  and ``dataset`` added a ``description`` column to ``news_item`` in every dump.
+
+
+
+v 1.25.0 (2026-09-10)
+=====================
+
+https://github.com/atviriduomenys/katalogas/issues/2791
+
+- Show the "Tvarkyti IS metaduomenis" button and open the IS metadata wizard for the resource
+  coordinator, the resource manager and the superuser. The button asked for two conditions that
+  no single role met, so nobody reached the wizard, although its forms already accepted these
+  users. Staff without ``is_superuser`` stays outside the wizard shell.
+- Do not offer "Redaguoti organizaciją" to the two resource roles: the wizard opens the same form
+  from its root node. Nobody loses access, and nothing changes for the open data roles.
+- Send a logged out visitor of a wizard URL to the login page again, with ``next`` intact.
+- Stop the wizard requesting the organization form for a user who may not edit the organization,
+  which answered a redirect that HTMX swapped into the pane as a whole page. A short note takes
+  its place, and the root node still returns the pane to the organization state.
+- Replace ``is_organization_resource_manager`` with ``can_manage_is_metadata``, add
+  ``can_edit_organization_details``, and gather the four wizard views' access rules into
+  ``WizardAccessMixin``.
+
+https://github.com/atviriduomenys/katalogas/issues/2793
+
+- Upgrade PostgreSQL to `18`. `docker-compose.yml` and `docker-compose-test.yml`
+  used `14`, `docker-compose.dev.yml` and `docker-compose.template.yml` used `16`.
+  All four now use `18`. `14` reaches end of life 2026-11-12.
+- Pin `PGDATA` to `/var/lib/postgresql/data` in every compose file. The `postgres:18`
+  image no longer defaults there, so the existing mounts would stop being the data
+  directory and an empty database would be initialised inside the container.
+- **Existing data directories are not upgraded in place.** `postgres:18` refuses a
+  directory written by `14`, so dump before switching, move the old directory aside,
+  then restore into the new one::
+
+      docker compose exec postgres pg_dump -U adp -Fc adp-dev > adp-dev.dump
+      docker compose down
+      sudo mv var/postgres var/postgres-pg14
+      docker compose up -d postgres
+      docker compose exec -T postgres pg_restore -U adp -d adp-dev --no-owner < adp-dev.dump
+      python manage.py migrate --skip-checks
+
+  Keep `var/postgres-pg14` until the new database is verified - it is the rollback.
+  Remote servers need the same, with the dump taken before the upgrade: `14` restores
+  onto `18`, but `18` does not restore onto `14`.
+
+
+
+v 1.24.0 (2026-08-21)
+=====================
+
+https://github.com/atviriduomenys/katalogas/issues/2785
+
+- Bump `spinta` version `1.0.0` -> `1.1.0`.
+- Bump cryptography from 48.0.1 to 50.0.0 (CVE-2026-69247).
+- Bump sqlparse from 0.5.5 to 0.6.0.
+- Bump aiohttp from 3.14.1 to 3.14.3.
+- Bump the npm package fast-uri from 3.1.4 to 3.1.5.
+- Bump the npm package nanoid from 3.3.16 to 3.3.18.
+- Drop eight orphan packages from ``poetry.lock``: ``gprof2dot``, ``jsonschema``,
+  ``jsonschema-specifications``, ``jsonsir``, ``pyinstrument``, ``pytest-profiling``, ``snakeviz``
+  and ``tornado``.
+
+The open Django alerts stay open. The fix for them is Django 5.2, and the team plans that upgrade
+as a separate task: https://github.com/atviriduomenys/katalogas/issues/1826
 
 https://github.com/atviriduomenys/katalogas/issues/2762
 
@@ -13,6 +238,12 @@ https://github.com/atviriduomenys/katalogas/issues/2771
 - Hide the deprecated "API specifikacijos formatas" (``endpoint_description_type``) field from
   service forms, detail pages, and administration while preserving existing database values and
   API output.
+- Raise the ``dcat:endpointDescription`` (``endpoint_description``) cardinality from 0..1 to 0..n.
+  The single ``CharField`` is replaced by a many-to-many relation to the new ``EndpointDescription``
+  model, so a data service can expose several API specifications at once. Legacy values are copied
+  into the new relation by the ``0047_endpoint_description_multivalue`` migration. Orphan
+  ``EndpointDescription`` rows (no longer linked to any dataset) are pruned on every update and on
+  dataset deletion.
 
 https://github.com/atviriduomenys/katalogas/issues/2722
 
@@ -38,6 +269,25 @@ https://github.com/atviriduomenys/katalogas/issues/2723
 - A link with no scheme is now refused. Before this change ``forms.URLField`` silently made
   ``www.example.com`` into ``http://www.example.com``. Give the full link.
 
+https://github.com/atviriduomenys/katalogas/issues/2746
+
+- Render the dataset list without a query for each row. The view now batches the likes, the hits, the
+  group titles and the data service formats once for each page. A list of 20 datasets that serve a
+  data service made 172 queries and now makes 20.
+- Stop the dataset list and the landing page writing to the database. The ``get_hit_count`` tag
+  created a row for every dataset that nobody had opened yet, so a GET inserted rows on every render.
+- Read the titles of the tags facet in one query. The sidebar shows up to 50 tags, and the list made
+  one query for each of them.
+- Read the areas of management of the organization list in one query.
+- Read the icon of the dataset list in one query for each page. ``get_icon`` asked the database for
+  the root of every category of every row, so a page of 20 datasets made up to 26 category queries.
+  The query count of the list is now flat: 51 -> 28 queries for a page of the production catalogue.
+- Read the distributions of a dataset once in ``distinct_formats``. The project datasets page and the
+  landing page read them and every format twice.
+- Cache the navigation menu for each language. A change to a page clears the cache after the
+  transaction commits. The cache lasts 60 seconds, because a page move sends no signal.
+- Fix the dataset list pushing its cards past the right edge of the page.
+
 https://github.com/atviriduomenys/katalogas/issues/1825
 
 - Remove Elasticsearch and ``django-haystack``. Use PostgreSQL for search.
@@ -52,22 +302,9 @@ https://github.com/atviriduomenys/katalogas/issues/1825
 - Match a search word anywhere in the text, not only at the start of a word. A search now finds
   more datasets than before.
 
-DAS-643
-
-- Fix ``scripts/anonymize.py`` writing to the wrong tables. ``_anonymize_organization`` operated on
-  ``djangocms_blog_post_translation`` instead of ``organization``, so organisation e-mails, phone
-  numbers and addresses were never anonymized. ``_anonymize_adp_cms_page`` operated on ``news_item``,
-  so ``adp_cms_page`` was left untouched and ``news_item`` was anonymized twice.
-- Add ``--keep-public-content``. It keeps published news and CMS page texts, titles and slugs
-  readable, so that content can be reviewed after a migration; without it every article becomes
-  ``example`` and such a review proves nothing. Only what the site actually shows is spared —
-  drafts, scheduled, expired, non-public and deleted rows are anonymized as before. Bylines are
-  removed, including the one ``scripts/migrate_news.py`` wrote into the article text itself. The
-  kept text is not scanned, so the command warns that it can still contain personal data an editor
-  typed in. Default behaviour is unchanged.
 
 v 1.23.0 (2026-08-03)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2755
 
@@ -167,6 +404,7 @@ https://github.com/atviriduomenys/katalogas/issues/2632
 
 - Prefix log records with the authenticated user's ID (``user ID: <id>``), falling back to ``anonymous`` for unauthenticated requests and background tasks.
 - Add a request-scoped logging context (``vitrina.log_context``) and ``LogContextMiddleware`` so additional details can be surfaced in logs later.
+
 DVMS-514
 
 - Fix insufficient file upload validation (CWE-434): block ``.xhtml`` (``application/xhtml+xml``) uploads,
@@ -187,7 +425,7 @@ https://github.com/atviriduomenys/katalogas/issues/2736
 
 
 v 1.22.0 (2026-06-30)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/pull/2707
 
@@ -292,7 +530,7 @@ https://github.com/atviriduomenys/katalogas/issues/2642
 - Remove the dead jQuery ``.show-reply-form`` handler from the comments component.
 
 v 1.21.0 (2026-05-18)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2563
 
@@ -323,7 +561,7 @@ https://github.com/atviriduomenys/katalogas/issues/2607
  - Fixed an issue where importing a structure with name errors deletes the draft version.
 
 v 1.20.0 (2026-05-12)
-==================
+=====================
 
 https://github.com/atviriduomenys/spinta/issues/1874
 
@@ -338,11 +576,11 @@ https://github.com/atviriduomenys/katalogas/issues/2589
 https://github.com/atviriduomenys/katalogas/issues/2595
 
 - Overrides `python manage.py makemessages` command to automatically include `-l en -l lt --no-location` if not provided
-- Overrides `python manage.py compilemessages` command to automatically include `-l en -l lt ` if not provided
+- Overrides `python manage.py compilemessages` command to automatically include `-l en -l lt` if not provided
 - Change all Lithuanian translation of "Distribution" to single term - "Pateiktis" (in line with DCAT-AP-LT)
 
 v 1.19.0 (2026-04-29)
-==================
+=====================
 
 Improvements:
 
@@ -360,7 +598,7 @@ https://github.com/atviriduomenys/katalogas/issues/2558
 - Removed the early return that was blocking non-superusers from updating Organizations as Representatives.
 
 v 1.18.0 (2026-04-15)
-==================
+=====================
 
 Improvements:
 
@@ -438,13 +676,13 @@ https://github.com/atviriduomenys/katalogas/issues/2541
   if uri is valid URI to EU Vocabulary Authority Tables.
 
 v 1.17.1 (2026-03-30)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/1828
 - Publisher and creator changes.
 
 v 1.17.0 (2026-03-27)
-==================
+=====================
 
 Bug fixes:
 
@@ -493,7 +731,7 @@ https://github.com/atviriduomenys/katalogas/issues/2335
 
 
 v 1.16.0 (2026-03-16)
-==================
+=====================
 
 https://github.com/atviriduomenys/katalogas/issues/2321
 
@@ -547,11 +785,11 @@ Security: Fix open Dependabot vulnerability alerts across pip and npm dependenci
 https://github.com/atviriduomenys/katalogas/issues/2363
 
 - Introduce DatasetAccessMixin to centralize dataset access control logic
-previously scattered across viewsets.
+  previously scattered across viewsets.
 - `is_open_data_representative` – checks whether the current user or
-organization role has open data access
+  organization role has open data access
 - `_filter_queryset_by_access` – filters datasets based on access rights
-appropriate to the user or role
+  appropriate to the user or role
 - `_check_dataset_access` – raises `PermissionDenied` for inaccessible datasets
 - Changed Dataset access_right default value to PUBLIC from CONFIDENTIAL
 
@@ -578,7 +816,7 @@ https://github.com/atviriduomenys/katalogas/issues/2467
 - Comments for `Base` manifest rows are now imported & displayed correctly in Catalog & after export.
 
 v 1.15.0 (2026-02-27)
-==================
+=====================
 
 Bug fixes:
 
@@ -604,7 +842,7 @@ https://github.com/atviriduomenys/katalogas/issues/2257
 - Index query optimization to fix N+1 problem.
 
 v 1.14.1 (2026-02-23)
-==================
+=====================
 
 Bug fixes:
 
@@ -613,7 +851,7 @@ https://github.com/atviriduomenys/katalogas/issues/2397
 - Fix url for `Dataset` landing page.
 
 v 1.14.0 (2026-02-17)
-==================
+=====================
 
 Improvements:
 
@@ -659,7 +897,7 @@ https://github.com/atviriduomenys/katalogas/issues/2382
 - `NoneType` object has no attribute `is_draft` fix.
 
 v 1.13.0 (2026-01-26)
-==================
+=====================
 
 Improvements:
 
@@ -720,7 +958,7 @@ https://github.com/atviriduomenys/katalogas/issues/2031
 - Refactor `CreateMemberView.form_valid` function into service.
 
 v 1.12.1 (2026-01-19)
-==================
+=====================
 
 Bug fixes:
 
@@ -729,7 +967,7 @@ https://github.com/atviriduomenys/spinta/issues/1630
 - Fix import logic when resource params were imported as dataset params.
 
 v 1.12.0 (2026-01-15)
-==================
+=====================
 
 Improvements
 
@@ -789,23 +1027,23 @@ https://github.com/atviriduomenys/katalogas/issues/2244
 - Bump `spinta` version to latest 0.2dev13.
 
 v 1.11.3 (2026-01-05)
-==================
+=====================
 
 - Revert `CustomSignalProcessor`.
 
 v 1.11.2 (2025-12-18)
-==================
+=====================
 
 - Add missing 0012 migration for `vitrina_smart_contracts`.
 - Remove `vitrina_datasets` 0037 migration.
 
 v 1.11.1 (2025-12-18)
-==================
+=====================
 
 - Add reverse function for 0037 migration in `vitrina_datasets`.
 
 v 1.11 (2025-12-16)
-==================
+===================
 
 Bug fixes:
 
@@ -814,7 +1052,7 @@ Bug fixes:
 - Make a `Representative.can_make_agreements` boolean field non-nullable.
 
 v 1.10 (2025-12-11)
-==================
+===================
 
 Bug fixes:
 
@@ -833,6 +1071,7 @@ https://github.com/atviriduomenys/katalogas/issues/1925
 
 - Remove `save()` from `Representative` model.
 - Update elasticsearch indices from `Representative` and `DataDistribution` model.
+
 Improvements:
 
 https://github.com/atviriduomenys/katalogas/issues/2040
@@ -858,13 +1097,12 @@ https://github.com/atviriduomenys/katalogas/issues/2124
 
 - Adds new "internal media" directory for non public uploaded files. It works same way as Django media files, but uses `INTERNAL_MEDIA_ROOT` and `INTERNAL_MEDIA_URL` settings.
 - Adds new endpoint for downloading uploaded smart contract files. In production, file is returned via `X-Accel-Redirect` header
-- Additional Nginx configuration is needed:
-    ```
-    location /internal-static {
-        internal;
-        alias /internal-static;
-    }
-    ```
+- Additional Nginx configuration is needed::
+
+      location /internal-static {
+          internal;
+          alias /internal-static;
+      }
 
 Security improvements:
 
@@ -1107,12 +1345,14 @@ Learning material should have an option to upload a file.
 
 https://github.com/atviriduomenys/katalogas/issues/1818
 Introduced `DistributionStatus` into the distribution form
+
     - Created `DistributionStatus` `ConceptSchema` (migration)
     - Created new instances in `Concept` which connect to the created `ConceptSchema`.
     - Made a data correction, so that old distributions get this `Status` field.
 
 https://github.com/atviriduomenys/katalogas/issues/1780
 Changed ENUM values for access rights:
+
     - Added value confidential.
     - Changed translations by the specification.
 
@@ -1121,6 +1361,7 @@ Introduce scripts to export users dump and to execute SQL queries; improved anon
 
 https://github.com/atviriduomenys/spinta/issues/1415
 Some additional improvements for the synchronization:
+
     - Added new fields for Dataset API that conforms to the UAPI: `service` & `series`.
     - Added `parent_id` to the API to be able to add hierarchy via the API.
     - Fixed a bug where the translations were not setting properly.
@@ -1128,9 +1369,11 @@ Some additional improvements for the synchronization:
 
 https://github.com/atviriduomenys/katalogas/issues/1812
 Upgrade Django 3.2 -> Django 4.2:
+
     - Changed `delete(..)` methods to `form_valid(..)` in all `DeleteView` views.
     - Changed some model `save(..)` methods to automatically update fields, if `update_fields` are used.
     - Few smaller fixes for deprecated features.
+
 Fix `AgreementGeneratePdf` view errors by adding missing urls to context. Also reuse `base_form.html` instead of custom one.
 
 https://github.com/atviriduomenys/katalogas/issues/1758

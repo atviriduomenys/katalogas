@@ -15,16 +15,39 @@ from typer import Argument, Option, confirm, echo, run
 _KEEP_PUBLIC_CONTENT = False
 
 
+# The djangocms-blog schema is gone; only an upgrade that stopped half way leaves it standing.
+STORY_CONTENT_TABLE = "djangocms_stories_postcontent"
+LEGACY_STORY_TABLE = "djangocms_blog_post_translation"
+
+
+def _story_content_table(db: Database) -> str:
+    """The story content table, or stop: `dataset` would silently scrub a missing one.
+
+    A pre-upgrade or half-upgraded database is refused too - its legacy text would go out as is.
+    """
+    if STORY_CONTENT_TABLE not in db.tables:
+        raise SystemExit(
+            f"This database has no {STORY_CONTENT_TABLE}. Story text would go out unscrubbed, so nothing was changed."
+        )
+    if LEGACY_STORY_TABLE in db.tables:
+        raise SystemExit(
+            f"This database still has {LEGACY_STORY_TABLE}, left by a django-cms 5 upgrade that did "
+            "not finish. This script only scrubs the djangocms-stories schema, so that text would go "
+            "out as it is - nothing was changed."
+        )
+    return STORY_CONTENT_TABLE
+
+
 def main(
     uri: str = Argument(..., help=("Database URI (postgresql://user:pass@host:port/db)")),
     yes: bool = Option(False, help="Do not ask anything, just do it"),
     keep_public_content: bool = Option(
         False,
         help=(
-            "Keep PUBLISHED editorial content readable: news and CMS page texts, titles "
-            "and slugs. Drafts, scheduled, expired, non-public and deleted rows are anonymized "
+            "Keep PUBLISHED editorial content readable: stories, news and old portal pages - "
+            "their texts, titles and slugs. Drafts, scheduled, expired, non-public and deleted rows are anonymized "
             "as usual - only what the site already shows to everyone is spared. Bylines are "
-            "removed, including the one scripts/migrate_news.py wrote into the article text as "
+            "removed, including the one the old news migration wrote into the article text as "
             "'<p>Autorius: NAME</p>'. WARNING: the kept text itself is NOT scanned, so it can "
             "still contain names, e-mail addresses or phone numbers that an editor typed into "
             "an article. Use this when someone has to REVIEW the content, e.g. after a CMS "
@@ -55,7 +78,7 @@ def main(
         "organization",
         "adp_cms_page",
         "news_item",
-        "djangocms_blog_post_translation",
+        _story_content_table(db),
         "reversion_version",
         "api_description",
         "vitrina_datasets_contact",
@@ -68,6 +91,7 @@ def main(
         "dataset_migrate",
         "dataset",
         "cms_page",
+        *(["cms_pagecontent"] if "cms_pagecontent" in db.tables else []),
         "account_emailconfirmation",
         "socialaccount_socialaccount",
         "socialaccount_socialtoken",
@@ -112,10 +136,12 @@ def main(
             func = sys.modules[__name__].__dict__[f"_anonymize_{table}"]
             func(db, fake, pbar, users)
 
+    _scrub_story_plugins(db)
 
-# scripts/migrate_news.py prepends "<p>Autorius: NAME</p>" to the body and the summary, so the
-# byline ends up inside post_text / abstract, not only in a column of its own. Keeping the article
-# text therefore means keeping that name unless it is scrubbed out explicitly.
+
+# The old news migration (scripts/migrate_news.py, now in git history) prepended "<p>Autorius: NAME</p>"
+# to the body and the summary, so the byline sits inside post_text / abstract too. Keeping the
+# article text therefore means keeping that name unless it is scrubbed out explicitly.
 _BYLINE_RE = re.compile(r"<p>Autorius:.*?</p>", re.S)
 
 
@@ -125,13 +151,14 @@ def _scrub_byline(text: str | None) -> str | None:
     return _BYLINE_RE.sub("<p>Autorius: example, example</p>", text)
 
 
-def _published_post_ids(db: Database) -> Set[int]:
-    """Ids of posts djangocms-blog would actually show.
+def _published_story_content_ids(db: Database) -> Set[int]:
+    """Ids of story contents the site shows: a published version of a post inside its publication window.
 
-    Not just `publish`: its published() queryset also requires the start date to have
-    passed and the end date not to have. A scheduled or expired post is not public yet
-    (or any more), so its text must not be spared.
+    Drafts, unpublished and archived versions, scheduled and expired posts are not public, so their text is not spared.
     """
+    if "djangocms_versioning_version" not in db.tables:
+        return set()
+
     now = datetime.now(timezone.utc)
 
     def _passed(value, future: bool) -> bool:
@@ -141,12 +168,26 @@ def _published_post_ids(db: Database) -> Set[int]:
             value = value.replace(tzinfo=timezone.utc)
         return value > now if future else value <= now
 
+    published_versions = {
+        row["object_id"]
+        for row in db.query(
+            """
+            SELECT version.object_id
+            FROM djangocms_versioning_version version
+            JOIN django_content_type ct ON ct.id = version.content_type_id
+            WHERE ct.app_label = 'djangocms_stories' AND ct.model = 'postcontent' AND version.state = 'published'
+            """
+        )
+    }
+    public_posts = {
+        row["id"]
+        for row in db["djangocms_stories_post"].all()
+        if _passed(row.get("date_published"), future=False) and _passed(row.get("date_published_end"), future=True)
+    }
     return {
         row["id"]
-        for row in db["djangocms_blog_post"].all()
-        if row.get("publish")
-        and _passed(row.get("date_published"), future=False)
-        and _passed(row.get("date_published_end"), future=True)
+        for row in db[STORY_CONTENT_TABLE].all()
+        if row["id"] in published_versions and row.get("post_id") in public_posts
     }
 
 
@@ -159,19 +200,18 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
             "email": fake.email(),
             "phone": fake.phone_number(),
             "address": fake.address(),
+            "website": fake.url(),
         }
         objects.update(data, [pk_name])
         pbar.update(1)
 
 
-def _anonymize_djangocms_blog_post_translation(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
-) -> None:
-    objects: Table = db["djangocms_blog_post_translation"]
+def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
+    objects: Table = db[table]
     pk_name = "id"
-    published = _published_post_ids(db) if _KEEP_PUBLIC_CONTENT else set()
+    published = _published_story_content_ids(db) if _KEEP_PUBLIC_CONTENT else set()
     for record in objects.all():
-        if _KEEP_PUBLIC_CONTENT and record.get("master_id") in published:
+        if record[pk_name] in published:
             # Published article: keep the text, but strip the byline embedded in it.
             objects.update(
                 {
@@ -198,13 +238,46 @@ def _anonymize_djangocms_blog_post_translation(
         pbar.update(1)
 
 
+# Empty on this portal - STORIES_USE_PLACEHOLDER is off, so article text lives
+# in post_text. A config with placeholders on keeps it here instead.
+STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"),)
+
+
+def _scrub_story_plugins(db: Database) -> None:
+    if "djangocms_text_text" not in db.tables:
+        return
+
+    conditions = " OR ".join(
+        f"(ct.app_label = '{app_label}' AND ct.model = '{model}')" for app_label, model in STORY_CONTENT_TYPES
+    )
+    db.query(
+        f"""
+        UPDATE djangocms_text_text SET body = '<p>example</p>'
+        WHERE cmsplugin_ptr_id IN (
+            SELECT plugin.id
+            FROM cms_cmsplugin plugin
+            JOIN cms_placeholder placeholder ON placeholder.id = plugin.placeholder_id
+            JOIN django_content_type ct ON ct.id = placeholder.content_type_id
+            WHERE {conditions}
+        )
+        """
+    )
+
+
+def _anonymize_djangocms_stories_postcontent(
+    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
+) -> None:
+    """Story text."""
+    _anonymize_story_content(db, pbar, STORY_CONTENT_TABLE)
+
+
 def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["news_item"]
     pk_name = "id"
     for record in objects.all():
         if _KEEP_PUBLIC_CONTENT and record.get("is_public") and not record.get("deleted"):
             # Published item: keep the text, drop both byline columns and the byline
-            # that migrate_news.py wrote into the text itself.
+            # that the old news migration wrote into the text itself.
             data = {
                 pk_name: record[pk_name],
                 "author_name": "example, example",
@@ -372,6 +445,15 @@ def _anonymize_dataset(db: Database, fake: Faker, pbar: tqdm, users: dict[str, d
 
 def _anonymize_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["cms_page"]
+    pk_name = "id"
+    for record in objects.all():
+        data = {pk_name: record[pk_name], "changed_by": fake.first_name(), "created_by": fake.first_name()}
+        objects.update(data, [pk_name])
+        pbar.update(1)
+
+
+def _anonymize_cms_pagecontent(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    objects: Table = db["cms_pagecontent"]
     pk_name = "id"
     for record in objects.all():
         data = {pk_name: record[pk_name], "changed_by": fake.first_name(), "created_by": fake.first_name()}

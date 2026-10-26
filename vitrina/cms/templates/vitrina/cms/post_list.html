@@ -17,26 +17,26 @@
 {% endblock %}
 
 {% block content %}
-{% if post_list %}
-    {% for i in post_list %}
+{% if postcontent_list %}
+    {% for i in postcontent_list %}
         <div class="columns">
-            {% if i.main_image %}
+            {% if i.post.main_image %}
                 <div class="column is-3">
                     <figure class="image">
                         <p class="newsitem-thumb-image">
-                            <img src="{{ i.main_image.url }}" alt="{{ i.title }}" />
+                            <img src="{{ i.post.main_image.url }}" alt="{{ i.title }}" />
                         </p>
                     </figure>
                 </div>
             {% endif %}
-            <div class="column {% if i.main_image %}is-9{% else %}is-12{% endif %}">
+            <div class="column {% if i.post.main_image %}is-9{% else %}is-12{% endif %}">
                 <div class="media-content single-item">
                     <div class="content">
                         <div class="m-b-sm">
                             <h2 class="is-size-5"><a href="{{ i.get_absolute_url }}" class="usecase-url">{{ i.title }}</a></h2>
                             <p>
                                 <span>{% translate "Publikavimo data" %}: <i>{{ i.date_published|date:"SHORT_DATETIME_FORMAT" }}</i></span>
-                                {% if i.author %}<br/><span>{% translate "Autorius" %}: <i>{{ i.author }}</i></span>{% endif %}
+                                {% if i.post.author %}<br/><span>{% translate "Autorius" %}: <i>{{ i.post.author }}</i></span>{% endif %}
                             </p>
                         </div>
                         <div>

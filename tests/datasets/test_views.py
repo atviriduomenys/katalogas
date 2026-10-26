@@ -48,7 +48,15 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.models import Dataset, DatasetAttribution, DatasetStructure, Type, Relation, Attribution
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetAttribution,
+    DatasetStructure,
+    EndpointDescription,
+    Type,
+    Relation,
+    Attribution,
+)
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -267,6 +275,21 @@ class TestDatasetDetailView:
         resp = app.get(dataset_detail_data["dataset"].get_absolute_url()).follow()
         assert list(resp.context["resources"]) == [dataset_detail_data["dataset_distribution"]]
 
+    def test_dataset_detail_maturity_uses_get_level(self, app: DjangoTestApp):
+        from vitrina.structure.factories import MetadataFactory, ModelFactory
+
+        dataset = DatasetFactory()
+        dataset_metadata = dataset.metadata.first()
+        dataset_metadata.average_level = 2
+        dataset_metadata.save()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(dataset=dataset, object=model, average_level=5)
+
+        resp = app.get(dataset.get_absolute_url()).follow()
+
+        assert dataset.get_level() == 2
+        assert resp.context["data_maturity"] == 2
+
     def test_dataset_detail_description_url_not_double_linkified(self, app: DjangoTestApp):
         url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
         dataset = DatasetFactory(description=f"Duomenu pristatymas: {url}")
@@ -407,7 +430,7 @@ class TestDatasetDetailView:
             organization=org,
             endpoint_url="http://test.com",
             endpoint_type=endpoint_format,
-            endpoint_description="http://example.com",
+            endpoint_description=["http://example.com"],
             endpoint_description_type=endpoint_description_format,
         )
 
@@ -417,7 +440,7 @@ class TestDatasetDetailView:
         assert response.status_code == 200
 
         assert data_service.endpoint_url in response.text
-        assert data_service.endpoint_description in response.text
+        assert 'href="http://example.com"' in response.text
         assert data_service.endpoint_type.title in response.text
         assert endpoint_description_format.title not in response.text
 
@@ -1058,11 +1081,10 @@ class TestDatasetListView:
         assert objects == [dataset_with_all_filters.pk]
 
         selected = _get_selected(resp.context)
-        assert selected == {
+        assert {key: value for key, value in selected.items() if key != "tags"} == {
             "status": Dataset.HAS_DATA,
             "organization": str(organization.pk),
             "category": str(category.pk),
-            "tags": [str(tag_id_1), str(tag_id_2)],
             "frequency": frequency.pk,
             "published": [
                 (2022, "Y"),
@@ -1070,6 +1092,7 @@ class TestDatasetListView:
                 (2022, 2, "M"),
             ],
         }
+        assert sorted(selected["tags"]) == sorted([str(tag_id_1), str(tag_id_2)])
 
     def test_dataset_filter_with_pages(self, app: DjangoTestApp):
         inventored_dataset = None
@@ -1708,7 +1731,7 @@ class TestDatasetUpdateView:
         dataservice = DatasetServiceFactory(
             organization=organization,
             endpoint_url=None,
-            endpoint_description=None,
+            endpoint_description=[],
             endpoint_type=json_format,
         )
         agent = AgentFactory(organization=organization)
@@ -1726,6 +1749,29 @@ class TestDatasetUpdateView:
         assert response.status_code == 302
         dataservice.refresh_from_db()
         assert dataservice.agent == agent
+
+    def test_dataset_update_service_removes_one_of_multiple_endpoint_descriptions(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        dataservice = DatasetServiceFactory(
+            organization=organization,
+            endpoint_url="https://data.gov.lt",
+            endpoint_description=["http://api.data.gov.lt", "http://api2.data.gov.lt"],
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change", kwargs={"pk": dataservice.id})
+
+        form = app.get(url).forms["dataset-form"]
+        form.set("endpoint_description", "", index=0)
+        response = form.submit()
+
+        assert response.status_code == 302
+        dataservice.refresh_from_db()
+        assert list(dataservice.endpoint_description.values_list("download_url", flat=True)) == [
+            "http://api2.data.gov.lt"
+        ]
+        assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
 
 
 class TestDatasetCreateView:
@@ -2242,7 +2288,7 @@ class TestDatasetCreateView:
         assert dataset.agent is None
         assert dataset.conforms_to is None
         assert dataset.endpoint_url == "https://data.gov.lt"
-        assert dataset.endpoint_description == "http://api.data.gov.lt"
+        assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == ["http://api.data.gov.lt"]
 
     def test_create_service_without_endpoint_description(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
@@ -2267,7 +2313,41 @@ class TestDatasetCreateView:
 
         assert dataset.agent is None
         assert dataset.endpoint_url == "https://data.gov.lt"
-        assert not dataset.endpoint_description
+        assert not dataset.endpoint_description.exists()
+
+    def test_create_service_with_multiple_endpoint_descriptions(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        contact = ContactFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["endpoint_url"] = "https://data.gov.lt"
+        form["endpoint_description"] = ["http://api.data.gov.lt", "http://api2.data.gov.lt"]
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent is None
+        assert dataset.endpoint_url == "https://data.gov.lt"
+        assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == [
+            "http://api.data.gov.lt",
+            "http://api2.data.gov.lt",
+        ]
+
+        res = app.get(reverse("dataset-rdf-download", args=[dataset.pk]))
+        assert res.status_code == 200
+        assert '<dcat:endpointDescription rdf:resource="http://api.data.gov.lt"/>' in res.text
+        assert '<dcat:endpointDescription rdf:resource="http://api2.data.gov.lt"/>' in res.text
 
     def test_create_without_name(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
@@ -3579,6 +3659,76 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     assert resp.context["history"][0]["user"] == user
 
 
+def _create_service_with_endpoint_description(app: DjangoTestApp, user, url_value: str | list[str]) -> Dataset:
+    organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory(name="service")
+    contact = ContactFactory(organization=organization)
+    url = reverse("dataset-add", kwargs={"pk": organization.pk, "subclass_uuid": subclass.pk})
+    form = app.get(url).forms["dataset-form"]
+    form["title"] = "Service title"
+    form["tags"] = "test"
+    form["contact"] = contact.pk
+    form["endpoint_url"] = "https://data.gov.lt"
+    form["endpoint_description"] = url_value
+    assert form.submit().status_code == 302
+    return Dataset.objects.filter(translations__title="Service title").first()
+
+
+def _get_history_reprs(app: DjangoTestApp, dataset: Dataset) -> list[str]:
+    resp = app.get(reverse("dataset-history", args=[dataset.pk]))
+    return [repr_ for entry in resp.context["history"] for repr_, url in entry["action"]["objects"]]
+
+
+def _history_reprs_contain(reprs: list[str], repr_: str) -> bool:
+    return any(r == repr_ for r in reprs)
+
+
+def test_dataset_history_shows_replaced_endpoint_description(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    app.set_user(user)
+    dataset = _create_service_with_endpoint_description(app, user, "http://api.data.gov.lt")
+
+    url = reverse("dataset-change", args=[dataset.pk])
+    form = app.get(url).forms["dataset-form"]
+    form["endpoint_description"] = "http://api.updated.gov.lt"
+    assert form.submit().status_code == 302
+
+    assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
+    assert _history_reprs_contain(_get_history_reprs(app, dataset), "http://api.data.gov.lt")
+
+
+def test_dataset_history_shows_cleared_endpoint_description(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    app.set_user(user)
+    dataset = _create_service_with_endpoint_description(app, user, "http://api.data.gov.lt")
+
+    url = reverse("dataset-change", args=[dataset.pk])
+    form = app.get(url).forms["dataset-form"]
+    form["endpoint_description"] = ""
+    assert form.submit().status_code == 302
+
+    assert not EndpointDescription.objects.filter(download_url="http://api.data.gov.lt").exists()
+    assert _history_reprs_contain(_get_history_reprs(app, dataset), "http://api.data.gov.lt")
+
+
+def test_dataset_history_shows_multiple_endpoint_descriptions_after_removal(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    app.set_user(user)
+    dataset = _create_service_with_endpoint_description(
+        app, user, ["http://api.data.gov.lt", "http://api2.data.gov.lt"]
+    )
+
+    url = reverse("dataset-change", args=[dataset.pk])
+    form = app.get(url).forms["dataset-form"]
+    form.set("endpoint_description", "", index=0)
+    assert form.submit().status_code == 302
+
+    assert list(dataset.endpoint_description.values_list("download_url", flat=True)) == ["http://api2.data.gov.lt"]
+    history_reprs = _get_history_reprs(app, dataset)
+    assert _history_reprs_contain(history_reprs, "http://api.data.gov.lt")
+    assert _history_reprs_contain(history_reprs, "http://api2.data.gov.lt")
+
+
 class TestDatasetStructureImport:
     def test_dataset_structure_import_without_permission(self, app: DjangoTestApp):
         user = UserFactory()
@@ -4168,6 +4318,8 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         title="Failas 1",
         description="Failas su prieigos nuoroda",
         format=FileFormat(
+            title="CSV",
+            extension="CSV",
             uri=f"{po}/file-type/CSV",
             media_type_uri=f"{iana}/media-types/text/csv",
         ),
@@ -4180,6 +4332,8 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         title="Failas 2",
         description="Failas be prieigos nuorodos",
         format=FileFormat(
+            title="JSON",
+            extension="JSON",
             uri=f"{po}/file-type/JSON",
             media_type_uri=f"{iana}/media-types/application/json",
         ),
@@ -4324,6 +4478,8 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         title="Failas 1",
         description="Failas su prieigos nuoroda",
         format=FileFormat(
+            title="CSV",
+            extension="CSV",
             uri=f"{po}/file-type/CSV",
             media_type_uri=f"{iana}/media-types/text/csv",
         ),
@@ -4336,6 +4492,8 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         title="Failas 2",
         description="Failas be prieigos nuorodos",
         format=FileFormat(
+            title="JSON",
+            extension="JSON",
             uri=f"{po}/file-type/JSON",
             media_type_uri=f"{iana}/media-types/application/json",
         ),
@@ -4715,7 +4873,11 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     iana = "http://www.iana.org/assignments"
     po = "http://publications.europa.eu/resource/authority"
 
-    dataset = DatasetFactory(
+    organization = OrganizationFactory(
+        title="Data Enterprise",
+        email="data@example.com",
+    )
+    dataset = DatasetServiceFactory(
         title={
             "lt": "Testas1",
             "en": "Test1",
@@ -4732,17 +4894,14 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
                 uri=f"{po}/data-theme/ENVI",
             ),
         ],
-        organization=OrganizationFactory(
-            title="Data Enterprise",
-            email="data@example.com",
-        ),
-        service=True,
+        organization=organization,
+        contact=ContactFactory(email="data@example.com", organization=organization),
         endpoint_url="https://endpoint-url.com",
         endpoint_type=FileFormat(
             uri=f"{po}/file-type/WMS",
             media_type_uri=f"{iana}/media-types/application/wms",
         ),
-        endpoint_description="https://endpoint-description.com",
+        endpoint_description=["https://endpoint-description.com"],
     )
     service_type = TypeFactory(name=Type.SERVICE)
     dataset.type.add(service_type)
@@ -4797,6 +4956,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
                 <vcard:hasEmail rdf:resource="mailto:data@example.com"/>
             </vcard:Kind>
         </dcat:contactPoint>
+            <dcat:keyword>test tag</dcat:keyword>
         <dcat:endpointURL rdf:resource="https://endpoint-url.com"/>
         <dct:format>
             <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/WMS"/>

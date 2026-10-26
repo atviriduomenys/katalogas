@@ -3,7 +3,7 @@ import datetime
 from django import forms
 
 from django.utils.translation import gettext_lazy as _
-from djangocms_text_ckeditor.fields import HTMLFormField
+from djangocms_text.fields import HTMLFormField
 
 from vitrina.cms.models import LearningMaterial, Faq, ExternalSite, Deployment
 from vitrina.orgs.models import PublishedReport

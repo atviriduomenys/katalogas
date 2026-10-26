@@ -1,11 +1,13 @@
 from typing import Iterable
 
 import factory
+from django.contrib.auth.models import Group
 from factory.django import DjangoModelFactory
 
 from vitrina.cms.factories import FilerImageFactory
 from vitrina.datasets.models import Dataset
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
+from vitrina.users.factories import UserFactory
 
 
 class ProjectFactory(DjangoModelFactory):
@@ -46,3 +48,12 @@ class UseCaseClientScopeFactory(DjangoModelFactory):
     scope = factory.Faker("uri")
     use_case_client = factory.SubFactory(UseCaseClientFactory)
     is_active = True
+
+
+class ProjectManagerFactory(UserFactory):
+    is_staff = True
+
+    @factory.post_generation
+    def groups(self, create: bool, extracted, **kwargs) -> None:
+        if create:
+            self.groups.add(Group.objects.get(name="Panaudojimo atvejų tvarkytojai"))

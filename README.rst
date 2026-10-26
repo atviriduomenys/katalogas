@@ -156,6 +156,15 @@ Then we can run:
 check queries the Site table before migrations run on a fresh database (a
 django-cms bootstrapping quirk).
 
+On an empty database, the production page tree and the news (stories)
+configuration can be created with (pages are published as the superuser; pages
+whose slug already exists are left alone, so it is safe to run again):
+
+.. code:: sh
+
+    python manage.py createsuperuser
+    python scripts/create_pages.py
+
 To generate static files run (build the webpack bundles first so
 `collectstatic` picks them up):
 
@@ -193,6 +202,32 @@ To log into adminer open http://localhost:9000/ in your browser and use credenti
     Password: secret
     Database: adp-dev
 
+To use Umami analytics, open http://localhost:3000/ and log in as `admin` / `umami`. Add a website,
+then set these values in `.env`::
+
+    UMAMI_SCRIPT_URL=http://localhost:3000/script.js
+    UMAMI_WEBSITE_ID=<website id from Umami>
+
+Umami does not count visits from headless browsers.
+
+On test and prod, nginx serves Umami under `/analytics`. The official image cannot use a sub-path, so
+build the server image with the prefix::
+
+    docker build --build-arg BASE_PATH=/analytics -t umami-analytics:3.4.0 \
+        https://github.com/umami-software/umami.git#v3.4.0
+
+Linting database migrations for backward-incompatibility (the same ``Lint migrations`` check that
+CI runs on pull requests) requires postgres and redis to be running, with the database migrated to
+the base branch. It lints only the migrations added since the given base commit (pass your pull
+request's base branch)::
+
+    poetry run python manage.py lintmigrations --git-commit-id origin/devel --skip-checks
+
+A backward-incompatible migration (dropping/renaming a column, adding a NOT NULL column, etc.) makes
+the command exit non-zero. For a deliberate, reviewed exception, exempt a migration by name with
+``--ignore-name <migration_name>``.
+
+
 Scripts that are run periodically:
 
 - Script that adds holiday dates to database:
@@ -226,9 +261,6 @@ To set up a viisp social account provider:
     from cryptography.fernet import Fernet
     key = Fernet.generate_key()
 
-To use google analytics go to http://127.0.0.1:8000/admin/extra_settings/setting/ add setting GOOGLE_ANALYTICS_ID
-and set provided google analytics id.
-
 Testing
 *******
 
@@ -255,3 +287,53 @@ Run a single test:
 
     Running the full test suite takes approximately 10 to 15 minutes on a fast
     computer.
+
+Smoke tests
+***********
+
+Smoke tests drive a *running* Katalogas instance exclusively through the
+browser (Playwright/Chromium) — they do not access the database directly.
+They register users through the UI, confirm them via e-mails recorded in the
+SentMail admin, and exercise organization, resource (dataset, information
+system, data service), agent, and admin flows. The instance must run with
+``DEBUG`` enabled (fake VIISP login) and provide the admin account from
+``docker-compose.yml`` (``test@test.com`` / ``test``).
+
+To run the smoke tests against a freshly initialized (empty) database:
+
+#. Reset the database (stop the app containers first so active connections
+   do not block the drop):
+
+   .. code:: sh
+
+       docker compose stop vitrina celery
+       docker exec katalogas-postgres-1 psql -U adp -d postgres -c 'DROP DATABASE "adp-dev";'
+       docker exec katalogas-postgres-1 psql -U adp -d postgres -c 'CREATE DATABASE "adp-dev" OWNER adp;'
+
+#. Re-initialize and restart the app containers (the container entrypoint
+   runs migrations and rebuilds the search index):
+
+   .. code:: sh
+
+       docker compose start vitrina celery
+       DJANGO_SUPERUSER_EMAIL=test@test.com DJANGO_SUPERUSER_PASSWORD=test \
+         python manage.py createsuperuser --noinput
+
+   (Run ``manage.py`` inside ``nix develop`` or the container.)
+
+#. Wait until the login page responds (the entrypoint needs a minute or two
+   to build webpack assets and migrate), then run the suite:
+
+   .. code:: sh
+
+       pytest smoketests --base-url=http://localhost:8000 -vvra --tb=short
+
+All tests are idempotent — they create missing data on first run and reuse
+it afterwards, so they can also be pointed at an already running instance:
+
+.. code:: sh
+
+    pytest smoketests --base-url=http://localhost:8000
+
+Pass ``--headed`` (together with a display) to watch the browser while the
+tests run.

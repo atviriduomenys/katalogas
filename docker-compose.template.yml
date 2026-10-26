@@ -35,11 +35,13 @@ services:
       - /tmp/${BRANCH}-static:/app/static
 
   katalogas-${BRANCH}-database:
-    image: postgres:16
+    image: postgres:18
     environment:
       - POSTGRES_DB=katalogas
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin123
+      # Keep PGDATA on the mounted path below - the image no longer defaults there.
+      - PGDATA=/var/lib/postgresql/data
     volumes:
       - ${BRANCH}-postgres:/var/lib/postgresql/data
     networks:

@@ -30,7 +30,7 @@
                                 <td>{{ param_item.metadata.first.prepare }}</td>
                                 <td>{{ param_item.metadata.first.source }}</td>
                                 <td>{{ param_item.metadata.first.title }}</td>
-                                <td><p>{{ param_item.metadata.first.description | markdown | safe }}</p></td>
+                                <td>{{ param_item.metadata.first.description | markdown | safe }}</td>
                                 <td>
                                     {% if can_update or can_manage_structure %}
                                         <div class="buttons is-right">

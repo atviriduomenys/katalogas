@@ -15,6 +15,7 @@ import json
 import os
 import environ
 from pathlib import Path
+from urllib.parse import urlsplit
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 
@@ -129,17 +130,18 @@ INSTALLED_APPS = [
     "treebeard",
     "filer",
     "easy_thumbnails",
-    "djangocms_text_ckeditor",
     "djangocms_file",
     "djangocms_picture",
     "djangocms_link",
-    "aldryn_apphooks_config",
     "parler",
     "taggit",
     "taggit_autosuggest",
     "meta",
     "sortedm2m",
-    "djangocms_blog",
+    "djangocms_text",
+    "djangocms_versioning",
+    "djangocms_alias",
+    "djangocms_stories",
     "reversion",
     "hitcount",
     "crispy_forms",
@@ -233,6 +235,7 @@ TEMPLATES = [
                 "sekizai.context_processors.sekizai",
                 "cms.context_processors.cms_settings",
                 "vitrina.context_processors.current_domain",
+                "vitrina.context_processors.umami",
             ],
         },
     },
@@ -528,7 +531,7 @@ PASSWORD_HASHERS = [
 
 HASHER_SALT = "2LxpaW5qOe80xZjTPyzpgi"
 
-BLOG_USE_PLACEHOLDER = False
+STORIES_USE_PLACEHOLDER = False
 META_USE_SITES = True
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = ("bulma",)
@@ -620,7 +623,6 @@ CONTENT_SECURITY_POLICY = {
             "https://cdnjs.cloudflare.com",  # CodeMirror
             "https://cdn.jsdelivr.net",  # Chart.js
             "https://unpkg.com",  # Leaflet
-            "https://www.googletagmanager.com",  # Google Tag Manager
         ],
         # TODO: drop 'unsafe-inline' once inline style attributes are removed.
         "style-src": [
@@ -635,10 +637,6 @@ CONTENT_SECURITY_POLICY = {
             "'self'",
             "https://www.google.com",  # reCAPTCHA
             "https://www.gstatic.com",  # reCAPTCHA
-            "https://www.googletagmanager.com",
-            "https://www.google-analytics.com",
-            "https://*.google-analytics.com",
-            "https://*.analytics.google.com",
         ],
         "frame-src": [
             "'self'",
@@ -653,6 +651,15 @@ CONTENT_SECURITY_POLICY = {
         "form-action": ["'self'"],
     },
 }
+
+UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="")
+UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
+
+_umami_url = urlsplit(UMAMI_SCRIPT_URL)
+if _umami_url.netloc:
+    _umami_origin = f"{_umami_url.scheme}://{_umami_url.netloc}" if _umami_url.scheme else _umami_url.netloc
+    CONTENT_SECURITY_POLICY["DIRECTIVES"]["script-src"].append(_umami_origin)
+    CONTENT_SECURITY_POLICY["DIRECTIVES"]["connect-src"].append(_umami_origin)
 
 # --- Strict (nonce-based) CSP, currently shipped REPORT-ONLY ------------------------------------
 # The block above is the ENFORCED policy and still allows 'unsafe-inline'. Below we derive the
@@ -748,8 +755,8 @@ SELECT2_CACHE_BACKEND = "select2"
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = None
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
 
 # Cookie security: SameSite and HttpOnly flags
 SESSION_COOKIE_SAMESITE = "Lax"  # Prevents CSRF via cross-site requests
@@ -757,7 +764,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access (XSS protection)
 # Note: CSRF_COOKIE_HTTPONLY not set - jquery.postcsrf.js needs to read it for hitcount
 
-CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt"]
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=["https://*.gov.lt"])
 LANGUAGE_COOKIE_SECURE = True
 
 OTP_EMAIL_TOKEN_VALIDITY = 600
@@ -784,3 +791,15 @@ TAGULOUS_AUTOCOMPLETE_JS = (
     "tagulous/adaptor/select2-4.js",
 )
 TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}
+
+# djangocms_versioning, djangocms_alias and djangocms_stories are listed above, ordered
+# so that vitrina.users comes before cms and vitrina.cms after djangocms_stories.
+CMS_CONFIRM_VERSION4 = True
+DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"
+
+try:
+    import django_migration_linter  # noqa: F401
+
+    INSTALLED_APPS += ["django_migration_linter"]
+except ImportError:
+    pass

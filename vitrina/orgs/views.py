@@ -105,7 +105,8 @@ from vitrina.orgs.services import (
     has_perm,
     Action,
     hash_api_key,
-    is_organization_resource_manager,
+    can_edit_organization_details,
+    can_manage_is_metadata,
     manage_subscriptions_for_representative,
     pre_representative_delete,
     remove_representative_subscription,
@@ -142,9 +143,6 @@ class OrganizationBaseViewMixin:
         context_data["can_view_contacts"] = has_perm(self.request.user, Action.VIEW, Contact, self.organization)
         context_data["can_update_organization"] = has_perm(
             self.request.user, Action.UPDATE, Representative, self.organization
-        )
-        context_data["is_information_system_administrator"] = is_organization_resource_manager(
-            self.request.user, self.organization
         )
         context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
@@ -361,9 +359,9 @@ class OrganizationListView(FacetedListView):
             if row["jurisdiction_id"] is not None and row["count"]
         }
         jurisdictions = Organization.public.values_list("jurisdiction_id", flat=True).distinct()
-        jurisdictions_objects = {
-            jurisdiction: AreaOfManagement.objects.filter(id=jurisdiction).first() for jurisdiction in jurisdictions
-        }
+        jurisdictions_objects = AreaOfManagement.objects.in_bulk(
+            {jurisdiction for jurisdiction in jurisdictions if jurisdiction is not None}
+        )
 
         context["jurisdictions"] = [
             {
@@ -519,6 +517,11 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, OrganizationBas
             language_code=self.request.LANGUAGE_CODE,
         )
         context_data["parent_links"].update({None: _("Informacija")})
+        # Only this page draws the buttons, so these queries stay off every other organization page.
+        context_data["can_manage_is_metadata"] = can_manage_is_metadata(self.request.user, self.organization)
+        context_data["can_edit_organization_details"] = can_edit_organization_details(
+            self.request.user, self.organization
+        )
         return context_data
 
 
@@ -956,19 +959,16 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
 
-        current_parent = self.object.get_parent()
-        new_jurisdiction = form.cleaned_data.get("jurisdiction")
-
         self.object.save()
 
-        if current_parent != new_jurisdiction and new_jurisdiction:
+        if "jurisdiction" in form.changed_data:
             Organization.fix_tree(fix_paths=True)
-            parent_org = get_or_create_parent_org(new_jurisdiction)
-            node = Organization.objects.get(pk=self.object.pk)
-            node.move(parent_org, "sorted-child")
+            parent_org = get_or_create_parent_org(
+                form.cleaned_data["jurisdiction"], child=Organization.objects.get(pk=self.object.pk)
+            )
+            Organization.objects.get(pk=self.object.pk).move(parent_org, "sorted-child")
             self.object.refresh_from_db()
 
-        if "jurisdiction" in form.changed_data:
             # save related datasets to update search index
             for dataset in self.object.dataset_set.all():
                 dataset.save()
@@ -976,6 +976,8 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
             # save related requests to update search index
             for request_assignment in self.object.requestassignment_set.all():
                 request_assignment.request.save()
+        elif "title" in form.changed_data:
+            Organization.fix_tree(fix_paths=True)
 
         messages.success(self.request, _("Organizacija atnaujinta sėkmingai"))
 

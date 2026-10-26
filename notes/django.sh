@@ -15,8 +15,6 @@ poetry run python scripts/migrate_files.py \
     -distribution-path var/data/ \
     --cms-path var/data/files/ \
     --structure-path var/data/structure/
-poetry run python scripts/migrate_pages.py
-poetry run python scripts/migrate_news.py
 
 # Reset passwords of all users
 poetry run python manage.py shell

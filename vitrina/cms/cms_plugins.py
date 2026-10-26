@@ -1,10 +1,18 @@
-from cms.models import CMSPlugin
+from cms.models import CMSPlugin, Page, PageContent
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
 from django.utils.translation import gettext as _
 
 from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
 from vitrina.orgs.models import PublishedReport
+
+
+def _published_page_ids(language):
+    """PKs of pages with published content in this language.
+
+    `PageContent.objects` returns published versions only; distinct() as it joins the version table.
+    """
+    return PageContent.objects.filter(language=language).values_list("page_id", flat=True).distinct()
 
 
 @plugin_pool.register_plugin
@@ -16,12 +24,20 @@ class SideMenuPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        if instance.page.node.get_children():
-            parent = instance.page.node
-            children = instance.page.node.get_children()
+        page = instance.placeholder.page if instance.placeholder_id else None
+        if page is None:
+            context.update({"children": Page.objects.none(), "parent": None})
+            return context
+
+        published = _published_page_ids(instance.language)
+        children = page.get_child_pages().filter(pk__in=published)
+        if children:
+            parent = page
         else:
-            parent = instance.page.node.get_parent()
-            children = instance.page.node.get_siblings()
+            # The heading links to the parent, so an unpublished parent would offer a 404
+            # under an empty title.
+            parent = page.parent if page.parent_id in published else None
+            children = page.get_siblings().filter(pk__in=published)
         context.update({"children": children, "parent": parent})
         return context
 

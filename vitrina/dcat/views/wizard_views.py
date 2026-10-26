@@ -19,25 +19,31 @@ from vitrina.dcat.wizard import (
     _build_wizard_tree,
 )
 from vitrina.orgs.models import Organization
-from vitrina.orgs.services import is_organization_resource_manager
+from vitrina.orgs.services import can_manage_is_metadata
 from vitrina.orgs.views import OrganizationBaseViewMixin
 
 
-class OrganizationWizardView(
+class WizardAccessMixin(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     OrganizationBaseViewMixin,
-    TemplateView,
 ):
-    template_name = "vitrina/orgs/wizard.html"
+    """Access rules shared by every view of the IS metadata wizard."""
 
     organization: Organization
 
     def has_permission(self) -> bool:
-        return is_organization_resource_manager(self.request.user, self.organization)
+        return can_manage_is_metadata(self.request.user, self.organization)
 
     def handle_no_permission(self) -> HttpResponseBase:
+        # ``LoginRequiredMixin`` routes anonymous requests here too; ``super()`` keeps ``next``.
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
         return redirect("organization-detail", pk=self.organization.pk)
+
+
+class OrganizationWizardView(WizardAccessMixin, TemplateView):
+    template_name = "vitrina/orgs/wizard.html"
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
@@ -61,19 +67,8 @@ class OrganizationWizardView(
         return context
 
 
-class OrganizationWizardTreeView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    OrganizationBaseViewMixin,
-    TemplateView,
-):
+class OrganizationWizardTreeView(WizardAccessMixin, TemplateView):
     template_name = "vitrina/orgs/_wizard_tree_children_fragment.html"
-
-    def has_permission(self) -> bool:
-        return is_organization_resource_manager(self.request.user, self.organization)
-
-    def handle_no_permission(self) -> HttpResponseBase:
-        return redirect("organization-detail", pk=self.organization.pk)
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
@@ -82,35 +77,13 @@ class OrganizationWizardTreeView(
         return context
 
 
-class OrganizationWizardNodesView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    OrganizationBaseViewMixin,
-    View,
-):
-    def has_permission(self) -> bool:
-        return is_organization_resource_manager(self.request.user, self.organization)
-
-    def handle_no_permission(self) -> HttpResponseBase:
-        return redirect("organization-detail", pk=self.organization.pk)
-
+class OrganizationWizardNodesView(WizardAccessMixin, View):
     def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         _, nodes_by_key = _build_wizard_tree(self.organization)
         return JsonResponse(nodes_by_key)
 
 
-class OrganizationWizardCreateRedirectView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    OrganizationBaseViewMixin,
-    View,
-):
-    def has_permission(self) -> bool:
-        return is_organization_resource_manager(self.request.user, self.organization)
-
-    def handle_no_permission(self) -> HttpResponseBase:
-        return redirect("organization-detail", pk=self.organization.pk)
-
+class OrganizationWizardCreateRedirectView(WizardAccessMixin, View):
     def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         child_type = request.GET.get("type", "")
         parent_type = request.GET.get("parent_type", "")

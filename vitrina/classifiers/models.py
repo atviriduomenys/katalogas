@@ -55,6 +55,13 @@ class Category(MP_Node):
         yield from self.get_ancestors()
         yield from self.get_descendants()
 
+    def root_path(self) -> str:
+        return self.path[: self.steplen]
+
+    @classmethod
+    def root_icons(cls) -> list[tuple[str, str]]:
+        return list(cls.objects.filter(depth=1).order_by("title").values_list("path", "icon"))
+
 
 class Licence(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59

@@ -3,7 +3,6 @@ import logging
 import pathlib
 from datetime import datetime
 from functools import cached_property
-from random import randrange
 from uuid import uuid4
 
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
@@ -14,6 +13,8 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
 from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from filer.fields.file import FilerFileField
 from tagulous.models import TagModel
 from parler.models import TranslatedFields, TranslatableModel
@@ -46,6 +47,7 @@ from vitrina.datasets.managers import (
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
+from vitrina.projects.models import Project
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem, Version
 from vitrina.users.models import User
@@ -138,6 +140,9 @@ class Resource(MP_Node, TranslatableModel):
         self.path = last_root._inc_path() if last_root else self._get_path(None, 1, 1)
         self.save()
         self.fix_tree(fix_paths=True)
+
+
+DATASERVICE_FORMAT_TITLES = ["CSV", "JSON", "JSONL"]
 
 
 class Dataset(Resource):
@@ -316,6 +321,9 @@ class Dataset(Resource):
         verbose_name=_("Duomenų tvarkytojas"),
     )
 
+    # This is an internal field, not related to DCAT `adms:status` used for
+    # `dcat:Distribution` and `cpsv:PublicService.`
+    # See: https://github.com/atviriduomenys/katalogas/issues/1779
     status = models.CharField(
         max_length=255,
         choices=STATUSES,
@@ -480,12 +488,24 @@ class Dataset(Resource):
         related_name="format_endpoint_types",
         help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."),
     )
-    endpoint_description = models.CharField(
-        verbose_name=_("API specifikacija"),
+    # Issue #2771: deprecated physical column. Preserved as storage-only for the
+    # legacy single-value scalar. It is excluded from forms, validation, exports,
+    # detail pages and administration. New multi-value URLs are stored in the
+    # `endpoint_description` M2M via the `EndpointDescription` model below.
+    endpoint_description_deprecated = models.CharField(
+        verbose_name=_("API specifikacija (pasenęs)"),
         null=True,
         blank=True,
         max_length=512,
         validators=[validate_absolute_uri],
+        db_column="endpoint_description",
+    )
+    # Issue #2771: multi-value replacement for the deprecated scalar column above.
+    endpoint_description = models.ManyToManyField(
+        "EndpointDescription",
+        verbose_name=_("API specifikacija"),
+        related_name="datasets",
+        blank=True,
     )
     service = models.BooleanField(
         _("DataService rinkinys"),
@@ -835,11 +855,6 @@ class Dataset(Resource):
         tags = self._get_tags_from_cache_or_db()
         return [tag.pk for tag in tags]
 
-    def get_tag_title(self, tag_id) -> str:
-        if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
-            return tag.name
-        return ""
-
     def get_resource_titles(self) -> list[str]:
         return [dist.title for dist in self.datasetdistribution_set.all() if dist.title]
 
@@ -855,8 +870,15 @@ class Dataset(Resource):
     def get_request_title_list(self) -> list[str]:
         return [request.title for request in self.dataset_request.all() if request.title]
 
+    def _public_projects(self) -> list[Project]:
+        return [
+            project
+            for project in self.project_set.all()
+            if project.is_public and project.status == Project.APPROVED and not project.deleted
+        ]
+
     def get_project_title_list(self) -> list[str]:
-        return [project.title for project in self.project_set.all()]
+        return [project.title for project in self._public_projects()]
 
     def get_resource_description(self) -> list[str]:
         return [dist.description for dist in self.datasetdistribution_set.all() if dist.description]
@@ -876,7 +898,7 @@ class Dataset(Resource):
         return [request.description for request in self.dataset_request.all() if request.description]
 
     def get_project_title_description(self) -> list[str]:
-        return [project.description for project in self.project_set.all()]
+        return [project.description for project in self._public_projects()]
 
     def get_all_groups(self):
         ids = (
@@ -943,9 +965,6 @@ class Dataset(Resource):
             categories.append({"title_en": category.title_en, "pk": category.pk})
         return categories
 
-    def level(self):
-        return randrange(5)
-
     def latest_version(self) -> Version:
         return self.dataset_version.order_by("-version").first()
 
@@ -954,29 +973,33 @@ class Dataset(Resource):
         return [obj.get_format() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
     def filter_formats(self):
-        formats = [obj.get_format().pk for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        return [fmt.pk for fmt in self.get_available_formats()]
 
-        if list(self.model_set.all()) and any(
-            dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format
-        ):
-            from vitrina.resources.models import Format
+    def serves_dataservice_formats(self, distributions=None) -> bool:
+        if not self.model_set.all():
+            return False
+        if distributions is None:
+            distributions = self.datasetdistribution_set.all()
+        return any(dist.format.extension == "UAPI" for dist in distributions if dist.format)
 
-            additional_formats = Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]).values_list("pk", flat=True)
-            formats.extend(additional_formats)
-        return formats
+    @classmethod
+    def dataservice_formats(cls):
+        from vitrina.resources.models import Format
+
+        return Format.objects.filter(title__in=DATASERVICE_FORMAT_TITLES)
+
+    def get_available_formats(self, dataservice_formats: list | None = None):
+        distributions = list(self.datasetdistribution_set.all())
+        formats = [dist.get_format() for dist in distributions if dist.get_format()]
+        if self.serves_dataservice_formats(distributions):
+            if dataservice_formats is None:
+                dataservice_formats = list(self.dataservice_formats())
+            formats = formats + dataservice_formats
+        return sorted(set(formats), key=lambda fmt: fmt.title)
 
     @property
     def distinct_formats(self):
-        if self.is_part_of_dataservice() and self.model_set.all():
-            from vitrina.resources.models import Format
-
-            additional_formats = [
-                Format.objects.get(title="CSV"),
-                Format.objects.get(title="JSON"),
-                Format.objects.get(title="JSONL"),
-            ]
-            return sorted(set(self.formats + additional_formats), key=lambda x: x.title)
-        return sorted(set(self.formats), key=lambda x: x.title)
+        return self.get_available_formats()
 
     @cached_property
     def dataset_content_type(self):
@@ -1155,8 +1178,11 @@ class Dataset(Resource):
             ).values_list("level", flat=True)
 
             if levels:
-                metadata.average_level = sum(levels) / len(levels)
+                from vitrina.search.indexing import index_dataset_level
+
+                metadata.average_level = round(sum(levels) / len(levels))
                 metadata.save()
+                index_dataset_level(self.pk, metadata.average_level)
 
     def get_creators(self):
         return list(
@@ -1168,23 +1194,11 @@ class Dataset(Resource):
     def published_created_sort(self):
         return self.published or self.created
 
-    def get_icon(self):
-        root_category_ids = []
-        for cat in self.category.all():
-            root_category_ids.append(cat.get_root().pk)
-
-        if root_category_ids:
-            category = (
-                Category.objects.filter(
-                    pk__in=root_category_ids,
-                    icon__isnull=False,
-                )
-                .order_by("title")
-                .first()
-            )
-            if category:
-                return category.icon
-        return None
+    def get_icon(self, root_icons: list[tuple[str, str]] | None = None):
+        if root_icons is None:
+            root_icons = Category.root_icons()
+        paths = {category.root_path() for category in self.category.all()}
+        return next((icon for path, icon in root_icons if path in paths), None)
 
     def _get_first_metadata(self) -> Metadata | None:
         prefetched = getattr(self, "_prefetched_objects_cache", {})
@@ -1759,6 +1773,22 @@ class Dataset(Resource):
 
         self.documentation.set(documentations)
 
+    def update_endpoint_description(self, urls: list[str]) -> None:
+        """Replace linked endpoint descriptions with the given sorted URLs.
+
+        URLs are de-duplicated and shared across datasets via `EndpointDescription`
+        rows. URLs no longer referenced by any dataset are deleted (orphan cleanup).
+        """
+        descriptions: list[EndpointDescription] = []
+        for url in urls:
+            description, _ = EndpointDescription.objects.get_or_create(download_url=url)
+            descriptions.append(description)
+
+        self.endpoint_description.set(descriptions)
+
+        # Delete rows that are no longer linked to any dataset.
+        _prune_orphan_endpoint_descriptions()
+
     def update_was_generated_by(self, titles: list[str]) -> None:
         activities: list[Activity] = []
         for title in titles:
@@ -1835,12 +1865,20 @@ class Dataset(Resource):
 
         return [(None, self.endpoint_url)]
 
-    def get_endpoint_description(self) -> str | None:
+    def get_endpoint_descriptions(self) -> list[str]:
+        """Return persisted endpoint description URLs plus the virtual agent URL.
+
+        Persisted URLs are sorted and deduplicated. The virtual agent-generated
+        URL is merged into the same set (so ordering is uniform) when an agent is
+        set and is never stored.
+        """
+        urls = {ed.download_url for ed in self.endpoint_description.all()}
+
         if self.agent and (metadata_version := self.latest_version()):
             # TODO: Update to possibly different url once DataService OpenAPI export is implemented
-            return reverse("dataset-structure-export-openapi", args=[self.pk, metadata_version.pk])
+            urls.add(reverse("dataset-structure-export-openapi", args=[self.pk, metadata_version.pk]))
 
-        return self.endpoint_description
+        return sorted(urls)
 
 
 class DatasetReport(Dataset):
@@ -2267,6 +2305,24 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
 
 class Documentation(UUIDBaseModel):
     documentation_link = models.CharField(max_length=500, blank=True, unique=True)
+
+
+# Issue #2771: stores the multi-value `dcat:endpointDescription` URLs. Rows are
+# shared across datasets; a URL is removed only when no dataset references it.
+class EndpointDescription(UUIDBaseModel):
+    download_url = models.CharField(
+        verbose_name=_("API specifikacija"),
+        max_length=512,
+        unique=True,
+        validators=[validate_absolute_uri],
+    )
+
+    class Meta:
+        verbose_name = _("API specifikacija")
+        verbose_name_plural = _("API specifikacijos")
+
+    def __str__(self) -> str:
+        return self.download_url
 
 
 class Relation(TranslatableModel):
@@ -2712,3 +2768,21 @@ class QualityMeasurement(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.codename
+
+
+def _prune_orphan_endpoint_descriptions() -> None:
+    """Delete EndpointDescription rows no longer referenced by any dataset.
+
+    EndpointDescription rows are shared across datasets through the M2M relation,
+    so removing the last link or deleting a dataset can leave rows nothing
+    references. Drop those orphans; rows still linked to at least one dataset
+    remain.
+    """
+    EndpointDescription.objects.filter(datasets__isnull=True).delete()
+
+
+@receiver(post_delete, sender=Dataset)
+def _cleanup_orphan_endpoint_descriptions(sender, instance, **kwargs):
+    # Issue #2771: when a dataset is deleted, drop EndpointDescription rows that
+    # are no longer referenced by any dataset. Shared rows remain.
+    _prune_orphan_endpoint_descriptions()

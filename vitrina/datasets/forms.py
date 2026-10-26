@@ -122,14 +122,14 @@ class BaseResourceForm(TranslatableModelForm):
     )
     description = TranslatedField(required=True)
     files = MultipleFilerField(
-        label=_("Dokumentacija"),
+        label=_("Dokumento failas"),
         help_text=_("Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         upload_to=Dataset.UPLOAD_TO,
         allow_empty_file=True,
     )
     documentation = StringListField(
-        label=_("Dokumentacija"),
+        label=_("Nuoroda į dokumentaciją"),
         help_text=_("Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         unique=True,
@@ -236,6 +236,9 @@ class BaseResourceForm(TranslatableModelForm):
 
             self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
             self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
+            self.initial["endpoint_description"] = list(
+                instance.endpoint_description.values_list("download_url", flat=True)
+            )
 
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
@@ -303,9 +306,10 @@ class ServiceResourceForm(BaseResourceForm):
         required=False,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
-    endpoint_description = forms.CharField(
+    endpoint_description = StringListField(
         label=_("API specifikacija"),
         required=False,
+        unique=True,
         help_text=_(
             "Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, aprašymas. "
             "Įskaitant jų operacijas, parametrus ir t. t. Atitinka dcat:endpointDescription."
@@ -396,6 +400,18 @@ class ServiceResourceForm(BaseResourceForm):
             self.add_error(field_name, error_message)
 
         return cleaned_data
+
+    def clean_endpoint_description(self) -> list[str]:
+        urls = self.cleaned_data.get("endpoint_description") or []
+
+        item_errors = validate_urls(urls)
+
+        if any(item_errors):
+            self.fields["endpoint_description"].widget.validation_errors = item_errors
+            # Plain per-item messages (matching the scalar field error wording).
+            raise ValidationError([e.split(": ", 1)[-1] if e else e for e in item_errors if e])
+
+        return sorted(set(urls))
 
 
 class CatalogResourceForm(BaseResourceForm):
@@ -680,6 +696,9 @@ class DatasetAdminForm(forms.ModelForm):
             "numchild",
             "path",
             "publisher",
+            # Issue #2771: deprecated storage-only scalar, excluded from admin.
+            "endpoint_description_deprecated",
+            # Issue #2771: deprecated, never changed.
             "endpoint_description_type",
         )
 
@@ -836,6 +855,14 @@ class AddProjectForm(forms.ModelForm):
 
 
 class AddRequestForm(forms.ModelForm):
+    requests = ModelMultipleChoiceField(
+        label=_("Poreikiai"),
+        queryset=None,
+        required=True,
+        help_text=_("Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų rinkinys."),
+        widget=Select2MultipleWidget(),
+    )
+
     class Meta:
         model = Dataset
         fields = ["requests"]
@@ -852,14 +879,6 @@ class AddRequestForm(forms.ModelForm):
             Field("requests"),
             Submit("submit", _("Pridėti"), css_class="button is-primary"),
         )
-
-    requests = ModelMultipleChoiceField(
-        label=_("Poreikiai"),
-        queryset=None,
-        widget=forms.CheckboxSelectMultiple,
-        required=True,
-        help_text=_("Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų rinkinys."),
-    )
 
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):

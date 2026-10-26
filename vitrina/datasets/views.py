@@ -2,6 +2,7 @@ import csv
 import itertools
 import secrets
 import json
+import logging
 import uuid
 from collections import Counter, defaultdict
 from datetime import datetime
@@ -98,6 +99,7 @@ from vitrina.uapi.models import Agent
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
+    build_dataset_rows,
     update_facet_data,
     get_frequency_and_format,
     get_requests,
@@ -127,6 +129,7 @@ from vitrina.datasets.models import (
     Contact,
     DatasetExcludedGroups,
     DCATResourceSubclass,
+    EndpointDescription,
 )
 from vitrina.classifiers.models import (
     Category,
@@ -161,6 +164,8 @@ from vitrina.structure.services import (
 )
 from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
 
+logger = logging.getLogger(__name__)
+
 
 class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
     template_name = "vitrina/datasets/list.html"
@@ -191,6 +196,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
     row_prefetch_related = (
         "translations",
         "category",
+        "category__datasetgroupcategoryuri_set",
         "excluded_groups",
         "metadata",
         "model_set",
@@ -250,6 +256,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["rows"] = build_dataset_rows(context["object_list"]) if self.get_paginate_by(self.object_list) else []
         facet_fields = context.get("facets").get("fields")
         date_facets = context.get("facets").get("dates")
         form = context.get("form")
@@ -327,10 +334,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     *filter_args,
                     "tags",
                     _("Žymė"),
-                    Dataset,
+                    Dataset.tags.tag_model,
                     multiple=True,
                     is_int=False,
-                    display_method="get_tag_title",
+                    use_str=True,
                 ),
                 Filter(
                     *filter_args,
@@ -549,7 +556,7 @@ class DatasetDetailView(
                 )
                 else None
             ),
-            "data_maturity": dataset.metadata_set.average_level(),
+            "data_maturity": dataset.get_level(),
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
@@ -837,7 +844,11 @@ class DatasetCreateView(
             return crumbs
 
         return self.breadcrumbs_organization(self.organization) + [
-            Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
+            Crumb(
+                title=_("Duomenų ištekliai"),
+                url=f"{reverse('organization-datasets', args=[self.organization.pk])}"
+                f"?selected_facets=organization_exact:{self.organization.pk}",
+            ),
             Crumb(
                 title=_("Pridėti duomenų išteklių"), url=reverse("resource-subclass-add", args=[self.organization.pk])
             ),
@@ -917,7 +928,6 @@ class DatasetCreateView(
         else:
             self.object.endpoint_url = None
             self.object.endpoint_type = None
-            self.object.endpoint_description = None
             self.object.service = False
         if subclass.name == DCATResourceSubclass.SERIES:
             self.object.series = True
@@ -994,6 +1004,9 @@ class DatasetCreateView(
         if documentation_urls := form.cleaned_data.get("documentation"):
             self.object.update_documentation(documentation_urls)
 
+        if endpoint_description_urls := form.cleaned_data.get("endpoint_description"):
+            self.object.update_endpoint_description(endpoint_description_urls)
+
         if service_type := form.cleaned_data.get("service_type"):
             self.object.service_type.set(service_type)
 
@@ -1036,7 +1049,10 @@ class ResourceSubclassCreateView(
 
         org = get_object_or_404(Organization, id=self.kwargs["pk"])
         return self.breadcrumbs_organization(org) + [
-            Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
+            Crumb(
+                title=_("Duomenų ištekliai"),
+                url=f"{reverse('organization-datasets', args=[org.pk])}?selected_facets=organization_exact:{org.pk}",
+            ),
             Crumb(title=_("Pridėti duomenų išteklių"), url=None, is_current=True),
         ]
 
@@ -1214,6 +1230,9 @@ class DatasetUpdateView(
         if "documentation" in form.changed_data:
             self.object.update_documentation(form.cleaned_data["documentation"])
 
+        if "endpoint_description" in form.changed_data:
+            self.object.update_endpoint_description(form.cleaned_data.get("endpoint_description") or [])
+
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
 
@@ -1330,6 +1349,17 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         attribution_history_objects = self._get_history_objects_for_model(DatasetAttribution)
         relation_history_objects = self._get_history_objects_for_model(DatasetRelation)
 
+        # Issue #2771: show versions of endpoint description URLs ever linked to this
+        # dataset. update_endpoint_description() unlinks old URLs and prunes orphan
+        # rows, so previously linked URLs can only be recovered from the endpoint
+        # description M2M values recorded in historical dataset versions.
+        endpoint_description_ids = set(self.object.endpoint_description.values_list("pk", flat=True))
+        for version in dataset_history_objects:
+            endpoint_description_ids.update(self._get_version_m2m_ids(version, "endpoint_description"))
+        endpoint_description_history_objects = Version.objects.get_for_model(EndpointDescription).filter(
+            object_id__in=list(endpoint_description_ids)
+        )
+
         history_objects = (
             property_history_objects
             | model_history_objects
@@ -1338,6 +1368,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             | dataset_distribution_history_objects
             | attribution_history_objects
             | relation_history_objects
+            | endpoint_description_history_objects
         )
         return history_objects.order_by("-revision__date_created")
 
@@ -1352,6 +1383,21 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             ]
 
         return all_versions.filter(pk__in=filtered_versions_ids)
+
+    @staticmethod
+    def _get_version_m2m_ids(version: Version, field_name: str) -> list:
+        try:
+            fields = json.loads(version.serialized_data)[0]["fields"]
+        except (json.JSONDecodeError, IndexError, KeyError, TypeError):
+            logger.warning(
+                "Failed to parse M2M field %s from version %s (pk=%s):",
+                field_name,
+                version,
+                version.pk,
+                exc_info=True,
+            )
+            return []
+        return fields.get(field_name) or []
 
 
 class DatasetStructureImportView(
@@ -3560,10 +3606,10 @@ class UpdateDatasetTagFilters(DatasetFilterItemsView):
                     *filter_args,
                     "tags",
                     _("Žymė"),
-                    Dataset,
+                    Dataset.tags.tag_model,
                     multiple=True,
                     is_int=False,
-                    display_method="get_tag_title",
+                    use_str=True,
                     remove_search_query=True,
                 ),
             )

@@ -523,19 +523,44 @@ def is_supervisor(user: User, node: Model) -> bool:
     return False
 
 
-def is_organization_resource_manager(user: User, organization: Organization) -> bool:
+def can_manage_is_metadata(user: User, organization: Organization) -> bool:
+    """Who may open the IS metadata wizard: superusers, the organization's resource roles, and
+    staff with the ``manage_is_metadata`` permission (the "IS metaduomenų tvarkytojai" group).
+
+    Staff without the permission is left out on purpose. ``has_perm`` grants staff the wizard
+    forms through a direct URL, so the permission only opens the wizard to staff the team picks.
+    """
     if not user.is_authenticated:
         return False
+    if user.is_superuser:
+        return True
+    if user.is_staff and user.has_perm("vitrina_orgs.manage_is_metadata"):
+        return True
     return (
         Representative.objects.filter(
             user=user,
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization.pk,
-            role=Representative.RESOURCE_MANAGER,
+            role__in=Representative.RESOURCE_ROLE_KEYS,
         )
         .exclude(deleted=True)
         .exists()
     )
+
+
+def can_edit_organization_details(user: User, organization: Organization) -> bool:
+    """Who sees the "Redaguoti organizaciją" button on the organization page.
+
+    Anyone with ``Action.UPDATE``, except those who already open the same form from the wizard's
+    root node. Nobody loses access, no ACL rule moves, and a superuser keeps both buttons.
+    """
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    if not has_perm(user, Action.UPDATE, organization):
+        return False
+    return not can_manage_is_metadata(user, organization)
 
 
 def is_manager(user: User, node: Model) -> bool:

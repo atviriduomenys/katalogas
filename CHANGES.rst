@@ -4,6 +4,13 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2841
+
+- Update ``spinta`` from ``1.1.0`` to ``1.3.1``. The exported OpenAPI file is now OpenAPI
+  ``3.0.3``, has no ``servers``, ``/version`` or ``/health``, and puts the dataset title as the
+  first paragraph of ``info.description``.
+- Export models, properties and enum values with an empty visibility as ``public`` in the OpenAPI
+  file. Spinta leaves them out, so most datasets exported a file with no models.
 
 
 v 1.27.0 (2026-10-23)

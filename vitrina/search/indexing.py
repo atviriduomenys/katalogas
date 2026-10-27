@@ -216,6 +216,14 @@ def index_dataset(dataset):
         _remove_dataset(dataset.pk)
 
 
+@transaction.atomic
+def index_dataset_level(dataset_id, level):
+    if DatasetSearchDoc.objects.filter(dataset_id=dataset_id).exists():
+        DatasetSearchFacet.objects.update_or_create(
+            dataset_id=dataset_id, field="level", defaults={"value": str(level)}
+        )
+
+
 def index_request(request):
     if indexable_requests().filter(pk=request.pk).exists():
         _write_request(request)

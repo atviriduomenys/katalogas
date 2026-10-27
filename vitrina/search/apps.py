@@ -1,5 +1,5 @@
 from django.apps import AppConfig
-from django.db.models.signals import post_save
+from django.db.models.signals import m2m_changed, post_save
 
 
 class SearchConfig(AppConfig):
@@ -9,8 +9,20 @@ class SearchConfig(AppConfig):
 
     def ready(self):
         from vitrina.datasets.models import Dataset
+        from vitrina.projects.models import Project
         from vitrina.requests.models import Request
-        from vitrina.search.signals import index_dataset_on_save, index_request_on_save
+        from vitrina.search.signals import (
+            index_dataset_on_save,
+            index_project_datasets_on_link,
+            index_project_datasets_on_save,
+            index_request_on_save,
+        )
 
         post_save.connect(index_dataset_on_save, sender=Dataset, dispatch_uid="vitrina_search_dataset")
         post_save.connect(index_request_on_save, sender=Request, dispatch_uid="vitrina_search_request")
+        post_save.connect(index_project_datasets_on_save, sender=Project, dispatch_uid="vitrina_search_project")
+        m2m_changed.connect(
+            index_project_datasets_on_link,
+            sender=Project.datasets.through,
+            dispatch_uid="vitrina_search_project_datasets",
+        )

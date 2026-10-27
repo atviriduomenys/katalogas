@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
-from django.db.models import Q, Max, Avg, QuerySet, F
+from django.db.models import Q, Max, QuerySet, F
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -51,12 +51,6 @@ class Prefix(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class MetadataManager(models.Manager):
-    def average_level(self):
-        avg_level = self.exclude(average_level__isnull=True).aggregate(Avg("average_level"))["average_level__avg"]
-        return round(avg_level) if avg_level is not None else None
 
 
 class Metadata(models.Model):
@@ -108,8 +102,6 @@ class Metadata(models.Model):
         _("Priskirta versijai"),
         default=True,
     )
-
-    objects = MetadataManager()
 
     class Meta:
         db_table = "metadata"

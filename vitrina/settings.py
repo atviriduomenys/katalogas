@@ -15,6 +15,7 @@ import json
 import os
 import environ
 from pathlib import Path
+from urllib.parse import urlsplit
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 
@@ -177,15 +178,6 @@ INSTALLED_APPS = [
     "vitrina.search",
 ]
 
-# Bundled by djangocms-stories only for its one-time data migration, which runs from
-# the django-cms 4.1 tool (DJANGOCMS_BLOG_MIGRATION=1); the release never turns it on.
-if env.bool("DJANGOCMS_BLOG_MIGRATION", default=False):
-    INSTALLED_APPS.insert(INSTALLED_APPS.index("djangocms_stories"), "djangocms_blog")
-
-MIGRATION_MODULES = {
-    "djangocms_stories": "vitrina.cms.stories_migrations",
-}
-
 SERIALIZATION_MODULES = {
     "xml": "tagulous.serializers.xml_serializer",
     "json": "tagulous.serializers.json",
@@ -243,6 +235,7 @@ TEMPLATES = [
                 "sekizai.context_processors.sekizai",
                 "cms.context_processors.cms_settings",
                 "vitrina.context_processors.current_domain",
+                "vitrina.context_processors.umami",
             ],
         },
     },
@@ -630,7 +623,6 @@ CONTENT_SECURITY_POLICY = {
             "https://cdnjs.cloudflare.com",  # CodeMirror
             "https://cdn.jsdelivr.net",  # Chart.js
             "https://unpkg.com",  # Leaflet
-            "https://www.googletagmanager.com",  # Google Tag Manager
         ],
         # TODO: drop 'unsafe-inline' once inline style attributes are removed.
         "style-src": [
@@ -645,10 +637,6 @@ CONTENT_SECURITY_POLICY = {
             "'self'",
             "https://www.google.com",  # reCAPTCHA
             "https://www.gstatic.com",  # reCAPTCHA
-            "https://www.googletagmanager.com",
-            "https://www.google-analytics.com",
-            "https://*.google-analytics.com",
-            "https://*.analytics.google.com",
         ],
         "frame-src": [
             "'self'",
@@ -663,6 +651,15 @@ CONTENT_SECURITY_POLICY = {
         "form-action": ["'self'"],
     },
 }
+
+UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="")
+UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
+
+_umami_url = urlsplit(UMAMI_SCRIPT_URL)
+if _umami_url.netloc:
+    _umami_origin = f"{_umami_url.scheme}://{_umami_url.netloc}" if _umami_url.scheme else _umami_url.netloc
+    CONTENT_SECURITY_POLICY["DIRECTIVES"]["script-src"].append(_umami_origin)
+    CONTENT_SECURITY_POLICY["DIRECTIVES"]["connect-src"].append(_umami_origin)
 
 # --- Strict (nonce-based) CSP, currently shipped REPORT-ONLY ------------------------------------
 # The block above is the ENFORCED policy and still allows 'unsafe-inline'. Below we derive the
@@ -799,3 +796,10 @@ TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]
 # so that vitrina.users comes before cms and vitrina.cms after djangocms_stories.
 CMS_CONFIRM_VERSION4 = True
 DJANGOCMS_VERSIONING_USERNAME_FIELD = "email"
+
+try:
+    import django_migration_linter  # noqa: F401
+
+    INSTALLED_APPS += ["django_migration_linter"]
+except ImportError:
+    pass

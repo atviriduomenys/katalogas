@@ -197,18 +197,6 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def _handle_status_change(self, form, comment, status, request):
         comment.type = Comment.STATUS
-
-        if isinstance(self.obj, Request):
-            return self._handle_request_status_change(form, comment, status, request)
-
-        save_request_comment(self.obj, status, comment.body, request.user)
-        self.obj.status = status
-        self.obj.save()
-        comment.save()
-        self._finalize_comment(comment, request)
-        return redirect(self.obj.get_absolute_url())
-
-    def _handle_request_status_change(self, form, comment, status, request):
         if status == Request.REJECTED:
             has_approved = RequestAssignment.objects.filter(status=Request.APPROVED, request=self.obj).exists()
             has_opened = RequestAssignment.objects.filter(status=Request.OPENED, request=self.obj).exists()

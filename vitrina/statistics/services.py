@@ -4,7 +4,7 @@ import logging
 
 import requests
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 
 from vitrina.datasets.models import Dataset
 from vitrina.projects.models import Project
@@ -44,7 +44,7 @@ def _get_projects():
         Project.objects.filter(datasets__pk__isnull=False)
         .annotate(date=F("created__date"), dataset_id=F("datasets__pk"))
         .values("date", "dataset_id")
-        .annotate(count=Count("datasets"))
+        .annotate(count=Count("datasets", filter=~Q(deleted=True)))
     )
 
 

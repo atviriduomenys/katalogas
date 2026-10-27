@@ -818,6 +818,12 @@ class DatasetCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
 
+        subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
+        if subclass.name == DCATResourceSubclass.CATALOG and not (
+            self.request.user.is_superuser or self.request.user.is_staff
+        ):
+            return False
+
         return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
 
     def get_breadcrumbs(self) -> list[Crumb]:

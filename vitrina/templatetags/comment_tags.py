@@ -190,11 +190,15 @@ def get_author_name(comment, user):
 
     # vitrina_projects
     if comment.content_type.model == "project":
-        organization_id = Project.objects.filter(pk=comment.object_id).first().user.organization
-        if user.representative_set.filter(
-            object_id=organization_id.pk,
-            content_type=ContentType.objects.get_for_model(Organization),
-        ).exists():
+        project = Project.objects.filter(pk=comment.object_id).select_related("user").first()
+        organization = project.user.organization if project and project.user else None
+        if (
+            organization
+            and user.representative_set.filter(
+                object_id=organization.pk,
+                content_type=ContentType.objects.get_for_model(Organization),
+            ).exists()
+        ):
             return f"{comment.user.first_name} {comment.user.last_name}"
 
     return "Sistemos naudotojas"

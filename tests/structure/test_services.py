@@ -1645,9 +1645,30 @@ def test_average_level_without_given_level(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert structure.dataset.metadata.first().average_level == 3
+    # Field levels 3, 3, 3, 3, 4, 5 average to 3.5, which rounds to 4 (matching Model.update_level).
+    assert structure.dataset.metadata.first().average_level == 4
     assert Model.objects.get(metadata__uuid="1").metadata.first().average_level == 3
     assert Model.objects.get(metadata__uuid="2").metadata.first().average_level == 4
+
+
+@pytest.mark.django_db
+def test_dataset_average_level_is_rounded(app: DjangoTestApp):
+    # Field levels average to 4 + 4 + 4 + 3 = 15 / 4 = 3.75, which must round to 4
+    # (not truncate to 3), so the list/filter value matches Model.update_level rounding.
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,,,,City,,,,,,4,,,,,,,,,\n"
+        ",,,,,id,integer,,,,4,,,,,,,,,\n"
+        ",,,,,title,string,,,,4,,,,,,,,,\n"
+        ",,,,,code,string,,,,3,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert structure.dataset.metadata.first().average_level == 4
+    assert structure.dataset.get_level() == 4
 
 
 @pytest.mark.django_db

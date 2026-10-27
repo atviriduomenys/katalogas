@@ -17,6 +17,7 @@ from django.views.generic import (
     View,
 )
 from django.views.generic.edit import DeleteView
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -28,11 +29,18 @@ import requests
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.oauth import OAuthClientManagement
 from vitrina.api.services import get_auth_session
+from vitrina.comments.helpers import (
+    NEW_COMMENT,
+    create_subscription,
+    create_task,
+    send_mail_and_create_tasks_for_subs,
+)
+from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
 from vitrina.orgs.forms import ProjectApiKeyRegenerateForm
 from vitrina.orgs.services import has_perm, Action, hash_api_key
-from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCreateForm
+from vitrina.projects.forms import ProjectForm, ProjectReviewForm, ClientCreateForm, ClientScopeCreateForm
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.smart_contracts import AgreementStatuses
@@ -42,6 +50,7 @@ from vitrina.tasks.models import Task
 from vitrina.views import HistoryView
 from vitrina.helpers import get_current_domain
 from vitrina.projects.services import (
+    can_manage_projects,
     can_update_project,
     can_view_project,
     get_projects,
@@ -59,7 +68,7 @@ logger = logging.getLogger()
 
 class ProjectViewBaseMixin:
     def setup(self, request, *args, **kwargs):
-        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        self.project = get_object_or_404(Project.public, pk=kwargs["pk"])
         return super().setup(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -72,6 +81,8 @@ class ProjectViewBaseMixin:
             {
                 "project": self.project,
                 "can_update_project": can_update_project(self.request.user, self.project),
+                "can_manage_projects": can_manage_projects(self.request.user),
+                "review_form": ProjectReviewForm(self.project),
                 "can_view_agreements": can_view_agreements(self.request.user, self.project),
                 "can_view_clients": can_view_clients(self.request.user, self.project),
                 "can_view_history": can_view_history(self.request.user, self.project),
@@ -174,7 +185,7 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
 
 
 class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
-    model = Project
+    queryset = Project.public.all()
     form_class = ProjectForm
     template_name = "base_form.html"
 
@@ -198,9 +209,7 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         return can_update_project(self.request.user, project)
 
     def form_valid(self, form):
-        super().form_valid(form)
-        self.object = form.save(commit=True)
-        self.object.save()
+        self.object = form.save()
         sub_ct = ContentType.objects.get_for_model(self.object)
         subs = Subscription.objects.filter(
             sub_type=Subscription.PROJECT,
@@ -233,6 +242,80 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         context_data = super().get_context_data(**kwargs)
         context_data["current_title"] = _("Panaudojimo atvejo redagavimas")
         return context_data
+
+
+class ProjectReviewView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, View):
+    def has_permission(self):
+        return can_manage_projects(self.request.user)
+
+    def post(self, request, pk):
+        form = ProjectReviewForm(self.project, request.POST)
+        if not form.is_valid():
+            messages.error(request, "\n".join(error[0] for error in form.errors.values()))
+            return redirect(self.project)
+
+        status = form.cleaned_data["status"]
+        comment = Comment.objects.create(
+            type=Comment.STATUS,
+            status=status,
+            body=form.cleaned_data["body"],
+            user=request.user,
+            content_type=ContentType.objects.get_for_model(self.project),
+            object_id=self.project.pk,
+            is_public=True,
+        )
+        self.project.status = status
+        self.project.save()
+        create_task(NEW_COMMENT, comment.content_type, self.project.pk, request.user, obj=self.project)
+        create_subscription(request.user, comment)
+        send_mail_and_create_tasks_for_subs(
+            NEW_COMMENT,
+            comment.content_type,
+            self.project.pk,
+            request.user,
+            f"{get_current_domain(request)}{self.project.get_absolute_url()}",
+            obj=self.project,
+            text=f"{comment.status_change_text}\n\n{comment.body}".strip(),
+        )
+        if status == Project.APPROVED:
+            messages.success(request, _("Panaudojimo atvejis patvirtintas"))
+        else:
+            messages.success(request, _("Panaudojimo atvejis atmestas"))
+        return redirect(self.project)
+
+
+class ProjectDeleteView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "confirm_delete.html"
+
+    def has_permission(self):
+        return can_manage_projects(self.request.user)
+
+    def dispatch(self, request, *args, **kwargs):
+        has_data_access = (
+            self.project.agreements.exists()
+            or ApiKey.objects.filter(project=self.project).exists()
+            or self.project.client_set.exists()
+        )
+        if self.has_permission() and has_data_access:
+            messages.error(
+                request,
+                _("Negalima ištrinti panaudojimo atvejo, kuris turi sutarčių, API raktų arba klientų."),
+            )
+            return redirect(self.project)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object"] = self.project
+        context["current_title"] = _("Panaudojimo atvejo ištrynimas")
+        return context
+
+    def post(self, request, pk):
+        self.project.deleted = True
+        self.project.deleted_on = timezone.now()
+        self.project.save()
+        messages.success(request, _("Panaudojimo atvejis ištrintas"))
+        return redirect("project-list")
 
 
 class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):
@@ -345,7 +428,7 @@ class ProjectPermissionsView(ProjectViewBaseMixin, PermissionRequiredMixin, Temp
 
 class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
     def dispatch(self, request, *args, **kwargs):
-        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        self.project = get_object_or_404(Project.public, pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -353,7 +436,7 @@ class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
 
     def get(self, request, **kwargs):
         project_id = kwargs.get("pk")
-        project = get_object_or_404(Project, pk=project_id)
+        project = self.project
         apikey = ApiKey.objects.filter(project_id=project_id).first()
         permissions = ["_getone", "_getall", "_search", "_changes"]
 

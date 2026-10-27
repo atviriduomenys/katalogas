@@ -122,14 +122,14 @@ class BaseResourceForm(TranslatableModelForm):
     )
     description = TranslatedField(required=True)
     files = MultipleFilerField(
-        label=_("Dokumentacija"),
+        label=_("Dokumento failas"),
         help_text=_("Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         upload_to=Dataset.UPLOAD_TO,
         allow_empty_file=True,
     )
     documentation = StringListField(
-        label=_("Dokumentacija"),
+        label=_("Nuoroda į dokumentaciją"),
         help_text=_("Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         unique=True,
@@ -855,6 +855,14 @@ class AddProjectForm(forms.ModelForm):
 
 
 class AddRequestForm(forms.ModelForm):
+    requests = ModelMultipleChoiceField(
+        label=_("Poreikiai"),
+        queryset=None,
+        required=True,
+        help_text=_("Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų rinkinys."),
+        widget=Select2MultipleWidget(),
+    )
+
     class Meta:
         model = Dataset
         fields = ["requests"]
@@ -871,14 +879,6 @@ class AddRequestForm(forms.ModelForm):
             Field("requests"),
             Submit("submit", _("Pridėti"), css_class="button is-primary"),
         )
-
-    requests = ModelMultipleChoiceField(
-        label=_("Poreikiai"),
-        queryset=None,
-        widget=forms.CheckboxSelectMultiple,
-        required=True,
-        help_text=_("Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų rinkinys."),
-    )
 
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):

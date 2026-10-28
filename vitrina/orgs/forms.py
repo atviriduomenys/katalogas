@@ -1173,7 +1173,7 @@ class BaseContactForm(ModelForm):
     def _populate_contact_choices(self, organization_id: int) -> None:
         organization_contacts, user_contacts = self._get_organization_and_user_contacts(organization_id)
 
-        self.fields["contact"].choices = [("", "---------")]
+        choices = [("", "---------")]
 
         contact_query = Contact.objects.exclude(email="")
 
@@ -1184,7 +1184,7 @@ class BaseContactForm(ModelForm):
 
         for org in organization_contacts:
             if not existing_contact_emails or (org.email and org.email not in existing_contact_emails):
-                self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
+                choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
 
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
@@ -1193,7 +1193,9 @@ class BaseContactForm(ModelForm):
                 and (not existing_contact_emails or (user.email and user.email not in existing_contact_emails))
             ]
             if user_choices:
-                self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
+                choices.append((_("Naudotojai:"), user_choices))
+
+        self.fields["contact"].choices = choices
 
     def clean_contact(self):
         contact = self.cleaned_data.get("contact")

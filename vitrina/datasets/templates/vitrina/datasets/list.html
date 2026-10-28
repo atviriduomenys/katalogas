@@ -374,15 +374,6 @@
                 }
             });
 
-            let creatorFilter = $('#creator-filter-input');
-            creatorFilter.on('input', function(){
-                if (creatorFilter.val().length !== 0) {
-                    $('.creator_filter_items_body').html('').load(
-                        "{% url 'update-dataset-creator-filters' %}?term=" + creatorFilter.val()
-                    );
-                }
-            });
-
             let catFilter = $('#category-filter-input');
             catFilter.on('input', function(){
                 if (catFilter.val().length !== 0) {

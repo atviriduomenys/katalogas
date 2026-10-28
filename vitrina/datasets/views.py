@@ -425,17 +425,22 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                 sections.append({"type": "filter", "filter": f})
         extra_context["filter_sections"] = sections
 
-        group_filter = next((f for f in extra_context["filters"] if f.name == "groups"), None)
-        hvd_group = (
-            next(
-                (item for item in group_filter.items() if item.title == "Didelės vertės rinkiniai"),
-                None,
-            )
-            if group_filter
-            else None
-        )
-        context["hvd_group_url"] = hvd_group.url if hvd_group else ""
-        context["hvd_group_selected"] = hvd_group.selected if hvd_group else False
+        hvd_group = DatasetGroup.objects.filter(name=DatasetGroup.HVD).first()
+        context["hvd_group_url"] = ""
+        context["hvd_group_selected"] = False
+        if hvd_group:
+            facet = f"groups_exact:{hvd_group.pk}"
+            query = self.request.GET.copy()
+            selected_facets = query.getlist("selected_facets")
+            is_selected = facet in selected_facets
+            if is_selected:
+                selected_facets.remove(facet)
+            else:
+                selected_facets.append(facet)
+            query.setlist("selected_facets", selected_facets)
+            query.pop("page", None)
+            context["hvd_group_url"] = "?" + query.urlencode()
+            context["hvd_group_selected"] = is_selected
 
         search_query_dict = dict(self.request.GET.copy())
         if "query" in search_query_dict:
@@ -3394,6 +3399,8 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
+        self.object.dataset.save()
+        self.object.part_of.save()
         add_to_revision(self.object)
         return super().form_valid(form)
 

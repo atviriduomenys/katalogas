@@ -63,6 +63,7 @@
                     {% for filter in section.filters %}
                         <li class="{% if forloop.first %}is-active{% endif %}">
                             <a class="filter-tab-link"
+                               href="#tab-{{ section.name }}-{{ filter.name }}"
                                data-tab-target="tab-{{ section.name }}-{{ filter.name }}">
                                 {{ filter.title }}
                             </a>
@@ -89,6 +90,16 @@
 
 <script type="text/javascript" nonce="{{ request.csp_nonce }}">
     $(function () {
+
+        let creatorFilter = $('#creator-filter-input');
+        creatorFilter.on('input', function(){
+            if (creatorFilter.val().length !== 0) {
+                $('.creator_filter_items_body').html('').load(
+                    "{% url 'update-dataset-creator-filters' %}?term=" + creatorFilter.val()
+                );
+            }
+        });
+
         $('.filters-more').click(function () {
             let targetClass = 'filter-hidden-' + $(this).attr('id').split('-').pop();
             $('.' + targetClass).toggleClass('is-hidden');

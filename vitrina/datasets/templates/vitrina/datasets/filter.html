@@ -103,7 +103,7 @@
       {% endfor %}
         {% if filter.expand and filter.length > filter.default_item_count %}
         <div>
-           <a class="filters-more" id="filter-hidden-{{ forloop.counter }}" data-expand-text="{{ filter.expand_text }}" data-collapse-text="{{ filter.collapse_text }}">{{ filter.expand_text }}</a>
+            <button type="button" class="filters-more button is-text px-0 has-text-link" id="filter-hidden-{{ forloop.counter }}" data-expand-text="{{ filter.expand_text }}" data-collapse-text="{{ filter.collapse_text }}">{{ filter.expand_text }}</button>
         </div>
         {% endif %}
     </nav>

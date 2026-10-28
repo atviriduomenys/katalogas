@@ -2,11 +2,7 @@
   {% load util_tags %}
   {% if filter_items %}
   {% for item in filter_items %}
-    {% if item.hidden %}
-    <div class="columns is-gapless is-hidden  m-0 mt-1">
-    {% else %}
-    <div class="columns is-gapless  m-0 mt-1">
-    {% endif %}
+    <div class="columns is-gapless m-0 mt-1">
 
       <div class="column is-1">
           <a href="{{ item.url }}" class="has-text-dark">

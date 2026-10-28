@@ -1195,7 +1195,9 @@ class Dataset(Resource):
         return [
             relation.part_of_id
             for relation in self.dataset_relations.all()
-            if relation.relation.name == Relation.CATALOG and relation.part_of_id is not None
+            if relation.relation.name == Relation.CATALOG
+            and relation.part_of_id is not None
+            and relation.part_of.subclass.is_catalog
         ]
 
     def published_created_sort(self):

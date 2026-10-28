@@ -127,7 +127,9 @@ def dataset_index_queryset():
             Prefetch("dataset_request", queryset=Request.objects.prefetch_related("translations")),
             Prefetch(
                 "dataset_relations",
-                queryset=DatasetRelation.objects.prefetch_related("relation"),
+                queryset=DatasetRelation.objects.prefetch_related(
+                    "relation",
+                    Prefetch("part_of", queryset=Dataset.objects.prefetch_related("subclass")),),
             ),
         )
     )

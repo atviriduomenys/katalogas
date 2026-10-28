@@ -1,7 +1,12 @@
+import uuid
+
 from django.db import migrations
 from django.db.migrations.exceptions import IrreversibleError
 
-from vitrina.uapi.utils.utils import generate_agent_uri
+
+# A copy of `vitrina.uapi.utils.utils.generate_agent_uri`, so later changes there do not alter this migration.
+def generate_agent_uri() -> str:
+    return f"https://data.gov.lt/id/dcat/Agent/{uuid.uuid4()}"
 
 
 def assign_instance_uris(apps, schema_editor):

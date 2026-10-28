@@ -1,7 +1,14 @@
+import uuid
+
 from django.db import migrations, models
 
+# `default` below must stay a reference: Django compares it with the model's field.
 import vitrina.uapi.utils.utils
-from vitrina.uapi.utils.utils import generate_agent_uri
+
+
+# A copy of `vitrina.uapi.utils.utils.generate_agent_uri`, so later changes there do not alter this migration.
+def generate_agent_uri() -> str:
+    return f"https://data.gov.lt/id/dcat/Agent/{uuid.uuid4()}"
 
 
 def lock_and_assign_missing_instance_uris(apps, schema_editor):

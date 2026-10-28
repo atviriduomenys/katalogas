@@ -374,7 +374,11 @@ def test_login_second_time(app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == reverse("home")
 
-    app.get(reverse("logout"))
+    logout_form = app.get(reverse("home")).forms["logout-form"]
+    assert logout_form.method.upper() == "POST"
+    resp = logout_form.submit()
+    assert resp.status_code == 302
+    assert resp.url == "/"
 
     form = app.get(reverse("login")).forms["login-form"]
     form["username"] = "testas1@testas.com"

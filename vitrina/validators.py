@@ -87,7 +87,7 @@ class UniquePasswordValidator:
         # Imported here so model modules can import this module without an import cycle.
         from vitrina.users.models import OldPassword
 
-        if user:
+        if user and user.pk:
             old_passwords = OldPassword.objects.filter(user=user).order_by("-created")[:4]
             for old_password in old_passwords:
                 if check_password(password, old_password.password.strip()):

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -225,6 +227,30 @@ def test_sniffing_fails_closed_when_libmagic_errors(monkeypatch):
     monkeypatch.setattr(helpers, "magic", types.SimpleNamespace(from_buffer=boom))
     with pytest.raises(FileValidationError):
         validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))
+
+
+SIGNED_ADOC = Path(__file__).parent.parent / "smart_contracts/files/test_contracts/agreement_one_signer.adoc"
+
+
+def _sniff_as_octet_stream(monkeypatch):
+    import types
+
+    import vitrina.helpers as helpers
+
+    monkeypatch.setattr(
+        helpers, "magic", types.SimpleNamespace(from_buffer=lambda *args, **kwargs: "application/octet-stream")
+    )
+
+
+def test_signed_adoc_is_allowed_when_libmagic_sniffs_octet_stream(monkeypatch):
+    _sniff_as_octet_stream(monkeypatch)
+    validate_file(ContentFile(SIGNED_ADOC.read_bytes(), name="agreement.adoc"))
+
+
+def test_non_zip_adoc_sniffed_as_octet_stream_is_denied(monkeypatch):
+    _sniff_as_octet_stream(monkeypatch)
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(PE_BINARY, name="agreement.adoc"))
 
 
 # --- real form-field entry point (FilerFileField.clean) ---

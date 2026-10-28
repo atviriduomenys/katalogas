@@ -1689,14 +1689,14 @@ bcrypt = ["bcrypt"]
 
 [[package]]
 name = "django-allauth"
-version = "65.19.5"
+version = "65.21.0"
 description = "Integrated set of Django applications addressing authentication, registration, account management as well as 3rd party (social) account authentication."
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "django_allauth-65.19.5-py3-none-any.whl", hash = "sha256:eda48d77cd790d2e60862993fe19e59ff2e18c6be8aa490d407e0ee1108dd385"},
-    {file = "django_allauth-65.19.5.tar.gz", hash = "sha256:03fdb1431e8cecd55071e6c3a3006f2fe1a45b916ee2bf5d14ed0fdadea3b7e5"},
+    {file = "django_allauth-65.21.0-py3-none-any.whl", hash = "sha256:0f55a8bf7c4f7d66df45064eb004f53c6bb50d17381df3b281ae4759e62ab1b5"},
+    {file = "django_allauth-65.21.0.tar.gz", hash = "sha256:26ab74262fbe1aa4bb5a3494d0af220b1606d040c0e31f1af6c9dc0bf7447f61"},
 ]
 
 [package.dependencies]
@@ -1706,11 +1706,11 @@ Django = ">=4.2.16"
 [package.extras]
 headless = ["pyjwt[crypto] (>=2.0,<3)"]
 headless-spec = ["PyYAML (>=6,<7)"]
-idp-oidc = ["oauthlib (>=3.3.0,<4)", "pyjwt[crypto] (>=2.0,<3)"]
+idp-oidc = ["oauthlib (>=4.0.0,<5)", "pyjwt[crypto] (>=2.0,<3)"]
 mfa = ["fido2 (>=1.1.2,<3)", "qrcode (>=7.0.0,<9)"]
 openid = ["python3-openid (>=3.0.8,<4)"]
 saml = ["python3-saml (>=1.15.0,<2.0.0)"]
-socialaccount = ["oauthlib (>=3.3.0,<4)", "pyjwt[crypto] (>=2.0,<3)", "requests (>=2.0.0,<3)"]
+socialaccount = ["oauthlib (>=4.0.0,<5)", "pyjwt[crypto] (>=2.0,<3)", "requests (>=2.0.0,<3)"]
 steam = ["python3-openid (>=3.0.8,<4)"]
 
 [[package]]
@@ -4231,14 +4231,14 @@ files = [
 
 [[package]]
 name = "oauthlib"
-version = "3.3.1"
+version = "4.0.0"
 description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "oauthlib-3.3.1-py3-none-any.whl", hash = "sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1"},
-    {file = "oauthlib-3.3.1.tar.gz", hash = "sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9"},
+    {file = "oauthlib-4.0.0-py3-none-any.whl", hash = "sha256:624c28c13a0a59cabf9747dfa52af63be3e512a7f2714df16e91b5b3a145e6cd"},
+    {file = "oauthlib-4.0.0.tar.gz", hash = "sha256:efb274799819440f95b4ab3b818869f1ce9ae26c5beacba0201d1a1b76b54f86"},
 ]
 
 [package.extras]
@@ -7579,4 +7579,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "f978c091a572d25518a52f5cc98b4f51e90aa4862edff0989f7f461713c57a1c"
+content-hash = "55127db6281d3380d4476e9c1a7566e154e61a8a5ff5848154688969b4475ec0"

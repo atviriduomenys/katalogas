@@ -129,7 +129,8 @@ def dataset_index_queryset():
                 "dataset_relations",
                 queryset=DatasetRelation.objects.prefetch_related(
                     "relation",
-                    Prefetch("part_of", queryset=Dataset.objects.prefetch_related("subclass")),),
+                    Prefetch("part_of", queryset=Dataset.objects.prefetch_related("subclass")),
+                ),
             ),
         )
     )
@@ -216,14 +217,6 @@ def index_dataset(dataset):
         _write_dataset(dataset)
     else:
         _remove_dataset(dataset.pk)
-
-
-@transaction.atomic
-def index_dataset_level(dataset_id, level):
-    if DatasetSearchDoc.objects.filter(dataset_id=dataset_id).exists():
-        DatasetSearchFacet.objects.update_or_create(
-            dataset_id=dataset_id, field="level", defaults={"value": str(level)}
-        )
 
 
 def index_request(request):

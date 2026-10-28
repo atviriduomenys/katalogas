@@ -268,7 +268,7 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "NAME": "vitrina.validators.MinimumLengthValidator",
         "OPTIONS": {
             "min_length": 12,
         },

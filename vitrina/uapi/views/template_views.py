@@ -266,6 +266,8 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
                     if settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH
                     else None
                 ),
+                # Behind API gates `agent_address` is internal, so the public URL is the gate's.
+                "agent_public_url": (self.object.api_gate_server_url or self.object.agent_address).rstrip("/"),
                 "resource_server_url": f"{self.request.scheme}://{self.request.get_host()}/uapi/",
                 "resource_server_id": settings.OAUTH_RESOURCE_URI,
                 "request_history": page.object_list,

@@ -763,6 +763,33 @@ class TestAgentEnvDetail:
         config = response.html.find(id="config-text").get_text()
         assert "token_validation_keys_download_url" not in config
 
+    @pytest.mark.parametrize(
+        "api_gate_server_url, agent_address, expected",
+        [
+            ("https://gate.example.com/agent/", "http://10.0.0.1/", "https://gate.example.com/agent"),
+            ("", "https://agent.example.com/", "https://agent.example.com"),
+        ],
+    )
+    def test_config_has_agent_public_url(
+        self,
+        app: DjangoTestApp,
+        representative_user: User,
+        organization: Organization,
+        agent_environment: AgentEnvironment,
+        api_gate_server_url: str,
+        agent_address: str,
+        expected: str,
+    ):
+        agent_environment.api_gate_server_url = api_gate_server_url
+        agent_environment.agent_address = agent_address
+        agent_environment.save()
+        app.set_user(representative_user)
+
+        response = app.get(reverse("agent-env-detail", args=[organization.pk, agent_environment.pk]))
+
+        config = response.html.find(id="config-text").get_text()
+        assert f"resource_server_url: {expected}\n" in config
+
     @pytest.mark.parametrize("is_archived_agent", [True, False])
     def test_archived_agent(
         self,

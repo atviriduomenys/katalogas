@@ -1,10 +1,10 @@
 import json
+from datetime import datetime, timezone
 
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
-from django.utils import timezone
 from freezegun import freeze_time
 
 from vitrina.classifiers.models import AreaOfManagement
@@ -145,15 +145,15 @@ def jur_org_data(db):
     jur2 = AreaOfManagement.objects.get(id=3)
 
     org1 = OrganizationFactory(title="Org Alpha", jurisdiction=jur1)
-    org1.created = timezone.datetime(2023, 6, 10, 10, 0, 0, tzinfo=timezone.utc)
+    org1.created = datetime(2023, 6, 10, 10, 0, 0, tzinfo=timezone.utc)
     org1.save()
 
     org2 = OrganizationFactory(title="Org Beta", jurisdiction=jur1)
-    org2.created = timezone.datetime(2022, 12, 5, 10, 0, 0, tzinfo=timezone.utc)
+    org2.created = datetime(2022, 12, 5, 10, 0, 0, tzinfo=timezone.utc)
     org2.save()
 
     org3 = OrganizationFactory(title="Org Gamma", jurisdiction=jur2)
-    org3.created = timezone.datetime(2023, 3, 20, 10, 0, 0, tzinfo=timezone.utc)
+    org3.created = datetime(2023, 3, 20, 10, 0, 0, tzinfo=timezone.utc)
     org3.save()
 
     return [org1, org2, org3]

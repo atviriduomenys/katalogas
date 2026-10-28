@@ -1,9 +1,12 @@
+from unittest.mock import patch
+
 import pytest
 from django.contrib.admin import AdminSite
 from django.urls import reverse
 from django.utils.html import escape
 from django_webtest import DjangoTestApp
 
+from vitrina.admin import RevisionCommentVersionAdmin
 from vitrina.classifiers.admin import GeoportalCategoryAdmin
 from vitrina.classifiers.factories import (
     LicenceFactory,
@@ -88,3 +91,20 @@ def test_categories_display_escapes_title():
 
     assert xss_payload not in str(result)
     assert escape(xss_payload) in str(result)
+
+
+@pytest.mark.django_db
+def test_delete_sets_revision_comment(app: DjangoTestApp):
+    admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
+    frequency = FrequencyFactory()
+    app.set_user(admin)
+    page = app.get(reverse("admin:vitrina_classifiers_frequency_delete", args=[frequency.pk]))
+    form = next(form for form in page.forms.values() if "post" in form.fields)
+
+    with patch.object(RevisionCommentVersionAdmin, "_set_revision_comment", autospec=True) as set_comment:
+        form.submit()
+
+    assert not Frequency.objects.filter(pk=frequency.pk).exists()
+    set_comment.assert_called_once()
+    _, _, deleted, action = set_comment.call_args.args
+    assert (deleted.title, action) == (frequency.title, "delete")

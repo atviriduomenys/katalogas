@@ -6330,6 +6330,14 @@ msgstr ""
 msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
 msgstr ""
 
+msgid "Agento identifikatorius"
+msgstr ""
+
+msgid ""
+"Agento aplinkos identifikatorius, sugeneruojamas sukuriant aplinką. "
+"Naudojamas kaip prieigos rakto `aud` reikšmė."
+msgstr ""
+
 msgid "Autorizacijos kliento identifikatorius"
 msgstr ""
 

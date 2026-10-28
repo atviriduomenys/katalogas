@@ -1858,6 +1858,21 @@ tests = ["jinja2 (>=2.9.6)", "pytest", "pytest-cov", "pytest-django", "pytest-ru
 typing = ["django-stubs[compatible-mypy]", "jinja2 (>=2.9.6)", "mypy", "pytest", "pytest-django", "types-setuptools"]
 
 [[package]]
+name = "django-dropulous"
+version = "0.1.1"
+description = "Django form widgets for Dropulous"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "django_dropulous-0.1.1-py3-none-any.whl", hash = "sha256:fbd8ca2009ce2cf21ec67b82537942fdc0caf079ecf743cb4f7b8e67426e4f3c"},
+    {file = "django_dropulous-0.1.1.tar.gz", hash = "sha256:d3ce12fe6f1e02220541a8c9bf59308aded5c2907739b3703131dbc55389d076"},
+]
+
+[package.dependencies]
+django = ">=3.2"
+
+[[package]]
 name = "django-environ"
 version = "0.9.0"
 description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
@@ -2284,18 +2299,19 @@ django-templatetag-sugar = ">=0.1"
 
 [[package]]
 name = "django-tagulous"
-version = "1.3.3"
+version = "2.2.3"
 description = "Fabulous Tagging for Django"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "django-tagulous-1.3.3.tar.gz", hash = "sha256:d445590ae1b5cb9b8c5a425f97bf5f01148a33419c19edeb721ebd9fdd6792fe"},
-    {file = "django_tagulous-1.3.3-py3-none-any.whl", hash = "sha256:ad3bb85f4cce83a47e4c0257143229cb92a294defa02fe661823b0442b35d478"},
+    {file = "django_tagulous-2.2.3-py3-none-any.whl", hash = "sha256:fdd66cd0d9003cc35827f2c74ca6729407272a94123ed936123fbf3f441b8966"},
+    {file = "django_tagulous-2.2.3.tar.gz", hash = "sha256:59c8262c014b07db12ac05f0c3ae1429375ba42a00dfdf4721efbcd341816534"},
 ]
 
 [package.dependencies]
-Django = ">=2.2"
+Django = ">=3.2"
+django-dropulous = ">=0.1"
 
 [[package]]
 name = "django-templatetag-sugar"
@@ -7579,4 +7595,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "ca828314f5a0809a02666c42645bae89d1b6dec386d38109e9af9352ed1a3ca0"
+content-hash = "7a15b536dbfd4835a4203bf9f6d31b4f0afc8253709c24bcfb3cc42e435fc9d5"

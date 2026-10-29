@@ -807,3 +807,12 @@ try:
     INSTALLED_APPS += ["django_migration_linter"]
 except ImportError:
     pass
+
+# Reviewed exceptions to `lintmigrations`.
+MIGRATION_LINTER_OPTIONS = {
+    "ignore_name": [
+        # NOT NULL + unique on `vitrina_uapi_agentenvironment.uri`: a small table, every row filled and the table
+        # locked by the migration itself; Django 4.2 has no `db_default` to keep old writers working.
+        "0010_alter_agentenvironment_uri",
+    ],
+}

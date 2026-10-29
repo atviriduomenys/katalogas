@@ -100,7 +100,7 @@ class ConceptFactory(DjangoModelFactory):
         model = Concept
         django_get_or_create = ("code",)
 
-    code = factory.Faker("word")
+    code = factory.Sequence(lambda n: f"concept-{n}")
     valid_since = factory.Faker("date")
 
     @factory.post_generation

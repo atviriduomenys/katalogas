@@ -4,6 +4,12 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2851
+
+- Accept an upload whose content libmagic cannot identify (``application/octet-stream``) if its
+  extension is allowed. Newer libmagic reports an ADOC this way, and the content check rejected it
+  as forbidden, so a partner registration with a signed ADOC failed.
+
 https://github.com/atviriduomenys/katalogas/issues/2841
 
 - Update ``spinta`` from ``1.1.0`` to ``1.3.1``. The exported OpenAPI file is now OpenAPI

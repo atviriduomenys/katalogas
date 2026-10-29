@@ -38,7 +38,7 @@ from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.resources.factories import FileFormat
 from vitrina.utils import RevisionComment, RevisionSource
 
-from vitrina.api.helpers import _encode_xml_control_chars
+from vitrina.api.helpers import _encode_xml_control_chars, get_datasets_for_rdf
 
 
 @pytest.mark.django_db
@@ -3131,6 +3131,21 @@ def test_edp_dcat_ap_rdf_starts_with_xml_declaration(app: DjangoTestApp):
 
     assert res.status_code == 200
     assert res.text.startswith("<?xml")
+
+
+@pytest.mark.django_db
+def test_rdf_distributions_are_ordered_by_pk():
+    # Inserted in reverse pk order, so without ORDER BY Postgres would return them as inserted.
+    dataset = DatasetFactory(access_rights=Dataset.PUBLIC)
+    later = DatasetDistributionFactory(pk=900002, dataset=dataset)
+    earlier = DatasetDistributionFactory(pk=900001, dataset=dataset)
+
+    [rdf_dataset] = get_datasets_for_rdf(Dataset.objects.filter(pk=dataset.pk))
+
+    assert [d["uri"] for d in rdf_dataset["distributions"]] == [
+        earlier.get_absolute_url(),
+        later.get_absolute_url(),
+    ]
 
 
 @pytest.mark.django_db

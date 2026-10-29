@@ -15,6 +15,11 @@
    the disabled .button elements used to carry. Scoped to .button so it does not affect
    other components that use .is-disabled with their own styling (e.g. wizard-picker-card). */
 .button.is-disabled { pointer-events: none; opacity: 0.5; }
+.navbar-item-button { width: 100%; border: none; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.navbar-item-button:hover, .navbar-item-button:focus { background-color: hsl(0, 0%, 98%); color: #007db2; }
+@media screen and (min-width: 1024px) {
+  .navbar-dropdown .navbar-item-button:hover, .navbar-dropdown .navbar-item-button:focus { background-color: hsl(0, 0%, 96%); color: hsl(0, 0%, 4%); }
+}
 
 /* Display */
 .u-hidden { display: none; }

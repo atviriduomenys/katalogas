@@ -4,6 +4,7 @@ import datetime
 import calendar
 import logging
 import mimetypes
+import zipfile
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Optional, List, Any
@@ -831,6 +832,13 @@ def validate_file(file: File) -> None:
     # validators against it. This catches active content (HTML/PHP/shell/SVG/
     # executables) smuggled past the extension gate under a benign extension.
     detected_mime = _detect_content_type(file.file)
+    if (
+        declared_mime == "text/asciidoc"
+        and detected_mime == "application/octet-stream"
+        and zipfile.is_zipfile(file.file)
+    ):
+        detected_mime = "application/zip"
+    file.file.seek(0)
     if detected_mime and detected_mime != declared_mime:
         _run_deny_validators(file.name, file.file, detected_mime)
 

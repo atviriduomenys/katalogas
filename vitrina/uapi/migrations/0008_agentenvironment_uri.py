@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="agentenvironment",
-            name="instance_uri",
+            name="uri",
             field=models.CharField(editable=False, max_length=255, null=True),
         ),
     ]

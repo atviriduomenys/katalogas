@@ -144,3 +144,45 @@ $primary: #007db2;
     border-left-color: $danger;
   }
 }
+
+.help-nav-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+    gap: 2rem;
+}
+
+.help-nav-column {
+    min-width: 0;
+}
+
+.help-nav-column-title {
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.help-nav-child-link {
+    display: block;
+    padding: 0.4rem 0;
+}
+
+.help-nav-menu-link::after {
+    display: none !important;
+}
+
+.organization-dropdown {
+    min-width: 280px;
+    padding: 0.75rem;
+}
+
+.organization-search {
+    padding: 0.5rem;
+}
+
+.organization-search .input {
+    width: 100%;
+}
+
+#navOrganizationList {
+    max-height: 250px;
+    overflow-y: auto;
+}

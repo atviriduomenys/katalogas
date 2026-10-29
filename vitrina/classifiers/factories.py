@@ -42,7 +42,7 @@ class FrequencyFactory(DjangoModelFactory):
         model = Frequency
         django_get_or_create = ("title",)
 
-    title = factory.Faker("word")
+    title = factory.Sequence(lambda n: f"frequency-{n}")
 
 
 class LicenceFactory(DjangoModelFactory):
@@ -51,7 +51,7 @@ class LicenceFactory(DjangoModelFactory):
         django_get_or_create = ("title",)
 
     identifier = factory.Sequence(lambda n: f"id{n}")
-    title = factory.Faker("word")
+    title = factory.Sequence(lambda n: f"licence-{n}")
     description = factory.Faker("catch_phrase")
 
 
@@ -87,7 +87,7 @@ class StatusFactory(DjangoModelFactory):
         model = Status
         django_get_or_create = ("codename",)
 
-    codename = factory.Faker("word")
+    codename = factory.Sequence(lambda n: f"status-{n}")
 
 
 class ConceptSchemaFactory(DjangoModelFactory):

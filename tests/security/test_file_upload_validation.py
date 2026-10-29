@@ -227,6 +227,38 @@ def test_sniffing_fails_closed_when_libmagic_errors(monkeypatch):
         validate_file(ContentFile(b"a,b,c\n1,2,3\n", name="table.csv"))
 
 
+@pytest.mark.parametrize(
+    "file_name, content",
+    [
+        # An ADOC is a ZIP container; newer libmagic cannot tell that from its first bytes.
+        ("agreement.adoc", b"PK\x03\x04\x14\x00\x00\x00\x00\x00mimetypeapplication/vnd.etsi.asic-e+zip"),
+        ("table.csv", b"a,b,c\n1,2,3\n"),
+    ],
+)
+def test_content_sniffed_as_octet_stream_is_inconclusive(monkeypatch, file_name, content):
+    # octet-stream only means libmagic does not know the bytes; the extension gate already ran.
+    import types
+
+    import vitrina.helpers as helpers
+
+    monkeypatch.setattr(
+        helpers, "magic", types.SimpleNamespace(from_buffer=lambda *a, **kw: "application/octet-stream")
+    )
+    validate_file(ContentFile(content, name=file_name))
+
+
+def test_unknown_extension_is_denied_even_if_sniffed_as_octet_stream(monkeypatch):
+    import types
+
+    import vitrina.helpers as helpers
+
+    monkeypatch.setattr(
+        helpers, "magic", types.SimpleNamespace(from_buffer=lambda *a, **kw: "application/octet-stream")
+    )
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(b"\x00\x01\x02binarydata", name="payload.unknownext"))
+
+
 # --- real form-field entry point (FilerFileField.clean) ---
 
 

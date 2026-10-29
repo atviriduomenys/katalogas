@@ -24,7 +24,7 @@ class FileFormat(DjangoModelFactory):
         model = Format
         django_get_or_create = ("title", "extension")
 
-    title = factory.Faker("word")
+    title = factory.Sequence(lambda n: f"format-{n}")
     extension = "CSV"
 
 

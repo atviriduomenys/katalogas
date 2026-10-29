@@ -100,7 +100,7 @@ def _story_plugin_database(path):
     """The four tables the plugin scrub joins, with one row of each kind."""
     db = dataset.connect(f"sqlite:///{path}")
     db.query("CREATE TABLE django_content_type (id integer primary key, app_label text, model text)")
-    db.query("CREATE TABLE cms_placeholder (id integer primary key, content_type_id integer)")
+    db.query("CREATE TABLE cms_placeholder (id integer primary key, content_type_id integer, object_id integer)")
     db.query("CREATE TABLE cms_cmsplugin (id integer primary key, placeholder_id integer)")
     db.query("CREATE TABLE djangocms_text_text (cmsplugin_ptr_id integer primary key, body text)")
 
@@ -108,7 +108,7 @@ def _story_plugin_database(path):
     for pk, app_label, model in types:
         db.query(f"INSERT INTO django_content_type VALUES ({pk}, '{app_label}', '{model}')")
     for pk in (1, 2, 3):
-        db.query(f"INSERT INTO cms_placeholder VALUES ({pk}, {pk})")
+        db.query(f"INSERT INTO cms_placeholder VALUES ({pk}, {pk}, {pk})")
         db.query(f"INSERT INTO cms_cmsplugin VALUES ({pk}, {pk})")
         db.query(f"INSERT INTO djangocms_text_text VALUES ({pk}, '<p>SLAPTA {pk}</p>')")
     return db

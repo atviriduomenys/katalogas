@@ -136,7 +136,7 @@ def main(
             else:
                 func(db, fake, pbar, users)
 
-    _scrub_story_plugins(db)
+    _scrub_story_plugins(db, _published_story_content_ids(db) if keep_public_content else set())
 
 
 # The old news migration (scripts/migrate_news.py, now in git history) prepended "<p>Autorius: NAME</p>"
@@ -238,30 +238,33 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str, keep_public_c
         pbar.update(1)
 
 
-# Empty on this portal - STORIES_USE_PLACEHOLDER is off, so article text lives
-# in post_text. A config with placeholders on keeps it here instead.
+# Empty unless a stories config has use_placeholder on (STORIES_USE_PLACEHOLDER is off
+# by default); such a config renders its article text from here instead of post_text.
 STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"),)
 
 
-def _scrub_story_plugins(db: Database) -> None:
+def _scrub_story_plugins(db: Database, kept_content_ids: Set[int] = frozenset()) -> None:
+    """Scrub story text plugins; those of kept story contents only lose their byline."""
     if "djangocms_text_text" not in db.tables:
         return
 
     conditions = " OR ".join(
         f"(ct.app_label = '{app_label}' AND ct.model = '{model}')" for app_label, model in STORY_CONTENT_TYPES
     )
-    db.query(
+    rows = db.query(
         f"""
-        UPDATE djangocms_text_text SET body = '<p>example</p>'
-        WHERE cmsplugin_ptr_id IN (
-            SELECT plugin.id
-            FROM cms_cmsplugin plugin
-            JOIN cms_placeholder placeholder ON placeholder.id = plugin.placeholder_id
-            JOIN django_content_type ct ON ct.id = placeholder.content_type_id
-            WHERE {conditions}
-        )
+        SELECT txt.cmsplugin_ptr_id, txt.body, placeholder.object_id
+        FROM djangocms_text_text txt
+        JOIN cms_cmsplugin plugin ON plugin.id = txt.cmsplugin_ptr_id
+        JOIN cms_placeholder placeholder ON placeholder.id = plugin.placeholder_id
+        JOIN django_content_type ct ON ct.id = placeholder.content_type_id
+        WHERE {conditions}
         """
     )
+    texts: Table = db["djangocms_text_text"]
+    for row in list(rows):
+        body = _scrub_byline(row["body"]) if row["object_id"] in kept_content_ids else "<p>example</p>"
+        texts.update({"cmsplugin_ptr_id": row["cmsplugin_ptr_id"], "body": body}, ["cmsplugin_ptr_id"])
 
 
 def _anonymize_djangocms_stories_postcontent(

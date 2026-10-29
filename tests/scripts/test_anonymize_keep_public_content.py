@@ -14,6 +14,8 @@ from scripts.anonymize import (
     _anonymize_adp_cms_page,
     _anonymize_djangocms_stories_postcontent,
     _anonymize_news_item,
+    _published_story_content_ids,
+    _scrub_story_plugins,
 )
 
 NOW = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -101,6 +103,32 @@ def test_without_versioning_no_story_counts_as_published(tmp_path):
     _anonymize_djangocms_stories_postcontent(db, Faker(), Mock(), {}, keep_public_content=True)
 
     assert _titles(db) == {1: "example"}
+
+
+def _add_text_plugin(db, pk, content_type_id, object_id, body):
+    db["cms_placeholder"].insert({"id": pk, "content_type_id": content_type_id, "object_id": object_id})
+    db["cms_cmsplugin"].insert({"id": pk, "placeholder_id": pk})
+    db["djangocms_text_text"].insert({"cmsplugin_ptr_id": pk, "body": body})
+
+
+def test_a_kept_story_keeps_its_placeholder_text(tmp_path):
+    """A config with use_placeholder renders the placeholder, not post_text."""
+    db = _stories_database(
+        tmp_path / "stories.db",
+        [("PUBLISHED", "published", None, None), ("DRAFT", "draft", None, None)],
+    )
+    _add_text_plugin(db, 1, content_type_id=1, object_id=1, body=f"{BYLINE}<p>TEKSTAS</p>")
+    _add_text_plugin(db, 2, content_type_id=1, object_id=2, body="<p>JUODRASTIS</p>")
+    _add_text_plugin(db, 3, content_type_id=2, object_id=1, body="<p>PUSLAPIS</p>")
+
+    _scrub_story_plugins(db, _published_story_content_ids(db))
+
+    bodies = {row["cmsplugin_ptr_id"]: row["body"] for row in db["djangocms_text_text"].all()}
+    assert bodies == {
+        1: "<p>Autorius: example, example</p><p>TEKSTAS</p>",
+        2: "<p>example</p>",
+        3: "<p>PUSLAPIS</p>",
+    }
 
 
 def test_a_public_news_item_keeps_its_text_but_not_its_author(tmp_path):

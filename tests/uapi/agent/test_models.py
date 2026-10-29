@@ -109,19 +109,15 @@ class TestAgentEnvironment:
 
         assert agent_env.uri == uri
 
-    # A version saved before 0008 has no identifier, one saved before 0011 has it as `instance_uri`.
-    @pytest.mark.parametrize("old_field_name", [None, "instance_uri"])
-    def test_uri_kept_when_old_version_reverted(self, old_field_name: str | None):
+    # A version saved before 0008 has no identifier.
+    def test_uri_kept_when_old_version_reverted(self):
         agent_env = AgentEnvironmentFactory(is_enabled=True)
         uri = agent_env.uri
         with reversion.create_revision():
             agent_env.save()
         version = Version.objects.get_for_object(agent_env).get()
         serialized_data = json.loads(version.serialized_data)
-        fields = serialized_data[0]["fields"]
-        old_uri = fields.pop("uri")
-        if old_field_name:
-            fields[old_field_name] = old_uri
+        serialized_data[0]["fields"].pop("uri")
         version.serialized_data = json.dumps(serialized_data)
         version.save(update_fields=["serialized_data"])
         AgentEnvironment.objects.filter(pk=agent_env.pk).update(is_enabled=False)

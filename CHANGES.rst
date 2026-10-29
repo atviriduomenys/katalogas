@@ -12,6 +12,15 @@ https://github.com/atviriduomenys/katalogas/issues/2841
 - Export models, properties and enum values with an empty visibility as ``public`` in the OpenAPI
   file. Spinta leaves them out, so most datasets exported a file with no models.
 
+https://github.com/atviriduomenys/katalogas/issues/2847
+
+- Update ``Django`` from ``4.2`` to ``5.2``, ``django-tagulous`` from ``1.3`` to ``2.2``,
+  ``djangorestframework`` to ``3.18``, ``oauthlib`` to ``4.0``, ``weasyprint`` to ``70.0`` and
+  ``pillow`` to ``13.0``.
+- Log out with POST only. A GET to ``/logout/`` now returns 405, so update bookmarks and scripts
+  that open it.
+- Accept a signed ADOC file that ``libmagic`` 5.46 reads as ``application/octet-stream``.
+
 
 v 1.27.0 (2026-10-23)
 ==================

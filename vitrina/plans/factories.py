@@ -10,5 +10,5 @@ class PlanFactory(DjangoModelFactory):
         model = Plan
         django_get_or_create = ("title",)
 
-    title = factory.Faker("word")
+    title = factory.Sequence(lambda n: f"plan-{n}")
     receiver = factory.SubFactory(OrganizationFactory)

@@ -556,7 +556,7 @@ class DatasetDetailView(
                 )
                 else None
             ),
-            "data_maturity": dataset.metadata_set.average_level(),
+            "data_maturity": dataset.get_level(),
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
@@ -844,7 +844,11 @@ class DatasetCreateView(
             return crumbs
 
         return self.breadcrumbs_organization(self.organization) + [
-            Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
+            Crumb(
+                title=_("Duomenų ištekliai"),
+                url=f"{reverse('organization-datasets', args=[self.organization.pk])}"
+                f"?selected_facets=organization_exact:{self.organization.pk}",
+            ),
             Crumb(
                 title=_("Pridėti duomenų išteklių"), url=reverse("resource-subclass-add", args=[self.organization.pk])
             ),
@@ -1045,7 +1049,10 @@ class ResourceSubclassCreateView(
 
         org = get_object_or_404(Organization, id=self.kwargs["pk"])
         return self.breadcrumbs_organization(org) + [
-            Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
+            Crumb(
+                title=_("Duomenų ištekliai"),
+                url=f"{reverse('organization-datasets', args=[org.pk])}?selected_facets=organization_exact:{org.pk}",
+            ),
             Crumb(title=_("Pridėti duomenų išteklių"), url=None, is_current=True),
         ]
 

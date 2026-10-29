@@ -959,19 +959,16 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
 
-        current_parent = self.object.get_parent()
-        new_jurisdiction = form.cleaned_data.get("jurisdiction")
-
         self.object.save()
 
-        if current_parent != new_jurisdiction and new_jurisdiction:
+        if "jurisdiction" in form.changed_data:
             Organization.fix_tree(fix_paths=True)
-            parent_org = get_or_create_parent_org(new_jurisdiction)
-            node = Organization.objects.get(pk=self.object.pk)
-            node.move(parent_org, "sorted-child")
+            parent_org = get_or_create_parent_org(
+                form.cleaned_data["jurisdiction"], child=Organization.objects.get(pk=self.object.pk)
+            )
+            Organization.objects.get(pk=self.object.pk).move(parent_org, "sorted-child")
             self.object.refresh_from_db()
 
-        if "jurisdiction" in form.changed_data:
             # save related datasets to update search index
             for dataset in self.object.dataset_set.all():
                 dataset.save()
@@ -979,6 +976,8 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
             # save related requests to update search index
             for request_assignment in self.object.requestassignment_set.all():
                 request_assignment.request.save()
+        elif "title" in form.changed_data:
+            Organization.fix_tree(fix_paths=True)
 
         messages.success(self.request, _("Organizacija atnaujinta sėkmingai"))
 

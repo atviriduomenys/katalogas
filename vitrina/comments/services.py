@@ -6,7 +6,6 @@ from vitrina.comments.forms import (
     DatasetCommentForm,
     RequestCommentForm,
     CommentForm,
-    ProjectCommentForm,
     RegisterRequestForm,
 )
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -26,8 +25,6 @@ def get_comment_form_class(obj: models.Model = None, user: User = None) -> Type:
         return DatasetCommentForm
     elif isinstance(obj, Request) and has_perm(user, Action.COMMENT, obj):
         return RequestCommentForm
-    elif isinstance(obj, Project) and has_perm(user, Action.COMMENT, obj):
-        return ProjectCommentForm
     elif isinstance(obj, (Property, Model)) or obj is None:
         return RegisterRequestForm
     return CommentForm

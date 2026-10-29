@@ -524,15 +524,17 @@ def is_supervisor(user: User, node: Model) -> bool:
 
 
 def can_manage_is_metadata(user: User, organization: Organization) -> bool:
-    """Who may open the IS metadata wizard: superusers and the organization's resource roles.
+    """Who may open the IS metadata wizard: superusers, the organization's resource roles, and
+    staff with the ``manage_is_metadata`` permission (the "IS metaduomenų tvarkytojai" group).
 
-    Staff without ``is_superuser`` is left out on purpose; the team weighed ``is_staff`` and
-    settled on ``is_superuser``. ``has_perm`` still grants staff the wizard forms through a
-    direct URL, so widen this helper rather than working around it.
+    Staff without the permission is left out on purpose. ``has_perm`` grants staff the wizard
+    forms through a direct URL, so the permission only opens the wizard to staff the team picks.
     """
     if not user.is_authenticated:
         return False
     if user.is_superuser:
+        return True
+    if user.is_staff and user.has_perm("vitrina_orgs.manage_is_metadata"):
         return True
     return (
         Representative.objects.filter(

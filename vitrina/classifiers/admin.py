@@ -167,8 +167,8 @@ class AreaOfManagementAdmin(RevisionCommentVersionAdmin):
                 org.save()
                 # Update hierarchy tree
                 if org.jurisdiction_id != 1:
-                    parent_org = get_or_create_parent_org(obj)
-                    org.move(parent_org, "sorted-child")
+                    parent_org = get_or_create_parent_org(obj, child=Organization.objects.get(pk=org.pk))
+                    Organization.objects.get(pk=org.pk).move(parent_org, "sorted-child")
                     org.refresh_from_db()
 
         # Update organization name if area of management name is changed

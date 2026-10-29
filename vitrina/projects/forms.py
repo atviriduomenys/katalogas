@@ -1,6 +1,6 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
-from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, BooleanField, RadioSelect
+from django.forms import Form, ModelForm, CharField, ChoiceField, Textarea, ModelChoiceField, BooleanField, RadioSelect
 
 from vitrina.fields import FilerImageField
 from vitrina.projects.models import Project, UseCaseClientScope, UseCaseClient
@@ -95,6 +95,23 @@ class ProjectForm(ModelForm):
             *layout_fields,
             Submit("submit", button, css_class="button is-primary"),
         )
+
+
+class ProjectReviewForm(Form):
+    status = ChoiceField(choices=[(Project.APPROVED, _("Patvirtinti")), (Project.REJECTED, _("Atmesti"))])
+    body = CharField(label=_("Komentaras"), widget=Textarea(attrs={"rows": 3}), required=False)
+
+    def __init__(self, project: Project, *args, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        status = self.cleaned_data.get("status")
+        if status == self.project.status:
+            self.add_error("status", _("Dabartinė būsena sutampa su jūsų pateikta"))
+        if status == Project.REJECTED and not self.cleaned_data.get("body"):
+            self.add_error("body", _("Atmetant panaudojimo atvejį komentaras yra privalomas"))
+        return self.cleaned_data
 
 
 class ClientCreateForm(ModelForm):

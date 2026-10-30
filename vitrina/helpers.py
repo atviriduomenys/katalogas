@@ -830,8 +830,10 @@ def validate_file(file: File) -> None:
     # Defense in depth: sniff the actual content type and re-run the deny
     # validators against it. This catches active content (HTML/PHP/shell/SVG/
     # executables) smuggled past the extension gate under a benign extension.
+    # octet-stream only means libmagic does not know the bytes (newer versions say so for ADOC), and
+    # filer denies it by default; the extension gate above already applied the whitelist.
     detected_mime = _detect_content_type(file.file)
-    if detected_mime and detected_mime != declared_mime:
+    if detected_mime and detected_mime not in (declared_mime, "application/octet-stream"):
         _run_deny_validators(file.name, file.file, detected_mime)
 
 

@@ -80,6 +80,13 @@ class Filter:
         remove_search_query: bool = False,
         order: classmethod = None,
         expand: bool = True,
+        default_item_count: int = 5,
+        is_visible: bool = True,
+        expand_text: str = _("Išskleisti"),
+        collapse_text: str = _("Suskleisti"),
+        info: str = None,
+        tab_group: str = None,
+        group_title: str = None,
     ):
         self.name = name
         self.title = title
@@ -96,6 +103,13 @@ class Filter:
         self.remove_search_query = remove_search_query
         self.order = order
         self.expand = expand
+        self.default_item_count = default_item_count
+        self.is_visible = is_visible
+        self.expand_text = expand_text
+        self.collapse_text = collapse_text
+        self.info = info
+        self.tab_group = tab_group
+        self.group_title = group_title
 
     def get_stats_url(self):
         path = reverse(f"dataset-stats-{self.name}")

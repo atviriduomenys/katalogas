@@ -11,16 +11,6 @@
 </nav>
 {% endif %}
 
-{% if user.organization %}
-<nav class="category-panel">
-    <a href="{% url 'organization-datasets' user.organization.pk %}?selected_facets=organization_exact:{{ user.organization.pk }}" id="org-dataset-url">
-        <p class="category-panel-heading">
-            {% translate "Mano organizacijos duomenų ištekliai" %}
-        </p>
-    </a>
-</nav>
-{% endif %}
-
 {% if user.can_see_manager_dataset_list_url %}
 <nav class="category-panel">
     <a href="{% url 'manager-dataset-list' %}" id="manager-dataset-url">
@@ -41,110 +31,108 @@
 {# facet=status_facet #}
 {# selected=selected_status #}
 
-{% for filter in filters %}
-<nav class="category-panel mb-5" id="filter_id">
-  {% if filter.stats and active_filter != filter.name %}
-    <a href="{% if 'selected_facets' in request.GET or not organization_id %}{{ filter.get_stats_url }}
-             {% else %}{{ filter.get_stats_url }}selected_facets=organization_exact:{{ organization_id }}{% endif %}"
-       id="dataset-{{ filter.name }}-stats"
-    >
-  {% endif %}
-    <p class="{{ filter.name }}-panel-heading">
-        <span class="icon-text">
-        {% if filter.stats %}
-        <span class="icon">
-          <i class="fas fa-chart-bar fa-lg"></i>
-        </span>
-        {% endif %}
-        <span class="has-text-weight-bold" id="filter_title">
-          {{ filter.title }}
-        </span>
-      </span>
-    </p>
-  {% if active_filter != filter.name %}
-  </a>
-    {% if filter.name == 'jurisdiction' or filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' or filter.name == 'publisher' %}
-        <input
-            class="input"
-            id="{{ filter.name }}-filter-input"
-            placeholder="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}..."
-            title="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}"
-            aria-labelledby="filter_title">
-        {% if filter.name == 'organization' %}
-          {% include "vitrina/datasets/organization_filter_items.html" %}
-        {% elif filter.name == 'category' %}
-          {% include "vitrina/datasets/category_filter_items.html" %}
-        {% elif filter.name == 'tags' %}
-          {% include "vitrina/datasets/tag_filter_items.html" %}
-        {% elif filter.name == 'jurisdiction' %}
-          {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
-        {% elif filter.name == 'publisher' %}
-          {% include "vitrina/datasets/publisher_filter_items.html" %}
-        {% endif %}
-    {% endif %}
-  {% endif %}
+{% for section in filter_sections %}
+    {% if section.type == "tabs" %}
+        <nav class="category-panel mb-5 filter-tab-group"
+             id="filter-group-{{ section.name }}">
 
-  {% for item in filter.items %}
-      <div class="columns is-gapless m-0 mt-1 {% if forloop.counter > 10 %}is-hidden filter-hidden-{{ forloop.parentloop.counter }}{% endif %}">
-      <div class="column is-10">
-            <a href="{{ item.url }}"
-               class="category-panel-block
-                {% if item.selected %}
-                has-text-weight-bold has-text-dark
-                {% else %}
-                has-text-dark
-                {% endif %}"
-               id="{{ item.name }}_id"
-               title="{{ item.name }}"
-               aria-label="{{ item.name }}">
-                  <div class="columns is-gapless is-vcentered m-0">
-                  <div class="column is-1">
-                      {% if item.selected %}
-                      <span class="icon">
-                        <i class="far fa-check-square"></i>
-                      </span>
-                      {% else %}
-                      <span class="icon">
-                        <i class="far fa-square"></i>
-                      </span>
-                      {% endif %}
-                  </div>
-                  <div class="column is-11">
-                      {% if filter.name == 'level' %}
-                      <span class="icon-text">
-                        {% for star in item.value|range %}
-                        <i class="fas fa-star"></i>
-                        {% endfor %}
-                      </span>
+            {% for filter in section.filters %}
+                <a class="filter-group-heading-link {% if not forloop.first %}is-hidden{% endif %}"
+                   data-stats-tab-target="tab-{{ section.name }}-{{ filter.name }}"
+                   {% if filter.stats %}
+                       href="{% if 'selected_facets' in request.GET or not organization_id %}{{ filter.get_stats_url }}{% else %}{{ filter.get_stats_url }}&selected_facets=organization_exact:{{ organization_id|urlencode }}{% endif %}"
+                   {% endif %}
+                   {% if not filter.stats %}aria-disabled="true"{% endif %}>
+                    <p class="category-panel-heading">
+                        <span class="icon-text">
+                            {% if filter.stats %}
+                                <span class="icon">
+                                    <i class="fas fa-chart-bar fa-lg"></i>
+                                </span>
+                            {% endif %}
+                            <span class="has-text-weight-bold" id="filter-group-title">
+                                {{ filter.group_title }}
+                            </span>
+                        </span>
+                    </p>
+                </a>
+            {% endfor %}
 
-                    {% else %}
-                      {{ item.title }}
-                    {% endif %}
-                  </div>
-                  </div>
-              </a>
-      </div>
-      <div class="column is-2 has-text-right">
-        <span class="is-size-6">({{ item.count }})</span>
-      </div>
-      </div>
-  {% endfor %}
-    {% if filter.expand and filter.length > 10 and filter.name != 'published' %}
-    <div>
-       <a class="filters-more" id="filter-hidden-{{ forloop.counter }}">{% translate "Išskleisti" %}</a>
-    </div>
+            <div class="tabs is-toggle is-fullwidth mb-0 mt-1 {% if 'stats' in request.path %}is-small{% endif %}">
+                <ul>
+                    {% for filter in section.filters %}
+                        <li class="{% if forloop.first %}is-active{% endif %}">
+                            <a class="filter-tab-link"
+                               href="#tab-{{ section.name }}-{{ filter.name }}"
+                               data-tab-target="tab-{{ section.name }}-{{ filter.name }}">
+                                {{ filter.title }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% for filter in section.filters %}
+                <div id="tab-{{ section.name }}-{{ filter.name }}"
+                     class="filter-tab-content {% if not forloop.first %}is-hidden{% endif %}">
+                    {% include "vitrina/datasets/filter.html" %}
+                </div>
+            {% endfor %}
+        </nav>
+
+    {% else %}
+        {% with filter=section.filter %}
+            {% include "vitrina/datasets/filter.html" %}
+        {% endwith %}
+
     {% endif %}
-</nav>
 {% endfor %}
 
 <script type="text/javascript" nonce="{{ request.csp_nonce }}">
     $(function () {
+
+        let creatorFilter = $('#creator-filter-input');
+        creatorFilter.on('input', function(){
+            if (creatorFilter.val().length !== 0) {
+                $('.creator_filter_items_body').html('').load(
+                    "{% url 'update-dataset-creator-filters' %}?term=" + creatorFilter.val()
+                );
+            }
+        });
+
         $('.filters-more').click(function () {
             let targetClass = 'filter-hidden-' + $(this).attr('id').split('-').pop();
             $('.' + targetClass).toggleClass('is-hidden');
+
+            const expandText = $(this).data('expand-text');
+            const collapseText = $(this).data('collapse-text');
+
             $(this).text(function (i, text) {
-                return text === "{% translate 'Išskleisti' %}" ? "{% translate 'Suskleisti' %}" : "{% translate 'Išskleisti' %}";
+                return text === expandText ? collapseText : expandText;
             });
+        });
+
+        $('.filter-tab-link').on('click', function (event) {
+            event.preventDefault();
+
+            const $link = $(this);
+            const $container = $link.closest('.filter-tab-group');
+            const targetId = $link.attr('data-tab-target');
+
+            $container.find('.tabs li').removeClass('is-active');
+            $link.parent('li').addClass('is-active');
+
+            $container.find('.filter-tab-content').addClass('is-hidden');
+
+            $container.find('.filter-tab-content').filter(function () {
+                return this.id === targetId;
+            }).removeClass('is-hidden');
+
+            $container.find('.filter-group-heading-link').addClass('is-hidden');
+
+            $container.find('.filter-group-heading-link').filter(function () {
+                return $(this).attr('data-stats-tab-target') === targetId;
+            }).removeClass('is-hidden');
         });
     });
 </script>

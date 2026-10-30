@@ -1,0 +1,110 @@
+{% load i18n %}
+{% load util_tags %}
+
+{% if filter.is_visible %}
+    <nav class="category-panel mb-5" id="filter_id">
+      {% if filter.stats and active_filter != filter.name %}
+        <a href="{% if 'selected_facets' in request.GET or not organization_id %}{{ filter.get_stats_url }}
+                 {% else %}{{ filter.get_stats_url }}selected_facets=organization_exact:{{ organization_id }}{% endif %}"
+           id="dataset-{{ filter.name }}-stats"
+        >
+      {% endif %}
+
+        {% if not filter.tab_group %}
+        <p class="{{ filter.name }}-panel-heading">
+            <span class="icon-text">
+            {% if filter.stats %}
+            <span class="icon">
+              <i class="fas fa-chart-bar fa-lg"></i>
+            </span>
+            {% endif %}
+            <span class="has-text-weight-bold" id="filter_title">
+              {{ filter.title }}
+            </span>
+          </span>
+        </p>
+        {% endif %}
+
+        {% if filter.info %}
+            <div class="py-3">
+                <span class="has-text-dark">{{ filter.info }}</span>
+            </div>
+        {% endif %}
+
+      {% if active_filter != filter.name %}
+      </a>
+        {% if filter.name == 'jurisdiction' or filter.name == 'organization' or filter.name == 'creator' or filter.name == 'category' or filter.name == 'tags' or filter.name == 'publisher' %}
+            <input
+                class="input"
+                id="{{ filter.name }}-filter-input"
+                placeholder="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}..."
+                title="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}"
+                aria-labelledby="filter_title">
+            {% if filter.name == 'organization' %}
+              {% include "vitrina/datasets/organization_filter_items.html" %}
+            {% elif filter.name == 'creator' %}
+              {% include "vitrina/datasets/creator_filter_items.html" %}
+            {% elif filter.name == 'category' %}
+              {% include "vitrina/datasets/category_filter_items.html" %}
+            {% elif filter.name == 'tags' %}
+              {% include "vitrina/datasets/tag_filter_items.html" %}
+            {% elif filter.name == 'jurisdiction' %}
+              {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
+            {% elif filter.name == 'publisher' %}
+              {% include "vitrina/datasets/publisher_filter_items.html" %}
+            {% endif %}
+        {% endif %}
+      {% endif %}
+
+      {% for item in filter.items %}
+          <div class="columns is-gapless m-0 mt-1 {% if forloop.counter > filter.default_item_count and not item.selected %}is-hidden filter-hidden-{{ forloop.parentloop.counter }}{% endif %}">
+          <div class="column is-10">
+                <a href="{{ item.url }}"
+                   class="category-panel-block
+                    {% if item.selected %}
+                    has-text-weight-bold has-text-dark
+                    {% else %}
+                    has-text-dark
+                    {% endif %}"
+                   id="{{ item.name }}_id"
+                   title="{{ item.name }}"
+                   aria-label="{{ item.name }}">
+                      <div class="columns is-gapless is-vcentered m-0">
+                      <div class="column is-1">
+                          {% if item.selected %}
+                          <span class="icon">
+                            <i class="far fa-check-square"></i>
+                          </span>
+                          {% else %}
+                          <span class="icon">
+                            <i class="far fa-square"></i>
+                          </span>
+                          {% endif %}
+                      </div>
+                      <div class="column is-11">
+                          {% if filter.name == 'level' %}
+                          <span class="icon-text">
+                            {% for star in item.value|range %}
+                            <i class="fas fa-star"></i>
+                            {% endfor %}
+                          </span>
+
+                        {% else %}
+                          {{ item.title }}
+                        {% endif %}
+                      </div>
+                      </div>
+                  </a>
+          </div>
+          <div class="column is-2 has-text-right">
+            <span class="is-size-6">({{ item.count }})</span>
+          </div>
+          </div>
+      {% endfor %}
+        {% if filter.expand and filter.length > filter.default_item_count %}
+        <div>
+            <button type="button" class="filters-more button is-text px-0 has-text-link" id="filter-hidden-{{ forloop.counter }}" data-expand-text="{{ filter.expand_text }}" data-collapse-text="{{ filter.collapse_text }}">{{ filter.expand_text }}</button>
+        </div>
+        {% endif %}
+    </nav>
+{% endif %}

@@ -13,7 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Q, QuerySet
 from django.forms import Form
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _

@@ -5,7 +5,6 @@ from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.contenttypes.models import ContentType
 
 from filer.fields.image import FilerImageField
 

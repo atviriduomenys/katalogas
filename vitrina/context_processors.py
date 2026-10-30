@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.sites.models import Site
 
 
@@ -8,4 +9,11 @@ def current_domain(request):
     return {
         "current_domain_full": url,
         "current_domain": domain,
+    }
+
+
+def umami(request):
+    return {
+        "umami_script_url": settings.UMAMI_SCRIPT_URL,
+        "umami_website_id": settings.UMAMI_WEBSITE_ID,
     }

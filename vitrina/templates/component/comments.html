@@ -4,7 +4,7 @@
 
 <h2 id="comments" class="custom-title is-size-4-mobile">{% translate "Komentarai" %}</h2>
 {% for comment, reply_form, is_child in comments %}
-    {% if comment.body_text %}
+    {% if comment.body_text or comment.status_change_text %}
         {% include "component/comment.html" with comment=comment reply_form=reply_form is_child=is_child %}
     {% endif %}
 {% endfor %}

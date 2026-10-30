@@ -61,6 +61,7 @@ def test_task_does_not_update_when_spinta_returns_older_date():
 def _mock_distribution_with_models(*full_names: str) -> MagicMock:
     distribution = MagicMock()
     distribution.pk = 42
+    distribution.download_url = ""
     models = [MagicMock(full_name=name) for name in full_names]
     distribution.dataset.model_set.all.return_value.__iter__.return_value = iter(models)
     distribution.dataset.model_set.all.return_value.exists.return_value = bool(models)
@@ -109,6 +110,97 @@ def test_fetch_tolerates_errors_from_individual_models():
     responses = {
         "ns/Broken": {"errors": ["some upstream failure"]},
         "ns/Working": {"_data": [{"_created": "2026-05-14T06:12:15"}]},
+    }
+
+    with patch("vitrina.resources.tasks.get_data_from_spinta") as mock_get:
+        mock_get.side_effect = lambda name, *a, **kw: responses[name]
+        result = _fetch_spinta_last_modified(distribution)
+
+    assert result.isoformat().startswith("2026-05-14T06:12:15")
+
+
+def test_fetch_finds_models_from_distribution_url_when_catalogue_name_drifted(settings):
+    settings.SPINTA_SERVER_URL = "https://get.data.gov.lt"
+    namespace = "datasets/gov/lsd/statistika/imoniu_islaidos_aplinkos_tausojimui"
+    distribution = _mock_distribution_with_models(f"{namespace}/S1R023_M8010502_1")
+    distribution.download_url = f"https://get.data.gov.lt/{namespace}/:ns"
+
+    responses = {
+        f"{namespace}/S1R023_M8010502_1": {"errors": [{"code": "ModelNotFound"}]},
+        f"{namespace}/:ns": {
+            "_data": [
+                {"name": f"{namespace}/S1R023M80105024"},
+                {"name": f"{namespace}/archyvas/:ns"},
+            ]
+        },
+        f"{namespace}/S1R023M80105024": {"_data": [{"_created": "2025-08-27T13:14:47.917469"}]},
+    }
+
+    with patch("vitrina.resources.tasks.get_data_from_spinta") as mock_get:
+        mock_get.side_effect = lambda name, *a, **kw: responses[name]
+        result = _fetch_spinta_last_modified(distribution)
+
+    assert result.isoformat().startswith("2025-08-27T13:14:47")
+
+
+def test_fetch_uses_model_from_distribution_url(settings):
+    settings.SPINTA_SERVER_URL = "https://get.data.gov.lt"
+    distribution = _mock_distribution_with_models("datasets/gov/ns/OldName")
+    distribution.download_url = "https://get.data.gov.lt/datasets/gov/ns/NewName"
+
+    responses = {
+        "datasets/gov/ns/OldName": {"errors": [{"code": "ModelNotFound"}]},
+        "datasets/gov/ns/NewName": {"_data": [{"_created": "2026-05-14T06:12:15"}]},
+    }
+
+    with patch("vitrina.resources.tasks.get_data_from_spinta") as mock_get:
+        mock_get.side_effect = lambda name, *a, **kw: responses[name]
+        result = _fetch_spinta_last_modified(distribution)
+
+    assert result.isoformat().startswith("2026-05-14T06:12:15")
+
+
+def test_fetch_returns_none_for_empty_namespace_from_distribution_url(settings):
+    settings.SPINTA_SERVER_URL = "https://get.data.gov.lt"
+    distribution = _mock_distribution_with_models("datasets/gov/ns/OtherDistributionModel")
+    distribution.download_url = "https://get.data.gov.lt/datasets/gov/ns/empty/:ns"
+
+    responses = {
+        "datasets/gov/ns/empty/:ns": {"_data": []},
+        "datasets/gov/ns/OtherDistributionModel": {"_data": [{"_created": "2026-05-14T06:12:15"}]},
+    }
+
+    with patch("vitrina.resources.tasks.get_data_from_spinta") as mock_get:
+        mock_get.side_effect = lambda name, *a, **kw: responses[name]
+        result = _fetch_spinta_last_modified(distribution)
+
+    assert result is None
+
+
+def test_fetch_uses_catalogue_models_when_distribution_url_is_on_another_host(settings):
+    settings.SPINTA_SERVER_URL = "https://get.data.gov.lt"
+    distribution = _mock_distribution_with_models("datasets/gov/ns/CatalogueModel")
+    distribution.download_url = "https://example.com/datasets/gov/ns/OtherModel"
+
+    responses = {
+        "datasets/gov/ns/CatalogueModel": {"_data": [{"_created": "2026-05-14T06:12:15"}]},
+    }
+
+    with patch("vitrina.resources.tasks.get_data_from_spinta") as mock_get:
+        mock_get.side_effect = lambda name, *a, **kw: responses[name]
+        result = _fetch_spinta_last_modified(distribution)
+
+    assert result.isoformat().startswith("2026-05-14T06:12:15")
+
+
+def test_fetch_uses_model_from_distribution_url_outside_datasets(settings):
+    settings.SPINTA_SERVER_URL = "https://get.data.gov.lt"
+    distribution = _mock_distribution_with_models("gov/vmi/ja_nepriemokos/OldName")
+    distribution.download_url = "https://get.data.gov.lt/gov/vmi/ja_nepriemokos/NepriemokosSuma"
+
+    responses = {
+        "gov/vmi/ja_nepriemokos/OldName": {"errors": [{"code": "ModelNotFound"}]},
+        "gov/vmi/ja_nepriemokos/NepriemokosSuma": {"_data": [{"_created": "2026-05-14T06:12:15"}]},
     }
 
     with patch("vitrina.resources.tasks.get_data_from_spinta") as mock_get:

@@ -23,7 +23,7 @@
                                     {% if comment.parent %}
                                         <p class="is-italic">
                                             {% translate "Atsakymas į" %}
-                                            {{ comment.parent.user }}
+                                            {% get_author_name comment.parent user %}
                                             {{ comment.parent.created|date:'SHORT_DATE_FORMAT' }}
                                         </p>
                                     {% endif %}
@@ -73,12 +73,15 @@
                                     {% if comment.parent %}
                                         <p class="is-italic">
                                             {% translate "Atsakymas į" %}
-                                            {{ comment.parent.user }}
+                                            {% get_author_name comment.parent user %}
                                             {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }}
                                         </p>
                                     {% endif %}
                                     <p class="no-margin-bottom">
                                         <strong>{% get_author_name comment user %}</strong>
+                                        {% if comment.status_change_text %}
+                                            <div class="has-text-weight-semibold">{{ comment.status_change_text }}</div>
+                                        {% endif %}
                                         <div>{{ comment.body_text | markdown | safe }}</div>
                                         <small>
                                             {{ comment.created|date:"SHORT_DATETIME_FORMAT" }}

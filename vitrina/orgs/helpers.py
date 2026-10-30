@@ -42,7 +42,7 @@ def is_org_dataset_list(request: Request):
     return request.resolver_match.url_name == "organization-datasets"
 
 
-def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
+def get_or_create_parent_org(obj: Union[AreaOfManagement, int], child: Organization | None = None) -> Organization:
     if isinstance(obj, int):
         jurisdiction = AreaOfManagement.objects.get(pk=obj)
     elif isinstance(obj, AreaOfManagement):
@@ -50,7 +50,13 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
     else:
         raise ValueError(_("Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"))
 
-    parent_org: Organization = Organization.objects.filter(title=jurisdiction.name_lt).first()
+    candidates = Organization.objects.all()
+    if child:
+        candidates = candidates.exclude(path__startswith=child.path)
+    parent_org: Organization = (
+        candidates.filter(title=jurisdiction.name_lt).first()
+        or candidates.filter(jurisdiction=jurisdiction, depth=1, numchild__gt=0).order_by("pk").first()
+    )
     if not parent_org:
         parent_org = Organization.add_root(
             title=jurisdiction.name_lt,

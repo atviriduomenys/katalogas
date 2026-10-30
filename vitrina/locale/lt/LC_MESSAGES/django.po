@@ -812,6 +812,12 @@ msgstr ""
 msgid "Dokumentacija"
 msgstr ""
 
+msgid "Dokumento failas"
+msgstr ""
+
+msgid "Nuoroda į dokumentaciją"
+msgstr ""
+
 msgid "Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."
 msgstr ""
 
@@ -1747,6 +1753,12 @@ msgid "Paskutinio atnaujinimo data"
 msgstr ""
 
 msgid "Kada paskutinį kartą buvo atnaujinti duomenys"
+msgstr ""
+
+msgid "Paskutinio metaduomenų atnaujinimo data"
+msgstr ""
+
+msgid "Kada paskutinį kartą buvo atnaujinti metaduomenys"
 msgstr ""
 
 msgid "Naudojimo limitas"

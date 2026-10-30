@@ -132,15 +132,6 @@ class Request(TranslatableModel):
             return _("Klaidų duomenyse pataisymas")
         return _("Duomenų rinkinio papildymas")
 
-    def get_likes(self):
-        from vitrina.likes.models import Like
-
-        content_type = ContentType.objects.get_for_model(self)
-        return Like.objects.filter(
-            content_type=content_type,
-            object_id=self.pk,
-        ).count()
-
     def is_not_closed(self):
         return self.status != self.REJECTED and self.status != self.OPENED
 

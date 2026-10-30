@@ -24,7 +24,6 @@ from vitrina.helpers import get_filter_url, get_current_domain
 from vitrina.api.models import ApiKey
 from vitrina.classifiers.models import Category
 from vitrina.helpers import email
-from vitrina.likes.models import Like
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -786,7 +785,6 @@ class DatasetRepresentativeService:
 class DatasetListRow:
     dataset: Dataset
     icon: str | None
-    likes: int
     hits: int
     groups: list
     formats: list
@@ -799,11 +797,6 @@ def build_dataset_rows(datasets: Iterable[Dataset]) -> list[DatasetListRow]:
         return []
 
     content_type = ContentType.objects.get_for_model(Dataset)
-    likes = dict(
-        Like.objects.filter(content_type=content_type, object_id__in=pks)
-        .values_list("object_id")
-        .annotate(total=Count("id"))
-    )
     hits = dict(HitCount.objects.filter(content_type=content_type, object_pk__in=pks).values_list("object_pk", "hits"))
 
     group_pks_by_dataset = {dataset.pk: set(dataset.get_group_list()) for dataset in datasets}
@@ -826,7 +819,6 @@ def build_dataset_rows(datasets: Iterable[Dataset]) -> list[DatasetListRow]:
         DatasetListRow(
             dataset=dataset,
             icon=dataset.get_icon(root_icons),
-            likes=likes.get(dataset.pk, 0),
             hits=hits.get(dataset.pk, 0),
             groups=[group for pk, group in groups.items() if pk in group_pks_by_dataset[dataset.pk]],
             formats=dataset.get_available_formats(dataservice_formats),

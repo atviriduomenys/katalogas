@@ -84,15 +84,6 @@ class Project(models.Model):
     def get_acl_parents(self):
         return [self]
 
-    def get_likes(self):
-        from vitrina.likes.models import Like
-
-        content_type = ContentType.objects.get_for_model(self)
-        return Like.objects.filter(
-            content_type=content_type,
-            object_id=self.pk,
-        ).count()
-
 
 class UsecaseLike(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

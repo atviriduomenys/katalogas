@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-import pytz
+from zoneinfo import ZoneInfo
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
@@ -14,7 +14,7 @@ from vitrina.tasks.models import Task
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
-timezone = pytz.timezone(settings.TIME_ZONE)
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def set_up_data():
     RepresentativeFactory(user=user_with_organization, content_type=content_type, object_id=organization.pk)
     task_for_user = TaskFactory(user=user)
     task_for_organization = TaskFactory(
-        organization=organization, created=timezone.localize(datetime(2022, 8, 23, 11, 30))
+        organization=organization, created=datetime(2022, 8, 23, 11, 30).replace(tzinfo=timezone)
     )
     return {
         "organization": organization,

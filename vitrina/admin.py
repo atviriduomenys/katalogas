@@ -148,7 +148,7 @@ class RevisionCommentVersionAdmin(VersionAdmin):
         self._set_revision_comment(request, obj, "change")
         return log_entry
 
-    def log_deletion(self, request: HttpRequest, obj: Any, object_repr: str) -> LogEntry:
-        log_entry = super().log_deletion(request, obj, object_repr)
-        self._set_revision_comment(request, obj, "delete")
-        return log_entry
+    def log_deletions(self, request: HttpRequest, queryset: Any) -> Any:
+        log_entries = super().log_deletions(request, queryset)
+        self._set_revision_comment(request, None, "delete")
+        return log_entries

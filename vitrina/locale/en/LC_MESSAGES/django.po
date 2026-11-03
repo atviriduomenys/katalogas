@@ -7626,6 +7626,13 @@ msgid ""
 msgstr "The password must not be the same as the previous 3 passwords."
 
 msgid ""
+"Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %(min_length)d "
+"simbolių."
+msgstr ""
+"This password is too short. It must contain at least %(min_length)d "
+"characters."
+
+msgid ""
 "Slaptažodis per silpnas. Bandykite naudoti daugiau simbolių, didžiųjų "
 "raidžių, skaitmenų ir specialiųjų simbolių."
 msgstr ""

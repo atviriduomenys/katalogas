@@ -1,12 +1,12 @@
 from datetime import datetime
 
-import pytz
+from zoneinfo import ZoneInfo
 from django.conf import settings
 from freezegun import freeze_time
 
 from vitrina.tasks.factories import TaskFactory
 
-timezone = pytz.timezone(settings.TIME_ZONE)
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 class TestTask:

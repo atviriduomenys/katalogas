@@ -1,7 +1,8 @@
 import pytest
 from django.core.exceptions import ValidationError
 
-from vitrina.validators import phone_validator, validate_absolute_uri
+from vitrina.users.models import User
+from vitrina.validators import UniquePasswordValidator, phone_validator, validate_absolute_uri
 
 
 @pytest.mark.parametrize(
@@ -84,3 +85,9 @@ def test_validate_absolute_uri_valid(url):
 def test_validate_absolute_uri_invalid(url):
     with pytest.raises(ValidationError):
         validate_absolute_uri(url)
+
+
+@pytest.mark.django_db
+def test_unique_password_validator_accepts_unsaved_user():
+    # Django 5.1+ validates passwords against the unsaved user on sign-up.
+    UniquePasswordValidator().validate("Secret-password-123", User(email="new@test.com"))

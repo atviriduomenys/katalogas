@@ -12,6 +12,15 @@ https://github.com/atviriduomenys/katalogas/issues/2841
 - Export models, properties and enum values with an empty visibility as ``public`` in the OpenAPI
   file. Spinta leaves them out, so most datasets exported a file with no models.
 
+https://github.com/atviriduomenys/katalogas/issues/1826
+
+- Update Django from ``4.2`` to ``5.2`` LTS. Update ``django-tagulous`` to ``2.2``,
+  ``django-reversion`` to ``6.4``, ``django-redis`` to ``7.0``, ``django-sekizai`` to ``4.1``,
+  ``django-environ`` to ``0.14`` and ``django-extra-settings`` to ``0.15``.
+- Log out with a POST form from the user menu. Django 5 does not log out on a GET request.
+- Return dataset tag autocomplete results in the format that ``django-tagulous`` 2.2 expects.
+- Use ``zoneinfo`` instead of ``pytz``, which Django 5 no longer supports.
+
 
 v 1.27.0 (2026-10-23)
 ==================

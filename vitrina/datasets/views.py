@@ -1675,7 +1675,8 @@ def autocomplete_tags(request, tag_model):
         more = results.count() > end
         results = results.order_by("-count")[start:end]
 
-    response = {"results": [tag.name for tag in results], "more": more}
+    # Tagulous 2.2+ adaptors expect the Dropulous format.
+    response = {"options": [{"value": tag.name, "label": tag.name} for tag in results], "more": more}
     return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder), content_type="application/json")
 
 

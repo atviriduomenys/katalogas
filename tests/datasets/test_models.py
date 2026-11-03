@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 
 import pytest
-import pytz
+from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
@@ -53,7 +53,7 @@ class TestDatasets:
         DatasetFactory(is_public=False, organization=organization)
         DatasetFactory(
             deleted=True,
-            deleted_on=pytz.timezone(settings.TIME_ZONE).localize(datetime.now()),
+            deleted_on=datetime.now(ZoneInfo(settings.TIME_ZONE)),
             organization=organization,
         )
         DatasetFactory(deleted=True, deleted_on=None, organization=organization)

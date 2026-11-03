@@ -1,4 +1,4 @@
-import pytz
+from zoneinfo import ZoneInfo
 from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpRequest
@@ -341,7 +341,7 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
     account_actions_display.admin_order_field = "status"
 
     def created_display(self, obj):
-        timezone = pytz.timezone(settings.TIME_ZONE)
+        timezone = ZoneInfo(settings.TIME_ZONE)
         return obj.created.astimezone(timezone).strftime("%Y-%m-%d %H:%M") if obj.created else "-"
 
     created_display.short_description = _("Sukurta")

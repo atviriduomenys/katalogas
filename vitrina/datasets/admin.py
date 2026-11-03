@@ -3,7 +3,7 @@ import math
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
-import pytz
+from zoneinfo import ZoneInfo
 from django.contrib import admin
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import QuerySet, Q
@@ -283,7 +283,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
 
     def distribution_published_display(self, obj):
         if distribution := obj.datasetdistribution_set.order_by("created").first():
-            tz = pytz.timezone(settings.TIME_ZONE)
+            tz = ZoneInfo(settings.TIME_ZONE)
             return distribution.created.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
 
@@ -346,7 +346,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
             .first()
         )
         if distribution:
-            tz = pytz.timezone(settings.TIME_ZONE)
+            tz = ZoneInfo(settings.TIME_ZONE)
             return distribution.effective_updated.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
 

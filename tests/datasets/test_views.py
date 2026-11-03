@@ -1,6 +1,6 @@
 from datetime import datetime, date, timedelta
 
-import pytz
+from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -82,7 +82,7 @@ from vitrina.utils import RevisionComment, RevisionSource
 from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
 
 pytestmark = pytest.mark.django_db
-timezone = pytz.timezone(settings.TIME_ZONE)
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ def search_datasets() -> list[Dataset]:
     )
     dataset1 = DatasetFactory(
         slug="ds1",
-        published=timezone.localize(datetime(2022, 6, 1)),
+        published=datetime(2022, 6, 1).replace(tzinfo=timezone),
         tags=("test_tag_1", "test_tag_2"),
     )
     dataset1.category.add(cat_parent1)
@@ -119,7 +119,7 @@ def search_datasets() -> list[Dataset]:
 
     dataset2 = DatasetFactory(
         slug="ds2",
-        published=timezone.localize(datetime(2022, 8, 1)),
+        published=datetime(2022, 8, 1).replace(tzinfo=timezone),
         tags=("test_tag_2", "test_tag_3"),
     )
     dataset2.category.add(cat_parent2)
@@ -134,7 +134,7 @@ def search_datasets() -> list[Dataset]:
 
     dataset3 = DatasetFactory(
         slug="ds3",
-        published=timezone.localize(datetime(2022, 7, 1)),
+        published=datetime(2022, 7, 1).replace(tzinfo=timezone),
         tags=("test_tag_4", "test_tag_5"),
     )
     dataset3.category.add(cat_child)
@@ -226,9 +226,9 @@ def frequency_filter_data() -> dict:
 @pytest.fixture
 def date_filter_data() -> list[Dataset]:
     org = OrganizationFactory()
-    dataset1 = DatasetFactory(organization=org, slug="ds1", published=timezone.localize(datetime(2022, 3, 1)))
-    dataset2 = DatasetFactory(organization=org, slug="ds2", published=timezone.localize(datetime(2022, 2, 1)))
-    dataset3 = DatasetFactory(organization=org, slug="ds3", published=timezone.localize(datetime(2021, 12, 1)))
+    dataset1 = DatasetFactory(organization=org, slug="ds1", published=datetime(2022, 3, 1).replace(tzinfo=timezone))
+    dataset2 = DatasetFactory(organization=org, slug="ds2", published=datetime(2022, 2, 1).replace(tzinfo=timezone))
+    dataset3 = DatasetFactory(organization=org, slug="ds3", published=datetime(2021, 12, 1).replace(tzinfo=timezone))
     return [dataset1, dataset2, dataset3]
 
 
@@ -316,7 +316,7 @@ class TestDatasetDetailView:
     def test_click_edit_button(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(
-            published=timezone.localize(datetime(2022, 9, 7)),
+            published=datetime(2022, 9, 7).replace(tzinfo=timezone),
             slug="test-dataset-slug",
             organization=org,
         )
@@ -1045,7 +1045,7 @@ class TestDatasetListView:
         dataset_with_all_filters = DatasetFactory(
             status=Dataset.HAS_DATA,
             tags=("tag1", "tag2", "tag3"),
-            published=timezone.localize(datetime(2022, 2, 9)),
+            published=datetime(2022, 2, 9).replace(tzinfo=timezone),
             organization=organization,
             frequency=frequency,
         )
@@ -1194,7 +1194,7 @@ class TestDatasetUpdateView:
         category = CategoryFactory()
         org = OrganizationFactory()
         dataset: Dataset = DatasetFactory(
-            published=timezone.localize(datetime(2022, 9, 7)),
+            published=datetime(2022, 9, 7).replace(tzinfo=timezone),
             slug="test-dataset-slug",
             description="test description",
             frequency=frequency,
@@ -1235,7 +1235,7 @@ class TestDatasetUpdateView:
         old_parent_dataset = DatasetFactory()
         new_parent_dataset = DatasetFactory()
         dataset: Dataset = DatasetFactory(
-            published=timezone.localize(datetime(2022, 9, 7)),
+            published=datetime(2022, 9, 7).replace(tzinfo=timezone),
             slug="test-dataset-slug",
             description="test description",
         )
@@ -1256,7 +1256,7 @@ class TestDatasetUpdateView:
     def test_remove_parent(self, app: DjangoTestApp):
         old_parent_dataset = DatasetFactory()
         dataset: Dataset = DatasetFactory(
-            published=timezone.localize(datetime(2022, 9, 7)),
+            published=datetime(2022, 9, 7).replace(tzinfo=timezone),
             slug="test-dataset-slug",
             description="test description",
         )
@@ -1799,7 +1799,7 @@ class TestDatasetCreateView:
         subclass = DCATResourceSubclassFactory()
         org = OrganizationFactory(
             title="Org_title",
-            created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
+            created=datetime(2022, 8, 22, 10, 30).replace(tzinfo=timezone),
             jurisdiction=AreaOfManagement.objects.get(id=1),
             slug="test-org-slug",
             kind="test_org_kind",
@@ -2070,7 +2070,7 @@ class TestDatasetCreateView:
         subclass = DCATResourceSubclassFactory()
         org = OrganizationFactory(
             title="Org_title",
-            created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
+            created=datetime(2022, 8, 22, 10, 30).replace(tzinfo=timezone),
             jurisdiction=AreaOfManagement.objects.get(id=1),
             slug="test-org-slug",
             kind="test_org_kind",
@@ -2100,7 +2100,7 @@ class TestDatasetCreateView:
         subclass = DCATResourceSubclassFactory()
         org = OrganizationFactory(
             title="Org_title",
-            created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
+            created=datetime(2022, 8, 22, 10, 30).replace(tzinfo=timezone),
             jurisdiction=AreaOfManagement.objects.get(id=1),
             slug="test-org-slug",
             kind="test_org_kind",
@@ -3591,7 +3591,7 @@ def test_add_subclass_form_wrong_login(app: DjangoTestApp):
 def test_click_add_button(app: DjangoTestApp):
     org = OrganizationFactory(
         title="Org_title",
-        created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
+        created=datetime(2022, 8, 22, 10, 30).replace(tzinfo=timezone),
         jurisdiction=AreaOfManagement.objects.get(id=1),
         slug="test-org-slug",
         kind="test_org_kind",
@@ -5179,3 +5179,11 @@ class TestDatasetMemberUpdate:
 
         user.refresh_from_db()
         assert user.organization is None, "User's org should not be assigned during update"
+
+
+@pytest.mark.django_db
+def test_autocomplete_tags_uses_dropulous_format(app: DjangoTestApp):
+    DatasetFactory(tags=["water", "weather"])
+    app.set_user(UserFactory())
+    resp = app.get(reverse("autocomplete_tags"), {"q": "wat"})
+    assert resp.json == {"options": [{"value": "water", "label": "water"}], "more": False}

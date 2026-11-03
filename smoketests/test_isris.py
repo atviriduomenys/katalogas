@@ -331,7 +331,9 @@ def test_coordinator_role_approval(page, admin_page):
     if member_listed(page, org_pk, COORDINATOR_EMAIL):
         return
 
-    page.goto("/logout/")
+    page.goto("/")
+    with page.expect_navigation():
+        page.locator("#logout-form").evaluate("form => form.submit()")
     page.goto("/login/")
     # The fake VIISP login is only linked from the login page (and only
     # available on DEBUG instances); resolve its URL from there.

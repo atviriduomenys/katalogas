@@ -2,8 +2,9 @@ from urllib.parse import urlsplit
 
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, URLValidator
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, ngettext
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import MinimumLengthValidator as DjangoMinimumLengthValidator
 from zxcvbn import zxcvbn
 import re
 
@@ -82,12 +83,21 @@ class SpecialCharacterValidator:
         )
 
 
+class MinimumLengthValidator(DjangoMinimumLengthValidator):
+    def get_error_message(self):
+        return ngettext(
+            "This password is too short. It must contain at least %(min_length)d character.",
+            "This password is too short. It must contain at least %(min_length)d characters.",
+            self.min_length,
+        ) % {"min_length": self.min_length}
+
+
 class UniquePasswordValidator:
     def validate(self, password, user=None):
         # Imported here so model modules can import this module without an import cycle.
         from vitrina.users.models import OldPassword
 
-        if user:
+        if user and user.pk:
             old_passwords = OldPassword.objects.filter(user=user).order_by("-created")[:4]
             for old_password in old_passwords:
                 if check_password(password, old_password.password.strip()):

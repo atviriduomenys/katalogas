@@ -91,7 +91,10 @@
                                     {% translate "Teikėjų prašymai" %}
                                 </a>
                                 {% endif %}
-                                <a href="{% url 'logout' %}" class="navbar-item">{% translate "Atsijungti" %}</a>
+                                <form id="logout-form" method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="navbar-item navbar-item-button">{% translate "Atsijungti" %}</button>
+                                </form>
                             </div>
                         </div>
                     {% else %}

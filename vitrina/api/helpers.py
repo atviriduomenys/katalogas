@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.template.loader import render_to_string
 
@@ -46,7 +46,8 @@ def get_datasets_for_rdf(qs, only_link_rendered_datasets: bool = False):
         qs.select_related("organization")
         .prefetch_related("category")
         .prefetch_related("translations")
-        .prefetch_related("datasetdistribution_set")
+        # Without ORDER BY Postgres gives no stable order, so the XML would change between runs.
+        .prefetch_related(Prefetch("datasetdistribution_set", queryset=Distribution.objects.order_by("pk")))
         .prefetch_related("datasetdistribution_set__format")
         .prefetch_related("endpoint_description")
         .order_by("published")

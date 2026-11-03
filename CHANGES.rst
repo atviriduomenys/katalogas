@@ -30,7 +30,6 @@ https://github.com/atviriduomenys/katalogas/issues/2847
   ``pillow`` to ``13.0``.
 - Log out with POST only. A GET to ``/logout/`` now returns 405, so update bookmarks and scripts
   that open it.
-- Accept a signed ADOC file that ``libmagic`` 5.46 reads as ``application/octet-stream``.
 
 
 v 1.27.0 (2026-10-23)

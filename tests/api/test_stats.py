@@ -40,16 +40,31 @@ def test_stats_default_scope_is_public(app: DjangoTestApp, stats_data):
 
 @pytest.mark.django_db
 def test_stats_all_scope(app: DjangoTestApp, stats_data):
+    app.set_user(UserFactory())
     res = app.get(reverse("api-stats"), {"scope": "all"})
     assert res.json == {"scope": "all", "organizations": 2, "datasets": 4, "projects": 2}
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("scope", ["public", "all"])
-def test_stats_ignore_requesting_user(app: DjangoTestApp, stats_data, scope):
-    anonymous = app.get(reverse("api-stats"), {"scope": scope}).json
+def test_stats_all_scope_requires_login(app: DjangoTestApp, stats_data):
+    res = app.get(reverse("api-stats"), {"scope": "all"}, expect_errors=True)
+    assert res.status_code == 403
+    assert res.headers["Access-Control-Allow-Origin"] == "*"
+
+
+@pytest.mark.django_db
+def test_stats_public_ignores_requesting_user(app: DjangoTestApp, stats_data):
+    anonymous = app.get(reverse("api-stats")).json
     app.set_user(UserFactory(is_staff=True, is_superuser=True))
-    assert app.get(reverse("api-stats"), {"scope": scope}).json == anonymous
+    assert app.get(reverse("api-stats")).json == anonymous
+
+
+@pytest.mark.django_db
+def test_stats_all_ignores_requesting_user(app: DjangoTestApp, stats_data):
+    app.set_user(UserFactory())
+    regular = app.get(reverse("api-stats"), {"scope": "all"}).json
+    app.set_user(UserFactory(is_staff=True, is_superuser=True))
+    assert app.get(reverse("api-stats"), {"scope": "all"}).json == regular
 
 
 @pytest.mark.django_db
@@ -57,6 +72,13 @@ def test_stats_headers(app: DjangoTestApp):
     res = app.get(reverse("api-stats"))
     assert res.headers["Access-Control-Allow-Origin"] == "*"
     assert res.headers["Cache-Control"] == "public, max-age=300"
+
+
+@pytest.mark.django_db
+def test_stats_all_scope_is_not_publicly_cached(app: DjangoTestApp):
+    app.set_user(UserFactory())
+    res = app.get(reverse("api-stats"), {"scope": "all"})
+    assert res.headers["Cache-Control"] == "private, max-age=300"
 
 
 @pytest.mark.django_db

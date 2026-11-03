@@ -801,10 +801,10 @@ def stats(request: HttpRequest) -> JsonResponse:
 
     ``scope=public`` counts what an anonymous visitor can reach in this instance.
     ``scope=all`` counts everything registered in it, regardless of access rights;
-    an instance holding restricted data would otherwise report zero.
+    an instance holding restricted data would otherwise report zero. It reveals how
+    many non-public datasets exist, so it is available to logged-in users only.
 
-    Neither variant looks at the requesting user, so the response is the same for
-    everyone and safe to store in a shared cache.
+    The counts never depend on who is asking.
     """
     scope = request.GET.get("scope", "public")
     if scope not in STATS_SCOPES:
@@ -815,13 +815,17 @@ def stats(request: HttpRequest) -> JsonResponse:
         response["Access-Control-Allow-Origin"] = "*"
         return response
 
+    if scope == "all" and not request.user.is_authenticated:
+        response = JsonResponse({"error": "scope=all requires a logged-in user."}, status=403)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
+
     not_deleted = {"deleted__isnull": True, "deleted_on__isnull": True}
 
     if scope == "public":
         organizations = Organization.public.count()
         # AnonymousUser on purpose, not request.user: the counter must match what
-        # the dataset list shows to a visitor who is not logged in, and it must be
-        # the same number for everybody so that it can be cached.
+        # the dataset list shows to a visitor who is not logged in.
         datasets = Dataset.restricted.for_user(AnonymousUser()).filter(search_doc__isnull=False).count()
         projects = get_projects(AnonymousUser(), approved_only=True).filter(**not_deleted).count()
     else:
@@ -842,5 +846,6 @@ def stats(request: HttpRequest) -> JsonResponse:
     # The landing page is served from another host, and the payload is aggregate
     # counts only, so it is exposed to any origin.
     response["Access-Control-Allow-Origin"] = "*"
-    response["Cache-Control"] = "public, max-age=300"
+    # scope=all must not be stored in a shared cache, or anonymous visitors would get it.
+    response["Cache-Control"] = "%s, max-age=300" % ("public" if scope == "public" else "private")
     return response

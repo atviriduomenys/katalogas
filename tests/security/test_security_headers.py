@@ -126,7 +126,16 @@ class TestContentSecurityPolicy:
         assert directives["object-src"] == ["'none'"]
         assert directives["base-uri"] == ["'self'"]
         assert directives["frame-ancestors"] == ["'self'"]
-        assert directives["form-action"] == ["'self'"]
+
+    def test_csp_form_action_allows_viisp_redirect(self):
+        viisp_url = urlsplit(settings.VIISP_AUTHORIZE_URL)
+        viisp_origin = f"{viisp_url.scheme}://{viisp_url.netloc}"
+
+        enforced = settings.CONTENT_SECURITY_POLICY["DIRECTIVES"]["form-action"]
+        report_only = settings.CONTENT_SECURITY_POLICY_REPORT_ONLY["DIRECTIVES"]["form-action"]
+
+        assert enforced == ["'self'", viisp_origin]
+        assert report_only == ["'self'", viisp_origin]
 
     def test_csp_script_and_style_src_restricted_to_self_and_allowlist(self):
         """script-src/style-src must at least be scoped to 'self' (never a bare '*')."""

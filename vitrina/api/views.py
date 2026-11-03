@@ -846,6 +846,7 @@ def stats(request: HttpRequest) -> JsonResponse:
     # The landing page is served from another host, and the payload is aggregate
     # counts only, so it is exposed to any origin.
     response["Access-Control-Allow-Origin"] = "*"
-    # scope=all must not be stored in a shared cache, or anonymous visitors would get it.
-    response["Cache-Control"] = "%s, max-age=300" % ("public" if scope == "public" else "private")
+    # scope=all is for logged-in users only, and NoCacheMiddleware marks their responses no-store.
+    if scope == "public":
+        response["Cache-Control"] = "public, max-age=300"
     return response

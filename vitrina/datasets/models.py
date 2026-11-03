@@ -1251,15 +1251,6 @@ class Dataset(Resource):
             return _("Duomenų rinkinio papildymas")
         return _("Duomenų atvėrimas")
 
-    def get_likes(self):
-        from vitrina.likes.models import Like
-
-        content_type = ContentType.objects.get_for_model(self)
-        return Like.objects.filter(
-            content_type=content_type,
-            object_id=self.pk,
-        ).count()
-
     def get_download_count(self) -> int:
         return self.download_count
 

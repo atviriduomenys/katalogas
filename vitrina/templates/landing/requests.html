@@ -26,10 +26,6 @@
                                 <div class="card-actions">
                                     <a href="{% url "request-list" %}?selected_facets=formats_exact:{{ format }}"
                                        class="tag is-info is-light mr-3">{{ request.get_status_display }}</a>
-                                    <span class="icon is-small ml-5">
-                                        <i class="fas fa-thumbs-up"></i>
-                                        &nbsp;{{ request.get_likes }}
-                                    </span>
                                 </div>
                             </div>
                         </div>

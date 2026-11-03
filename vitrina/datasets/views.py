@@ -899,6 +899,12 @@ class DatasetCreateView(
         return self.kwargs.get("parent_id")
 
     def has_permission(self):
+        subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
+        if subclass.name == DCATResourceSubclass.CATALOG and not (
+            self.request.user.is_superuser or self.request.user.is_staff
+        ):
+            return False
+
         next_url = self.request.GET.get("next")
         if next_url:
             match = resolve(next_url)
@@ -906,12 +912,6 @@ class DatasetCreateView(
                 if request_id := match.kwargs.get("pk"):
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
-
-        subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
-        if subclass.name == DCATResourceSubclass.CATALOG and not (
-            self.request.user.is_superuser or self.request.user.is_staff
-        ):
-            return False
 
         return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
 
@@ -3886,6 +3886,12 @@ class DatasetChildResourceCreateView(DatasetCreateView):
         return self.parent_dataset.organization_id
 
     def has_permission(self):
+        subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
+        if subclass.name == DCATResourceSubclass.CATALOG and not (
+            self.request.user.is_superuser or self.request.user.is_staff
+        ):
+            return False
+
         subclass = self.parent_dataset.subclass
         action = Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE
         return has_perm(self.request.user, action, Dataset, self.parent_dataset)

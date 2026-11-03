@@ -64,7 +64,7 @@ from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.factories import ProjectFactory
-from vitrina.requests.factories import RequestObjectFactory, RequestFactory
+from vitrina.requests.factories import RequestObjectFactory, RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import RequestObject
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import Format
@@ -2433,6 +2433,63 @@ class TestDatasetCreateView:
         assert added_dataset.datasetattribution_set.count() == 1
         assert added_dataset.datasetattribution_set.first().organization == creator
         assert added_dataset.datasetattribution_set.first().attribution.name == Attribution.CREATOR
+
+    def test_create_catalog_for_non_staff(self, app: DjangoTestApp):
+        subclass = DCATResourceSubclassFactory(name="catalog")
+        organization = OrganizationFactory()
+        user = UserFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        app.set_user(user)
+
+        res = app.get(
+            reverse("dataset-add", kwargs={"pk": organization.pk, "subclass_uuid": subclass.pk}), expect_errors=True
+        )
+        assert res.status_code == 403
+
+    def test_create_catalog_for_non_staff_with_next(self, app: DjangoTestApp):
+        subclass = DCATResourceSubclassFactory(name="catalog")
+        organization = OrganizationFactory()
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        request = RequestFactory()
+        RequestAssignmentFactory(organization=organization, request=request, status=request.status)
+        RepresentativeFactory(
+            user=user, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
+        )
+
+        res = app.get(
+            reverse("dataset-add", kwargs={"pk": organization.pk, "subclass_uuid": subclass.pk})
+            + f"?next={reverse('request-datasets', args=[request.pk])}",
+            expect_errors=True,
+        )
+        assert res.status_code == 403
+
+    def test_create_child_catalog_for_non_staff(self, app: DjangoTestApp):
+        parent = DatasetFactory()
+        subclass = DCATResourceSubclassFactory(name="catalog")
+        organization = OrganizationFactory()
+        user = UserFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        app.set_user(user)
+
+        res = app.get(
+            reverse(
+                "child-dataset-add",
+                kwargs={"pk": organization.pk, "parent_id": parent.pk, "subclass_uuid": subclass.pk},
+            ),
+            expect_errors=True,
+        )
+        assert res.status_code == 403
 
 
 class TestDatasetDeleteView:

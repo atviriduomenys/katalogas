@@ -808,10 +808,12 @@ def stats(request: HttpRequest) -> JsonResponse:
     """
     scope = request.GET.get("scope", "public")
     if scope not in STATS_SCOPES:
-        return JsonResponse(
+        response = JsonResponse(
             {"error": "Unsupported scope '%s'. Use one of: %s." % (scope, ", ".join(STATS_SCOPES))},
             status=400,
         )
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
 
     not_deleted = {"deleted__isnull": True, "deleted_on__isnull": True}
 
@@ -820,8 +822,8 @@ def stats(request: HttpRequest) -> JsonResponse:
         # AnonymousUser on purpose, not request.user: the counter must match what
         # the dataset list shows to a visitor who is not logged in, and it must be
         # the same number for everybody so that it can be cached.
-        datasets = Dataset.restricted.for_user(AnonymousUser()).count()
-        projects = get_projects(AnonymousUser(), approved_only=True).count()
+        datasets = Dataset.restricted.for_user(AnonymousUser()).filter(search_doc__isnull=False).count()
+        projects = get_projects(AnonymousUser(), approved_only=True).filter(**not_deleted).count()
     else:
         organizations = Organization.objects.filter(**not_deleted).count()
         datasets = Dataset.objects.filter(organization_id__isnull=False, **not_deleted).count()

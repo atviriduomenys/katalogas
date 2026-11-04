@@ -1,4 +1,5 @@
 {% load menu_tags %}
+{% load i18n %}
 
 {# Rendering is not recursive, we're rendering everything together - level 0 as navbar, level 1 as item dropdown #}
 
@@ -18,4 +19,116 @@
         <a href="{{ page.get_redirect|default:page.get_absolute_url }}"
            class="navbar-item {% if page.selected %} selected{% endif %}">{{ page.get_menu_title }}</a>
     {% endif %}
+
+    {% if page.get_redirect == "/datasets/" %}
+        <div class="navbar-item has-dropdown is-hoverable">
+            <a class="navbar-link">{% translate 'Organizacijos' %}</a>
+
+            <div class="navbar-dropdown is-right organization-dropdown">
+                <div class="px-4 py-2 has-text-weight-bold has-text-link">
+                    {% translate "Ieškoti organizacijos" %}
+                </div>
+                <form class="organization-search" onsubmit="return false;">
+                    <input
+                        type="search"
+                        id="organizationSearch"
+                        class="input"
+                        placeholder="{% translate 'Įveskite pavadinimą, pvz. registrų'%}"
+                        aria-label="{% translate 'Ieškoti organizacijos' %}">
+                    >
+                </form>
+
+                <div class="px-4 py-2 has-text-weight-medium has-text-dark">
+                    {% translate "Daugiausiai duomenų išteklių" %}
+                </div>
+
+                <div id="navOrganizationList">
+                    {% for organization in organizations %}
+                        <a href="{{ organization.get_absolute_url }}"
+                           class="navbar-item is-flex is-justify-content-space-between is-align-items-center organization-result"
+                           data-name="{{ organization.title }}">
+                            <span class="pr-3">{{ organization }}</span>
+                            <span class="has-text-grey is-size-7">{{ organization.dataset_count }}  {% translate 'išt.'%}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <p id="organizationNoResults" class="px-4 py-2" hidden>
+                    {% translate "Organizacijų nerasta" %}
+                </p>
+
+                <hr class="navbar-divider">
+
+                <a href="{% url 'organization-list' %}" class="navbar-item has-text-link">
+                    {% translate 'Visos organizacijos'%} ({{ organization_count }})🠒
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
 {% endfor %}
+
+{% if help_pages %}
+    <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link help-nav-menu-link pr-3"
+           aria-label="{% translate 'Pagalba' %}">
+            <span class="icon">
+                <i class="fa fa-bars" aria-hidden="true"></i>
+            </span>
+        </a>
+
+        <div class="navbar-dropdown is-right px-2 py-3">
+            <div class="help-nav-columns">
+                {% for page, children in help_pages.items %}
+                    <div class="help-nav-column">
+                        <a href="{{ page.get_redirect|default:page.get_absolute_url }}"
+                           class="navbar-item help-nav-column-title">
+                            {{ page.get_menu_title }}
+                        </a>
+
+                        {% for child in children %}
+                            <a href="{{ child.get_redirect|default:child.get_absolute_url }}"
+                               class="navbar-item help-nav-child-link">
+                                {{ child.get_menu_title }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        const $search = $("#organizationSearch");
+        const $results = $(".organization-result");
+        const $noResults = $("#organizationNoResults");
+
+        if (!$search.length) return;
+
+        function filterOrganizations() {
+            const query = $search.val().trim().toLowerCase();
+            let visibleCount = 0;
+
+            $results.each(function (index) {
+                const $item = $(this);
+                const name = String($item.data("name") || "").toLowerCase();
+                const matches = name.includes(query);
+                const visible = query ? matches : index < 5;
+
+                $item.toggleClass("is-hidden", !visible);
+
+                if (visible) {
+                    visibleCount++;
+                }
+            });
+
+            $noResults.prop("hidden", visibleCount > 0);
+        }
+
+        $search.on("input", filterOrganizations);
+        filterOrganizations();
+    });
+</script>

@@ -63,6 +63,9 @@ from vitrina.datasets.views import (
     DatasetChildResourceListView,
     ResourceSubclassCreateView,
     DatasetChildResourceCreateView,
+    UpdateDatasetCreatorFilters,
+    DatasetSubclassView,
+    DatasetsCatalogsView,
 )
 
 urlpatterns = [
@@ -70,6 +73,11 @@ urlpatterns = [
         "update-dataset-org-filters/",
         UpdateDatasetOrgFilters.as_view(),
         name="update-dataset-org-filters",
+    ),
+    path(
+        "update-dataset-creator-filters/",
+        UpdateDatasetCreatorFilters.as_view(),
+        name="update-dataset-creator-filters",
     ),
     path(
         "update-dataset-cat-filters/",
@@ -164,6 +172,11 @@ urlpatterns = [
         "datasets/stats/creator/",
         DatasetsCreatorsView.as_view(),
         name="dataset-stats-creator",
+    ),
+    path(
+        "datasets/stats/catalog/",
+        DatasetsCatalogsView.as_view(),
+        name="dataset-stats-catalog",
     ),
     path(
         "orgs/<int:pk>/datasets/add/",
@@ -292,6 +305,11 @@ urlpatterns = [
         "dataset/stats/jurisdiction/",
         DatasetManagementsView.as_view(),
         name="dataset-stats-jurisdiction",
+    ),
+    path(
+        "dataset/stats/subclass/",
+        DatasetSubclassView.as_view(),
+        name="dataset-stats-subclass",
     ),
     path(
         "dataset/atviru-duomenu-katalogo-api/",

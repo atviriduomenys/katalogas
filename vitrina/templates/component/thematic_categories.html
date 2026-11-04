@@ -50,6 +50,25 @@
                         </a>
                     </div>
                 </div>
+                {% if geoportal_catalog %}
+                    <div class="column is-3-fullhd is-3-desktop is-4-tablet">
+                        <div class="container category-box u-pos-relative">
+                            <a href="{% url 'dataset-list' %}?selected_facets=catalog_exact:{{ geoportal_catalog.pk }}"
+                               class="category-icon"
+                               title="{{ geoportal_catalog.title }}"
+                            >
+                                <div class="columns is-vcentered">
+                                    <div class="column is-4">
+                                        <i class="fa-solid fa-globe fa-2x"></i>
+                                    </div>
+                                    <div class="column is-8">
+                                        <span class="category-icon-text">{{ geoportal_catalog.title }}</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>

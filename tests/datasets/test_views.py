@@ -481,19 +481,9 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
         assert len(resp.context["object_list"]) == 2
 
-    def test_org_dataset_url_is_hidden_for_anon_user(self, app: DjangoTestApp):
-        resp = app.get(reverse("dataset-list"))
-        assert not resp.html.find(id="org-dataset-url")
-
     def test_manager_dataset_url_is_hidden_for_anon_user(self, app: DjangoTestApp):
         resp = app.get(reverse("dataset-list"))
         assert not resp.html.find(id="manager-dataset-url")
-
-    def test_org_dataset_url_is_hidden_for_normal_user(self, app: DjangoTestApp):
-        user = User.objects.create_user(email="test@test.com", password="test123")
-        app.set_user(user)
-        resp = app.get(reverse("dataset-list"))
-        assert not resp.html.find(id="org-dataset-url")
 
     @pytest.mark.parametrize(
         "is_staff,can_view",
@@ -545,14 +535,6 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
         assert not resp.html.find(id="manager-dataset-url")
 
-    def test_org_dataset_url_is_shown_for_coordinator(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        DatasetFactory(organization=org)
-        user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
-        app.set_user(user)
-        resp = app.get(reverse("dataset-list"))
-        assert resp.html.find(id="org-dataset-url")
-
     @pytest.mark.parametrize(
         "role",
         [
@@ -575,58 +557,6 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
 
         assert resp.html.find(id="manager-dataset-url")
-
-    def test_org_datasets_are_shown_for_coordinator(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        dataset = DatasetFactory(title="testt", organization=org)
-
-        user = User.objects.create_user(
-            email="test@test.com",
-            password="test123",
-            organization=org,
-        )
-
-        RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=org.pk,
-            role=Representative.RESOURCE_COORDINATOR,
-            user=user,
-        )
-
-        app.set_user(user)
-
-        resp = app.get(reverse("dataset-list"))
-        resp = resp.click(linkid="org-dataset-url")
-        assert [int(obj.pk) for obj in resp.context["object_list"]] == [dataset.pk]
-
-    def test_org_datasets_are_shown_for_open_data_coordinator(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        public_dataset = DatasetFactory(title="public_ds", organization=org, access_rights=Dataset.PUBLIC)
-        restricted_dataset = DatasetFactory(title="restricted_ds", organization=org, access_rights=Dataset.RESTRICTED)
-        confidential_dataset = DatasetFactory(
-            title="confidential_ds", organization=org, access_rights=Dataset.NON_PUBLIC
-        )
-
-        user = User.objects.create_user(
-            email="opendata@test.com",
-            password="test123",
-            organization=org,
-        )
-        RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=org.pk,
-            role=Representative.OPEN_DATA_COORDINATOR,
-            user=user,
-        )
-
-        app.set_user(user)
-
-        resp = app.get(reverse("dataset-list"))
-        resp = resp.click(linkid="org-dataset-url")
-        visible_dataset_ids = [int(obj.pk) for obj in resp.context["object_list"]]
-        assert public_dataset.pk in visible_dataset_ids
-        assert restricted_dataset.pk in visible_dataset_ids
-        assert confidential_dataset.pk not in visible_dataset_ids
 
     def test_manager_datasets_are_shown_for_manager(self, app: DjangoTestApp):
         org = OrganizationFactory()

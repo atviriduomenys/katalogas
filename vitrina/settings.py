@@ -59,6 +59,10 @@ OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_CACHE_TIMEOUT = int(
     env("OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_CACHE_TIMEOUT", default=7 * 24 * 60 * 60)
 )  # in seconds. Default - one week.
 OAUTH_SERVER_HOST = env("OAUTH_SERVER_HOST")
+# Authorization server identifier, the `iss` of the access tokens it issues.
+OAUTH_SERVER_ID = env("OAUTH_SERVER_ID", default=OAUTH_SERVER_HOST)
+# Catalog's own resource identifier, the `aud` of access tokens issued for it.
+OAUTH_RESOURCE_URI = env("OAUTH_RESOURCE_URI", default="https://data.gov.lt/uapi/")
 OAUTH_SERVER_CLIENTS_PATH = env("OAUTH_SERVER_CLIENTS_PATH", default="/auth/clients")
 OAUTH_SERVER_TOKEN_PATH = env("OAUTH_SERVER_TOKEN_PATH", default="/auth/token")
 OAUTH_SERVER_CLIENTS_URL = OAUTH_SERVER_HOST + OAUTH_SERVER_CLIENTS_PATH
@@ -803,3 +807,12 @@ try:
     INSTALLED_APPS += ["django_migration_linter"]
 except ImportError:
     pass
+
+# Reviewed exceptions to `lintmigrations`.
+MIGRATION_LINTER_OPTIONS = {
+    "ignore_name": [
+        # NOT NULL + unique on `vitrina_uapi_agentenvironment.uri`: a small table, every row filled and the table
+        # locked by the migration itself; Django 4.2 has no `db_default` to keep old writers working.
+        "0010_alter_agentenvironment_uri",
+    ],
+}

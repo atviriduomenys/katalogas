@@ -4,6 +4,17 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2851
+
+- Accept an upload whose content libmagic cannot identify (``application/octet-stream``) if its
+  extension is allowed. Newer libmagic reports an ADOC this way, and the content check rejected it
+  as forbidden, so a partner registration with a signed ADOC failed.
+
+https://github.com/atviriduomenys/katalogas/issues/2853
+
+- List a dataset's distributions in a stable order (by id) in the RDF export. Before, the order
+  could change between runs, so the same data gave a different XML.
+
 https://github.com/atviriduomenys/katalogas/issues/2841
 
 - Update ``spinta`` from ``1.1.0`` to ``1.3.1``. The exported OpenAPI file is now OpenAPI
@@ -20,6 +31,14 @@ https://github.com/atviriduomenys/katalogas/issues/1826
 - Log out with a POST form from the user menu. Django 5 does not log out on a GET request.
 - Return dataset tag autocomplete results in the format that ``django-tagulous`` 2.2 expects.
 - Use ``zoneinfo`` instead of ``pytz``, which Django 5 no longer supports.
+https://github.com/atviriduomenys/katalogas/pull/2769
+
+- Add ``--keep-public-content`` to ``scripts/anonymize.py``. It keeps the text of published
+  stories, news and old portal pages, so content can be reviewed on an anonymized copy. Drafts,
+  scheduled, expired, non-public and deleted rows are anonymized as before.
+- Remove bylines in both modes, including the ``<p>Autorius: NAME</p>`` in the article text. The
+  kept text is not scanned for personal data, and the command warns about it.
+- Clear ``news_item.author``. It was never anonymized.
 
 
 v 1.27.0 (2026-10-23)

@@ -102,10 +102,16 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
         else:
             parent = None
 
-        if user and (user.is_open_data_representative_for(parent or self.organization)):
-            self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
-                name=DCATResourceSubclass.INFORMATION_SYSTEM
-            )
+        if user:
+            if user.is_open_data_representative_for(parent or self.organization):
+                self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
+                    name=DCATResourceSubclass.INFORMATION_SYSTEM
+                )
+
+            if not user.is_superuser and not user.is_staff:
+                self.fields["subclass"].queryset = self.fields["subclass"].queryset.exclude(
+                    name=DCATResourceSubclass.CATALOG
+                )
 
     def clean_subclass(self):
         subclass = self.cleaned_data.get("subclass")

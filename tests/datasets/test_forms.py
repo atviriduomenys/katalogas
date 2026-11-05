@@ -441,6 +441,32 @@ class TestResourceSubclassForm:
         assert Dataset.PUBLIC in choices
         assert Dataset.RESTRICTED in choices
 
+    def test_catalog_for_staff(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        form = app.get(reverse("resource-subclass-add", kwargs={"pk": organization.pk})).context["form"]
+        assert isinstance(form, ResourceSubclassForm)
+        subclass_names = {s.name for s in form.fields["subclass"].queryset}
+        assert DCATResourceSubclass.CATALOG in subclass_names
+
+    def test_catalog_for_non_staff(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        user = UserFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        app.set_user(user)
+
+        form = app.get(reverse("resource-subclass-add", kwargs={"pk": organization.pk})).context["form"]
+        assert isinstance(form, ResourceSubclassForm)
+        subclass_names = {s.name for s in form.fields["subclass"].queryset}
+        assert DCATResourceSubclass.CATALOG not in subclass_names
+
 
 @pytest.mark.django_db
 class TestResourceSubclassTypeFieldXSS:

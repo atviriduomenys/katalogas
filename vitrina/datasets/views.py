@@ -1650,7 +1650,10 @@ def autocomplete_tags(request, tag_model):
     options = tag_model.tag_options
 
     query = request.GET.get("q", "")
-    page = int(request.GET.get("p", 1))
+    try:
+        page = max(int(request.GET.get("p", 1)), 1)
+    except ValueError:
+        page = 1
 
     if query:
         if options.force_lowercase:

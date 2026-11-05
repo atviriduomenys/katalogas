@@ -5187,3 +5187,12 @@ def test_autocomplete_tags_uses_dropulous_format(app: DjangoTestApp):
     app.set_user(UserFactory())
     resp = app.get(reverse("autocomplete_tags"), {"q": "wat"})
     assert resp.json == {"options": [{"value": "water", "label": "water"}], "more": False}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("page", ["abc", "", "0", "-1"])
+def test_autocomplete_tags_invalid_page_falls_back_to_first(app: DjangoTestApp, page: str):
+    DatasetFactory(tags=["water"])
+    app.set_user(UserFactory())
+    resp = app.get(reverse("autocomplete_tags"), {"q": "wat", "p": page})
+    assert resp.json == {"options": [{"value": "water", "label": "water"}], "more": False}

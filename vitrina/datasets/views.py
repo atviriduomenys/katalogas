@@ -1761,6 +1761,7 @@ def autocomplete_tags(request, tag_model):
     else:
         results = queryset.all()
 
+    more = False
     if options.autocomplete_limit:
         start = options.autocomplete_limit * (page - 1)
         end = options.autocomplete_limit * page

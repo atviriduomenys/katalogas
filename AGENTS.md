@@ -84,6 +84,7 @@ Nix dev shell available (`nix develop`) — provides Python, Poetry, Node, and a
 ## Testing
 
 - Services must be running: `docker compose up -d`
+- Compile the Lithuanian catalog first: `poetry run python manage.py compilemessages -l lt` (needs `gettext`); some tests check messages only our catalog translates
 - `poetry run pytest -vvra --tb=short` — full suite ~10-15 min
 - Browser-only smoke tests against a running instance (no DB access): `poetry run pytest smoketests --base-url=http://localhost:8000` — requires a DEBUG instance with fake-VIISP, admin `test@test.com`/`test`, `USE_OTP_VALIDATION=False`
 - Single test: `poetry run pytest -vvra --tb=short tests/path/to/test.py::test_name`

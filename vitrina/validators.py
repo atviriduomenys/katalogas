@@ -1,6 +1,5 @@
 from urllib.parse import urlsplit
 
-from django.contrib.auth.password_validation import MinimumLengthValidator as DjangoMinimumLengthValidator
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, URLValidator
 from django.utils.translation import gettext_lazy as _
@@ -81,14 +80,6 @@ class SpecialCharacterValidator:
         return _(
             "Slaptažodyje turi būti panaudotas bent vienas specialusis simbolis ( !@#$%^&*()_+-=/.,';][|}{\":?>< )."
         )
-
-
-class MinimumLengthValidator(DjangoMinimumLengthValidator):
-    # Django 5.2 has no Lithuanian translation for this message.
-    def get_error_message(self):
-        return _("Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %(min_length)d simbolių.") % {
-            "min_length": self.min_length
-        }
 
 
 class UniquePasswordValidator:

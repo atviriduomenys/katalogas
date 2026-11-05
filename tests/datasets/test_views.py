@@ -5196,3 +5196,12 @@ def test_autocomplete_tags_invalid_page_falls_back_to_first(app: DjangoTestApp, 
     app.set_user(UserFactory())
     resp = app.get(reverse("autocomplete_tags"), {"q": "wat", "p": page})
     assert resp.json == {"options": [{"value": "water", "label": "water"}], "more": False}
+
+
+@pytest.mark.django_db
+def test_autocomplete_tags_without_limit(app: DjangoTestApp, monkeypatch):
+    monkeypatch.setattr(Dataset.tags.tag_model.tag_options, "autocomplete_limit", 0)
+    DatasetFactory(tags=["water"])
+    app.set_user(UserFactory())
+    resp = app.get(reverse("autocomplete_tags"), {"q": "wat"})
+    assert resp.json == {"options": [{"value": "water", "label": "water"}], "more": False}

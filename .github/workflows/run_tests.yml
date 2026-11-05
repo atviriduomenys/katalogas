@@ -43,10 +43,14 @@ jobs:
         # smoke tests are run separately).
         run: |
           sudo rm -f /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update && sudo apt-get install -y libmagic1
+          sudo apt-get update && sudo apt-get install -y libmagic1 gettext
 
       - name: Install dependencies
         run: poetry install
+
+      - name: Compile Lithuanian translations
+        # Django 5.2's own Lithuanian catalog lacks some messages; ours adds them.
+        run: poetry run python manage.py compilemessages -l lt
 
       - name: Build static files
         run: |

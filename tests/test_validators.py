@@ -1,5 +1,8 @@
 import pytest
+from django.conf import settings
+from django.contrib.auth.password_validation import MinimumLengthValidator
 from django.core.exceptions import ValidationError
+from django.utils import translation
 
 from vitrina.users.models import User
 from vitrina.validators import UniquePasswordValidator, phone_validator, validate_absolute_uri
@@ -91,3 +94,17 @@ def test_validate_absolute_uri_invalid(url):
 def test_unique_password_validator_accepts_unsaved_user():
     # Django 5.1+ validates passwords against the unsaved user on sign-up.
     UniquePasswordValidator().validate("Secret-password-123", User(email="new@test.com"))
+
+
+@pytest.mark.parametrize("min_length, form", [(12, "simbolių"), (21, "simbolis"), (22, "simboliai")])
+def test_minimum_length_message_in_lithuanian(min_length, form):
+    with translation.override("lt"):
+        message = MinimumLengthValidator(min_length).get_error_message()
+    assert message == f"Šis slaptažodis yra per trumpas. Jį turi sudaryti bent {min_length} {form}."
+
+
+def test_lt_catalog_keeps_django_minimum_length_message():
+    # The msgid is not in our code, so makemessages marks it obsolete (#~), which drops it from the catalog.
+    po = (settings.BASE_DIR / "vitrina/locale/lt/LC_MESSAGES/django.po").read_text(encoding="utf-8")
+    lines = po.replace('"\n"', "").splitlines()
+    assert 'msgid "This password is too short. It must contain at least %d character."' in lines

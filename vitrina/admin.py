@@ -121,7 +121,7 @@ class RevisionAdmin(admin.ModelAdmin):
 
 
 class RevisionCommentVersionAdmin(VersionAdmin):
-    def _set_revision_comment(self, request: HttpRequest, obj: Any, action: str) -> None:
+    def _set_revision_comment(self, request: HttpRequest, action: str) -> None:
         if not reversion.is_active():
             return
 
@@ -140,15 +140,15 @@ class RevisionCommentVersionAdmin(VersionAdmin):
 
     def log_addition(self, request: HttpRequest, obj: Any, message: str) -> LogEntry:
         log_entry = super().log_addition(request, obj, message)
-        self._set_revision_comment(request, obj, "add")
+        self._set_revision_comment(request, "add")
         return log_entry
 
     def log_change(self, request: HttpRequest, obj: Any, message: str) -> LogEntry:
         log_entry = super().log_change(request, obj, message)
-        self._set_revision_comment(request, obj, "change")
+        self._set_revision_comment(request, "change")
         return log_entry
 
     def log_deletions(self, request: HttpRequest, queryset: Any) -> Any:
         log_entries = super().log_deletions(request, queryset)
-        self._set_revision_comment(request, None, "delete")
+        self._set_revision_comment(request, "delete")
         return log_entries

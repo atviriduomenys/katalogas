@@ -2588,6 +2588,29 @@ def get_allowed_visibilities(
     return allowed_visibilities
 
 
+# _MMD_ENCODE and _mermaid_safe are duplicates from Spinta
+# If a problem is found with this escaping, it has to be fixed in both places.
+_MMD_ENCODE = str.maketrans(
+    {
+        "#": "#35;",
+        "`": "#96;",
+        '"': "#34;",
+        "{": "#123;",
+        "}": "#125;",
+        "<": "#60;",
+        ">": "#62;",
+        "\n": " ",
+        "\r": " ",
+    }
+)
+
+
+def _mermaid_safe(value: str | None) -> str | None:
+    if not value:
+        return value
+    return value.translate(_MMD_ENCODE)
+
+
 def generate_mermaid_diagram(dataset: Dataset, version: Version) -> str:
     context = create_context("cli")
 
@@ -2640,6 +2663,6 @@ def _generate_mermaid_model_click_links(dataset: Dataset, version: Version) -> s
                 "model": basename,
             },
         )
-        click_lines.append(f'click `{full_name}` href "{base_url}{path}"')
+        click_lines.append(f'click `{_mermaid_safe(full_name)}` href "{base_url}{path}"')
 
     return "\n".join(click_lines)

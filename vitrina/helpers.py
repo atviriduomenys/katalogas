@@ -15,6 +15,8 @@ from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
+from django.core.exceptions import ValidationError
+
 try:
     import magic
 except (ImportError, OSError):
@@ -382,6 +384,35 @@ def get_selected_value(
         except ValueError:
             return [] if multiple else None
     return selected_value
+
+
+def get_value_title(
+    filter_obj: Filter,
+    value: str,
+):
+    choices = filter_obj.choices
+    if choices:
+        for choice_value, label in choices.items():
+            if str(choice_value) == str(value):
+                return label
+
+    model = filter_obj.model
+    if model is not None:
+        try:
+            obj = model.objects.filter(pk=value).first()
+        except (ValueError, ValidationError):
+            obj = None
+
+        if obj is not None:
+            return str(obj) if filter_obj.use_str else obj.title
+
+    if filter_obj.is_int:
+        try:
+            value = int(value)
+        except ValueError:
+            return None
+
+    return value
 
 
 def get_filter_url(
@@ -830,8 +861,10 @@ def validate_file(file: File) -> None:
     # Defense in depth: sniff the actual content type and re-run the deny
     # validators against it. This catches active content (HTML/PHP/shell/SVG/
     # executables) smuggled past the extension gate under a benign extension.
+    # octet-stream only means libmagic does not know the bytes (newer versions say so for ADOC), and
+    # filer denies it by default; the extension gate above already applied the whitelist.
     detected_mime = _detect_content_type(file.file)
-    if detected_mime and detected_mime != declared_mime:
+    if detected_mime and detected_mime not in (declared_mime, "application/octet-stream"):
         _run_deny_validators(file.name, file.file, detected_mime)
 
 

@@ -4,6 +4,30 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/dvms/issues/513
+
+- Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)
+  in the UML diagram model click-link generation (``_generate_mermaid_model_click_links``). A model
+  whose name carries such a character in a namespace segment (the basename-only name validation does
+  not catch it) could otherwise break out of the ``click`` directive and inject Mermaid syntax.
+- Set the Mermaid ``securityLevel`` to ``antiscript`` on the UML canvas, so a ``javascript:`` link in a
+  rendered diagram is neutralized while legitimate ``https`` links keep working.
+- Wrap ``mermaid.render`` in a try/catch on the UML canvas so a malformed stored diagram no longer aborts
+  the whole load handler — the download button and pan/zoom stay functional and an error message is shown
+  instead of a dead viewport.
+- Add tests for the Mermaid click-link escaping (``_mermaid_safe`` and the malicious-namespace case).
+
+https://github.com/atviriduomenys/katalogas/issues/2851
+
+- Accept an upload whose content libmagic cannot identify (``application/octet-stream``) if its
+  extension is allowed. Newer libmagic reports an ADOC this way, and the content check rejected it
+  as forbidden, so a partner registration with a signed ADOC failed.
+
+https://github.com/atviriduomenys/katalogas/issues/2853
+
+- List a dataset's distributions in a stable order (by id) in the RDF export. Before, the order
+  could change between runs, so the same data gave a different XML.
+
 https://github.com/atviriduomenys/katalogas/issues/2841
 
 - Update ``spinta`` from ``1.1.0`` to ``1.3.1``. The exported OpenAPI file is now OpenAPI
@@ -20,6 +44,52 @@ https://github.com/atviriduomenys/katalogas/issues/1826
 - Log out with a POST form from the user menu. Django 5 does not log out on a GET request.
 - Return dataset tag autocomplete results in the format that ``django-tagulous`` 2.2 expects.
 - Use ``zoneinfo`` instead of ``pytz``, which Django 5 no longer supports.
+
+https://github.com/atviriduomenys/katalogas/pull/2769
+
+- Add ``--keep-public-content`` to ``scripts/anonymize.py``. It keeps the text of published
+  stories, news and old portal pages, so content can be reviewed on an anonymized copy. Drafts,
+  scheduled, expired, non-public and deleted rows are anonymized as before.
+- Remove bylines in both modes, including the ``<p>Autorius: NAME</p>`` in the article text. The
+  kept text is not scanned for personal data, and the command warns about it.
+- Clear ``news_item.author``. It was never anonymized.
+
+https://github.com/atviriduomenys/katalogas/issues/2799
+
+- Give every agent environment an identifier, ``AgentEnvironment.uri``
+  (``https://data.gov.lt/id/dcat/Agent/<uuid>``), for the agent to use as the ``aud`` claim instead of
+  the client id. It is generated when the environment is created, never changes, and is shown on
+  the environment page and as ``resource_server_id`` in ``config.yml``. The UAPI Agent endpoint returns
+  it as ``uri``.
+- The generated agent configuration uses the option names of Spinta (atviriduomenys/spinta#2048), which
+  keep identifiers apart from URLs. Agents need that Spinta release.
+
+  - ``credentials.cfg``: the section is ``[katalogas]`` (was ``[default]``). ``auth_server_url`` (was
+    ``server``), ``resource_server_url`` pointing to ``/uapi/`` (was ``resource_server``), and
+    ``resource_server_id``, the Catalog's identifier from the new ``OAUTH_RESOURCE_URI`` setting. The unused
+    ``client_id``, ``organization`` and ``organization_type`` options are gone.
+  - ``config.yml`` is filled from the environment: ``env``, ``resource_server_id``, ``resource_server_url``
+    (the API gate's URL, or the agent address when there is no gate), ``auth_server_id`` (new
+    ``OAUTH_SERVER_ID`` setting, defaults to ``OAUTH_SERVER_HOST``), ``auth_server_url`` and, when
+    ``OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH`` is set, ``token_validation_keys_download_url``.
+  - The rest of the ``config.yml`` skeleton changed too: the ``sql`` backend on ``sqlite.db`` is replaced
+    by a ``memory`` backend, with a ``csv`` manifest (``manifest.csv``) and a ``file`` accesslog
+    (``accesslog.json``).
+- Assign the identifier to existing environments, archived ones included, in a data migration.
+  **The migration cannot be reversed.** Rolling ``vitrina_uapi`` back past ``0009`` would drop
+  every identifier, and applying it again would issue new ones that no deployed agent knows.
+- Keep the stored identifier on every save. Reverting an environment in admin to a version saved before
+  this release would otherwise give it a new one, and the ``resource_server_id`` the agent already has would
+  stop matching.
+- Stop admin deleting agents and agent environments; archive them instead, as the app already does.
+  Recovering a deleted environment from a version saved before this release would issue a new
+  identifier. An organization that has agents can no longer be deleted in admin either, because
+  its agents would be deleted with it.
+- Move agents to the remaining organization when organizations are merged; they used to be deleted with
+  the merged one. A merge is refused if both organizations have active agents with the same codename.
+- Exempt ``vitrina_uapi`` ``0010_alter_agentenvironment_uri`` from ``lintmigrations`` in
+  ``MIGRATION_LINTER_OPTIONS``. It adds NOT NULL and a unique index to a small table it has filled and
+  locked itself.
 
 
 v 1.27.0 (2026-10-23)

@@ -1,0 +1,35 @@
+{% extends "admin/change_form.html" %}
+
+{% block admin_change_form_document_ready %}
+    {{ block.super }}
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
+        const $ = django.jQuery;
+        $(document).ready(function () {
+            $('#id_recipient_group').on('change', function () {
+                var group = $(this).val();
+
+                if (!group) {
+                    $('#id_recipients').val('');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/massmail/get-group-recipients/',
+                    type: 'GET',
+                    data: {
+                        group: group
+                    },
+                    dataType: 'json',
+                    success: function (response) {
+                        if ($('#id_recipient_group').val() === group) {
+                            $('#id_recipients').val(response.recipients.join(', '));
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Failed to fetch recipients:', error);
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -14,13 +14,15 @@ from vitrina import settings
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.messages.models import Subscription, NewsletterSubscriber
+from vitrina.messages.factories import SubscriptionFactory
+from vitrina.messages.models import Subscription, NewsletterSubscriber, MassMail
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
 from vitrina.projects.models import Project
 from vitrina.projects.factories import ProjectFactory, ProjectManagerFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.requests.models import Request
+from vitrina.settings import SYSTEM_USER_EMAIL
 from vitrina.users.factories import UserFactory
 
 
@@ -878,3 +880,257 @@ class TestNewsletterWorkflow:
         subscribers = NewsletterSubscriber.objects.filter(email=email)
         assert subscribers.count() == 1
         assert subscribers[0].status == NewsletterSubscriber.PENDING
+
+
+@pytest.mark.django_db
+class TestGroupRecipientsView:
+    def test_get_recipients_without_permission(self, app: DjangoTestApp):
+        user = UserFactory()
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients"), expect_errors=True)
+        assert response.status_code == 403
+
+    def test_get_organization_recipients(self, app: DjangoTestApp):
+        OrganizationFactory(email="test@example.com")
+        OrganizationFactory(email="Test@Example.com ")
+        OrganizationFactory(email="")
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.ORGANIZATIONS}")
+        assert response.json["recipients"] == ["test@example.com"]
+
+    def test_get_coordinators_recipients(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        RepresentativeFactory(
+            email="test@example.com",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="Test@Example.com ",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            role=Representative.RESOURCE_MANAGER,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.COORDINATORS}")
+        assert response.json["recipients"] == ["test@example.com"]
+
+    def test_get_user_recipients(self, app: DjangoTestApp):
+        UserFactory(email="Test@Example.com ")
+        UserFactory(email="")
+        UserFactory(is_active=False)
+
+        user = UserFactory(is_staff=True, email="test@example.com")
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.REGISTERED_USERS}")
+        recipients = [email for email in response.json["recipients"] if email != SYSTEM_USER_EMAIL]
+        assert recipients == ["test@example.com"]
+
+    def test_get_subscriber_recipients(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        SubscriptionFactory(
+            user=UserFactory(email="test@example.com"),
+            sub_type=Subscription.ORGANIZATION,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        SubscriptionFactory(
+            user=UserFactory(email="Test@Example.com "),
+            sub_type=Subscription.ORGANIZATION,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        SubscriptionFactory(
+            user=UserFactory(email=""),
+            sub_type=Subscription.ORGANIZATION,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        SubscriptionFactory(
+            email_subscribed=False,
+            sub_type=Subscription.ORGANIZATION,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.SUBSCRIBERS}")
+        assert response.json["recipients"] == ["test@example.com"]
+
+    def test_get_open_data_coordinators_recipients(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        RepresentativeFactory(
+            email="test1@example.com",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="Test1@Example.com ",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test2@example.com",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.OPEN_DATA_COORDINATORS}")
+        assert response.json["recipients"] == ["test1@example.com"]
+
+    def test_get_open_data_coordinators_and_managers_recipients(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        RepresentativeFactory(
+            email="test1@example.com",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="Test1@Example.com ",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test2@example.com",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test3@example.com",
+            role=Representative.OPEN_DATA_MANAGER,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test4@example.com",
+            role=Representative.RESOURCE_MANAGER,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.OPEN_DATA_COORDINATORS_AND_MANAGERS}")
+        assert sorted(response.json["recipients"]) == ["test1@example.com", "test3@example.com"]
+
+    def test_get_resource_coordinators_recipients(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        RepresentativeFactory(
+            email="test1@example.com",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="Test1@Example.com ",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test2@example.com",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.RESOURCE_COORDINATORS}")
+        assert response.json["recipients"] == ["test1@example.com"]
+
+    def test_get_resource_coordinators_and_managers_recipients(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        RepresentativeFactory(
+            email="test1@example.com",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="Test1@Example.com ",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test2@example.com",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test3@example.com",
+            role=Representative.RESOURCE_MANAGER,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+        RepresentativeFactory(
+            email="test4@example.com",
+            role=Representative.OPEN_DATA_MANAGER,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients") + f"?group={MassMail.RESOURCE_COORDINATORS_AND_MANAGERS}")
+        assert sorted(response.json["recipients"]) == ["test1@example.com", "test3@example.com"]

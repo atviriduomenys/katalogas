@@ -6,6 +6,7 @@ from vitrina.messages.views import (
     NewsletterSubscribeView,
     NewsletterUnsubscribeView,
     NewsletterConfirmView,
+    GroupRecipientsView,
 )
 
 urlpatterns = [
@@ -33,5 +34,10 @@ urlpatterns = [
         "newsletter/unsubscribe/<uuid:token>/",
         NewsletterUnsubscribeView.as_view(),
         name="newsletter-unsubscribe",
+    ),
+    path(
+        "massmail/get-group-recipients/",
+        GroupRecipientsView.as_view(),
+        name="group-recipients",
     ),
 ]

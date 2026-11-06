@@ -3,6 +3,7 @@ from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 from django.conf import settings
+from django.utils.timezone import localtime
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
@@ -4116,8 +4117,8 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             resource.title,
             "-",
             "Saugykla API",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "PeržiūrėtiAtsisiųsti",
             "Redaguoti",
             "Ištrinti",
@@ -4127,8 +4128,8 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             "TestModel",
             "-",
             "JSON",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4138,8 +4139,8 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             "TestModel",
             "-",
             "JSONL",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4149,8 +4150,8 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             "TestModel",
             "-",
             "RDF",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4160,8 +4161,8 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             "TestModel",
             "-",
             "CSV",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4210,8 +4211,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             resource.title,
             "-",
             "Saugykla API",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "PeržiūrėtiAtsisiųsti",
             "Redaguoti",
             "Ištrinti",
@@ -4221,8 +4222,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             "TestModel",
             "-",
             "JSON",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4232,8 +4233,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             "TestModel",
             "-",
             "JSONL",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4243,8 +4244,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             "TestModel",
             "-",
             "RDF",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4254,8 +4255,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             "TestModel",
             "-",
             "CSV",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4265,8 +4266,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             "TestModel2",
             "-",
             "CSV",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4276,8 +4277,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             "TestModel3",
             "-",
             "CSV",
-            resource.created.strftime("%Y-%m-%d"),
-            resource.modified.strftime("%Y-%m-%d"),
+            localtime(resource.created).strftime("%Y-%m-%d"),
+            localtime(resource.modified).strftime("%Y-%m-%d"),
             "",
             "",
             "Atidaryti",
@@ -4375,7 +4376,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
         <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
-        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dataset.modified).strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
         <dct:publisher>
             <foaf:Organization>
@@ -4397,8 +4398,8 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist1.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist1.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
@@ -4422,8 +4423,8 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist2.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist2.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dataset.landing_page}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
@@ -4535,7 +4536,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
         <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
-        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dataset.modified).strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
         <dct:publisher>
             <foaf:Organization>
@@ -4556,8 +4557,8 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist1.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist1.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
@@ -4581,8 +4582,8 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist2.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist2.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
@@ -4750,7 +4751,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
         <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
-        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dataset.modified).strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
         <dct:publisher>
             <foaf:Organization>
@@ -4771,8 +4772,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/json"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
@@ -4797,8 +4798,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/jsonl"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
@@ -4817,8 +4818,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/rdf"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
@@ -4843,8 +4844,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
-                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
-                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:modified>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:issued>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dist.created).strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/TestModel/:format/csv"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
@@ -4940,7 +4941,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
         <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
-        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{localtime(dataset.modified).strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
         <dct:publisher>
             <foaf:Organization>

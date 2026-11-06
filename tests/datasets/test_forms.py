@@ -113,9 +113,10 @@ class TestServiceResourceForm:
                 kwargs={"pk": organization.id, "subclass_uuid": subclass.pk},
             )
         ).context["form"]
-        concept1 = ConceptFactory()
-        concept2 = ConceptFactory()
-        concept3 = ConceptFactory()
+        # Explicit codes: the factory gets or creates by a random word, which can repeat.
+        concept1 = ConceptFactory(code="service-type-1")
+        concept2 = ConceptFactory(code="wrong-schema")
+        concept3 = ConceptFactory(code="service-type-2")
         needed_concept_schema, _ = ConceptSchema.objects.get_or_create(
             uri="http://publications.europa.eu/resource/authority/data-service-type"
         )

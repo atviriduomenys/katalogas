@@ -1,16 +1,14 @@
-import markdown
 from django.contrib import admin
-from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
-from vitrina import settings
-from vitrina.helpers import logger
 from vitrina.messages.forms import MassMailAdminForm
 from vitrina.messages.models import Subscription, EmailTemplate, SentMail, MassMail
 from django.template import Template
 from vitrina.admin import RevisionCommentVersionAdmin
+from vitrina.messages.tasks import send_mass_mail
 
 
 class SubscriptionAdmin(RevisionCommentVersionAdmin):
@@ -97,7 +95,6 @@ class MassMailAdmin(RevisionCommentVersionAdmin):
     )
     ordering = ("-created",)
     change_form_template = "vitrina/messages/admin/mass_mail_form.html"
-    list_editable = ("send",)
     list_display_links = ("recipient_group",)
     form = MassMailAdminForm
 
@@ -113,38 +110,7 @@ class MassMailAdmin(RevisionCommentVersionAdmin):
         super().save_model(request, obj, form, change)
 
         if "send" in form.changed_data and obj.send:
-            recipients = [recipient.strip() for recipient in obj.recipients.split(",") if recipient.strip()]
-            html_content = markdown.markdown(obj.email_content)
-            email = EmailMultiAlternatives(
-                subject=obj.email_subject,
-                body=obj.email_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[],
-                bcc=recipients,
-            )
-            email.attach_alternative(html_content, "text/html")
-
-            try:
-                email_send = email.send() > 0
-            except Exception as e:
-                logger.warning(
-                    "Email was not sent: subject=%s recipients=%s error=%s",
-                    obj.email_subject,
-                    recipients,
-                    e,
-                    exc_info=True,
-                )
-                email_send = False
-
-            SentMail.objects.create(
-                deleted=None,
-                deleted_on=None,
-                version=0,
-                recipient=list(recipients),
-                email_subject=obj.email_subject,
-                email_content=obj.email_content,
-                email_sent=email_send,
-            )
+            transaction.on_commit(lambda: send_mass_mail.delay(obj.pk))
 
 
 admin.site.register(Subscription, SubscriptionAdmin)

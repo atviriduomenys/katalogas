@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db.models import Q
+from django.db.models.functions import Lower, Trim
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -311,40 +312,55 @@ class NewsletterUnsubscribeView(View):
 class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def has_permission(self):
         user = self.request.user
-        return (
-            user.is_active
-            and user.is_staff
-            and (user.has_perm("vitrina_messages.add_massmail") or user.has_perm("vitrina_messages.change_massmail"))
-        )
+        return user.is_staff or user.is_superuser
 
     def get(self, request):
         group = request.GET.get("group")
         recipients = []
 
         if group == MassMail.ORGANIZATIONS:
-            recipients = Organization.objects.filter(email__isnull=False).values_list("email", flat=True).distinct()
+            recipients = (
+                Organization.objects.filter(email__isnull=False)
+                .annotate(normalized_email=Lower(Trim("email")))
+                .exclude(normalized_email="")
+                .order_by()
+                .values_list("normalized_email", flat=True)
+                .distinct()
+            )
 
         elif group == MassMail.COORDINATORS:
             recipients = (
                 Representative.objects.filter(email__isnull=False, role__in=Representative.COORDINATOR_ROLES)
-                .values_list("email", flat=True)
+                .annotate(normalized_email=Lower(Trim("email")))
+                .exclude(normalized_email="")
+                .values_list("normalized_email", flat=True)
                 .distinct()
             )
 
         elif group == MassMail.REGISTERED_USERS:
-            recipients = User.objects.filter(email__isnull=False).values_list("email", flat=True).distinct()
+            recipients = (
+                User.objects.filter(email__isnull=False, is_active=True)
+                .annotate(normalized_email=Lower(Trim("email")))
+                .exclude(normalized_email="")
+                .values_list("normalized_email", flat=True)
+                .distinct()
+            )
 
         elif group == MassMail.SUBSCRIBERS:
             recipients = (
                 Subscription.objects.filter(user__email__isnull=False, email_subscribed=True)
-                .values_list("user__email", flat=True)
+                .annotate(normalized_email=Lower(Trim("user__email")))
+                .exclude(normalized_email="")
+                .values_list("normalized_email", flat=True)
                 .distinct()
             )
 
         elif group == MassMail.OPEN_DATA_COORDINATORS:
             recipients = (
                 Representative.objects.filter(email__isnull=False, role=Representative.OPEN_DATA_COORDINATOR)
-                .values_list("email", flat=True)
+                .annotate(normalized_email=Lower(Trim("email")))
+                .exclude(normalized_email="")
+                .values_list("normalized_email", flat=True)
                 .distinct()
             )
 
@@ -354,14 +370,18 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                     Q(email__isnull=False)
                     & Q(Q(role=Representative.OPEN_DATA_COORDINATOR) | Q(role=Representative.OPEN_DATA_MANAGER))
                 )
-                .values_list("email", flat=True)
+                .annotate(normalized_email=Lower(Trim("email")))
+                .exclude(normalized_email="")
+                .values_list("normalized_email", flat=True)
                 .distinct()
             )
 
         elif group == MassMail.RESOURCE_COORDINATORS:
             recipients = (
                 Representative.objects.filter(email__isnull=False, role=Representative.RESOURCE_COORDINATOR)
-                .values_list("email", flat=True)
+                .annotate(normalized_email=Lower(Trim("email")))
+                .exclude(normalized_email="")
+                .values_list("normalized_email", flat=True)
                 .distinct()
             )
 
@@ -371,7 +391,9 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                     Q(email__isnull=False)
                     & Q(Q(role=Representative.RESOURCE_COORDINATOR) | Q(role=Representative.RESOURCE_MANAGER))
                 )
-                .values_list("email", flat=True)
+                .annotate(normalized_email=Lower(Trim("email")))
+                .exclude(normalized_email="")
+                .values_list("normalized_email", flat=True)
                 .distinct()
             )
 

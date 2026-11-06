@@ -733,7 +733,8 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
 def hash_api_key(api_key: str) -> str:
     hasher = PBKDF2PasswordHasher()
     salt = settings.HASHER_SALT
-    return hasher.encode(api_key, salt)
+    # Keys are looked up by exact hash; Django's default iterations change between releases.
+    return hasher.encode(api_key, salt, iterations=600_000)
 
 
 def create_subscription(user, organization):

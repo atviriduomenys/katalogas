@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django_recaptcha.client import RecaptchaResponse
 from freezegun import freeze_time
-import pytz
+from zoneinfo import ZoneInfo
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
@@ -45,7 +45,7 @@ from vitrina.users.models import User
 
 
 pytestmark = pytest.mark.django_db
-timezone = pytz.timezone(settings.TIME_ZONE)
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 def test_organization_detail_tab(app: DjangoTestApp):
@@ -92,13 +92,13 @@ MIGRATED_ORGANIZATION_PK = 1
 
 @pytest.fixture
 def organizations():
-    with freeze_time(timezone.localize(datetime(2022, 8, 22, 10, 30))):
+    with freeze_time(datetime(2022, 8, 22, 10, 30).replace(tzinfo=timezone)):
         organization1 = OrganizationFactory(
             slug="org1",
             title="Organization 1",
             jurisdiction=AreaOfManagement.objects.get(id=1),
         )
-    with freeze_time(timezone.localize(datetime(2022, 10, 22, 10, 30))):
+    with freeze_time(datetime(2022, 10, 22, 10, 30).replace(tzinfo=timezone)):
         jurisdiction2 = AreaOfManagementFactory(id=30)
         organization2 = OrganizationFactory(slug="org2", title="Organization 2", jurisdiction=jurisdiction2)
     with freeze_time(datetime(2022, 9, 22, 10, 30)):

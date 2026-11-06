@@ -359,6 +359,17 @@ def test_account_login_alias_redirects_to_login(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_logout_from_navbar(app: DjangoTestApp, user: User):
+    app.set_user(user)
+    form = app.get(reverse("organization-list")).forms["logout-form"]
+    assert form.method.upper() == "POST"
+    assert form.action == reverse("logout")
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == "/"
+
+
+@pytest.mark.django_db
 @override_settings(USE_OTP_VALIDATION=True)
 def test_login_second_time(app: DjangoTestApp):
     user = User.objects.create_user(email="testas1@testas.com", password="testas123", status=User.ACTIVE)
@@ -374,7 +385,7 @@ def test_login_second_time(app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == reverse("home")
 
-    app.get(reverse("logout"))
+    app.post(reverse("logout"))
 
     form = app.get(reverse("login")).forms["login-form"]
     form["username"] = "testas1@testas.com"

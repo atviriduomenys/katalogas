@@ -5,7 +5,7 @@ import django.db.models.deletion
 import filer.fields.file
 import parler.fields
 import parler.models
-import tagulous.models.models
+import django_tagulous.models.models
 
 
 class Migration(migrations.Migration):
@@ -495,7 +495,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'unique_together': {('slug',)},
             },
-            bases=(tagulous.models.models.BaseTagModel, models.Model),
+            bases=(django_tagulous.models.models.BaseTagModel, models.Model),
         ),
         migrations.CreateModel(
             name='RelationTranslation',

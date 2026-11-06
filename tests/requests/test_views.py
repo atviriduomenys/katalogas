@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
-import pytz
+from zoneinfo import ZoneInfo
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
@@ -25,7 +25,7 @@ from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.utils import RevisionComment, RevisionSource
 
-timezone = pytz.timezone(settings.TIME_ZONE)
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 @pytest.mark.django_db

@@ -149,7 +149,7 @@ INSTALLED_APPS = [
     "reversion",
     "hitcount",
     "crispy_forms",
-    "tagulous",
+    "django_tagulous",
     "crispy_bulma",
     "django_select2",
     "django_recaptcha",
@@ -183,10 +183,10 @@ INSTALLED_APPS = [
 ]
 
 SERIALIZATION_MODULES = {
-    "xml": "tagulous.serializers.xml_serializer",
-    "json": "tagulous.serializers.json",
-    "python": "tagulous.serializers.python",
-    "yaml": "tagulous.serializers.pyyaml",
+    "xml": "django_tagulous.serializers.xml_serializer",
+    "json": "django_tagulous.serializers.json",
+    "python": "django_tagulous.serializers.python",
+    "yaml": "django_tagulous.serializers.pyyaml",
 }
 
 MIDDLEWARE = [
@@ -309,7 +309,6 @@ LANGUAGES = [
 TIME_ZONE = "Europe/Vilnius"
 
 USE_I18N = True
-USE_L10N = True
 
 USE_TZ = True
 

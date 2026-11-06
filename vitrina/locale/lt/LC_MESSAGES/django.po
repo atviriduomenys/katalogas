@@ -7098,3 +7098,17 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr ""
+
+# Django 5.2 changed this message, and its own Lithuanian catalog does not translate it.
+#, python-format
+msgid "This password is too short. It must contain at least %d character."
+msgid_plural ""
+"This password is too short. It must contain at least %d characters."
+msgstr[0] ""
+"Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %d simbolis."
+msgstr[1] ""
+"Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %d simboliai."
+msgstr[2] ""
+"Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %d simbolių."
+msgstr[3] ""
+"Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %d simbolių."

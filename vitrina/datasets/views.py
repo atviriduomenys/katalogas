@@ -1739,7 +1739,10 @@ def autocomplete_tags(request, tag_model):
     options = tag_model.tag_options
 
     query = request.GET.get("q", "")
-    page = int(request.GET.get("p", 1))
+    try:
+        page = max(int(request.GET.get("p", 1)), 1)
+    except ValueError:
+        page = 1
 
     if query:
         if options.force_lowercase:
@@ -1758,13 +1761,15 @@ def autocomplete_tags(request, tag_model):
     else:
         results = queryset.all()
 
+    more = False
     if options.autocomplete_limit:
         start = options.autocomplete_limit * (page - 1)
         end = options.autocomplete_limit * page
         more = results.count() > end
         results = results.order_by("-count")[start:end]
 
-    response = {"results": [tag.name for tag in results], "more": more}
+    # Tagulous 2.2+ adaptors expect the Dropulous format.
+    response = {"options": [{"value": tag.name, "label": tag.name} for tag in results], "more": more}
     return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder), content_type="application/json")
 
 

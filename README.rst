@@ -271,6 +271,13 @@ tests:
 
     docker compose up -d
 
+Compile the Lithuanian translations (needs ``gettext``). Some tests check messages that only our
+catalog translates:
+
+.. code:: sh
+
+    python manage.py compilemessages -l lt
+
 Run all tests:
 
 .. code:: sh

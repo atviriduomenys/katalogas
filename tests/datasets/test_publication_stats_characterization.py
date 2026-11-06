@@ -1,7 +1,7 @@
 import json
 
 import pytest
-import pytz
+from zoneinfo import ZoneInfo
 from datetime import datetime, date
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -98,7 +98,7 @@ EXPECTED = {
 
 @pytest.fixture
 def publication_stats_data(db):
-    tz = pytz.timezone("Europe/Vilnius")
+    tz = ZoneInfo("Europe/Vilnius")
 
     org_a = OrganizationFactory(title="Org A")
     org_b = OrganizationFactory(title="Org B")
@@ -107,22 +107,22 @@ def publication_stats_data(db):
     ds_a = DatasetFactory(
         slug="pub-char-ds-a",
         organization=org_a,
-        published=tz.localize(datetime(2022, 3, 15)),
+        published=datetime(2022, 3, 15).replace(tzinfo=tz),
     )
     ds_b = DatasetFactory(
         slug="pub-char-ds-b",
         organization=org_b,
-        published=tz.localize(datetime(2023, 1, 10)),
+        published=datetime(2023, 1, 10).replace(tzinfo=tz),
     )
     ds_c = DatasetFactory(
         slug="pub-char-ds-c",
         organization=org_c,
-        published=tz.localize(datetime(2022, 9, 5)),
+        published=datetime(2022, 9, 5).replace(tzinfo=tz),
     )
 
-    Dataset.objects.filter(pk=ds_a.pk).update(created=tz.localize(datetime(2022, 3, 15)))
-    Dataset.objects.filter(pk=ds_b.pk).update(created=tz.localize(datetime(2023, 1, 10)))
-    Dataset.objects.filter(pk=ds_c.pk).update(created=tz.localize(datetime(2022, 9, 5)))
+    Dataset.objects.filter(pk=ds_a.pk).update(created=datetime(2022, 3, 15).replace(tzinfo=tz))
+    Dataset.objects.filter(pk=ds_b.pk).update(created=datetime(2023, 1, 10).replace(tzinfo=tz))
+    Dataset.objects.filter(pk=ds_c.pk).update(created=datetime(2022, 9, 5).replace(tzinfo=tz))
 
     DatasetStatsFactory(
         dataset_id=ds_a.pk, created=date(2022, 3, 15), object_count=10, request_count=5, maturity_level=3

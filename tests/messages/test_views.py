@@ -1133,5 +1133,4 @@ class TestGroupRecipientsView:
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.RESOURCE_COORDINATORS_AND_MANAGERS}")
-        print(sorted(response.json["recipients"]))
         assert sorted(response.json["recipients"]) == ["test1@example.com", "test3@example.com"]

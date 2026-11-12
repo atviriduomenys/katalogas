@@ -14,7 +14,6 @@
   "devDependencies": {
     "@babel/core": "^7.19.3",
     "@babel/preset-env": "^7.19.3",
-    "@fortawesome/fontawesome-free": "^5.3.1",
     "babel-loader": "^8.2.5",
     "bulma": "^0.9.4",
     "css-loader": "^6.7.1",

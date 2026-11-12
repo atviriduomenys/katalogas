@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 {% load comment_tags %}
 {% load markdown_tags %}
 
@@ -9,6 +9,9 @@
     {% else %}
         {{ model.name }}
     {% endif %}
+{% endblock %}
+{% block head %}
+    <link type="text/css" href="{% static 'css/pygments-api-response.css' %}" rel="stylesheet">
 {% endblock %}
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}

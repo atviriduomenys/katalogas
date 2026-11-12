@@ -18,7 +18,6 @@ from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
-from pygments.styles import get_style_by_name
 from reversion.models import Version
 
 from vitrina.classifiers.models import Status
@@ -1138,8 +1137,10 @@ def test_getall(app: DjangoTestApp):
                 ensure_ascii=False,
             ),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
+            HtmlFormatter(cssclass="api-response"),
         )
+        # Inline style="" attributes violate the strict CSP (style-src-attr).
+        assert 'style="' not in resp.context["response"]
 
 
 @pytest.mark.django_db
@@ -1219,7 +1220,7 @@ def test_getall_with_query(app: DjangoTestApp):
                 ensure_ascii=False,
             ),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
+            HtmlFormatter(cssclass="api-response"),
         )
 
 
@@ -1291,7 +1292,7 @@ def test_getone(app: DjangoTestApp):
                 ensure_ascii=False,
             ),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
+            HtmlFormatter(cssclass="api-response"),
         )
 
 
@@ -1366,7 +1367,7 @@ def test_changes(app: DjangoTestApp):
                 ensure_ascii=False,
             ),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
+            HtmlFormatter(cssclass="api-response"),
         )
 
 

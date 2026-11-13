@@ -245,8 +245,8 @@ class RegisterForm(UserCreationForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        first_name = cleaned_data.get("first_name", "")
-        last_name = cleaned_data.get("last_name", "")
+        first_name = cleaned_data.get("first_name", "").replace(" ", "").replace("-", "")
+        last_name = cleaned_data.get("last_name", "").replace(" ", "").replace("-", "")
 
         if len(first_name) < 3 or not first_name.isalpha():
             self.add_error(

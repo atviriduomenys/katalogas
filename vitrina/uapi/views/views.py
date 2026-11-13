@@ -24,6 +24,7 @@ from vitrina.exceptions import UAPIException
 from vitrina.resources.models import DatasetDistribution
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement
+from vitrina.structure.dataservice_import import import_dataservice_structure
 from vitrina.structure.models import Metadata, Version
 from vitrina.structure.services import create_structure_objects, export_dataset_structure
 from vitrina.uapi import HTTPMethods, PossibleResults
@@ -234,10 +235,46 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelView
             mime_type="text/csv",
             size=content_file.size,
         )
+        if dataset.subclass.name == DCATResourceSubclass.SERVICE:
+            return self._upload_dataservice_structure(request, dataset, structure)
         dataset.current_structure = structure
         create_structure_objects(structure)
         dataset.save()
 
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def _upload_dataservice_structure(
+        self, request: Request, service: Dataset, structure: DatasetStructure
+    ) -> Response:
+        # A DataService has no structure of its own: the file is imported into its datasets.
+        create_missing = request.query_params.get("_create_missing") == "true"
+        replace_drafts = request.query_params.get("_replace_drafts") == "true"
+        result = import_dataservice_structure(
+            structure,
+            organization=request.organization,
+            request=request,
+            create_missing=create_missing,
+            replace_drafts=replace_drafts,
+        )
+        skipped = [{"dataset": skipped.name, "reason": str(skipped.reason)} for skipped in result.skipped]
+        if result.errors:
+            errors = [str(error) for error in result.errors]
+            hints = []
+            if result.confirmable and result.new and not create_missing:
+                hints.append("Set _create_missing=true to create the new datasets.")
+            if result.confirmable and result.drafts and not replace_drafts:
+                hints.append("Set _replace_drafts=true to replace the drafts.")
+            raise UAPIException(
+                code="dataservice_import_rejected",
+                type="DataServiceImportRejected",
+                template="The DSA import into the DataService was rejected.",
+                message=" ".join(errors + hints),
+                context={"errors": errors, "new": result.new, "drafts": result.drafts, "skipped": skipped},
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        Dataset.objects.filter(pk=service.pk).update(current_structure=structure)
+        if skipped:
+            return Response({"skipped": skipped}, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["get"], url_path="dsa")

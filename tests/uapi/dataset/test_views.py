@@ -1,6 +1,6 @@
 from typing import Iterable, Any
 from unittest.mock import patch, PropertyMock
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -14,14 +14,23 @@ from rest_framework.exceptions import ErrorDetail
 
 from tests.conftest import _normalize_csv
 from tests.uapi.conftest import _generate_test_token, _build_reverse_uapi_url
+from tests.structure.test_dataservice_import import (
+    HEADER,
+    LOCATIONS,
+    NEW_DATASETS,
+    SERVICE,
+    _child,
+    _full_header,
+    _names,
+)
 from vitrina import settings
 from vitrina.cms.factories import FilerFileFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
-from vitrina.structure.models import Metadata
+from vitrina.structure.models import Metadata, Model, Property
 from vitrina.structure.services import create_structure_objects
 from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
 
@@ -1298,3 +1307,100 @@ class TestActionUpdateDatasetStructure:
             "message": "You do not have permission to perform this action.",
             "additionalProperties": None,
         }
+
+
+def _dataservice(organization: Organization) -> Dataset:
+    return DatasetServiceFactory(organization=organization, metadata=SERVICE)
+
+
+def _dataservice_child(service: Dataset, organization: Organization, name: str) -> Dataset:
+    child = _child(service, name)
+    Dataset.objects.filter(pk=child.pk).update(organization=organization)
+    return child
+
+
+def _post_dsa(app: DjangoTestApp, service: Dataset, manifest: str, token: str, **options: str):
+    url = _build_reverse_uapi_url("uapi-dataset-structure", pk=service.pk)
+    if options:
+        url += "?" + urlencode(options)
+    return app.post(
+        url,
+        _full_header(manifest),
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        content_type="text/csv",
+        expect_errors=True,
+    )
+
+
+@pytest.mark.django_db
+class TestActionUploadDataServiceStructure:
+    def test_imports_datasets_and_returns_204(self, app: DjangoTestApp, organization: Organization, valid_token: str):
+        service = _dataservice(organization)
+        locations = _dataservice_child(service, organization, "locations")
+
+        response = _post_dsa(app, service, LOCATIONS, valid_token)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+
+    def test_lists_skipped_datasets_with_200(self, app: DjangoTestApp, organization: Organization, valid_token: str):
+        service = _dataservice(organization)
+        _dataservice_child(service, organization, "locations")
+
+        response = _post_dsa(
+            app,
+            service,
+            LOCATIONS + "datasets/gov/rc/geo/uapi/countries,,,,,\n,Country,,,id,\n,,id,integer,,open\n",
+            valid_token,
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert [skipped["dataset"] for skipped in response.json["skipped"]] == ["datasets/gov/rc/geo/uapi/countries"]
+
+    def test_new_datasets_need_create_missing(self, app: DjangoTestApp, organization: Organization, valid_token: str):
+        service = _dataservice(organization)
+
+        response = _post_dsa(app, service, NEW_DATASETS, valid_token)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json["context"]["new"] == [f"{SERVICE}/locations", f"{SERVICE}/addresses"]
+        assert "_create_missing=true" in response.json["message"]
+        assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/locations").exists()
+
+        response = _post_dsa(app, service, NEW_DATASETS, valid_token, _create_missing="true")
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert Dataset.objects.get(metadata__name=f"{SERVICE}/locations").is_child_of(service)
+
+    def test_drafts_need_replace_drafts(self, app: DjangoTestApp, organization: Organization, valid_token: str):
+        service = _dataservice(organization)
+        locations = _dataservice_child(service, organization, "locations")
+        _post_dsa(app, service, LOCATIONS, valid_token)
+        short = HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n"
+
+        response = _post_dsa(app, service, short, valid_token)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json["context"]["drafts"] == [f"{SERVICE}/locations"]
+        assert "_replace_drafts=true" in response.json["message"]
+        assert _names(locations, Property) == ["id", "name"]
+
+        response = _post_dsa(app, service, short, valid_token, _replace_drafts="true")
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert _names(locations, Property) == ["id"]
+
+    def test_file_without_dataset_of_dataservice_is_rejected(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        service = _dataservice(organization)
+
+        response = _post_dsa(
+            app,
+            service,
+            HEADER + "datasets/gov/rc/geo/uapi/countries,,,,,\n,Country,,,id,\n,,id,integer,,open\n",
+            valid_token,
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert service.datasetstructure_set.count() == 0

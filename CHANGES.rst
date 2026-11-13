@@ -15,6 +15,10 @@ https://github.com/atviriduomenys/katalogas/issues/2846
   already have structure. A replaced draft is removed with its content; models keep their UUIDs, and
   references from other datasets are moved to the new models.
 - Never change the DataService's own models. Models in the DataService's own row get an error note.
+- Import into a DataService through the UAPI (``POST .../Dataset/{id}/dsa/``) the same way. New datasets
+  need ``_create_missing=true`` and drafts with structure need ``_replace_drafts=true``; without them
+  the import is rejected with 400, listing them. A successful import returns 204, or 200 with the
+  skipped datasets when some were skipped. Imports into other datasets still return 204.
 
 https://github.com/atviriduomenys/dvms/issues/513
 

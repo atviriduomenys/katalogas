@@ -554,3 +554,41 @@ def test_website_import_into_dataset_is_unchanged(app):
 
     assert "/confirm/" not in resp.location
     assert _names(dataset, Model) == ["datasets/gov/example/City"]
+
+
+def test_unreadable_file_is_rejected_without_changes():
+    service = _service()
+    locations = _child(service, "locations")
+    versions = Version.objects.count()
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data="dataset;model\n" + f"{SERVICE}/locations;\n")),
+        dataset=service,
+    )
+
+    result = import_dataservice_structure(structure)
+
+    assert len(result.errors) == 1
+    assert _names(locations, Model) == []
+    assert Version.objects.count() == versions
+
+
+def test_invalid_property_gets_an_error_note_and_the_rest_is_imported():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        ",,code,integer bogus,,open\n"
+        f"{SERVICE}/addresses,,,,,\n"
+        ",Address,,,id,\n"
+        ",,id,integer,,open\n",
+    )
+
+    assert result.errors == []
+    assert _names(locations, Property) == ["id"]
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+    assert len(_errors()) == 1 and "bogus" in _errors()[0]

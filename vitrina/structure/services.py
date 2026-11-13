@@ -206,7 +206,8 @@ def create_or_get_uapi_format():
     return format_obj
 
 
-def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version) -> None:
+def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version, link: bool = True) -> None:
+    """Load the manifest entry named like `dataset`; with link=False the caller links references later."""
     ct = ContentType.objects.get_for_model(dataset)
     existing_metadata = list(
         Metadata.objects.filter(content_type=ct, object_id=dataset.pk, metadata_version=metadata_version)
@@ -304,7 +305,8 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             )
             _load_models(meta, dataset, metadata_version, metadata_cache=metadata_cache)
             _link_distributions(meta, dataset, metadata_version, metadata_cache=metadata_cache)
-            _link_models(dataset, meta, metadata_version, metadata_cache=metadata_cache)
+            if link:
+                _link_models(dataset, meta, metadata_version, metadata_cache=metadata_cache)
             loaded_metadata.append(metadata)
 
         if errors := meta.errors:
@@ -1296,6 +1298,7 @@ def _link_models(
     dataset_meta: struct.Dataset,
     metadata_version: Version,
     metadata_cache: MetadataCache | None = None,
+    preferred_versions: list[Version] | None = None,
 ) -> None:
     model_ct = ContentType.objects.get_for_model(Model)
     prop_ct = ContentType.objects.get_for_model(Property)
@@ -1381,7 +1384,7 @@ def _link_models(
                             metadata_version=metadata_version,
                         )
 
-            _link_properties(dataset, model, model_meta, metadata_version)
+            _link_properties(dataset, model, model_meta, metadata_version, preferred_versions)
             model.update_level()
 
 
@@ -1470,6 +1473,7 @@ def _link_properties(
     model: Model,
     model_meta: struct.Model,
     metadata_version: Version,
+    preferred_versions: list[Version] | None = None,
 ):
     ct = ContentType.objects.get_for_model(Property)
     model_ct = ContentType.objects.get_for_model(Model)
@@ -1504,10 +1508,17 @@ def _link_properties(
                 property_meta_ref = prop_meta.ref.lstrip("/")
                 # Resolve via Model↔Metadata join (not Metadata-only + in_bulk): batching that path
                 # missed valid targets and left ref_model unset, breaking dependent export / Spinta.
-                if ref_model := Model.objects.filter(
+                ref_models = Model.objects.filter(
                     metadata__name=property_meta_ref,
                     metadata__content_type=model_ct,
-                ).first():
+                )
+                # A DataService import links its datasets together, so their new drafts come first.
+                if (
+                    ref_model := (
+                        preferred_versions and ref_models.filter(metadata_version__in=preferred_versions).first()
+                    )
+                    or ref_models.first()
+                ):
                     prop.ref_model = ref_model
                     prop.save()
 

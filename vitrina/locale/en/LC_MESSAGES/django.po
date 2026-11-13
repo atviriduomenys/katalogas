@@ -7711,3 +7711,34 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#, python-format
+msgid "Faile nėra nė vieno šios duomenų paslaugos „%(name)s“ duomenų rinkinio."
+msgstr "The file has no dataset of this DataService \"%(name)s\"."
+
+#, python-format
+msgid ""
+"Faile yra naujų duomenų rinkinių, kurių sukūrimas turi būti patvirtintas: "
+"%(names)s."
+msgstr "The file has new datasets whose creation must be confirmed: %(names)s."
+
+#, python-format
+msgid ""
+"Duomenų paslaugos „%(name)s“ eilutėje nurodyti modeliai neįkelti: duomenų "
+"paslauga neturi savo struktūros, todėl modelius importuokite į jos duomenų "
+"rinkinį."
+msgstr ""
+"The models given in the row of the DataService \"%(name)s\" were not "
+"imported: a DataService has no structure of its own, so import the models "
+"into one of its datasets."
+
+msgid "Duomenų rinkinys nepriklauso šiai duomenų paslaugai."
+msgstr "The dataset does not belong to this DataService."
+
+#, python-format
+msgid ""
+"Duomenų rinkinys „%(name)s“ jau yra ne šioje duomenų paslaugoje, todėl "
+"neįkeltas."
+msgstr ""
+"The dataset \"%(name)s\" already exists outside this DataService, so it was "
+"not imported."

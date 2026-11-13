@@ -10,6 +10,7 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.structure import HEADER as FULL_HEADER
+from vitrina.structure import VersionStatus
 from vitrina.structure.models import Metadata, Model, Property, Version
 from vitrina.structure.dataservice_import import import_dataservice_structure
 from vitrina.structure.services import create_structure_objects
@@ -26,7 +27,10 @@ def _service() -> Dataset:
 
 def _child(service: Dataset, name: str) -> Dataset:
     dataset = DatasetFactory(metadata=f"{SERVICE}/{name}")
+    # Treebeard moves by the parent's in-memory child count, so it must be fresh.
+    service.refresh_from_db()
     dataset.move(service, pos="sorted-child")
+    service.refresh_from_db()
     return Dataset.objects.get(pk=dataset.pk)
 
 
@@ -43,6 +47,8 @@ def _structure(dataset: Dataset, manifest: str):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=_full_header(manifest))), dataset=dataset
     )
+    # Adding a root dataset re-sorts the roots by subclass, so the in-memory tree path may be stale.
+    dataset.refresh_from_db()
     dataset.current_structure = structure
     dataset.save()
     return structure
@@ -52,8 +58,8 @@ def _import_dataset(dataset: Dataset, manifest: str):
     return create_structure_objects(_structure(dataset, manifest))
 
 
-def _import_service(service: Dataset, manifest: str):
-    return import_dataservice_structure(_structure(service, manifest))
+def _import_service(service: Dataset, manifest: str, **options):
+    return import_dataservice_structure(_structure(service, manifest), **options)
 
 
 def _names(dataset: Dataset, model) -> list[str]:
@@ -183,7 +189,9 @@ def test_existing_dataset_keeps_its_details_and_structure_is_replaced():
         HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n,,name,string,,open\n",
     )
 
-    result = _import_service(service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n")
+    result = _import_service(
+        service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n", replace_drafts=True
+    )
 
     locations.refresh_from_db()
     assert result.errors == []
@@ -272,3 +280,117 @@ def test_new_dataset_is_listed_and_import_is_rejected_until_confirmed():
     assert len(result.errors) == 1
     assert _names(locations, Model) == []
     assert not service.get_children().filter(metadata__name=f"{SERVICE}/addresses").exists()
+
+
+LOCATIONS = HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n,,name,string,,open\n"
+
+
+def _drafts(dataset: Dataset) -> list[Version]:
+    return list(dataset.dataset_version.filter(status=VersionStatus.DRAFT).order_by("version"))
+
+
+def _release(dataset: Dataset) -> Version:
+    version = _drafts(dataset)[-1]
+    version.status = VersionStatus.STABLE
+    version.save()
+    return version
+
+
+def _uuid(dataset: Dataset, model, name: str, version: Version) -> str:
+    return Metadata.objects.get(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        name=name,
+        metadata_version=version,
+    ).uuid
+
+
+def test_empty_draft_from_dataset_creation_is_reused():
+    service = _service()
+    locations = _child(service, "locations")
+    drafts = _drafts(locations)
+
+    result = _import_service(service, LOCATIONS)
+
+    assert result.errors == []
+    assert _drafts(locations) == drafts
+
+
+def test_dataset_without_draft_gets_a_new_draft_and_released_version_is_unchanged():
+    service = _service()
+    locations = _child(service, "locations")
+    _import_service(service, LOCATIONS)
+    released = _release(locations)
+
+    result = _import_service(service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n")
+
+    assert result.errors == []
+    [draft] = _drafts(locations)
+    assert draft.version > released.version
+    assert sorted(
+        Metadata.objects.filter(metadata_version=released, content_type__model="property").values_list(
+            "name", flat=True
+        )
+    ) == ["id", "name"]
+    assert list(
+        Metadata.objects.filter(metadata_version=draft, content_type__model="property").values_list("name", flat=True)
+    ) == ["id"]
+    location = f"{SERVICE}/locations/Location"
+    assert _uuid(locations, Model, location, draft) == _uuid(locations, Model, location, released)
+
+
+def test_existing_draft_rejects_import_without_changes():
+    service = _service()
+    locations = _child(service, "locations")
+    _import_service(service, LOCATIONS)
+    [draft] = _drafts(locations)
+
+    result = _import_service(service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n")
+
+    assert result.drafts == [f"{SERVICE}/locations"]
+    assert len(result.errors) == 1
+    assert _drafts(locations) == [draft]
+    assert _names(locations, Property) == ["id", "name"]
+
+
+def test_draft_in_one_of_two_datasets_rejects_whole_import():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    _import_service(service, HEADER + f"{SERVICE}/addresses,,,,,\n,Address,,,id,\n,,id,integer,,open\n")
+
+    result = _import_service(
+        service,
+        LOCATIONS + f"{SERVICE}/addresses,,,,,\n,Address,,,id,\n,,id,integer,,open\n",
+    )
+
+    assert result.drafts == [f"{SERVICE}/addresses"]
+    assert _names(locations, Model) == []
+    assert _names(addresses, Property) == ["id"]
+
+
+def test_replacing_drafts_keeps_uuids_and_references_from_other_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    streets = _child(service, "streets")
+    _import_service(service, LOCATIONS)
+    [old_draft] = _drafts(locations)
+    location = f"{SERVICE}/locations/Location"
+    model_uuid = _uuid(locations, Model, location, old_draft)
+    _import_service(
+        service,
+        HEADER + f"{SERVICE}/streets,,,,,\n,Street,,,id,\n,,id,integer,,open\n,,location,ref,/{location},open\n",
+    )
+
+    result = _import_service(
+        service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n", replace_drafts=True
+    )
+
+    assert result.errors == []
+    [new_draft] = _drafts(locations)
+    assert new_draft != old_draft
+    assert not Version.objects.filter(pk=old_draft.pk).exists()
+    assert _uuid(locations, Model, location, new_draft) == model_uuid
+    assert _names(locations, Property) == ["id"]
+    street_location = Property.objects.get(model__dataset=streets, metadata__name="location")
+    assert street_location.ref_model.metadata_version == new_draft

@@ -7742,3 +7742,11 @@ msgid ""
 msgstr ""
 "The dataset \"%(name)s\" already exists outside this DataService, so it was "
 "not imported."
+
+#, python-format
+msgid ""
+"Šių duomenų rinkinių juodraščiai būtų pakeisti, todėl importas turi būti "
+"patvirtintas: %(names)s."
+msgstr ""
+"The drafts of these datasets would be replaced, so the import must be "
+"confirmed: %(names)s."

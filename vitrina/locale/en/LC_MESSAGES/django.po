@@ -7750,3 +7750,13 @@ msgid ""
 msgstr ""
 "The drafts of these datasets would be replaced, so the import must be "
 "confirmed: %(names)s."
+
+msgid "Negalite keisti nė vieno faile nurodyto šios duomenų paslaugos duomenų rinkinio."
+msgstr "You may not change any dataset of this DataService listed in the file."
+
+#, python-format
+msgid "Neturite teisių kurti duomenų rinkinių šioje duomenų paslaugoje: %(names)s."
+msgstr "You may not create datasets in this DataService: %(names)s."
+
+msgid "Neturite teisių keisti šio duomenų rinkinio."
+msgstr "You may not change this dataset."

@@ -1,17 +1,25 @@
 """DSA import into a DataService: every dataset of the DataService listed in the file is imported (#2846)."""
 
 import csv
+import uuid
 from dataclasses import dataclass, field
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import F
-from django.utils.translation import gettext_lazy as _
+from django.http import HttpRequest
+from django.utils.translation import get_language, gettext_lazy as _
 
 import vitrina.datasets.structure as struct
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.datasets.structure import detect_read_errors, read
+from vitrina.datasets.view_helpers import (
+    create_dataset_representative_and_attribution,
+    create_tasks_and_notify_subscribers_about_dataset_creation,
+)
 from vitrina.helpers import get_encoding
+from vitrina.orgs.models import Organization
+from vitrina.orgs.services import Action, has_perm
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import (
     Base,
@@ -28,6 +36,7 @@ from vitrina.structure.models import (
     Version,
 )
 from vitrina.structure.services import _create_errors, _link_models, _load_comments, _load_datasets, _load_prefixes
+from vitrina.users.models import User
 
 
 @dataclass
@@ -53,22 +62,65 @@ class _Target:
     version: Version | None = None
 
 
-def import_dataservice_structure(structure: DatasetStructure, replace_drafts: bool = False) -> DataServiceImport:
+@dataclass
+class _Access:
+    """Rights of the website `user` or the UAPI agent's `organization`; without either nothing is checked."""
+
+    service: Dataset
+    user: User | None = None
+    organization: Organization | None = None
+
+    def can_change(self, dataset: Dataset) -> bool:
+        if self.user is not None:
+            action = Action.INFORMATION_SYSTEM_UPDATE if dataset.subclass.is_information_system else Action.CREATE
+            return has_perm(self.user, action, DatasetStructure, dataset)
+        if self.organization is not None:
+            return dataset.organization_id == self.organization.pk
+        return True
+
+    def can_create(self) -> bool:
+        if self.user is not None:
+            return has_perm(self.user, Action.CREATE, Dataset, self.service)
+        if self.organization is not None:
+            return self.service.organization_id == self.organization.pk
+        return True
+
+
+def import_dataservice_structure(
+    structure: DatasetStructure,
+    *,
+    user: User | None = None,
+    organization: Organization | None = None,
+    request: HttpRequest | None = None,
+    create_missing: bool = False,
+    replace_drafts: bool = False,
+) -> DataServiceImport:
     """Import the uploaded file into the datasets of `structure.dataset`, a DataService.
 
-    With `replace_drafts`, drafts with structure of the listed datasets are replaced; otherwise they reject the import.
+    New datasets are created only with `create_missing`, and drafts with structure are replaced only with
+    `replace_drafts`; otherwise they reject the import.
     """
     service = structure.dataset
+    access = _Access(service, user, organization)
     result = DataServiceImport()
     state = _read_file(structure, result)
     notes: list[str] = []
-    targets = [] if result.errors else _plan(state, service, result, notes)
+    listed = [] if result.errors else _plan(state, service, result, notes)
+    targets = _changeable(listed, access, result)
 
     if not result.errors and not targets and not result.new:
+        if listed:
+            result.errors.append(_("Negalite keisti nė vieno faile nurodyto šios duomenų paslaugos duomenų rinkinio."))
+        else:
+            result.errors.append(
+                _("Faile nėra nė vieno šios duomenų paslaugos „%(name)s“ duomenų rinkinio.") % {"name": service.name}
+            )
+    if result.new and not access.can_create():
         result.errors.append(
-            _("Faile nėra nė vieno šios duomenų paslaugos „%(name)s“ duomenų rinkinio.") % {"name": service.name}
+            _("Neturite teisių kurti duomenų rinkinių šioje duomenų paslaugoje: %(names)s.")
+            % {"names": ", ".join(result.new)}
         )
-    if result.new:
+    elif result.new and not create_missing:
         result.errors.append(
             _("Faile yra naujų duomenų rinkinių, kurių sukūrimas turi būti patvirtintas: %(names)s.")
             % {"names": ", ".join(result.new)}
@@ -83,6 +135,12 @@ def import_dataservice_structure(structure: DatasetStructure, replace_drafts: bo
         return result
 
     with transaction.atomic():
+        for name in result.new:
+            meta = state.manifest.datasets[name]
+            targets.append(_Target(_create_dataset(service, meta, request), meta))
+        # Adding datasets re-sorts the tree, so the targets are read again.
+        for target in targets:
+            target.dataset = Dataset.objects.get(pk=target.dataset.pk)
         _apply(state, structure, targets, replace_drafts)
         _create_errors(notes, structure)
     return result
@@ -122,9 +180,19 @@ def _plan(state: struct.State, service: Dataset, result: DataServiceImport, note
             )
         else:
             targets.append(_Target(dataset, meta))
-            if any(_has_structure(draft) for draft in _drafts(dataset)):
-                result.drafts.append(name)
     return targets
+
+
+def _changeable(targets: list[_Target], access: _Access, result: DataServiceImport) -> list[_Target]:
+    allowed = []
+    for target in targets:
+        if access.can_change(target.dataset):
+            allowed.append(target)
+            if any(_has_structure(draft) for draft in _drafts(target.dataset)):
+                result.drafts.append(target.meta.name)
+        else:
+            result.skipped.append(SkippedDataset(target.meta.name, _("Neturite teisių keisti šio duomenų rinkinio.")))
+    return allowed
 
 
 def _belongs_to(name: str, service_name: str) -> bool:
@@ -211,19 +279,19 @@ def _reuse_ids(dataset: Dataset, meta: struct.Dataset) -> None:
     ids: dict[tuple, str] = {}
     model_names: dict[int, str] = {}
     properties = []
-    for content_type_id, name, uuid, object_id in rows:
+    for content_type_id, name, uid, object_id in rows:
         if content_type_id == property_ct.pk:
-            properties.append((name, uuid, object_id))
+            properties.append((name, uid, object_id))
         else:
-            ids.setdefault((content_type_id, name), uuid)
+            ids.setdefault((content_type_id, name), uid)
             if content_type_id == model_ct.pk:
                 model_names[object_id] = name
     property_models = dict(
         Property.objects.filter(pk__in=[object_id for _, _, object_id in properties]).values_list("pk", "model_id")
     )
-    for name, uuid, object_id in properties:
+    for name, uid, object_id in properties:
         if model_name := model_names.get(property_models.get(object_id)):
-            ids.setdefault((property_ct.pk, model_name, name), uuid)
+            ids.setdefault((property_ct.pk, model_name, name), uid)
 
     meta.id = meta.id or ids.get((dataset_ct.pk, meta.name), "")
     for model_meta in meta.models.values():
@@ -256,3 +324,35 @@ def _delete_drafts(replaced: list[Version]) -> None:
     for model in (PropertyList, EnumItem, ParamItem, Enum, Param, Property, ModelScope, Model, Base, Prefix):
         model.objects.filter(metadata_version__in=replaced).delete()
     Version.objects.filter(pk__in=[version.pk for version in replaced]).delete()
+
+
+def _create_dataset(service: Dataset, meta: struct.Dataset, request: HttpRequest | None) -> Dataset:
+    """Create a dataset of the DataService as the website does: draft, metadata, representative and notifications."""
+    dataset = Dataset(
+        organization=service.organization,
+        subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.DATASET),
+        is_public=False,
+    )
+    dataset.set_current_language(get_language())
+    dataset.title = meta.title or meta.name.rsplit("/", 1)[-1]
+    dataset.description = meta.description
+    # Treebeard places the child by the parent's in-memory child count, so it must be fresh.
+    service.refresh_from_db()
+    dataset = service.add_child(instance=dataset)
+    version = Version.objects.create(dataset=dataset, version=1, status=VersionStatus.DRAFT)
+    Metadata.objects.create(
+        uuid=str(uuid.uuid4()),
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(Dataset),
+        object_id=dataset.pk,
+        name=meta.name,
+        title=dataset.title,
+        description=dataset.description,
+        prepare_ast={},
+        version=1,
+        metadata_version=version,
+    )
+    if request is not None:
+        create_tasks_and_notify_subscribers_about_dataset_creation(request, dataset)
+    create_dataset_representative_and_attribution(dataset)
+    return dataset

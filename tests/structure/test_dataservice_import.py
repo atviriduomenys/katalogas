@@ -10,10 +10,13 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.structure import HEADER as FULL_HEADER
+from vitrina.orgs.factories import RepresentativeFactory
+from vitrina.orgs.models import Representative
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import Metadata, Model, Property, Version
 from vitrina.structure.dataservice_import import import_dataservice_structure
 from vitrina.structure.services import create_structure_objects
+from vitrina.users.factories import UserFactory
 
 SERVICE = "datasets/gov/rc/ar/uapi"
 HEADER = "dataset,model,property,type,ref,access\n"
@@ -394,3 +397,94 @@ def test_replacing_drafts_keeps_uuids_and_references_from_other_datasets():
     assert _names(locations, Property) == ["id"]
     street_location = Property.objects.get(model__dataset=streets, metadata__name="location")
     assert street_location.ref_model.metadata_version == new_draft
+
+
+NEW_DATASETS = (
+    "dataset,model,property,type,ref,access,title,description\n"
+    f"{SERVICE}/locations,,,,,,Vietovės,Vietovių sąrašas\n"
+    ",Location,,,id,,,\n"
+    ",,id,integer,,open,,\n"
+    f"{SERVICE}/addresses,,,,,,,\n"
+    ",Address,,,id,,,\n"
+    ",,id,integer,,open,,\n"
+)
+
+
+def _representative(user, dataset: Dataset) -> None:
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+
+
+def test_create_missing_creates_datasets_under_dataservice(rf):
+    service = _service()
+
+    result = _import_service(service, NEW_DATASETS, create_missing=True, request=rf.get("/"))
+
+    assert (result.errors, result.new) == ([], [f"{SERVICE}/locations", f"{SERVICE}/addresses"])
+    locations = Dataset.objects.get(metadata__name=f"{SERVICE}/locations")
+    addresses = Dataset.objects.get(metadata__name=f"{SERVICE}/addresses")
+    assert locations.is_child_of(service) and addresses.is_child_of(service)
+    assert (locations.subclass.name, locations.organization, locations.is_public) == (
+        "dataset",
+        service.organization,
+        False,
+    )
+    assert (locations.title, locations.description, addresses.title) == ("Vietovės", "Vietovių sąrašas", "addresses")
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+    assert Representative.objects.filter(
+        content_type=ContentType.objects.get_for_model(Dataset),
+        object_id=locations.pk,
+        role=Representative.OPEN_DATA_MANAGER,
+    ).exists()
+
+
+def test_user_without_permission_to_create_datasets_gets_an_error():
+    service = _service()
+
+    result = _import_service(service, NEW_DATASETS, create_missing=True, user=UserFactory())
+
+    assert len(result.errors) == 1
+    assert not service.get_children().exists()
+
+
+def test_user_may_change_only_some_of_the_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    user = UserFactory()
+    _representative(user, addresses)
+
+    result = _import_service(service, NEW_DATASETS, user=user)
+
+    assert result.errors == []
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/locations"]
+    assert _names(locations, Model) == []
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+
+
+def test_user_may_change_none_of_the_datasets_is_rejected():
+    service = _service()
+    locations = _child(service, "locations")
+    _child(service, "addresses")
+
+    result = _import_service(service, NEW_DATASETS, user=UserFactory())
+
+    assert len(result.errors) == 1
+    assert _names(locations, Model) == []
+
+
+def test_agent_organization_may_change_only_its_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    Dataset.objects.filter(pk=addresses.pk).update(organization=service.organization)
+
+    result = _import_service(service, NEW_DATASETS, organization=service.organization)
+
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/locations"]
+    assert _names(locations, Model) == []
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]

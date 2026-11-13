@@ -53,6 +53,8 @@ class DataServiceImport:
     new: list[str] = field(default_factory=list)
     # Datasets whose draft with structure would be replaced.
     drafts: list[str] = field(default_factory=list)
+    # True when the only errors are new datasets or drafts that the user can confirm.
+    confirmable: bool = False
 
 
 @dataclass
@@ -94,11 +96,12 @@ def import_dataservice_structure(
     request: HttpRequest | None = None,
     create_missing: bool = False,
     replace_drafts: bool = False,
+    check_only: bool = False,
 ) -> DataServiceImport:
     """Import the uploaded file into the datasets of `structure.dataset`, a DataService.
 
     New datasets are created only with `create_missing`, and drafts with structure are replaced only with
-    `replace_drafts`; otherwise they reject the import.
+    `replace_drafts`; otherwise they reject the import. With `check_only` nothing is changed.
     """
     service = structure.dataset
     access = _Access(service, user, organization)
@@ -120,7 +123,8 @@ def import_dataservice_structure(
             _("Neturite teisių kurti duomenų rinkinių šioje duomenų paslaugoje: %(names)s.")
             % {"names": ", ".join(result.new)}
         )
-    elif result.new and not create_missing:
+    blocking = bool(result.errors)
+    if result.new and not blocking and not create_missing:
         result.errors.append(
             _("Faile yra naujų duomenų rinkinių, kurių sukūrimas turi būti patvirtintas: %(names)s.")
             % {"names": ", ".join(result.new)}
@@ -130,8 +134,13 @@ def import_dataservice_structure(
             _("Šių duomenų rinkinių juodraščiai būtų pakeisti, todėl importas turi būti patvirtintas: %(names)s.")
             % {"names": ", ".join(result.drafts)}
         )
+    result.confirmable = not blocking and bool(result.errors)
     if result.errors:
-        _create_errors(result.errors, structure)
+        # Waiting for confirmation is not an error of the file, so it is not stored on it.
+        if not result.confirmable and not check_only:
+            _create_errors(result.errors, structure)
+        return result
+    if check_only:
         return result
 
     with transaction.atomic():

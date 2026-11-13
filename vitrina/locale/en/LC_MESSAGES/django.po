@@ -7760,3 +7760,23 @@ msgstr "You may not create datasets in this DataService: %(names)s."
 
 msgid "Neturite teisių keisti šio duomenų rinkinio."
 msgstr "You may not change this dataset."
+
+msgid "Duomenų struktūra importuota."
+msgstr "The data structure was imported."
+
+#, python-format
+msgid "Duomenų rinkinys „%(name)s“ praleistas: %(reason)s"
+msgstr "The dataset \"%(name)s\" was skipped: %(reason)s"
+
+msgid "Struktūros importo patvirtinimas"
+msgstr "Confirm structure import"
+
+msgid "Bus sukurti nauji duomenų rinkiniai:"
+msgstr "These new datasets will be created:"
+
+msgid ""
+"Bus pakeisti šių duomenų rinkinių juodraščiai, o jų turinys ištrintas:"
+msgstr "The drafts of these datasets will be replaced, and their content deleted:"
+
+msgid "Šie duomenų rinkiniai bus praleisti:"
+msgstr "These datasets will be skipped:"

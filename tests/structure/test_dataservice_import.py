@@ -3,7 +3,9 @@ import io
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 from factory.django import FileField
+from webtest import Upload
 
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.comments.models import Comment
@@ -488,3 +490,67 @@ def test_agent_organization_may_change_only_its_datasets():
     assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/locations"]
     assert _names(locations, Model) == []
     assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+
+
+def _upload(app, service: Dataset, manifest: str):
+    form = app.get(reverse("dataset-structure-import-no-version", args=[service.pk])).forms["dataset-structure-form"]
+    form["file"] = Upload("file.csv", _full_header(manifest).encode())
+    return form.submit()
+
+
+def _messages(resp) -> list[str]:
+    # The structure page without a version redirects to the latest version.
+    while resp.status_code == 302:
+        resp = resp.follow()
+    return [str(message) for message in resp.context["messages"]]
+
+
+def test_website_import_into_dataservice_shows_one_result(app, settings):
+    # Messages travel in a cookie that is Secure like the session cookie, and the test client uses plain HTTP.
+    settings.SESSION_COOKIE_SECURE = False
+    service = _service()
+    locations = _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(
+        app,
+        service,
+        LOCATIONS + "datasets/gov/rc/geo/uapi/countries,,,,,\n,Country,,,id,\n,,id,integer,,open\n",
+    )
+
+    assert resp.location == reverse("dataset-structure-no-version", args=[service.pk])
+    messages = _messages(resp)
+    assert len(messages) == 2 and "datasets/gov/rc/geo/uapi/countries" in messages[1]
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+
+
+def test_website_confirms_new_datasets_and_drafts_before_importing(app):
+    service = _service()
+    locations = _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+    _upload(app, service, LOCATIONS)
+
+    resp = _upload(app, service, NEW_DATASETS)
+
+    assert "/confirm/" in resp.location
+    page = resp.follow()
+    assert f"{SERVICE}/addresses" in page and f"{SERVICE}/locations" in page
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/addresses").exists()
+    assert _names(locations, Property) == ["id", "name"]
+
+    resp = page.forms["confirm-form"].submit()
+
+    assert resp.location == reverse("dataset-structure-no-version", args=[service.pk])
+    addresses = Dataset.objects.get(metadata__name=f"{SERVICE}/addresses")
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+    assert _names(locations, Property) == ["id"]
+
+
+def test_website_import_into_dataset_is_unchanged(app):
+    dataset = DatasetFactory(metadata="datasets/gov/example")
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(app, dataset, HEADER + "datasets/gov/example,,,,,\n,City,,,id,\n,,id,integer,,open\n")
+
+    assert "/confirm/" not in resp.location
+    assert _names(dataset, Model) == ["datasets/gov/example/City"]

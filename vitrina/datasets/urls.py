@@ -29,6 +29,7 @@ from vitrina.datasets.views import (
     DatasetProjectsView,
     DatasetStatsView,
     DatasetStructureImportView,
+    DataServiceStructureImportConfirmView,
     DatasetAttributionCreateView,
     DatasetAttributionDeleteView,
     DatasetUpdateView,
@@ -216,6 +217,11 @@ urlpatterns = [
         "datasets/<int:pk>/structure/",
         DatasetStructureImportView.as_view(),
         name="dataset-structure-import-no-version",
+    ),
+    path(
+        "datasets/<int:pk>/structure/<int:structure_id>/confirm/",
+        DataServiceStructureImportConfirmView.as_view(),
+        name="dataservice-structure-import-confirm",
     ),
     path(
         "datasets/<int:pk>/history/",

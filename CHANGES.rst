@@ -4,6 +4,18 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2846
+
+- Import a DSA file into a DataService: every dataset of the DataService listed in the file is imported
+  into its own draft. Before, only the entry named like the DataService was imported, and a file with
+  only that entry deleted the DataService's models without an error.
+- Skip and list the datasets of other DataServices and the datasets the user may not change. Link
+  references between the datasets of the file in any order.
+- Ask for confirmation before creating new datasets under the DataService or replacing drafts that
+  already have structure. A replaced draft is removed with its content; models keep their UUIDs, and
+  references from other datasets are moved to the new models.
+- Never change the DataService's own models. Models in the DataService's own row get an error note.
+
 https://github.com/atviriduomenys/dvms/issues/513
 
 - Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)

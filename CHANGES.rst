@@ -93,6 +93,8 @@ https://github.com/atviriduomenys/katalogas/issues/2799
   ``MIGRATION_LINTER_OPTIONS``. It adds NOT NULL and a unique index to a small table it has filled and
   locked itself.
 
+https://github.com/atviriduomenys/katalogas/issues/2831
+- Remove like button and stats related to it.
 
 v 1.27.0 (2026-10-23)
 ==================

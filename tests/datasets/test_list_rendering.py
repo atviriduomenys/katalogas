@@ -7,10 +7,8 @@ from hitcount.models import HitCount
 from vitrina.classifiers.factories import CategoryFactory
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.likes.models import Like
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, UapiFormat
 from vitrina.structure.factories import ModelFactory
-from vitrina.users.factories import UserFactory
 
 
 @pytest.mark.django_db
@@ -26,18 +24,6 @@ def test_dataset_list_shows_the_real_hit_count(app: DjangoTestApp):
 
     assert response.context["rows"][0].hits == 4471
     assert "4471" in response.text
-
-
-@pytest.mark.django_db
-def test_dataset_list_shows_the_real_like_count(app: DjangoTestApp):
-    dataset = DatasetFactory()
-    content_type = ContentType.objects.get_for_model(Dataset)
-    for _ in range(3):
-        Like.objects.create(content_type=content_type, object_id=dataset.pk, user=UserFactory())
-
-    response = app.get(reverse("dataset-list"))
-
-    assert response.context["rows"][0].likes == 3
 
 
 @pytest.mark.django_db

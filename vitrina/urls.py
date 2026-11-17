@@ -42,7 +42,6 @@ urlpatterns = [
     path("", include("vitrina.projects.urls")),
     path("", include("vitrina.orgs.urls")),
     path("", include("vitrina.structure.urls")),
-    path("", include("vitrina.likes.urls")),
     path("", include("vitrina.messages.urls")),
     path("", include("vitrina.plans.urls")),
     path("", include("vitrina.resources.urls")),

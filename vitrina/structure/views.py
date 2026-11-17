@@ -32,7 +32,6 @@ from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
-from pygments.styles import get_style_by_name
 from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from shapely.wkt import loads
@@ -1571,6 +1570,10 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         raise NotImplementedError
 
 
+# Colours come from static/css/pygments-api-response.css; inline styles would break the strict CSP.
+API_RESPONSE_CSS_CLASS = "api-response"
+
+
 class GetAllApiView(ApiView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1583,7 +1586,7 @@ class GetAllApiView(ApiView):
         context["response"] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
+            HtmlFormatter(cssclass=API_RESPONSE_CSS_CLASS),
         )
 
         if self.model.name:
@@ -1646,7 +1649,7 @@ class GetOneApiView(ApiView):
         context["response"] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
+            HtmlFormatter(cssclass=API_RESPONSE_CSS_CLASS),
         )
 
         if self.model.name:
@@ -1713,7 +1716,7 @@ class ChangesApiView(ApiView):
         context["response"] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
+            HtmlFormatter(cssclass=API_RESPONSE_CSS_CLASS),
         )
 
         if self.model.name:

@@ -96,6 +96,15 @@ https://github.com/atviriduomenys/katalogas/issues/2799
 https://github.com/atviriduomenys/katalogas/issues/2831
 - Remove like button and stats related to it.
 
+https://github.com/atviriduomenys/dvms/issues/257
+
+- Stop bundling the Font Awesome JS (SVG replacement). It injected an un-nonced ``<style>`` on every
+  page, reported by the strict report-only CSP as ``style-src-elem``. Icons now come only from the
+  already loaded Font Awesome 6 CSS; the unused ``@fortawesome/fontawesome-free`` npm package is removed.
+- Highlight the API response on the ``getall``, ``getone`` and ``changes`` pages with CSS classes instead
+  of inline ``style=""`` attributes (``style-src-attr`` CSP violations). The ``borland`` colours moved
+  to ``css/pygments-api-response.css``.
+
 v 1.27.0 (2026-10-23)
 ==================
 

@@ -47,6 +47,9 @@
           # GitHub CLI
           gh
 
+          # msgfmt for compilemessages
+          gettext
+
           # Playwright (end-to-end browser tests)
           playwright
           chromium

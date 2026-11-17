@@ -93,6 +93,12 @@ https://github.com/atviriduomenys/katalogas/issues/2799
   ``MIGRATION_LINTER_OPTIONS``. It adds NOT NULL and a unique index to a small table it has filled and
   locked itself.
 
+https://github.com/atviriduomenys/katalogas/issues/2858
+
+- Remove Dataset and Publisher sections from the landing page.
+- Fix image display issues in the Projects section.
+- Redesign the Requests section on the landing page.
+- Replace images in the Statistics section with real-time graphs.
 
 v 1.27.0 (2026-10-23)
 ==================

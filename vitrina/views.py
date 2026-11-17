@@ -13,7 +13,6 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonRes
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django.db.models import Count
 from django.views.generic.base import TemplateResponseMixin, ContextMixin
 from django.views.generic.edit import ProcessFormView
 from django.views.decorators.csrf import csrf_exempt
@@ -23,7 +22,6 @@ from reversion.models import Version, Revision
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.services import build_dataset_rows
 from vitrina.projects.services import get_projects
 from vitrina.requests.models import Request
 from vitrina.orgs.models import Organization, Representative
@@ -35,17 +33,6 @@ from vitrina.utils import RevisionComment
 
 def home(request):
     cards_limit = 3
-    landing_datasets = list(
-        Dataset.restricted.for_user(request.user)
-        .select_related("organization")
-        .prefetch_related(
-            "category__datasetgroupcategoryuri_set",
-            "excluded_groups",
-            "model_set",
-            "datasetdistribution_set__format",
-        )
-        .order_by("-published")[:cards_limit]
-    )
     coordinator_count = (
         User.objects.select_related("representative")
         .filter(representative__role__in=Representative.COORDINATOR_ROLES)
@@ -77,17 +64,8 @@ def home(request):
             },
             "categories": (Category.objects.filter(featured=True).order_by("title")),
             "thematic_categories": (Category.objects.filter(thematic=True).order_by("title")),
-            "datasets": build_dataset_rows(landing_datasets),
             "requests": Request.public.prefetch_related("organizations").order_by("-created")[:cards_limit],
             "projects": get_projects(request.user, limit=cards_limit, require_images=True),
-            "orgs": (
-                Organization.public.filter(
-                    numchild=0,
-                    image__isnull=False,
-                )
-                .annotate(datasets=Count("dataset"))
-                .order_by("-datasets")[:cards_limit]
-            ),
             "stat_routes": (StatRoute.objects.filter(featured=True).order_by("order")),
         },
     )

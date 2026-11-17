@@ -87,7 +87,8 @@ class StatusFactory(DjangoModelFactory):
         model = Status
         django_get_or_create = ("codename",)
 
-    codename = factory.Faker("word")
+    # A random word could repeat, and get_or_create would then return the same Status twice.
+    codename = factory.Sequence(lambda n: f"status-{n}")
 
 
 class ConceptSchemaFactory(DjangoModelFactory):

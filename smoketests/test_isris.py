@@ -331,7 +331,11 @@ def test_coordinator_role_approval(page, admin_page):
     if member_listed(page, org_pk, COORDINATOR_EMAIL):
         return
 
-    page.goto("/logout/")
+    # Logout is POST-only; submit the (hidden) navbar dropdown form.
+    page.goto("/")
+    if page.locator("#logout-form").count():
+        with page.expect_navigation():
+            page.locator("#logout-form").evaluate("form => form.submit()")
     page.goto("/login/")
     # The fake VIISP login is only linked from the login page (and only
     # available on DEBUG instances); resolve its URL from there.
@@ -448,6 +452,7 @@ def test_agent_registration(page, admin_page):
     agent_link = page.locator(f'table tr:has-text("{AGENT_TITLE}") a')
     if agent_link.count():
         agent_link.first.click()
+        page.wait_for_load_state("networkidle")
     else:
         page.locator('a:has-text("Pridėti agentą")').first.click()
         page.wait_for_load_state("networkidle")

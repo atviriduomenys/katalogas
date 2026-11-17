@@ -1579,18 +1579,18 @@ dev = ["PyMySQL", "coverage", "cryptography", "flake8", "pip", "psycopg2-binary"
 
 [[package]]
 name = "django"
-version = "4.2.30"
+version = "5.2.18"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "django-4.2.30-py3-none-any.whl", hash = "sha256:4d07aaf1c62f9984842b67c2874ebbf7056a17be253860299b93ae1881faad65"},
-    {file = "django-4.2.30.tar.gz", hash = "sha256:4ebc7a434e3819db6cf4b399fb5b3f536310a30e8486f08b66886840be84b37c"},
+    {file = "django-5.2.18-py3-none-any.whl", hash = "sha256:92ed81d500be6408ecd704d7bd1366c534f30427bffcc63c5fefb129561aec7c"},
+    {file = "django-5.2.18.tar.gz", hash = "sha256:461c5dd06d2ea16bd5ca37d3f46e4def1d6b0fe7588c6f4e2119517bb0af8b2d"},
 ]
 
 [package.dependencies]
-asgiref = ">=3.6.0,<4"
+asgiref = ">=3.8.1"
 sqlparse = ">=0.3.1"
 tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
@@ -1769,21 +1769,36 @@ tests = ["jinja2 (>=2.9.6)", "pytest", "pytest-cov", "pytest-django", "pytest-ru
 typing = ["django-stubs[compatible-mypy]", "jinja2 (>=2.9.6)", "mypy", "pytest", "pytest-django", "types-setuptools"]
 
 [[package]]
-name = "django-environ"
-version = "0.9.0"
-description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
+name = "django-dropulous"
+version = "0.1.1"
+description = "Django form widgets for Dropulous"
 optional = false
-python-versions = ">=3.4,<4"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "django-environ-0.9.0.tar.gz", hash = "sha256:bff5381533056328c9ac02f71790bd5bf1cea81b1beeb648f28b81c9e83e0a21"},
-    {file = "django_environ-0.9.0-py2.py3-none-any.whl", hash = "sha256:f21a5ef8cc603da1870bbf9a09b7e5577ab5f6da451b843dbcc721a7bca6b3d9"},
+    {file = "django_dropulous-0.1.1-py3-none-any.whl", hash = "sha256:fbd8ca2009ce2cf21ec67b82537942fdc0caf079ecf743cb4f7b8e67426e4f3c"},
+    {file = "django_dropulous-0.1.1.tar.gz", hash = "sha256:d3ce12fe6f1e02220541a8c9bf59308aded5c2907739b3703131dbc55389d076"},
+]
+
+[package.dependencies]
+django = ">=3.2"
+
+[[package]]
+name = "django-environ"
+version = "0.14.0"
+description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
+optional = false
+python-versions = "<4,>=3.9"
+groups = ["main"]
+files = [
+    {file = "django_environ-0.14.0-py3-none-any.whl", hash = "sha256:8dbe8a57f0a540ab8abd6f54f230de5e99e3a2c9d797cb9caecb037bca3d47d8"},
+    {file = "django_environ-0.14.0.tar.gz", hash = "sha256:b6c48d93b9d2ff8a3ea14099e90c35aa4f101c1b4d5f262dfee0d27b06742ed7"},
 ]
 
 [package.extras]
-develop = ["coverage[toml] (>=5.0a4)", "furo (>=2021.8.17b43,<2021.9.dev0)", "pytest (>=4.6.11)", "sphinx (>=3.5.0)", "sphinx-notfound-page"]
-docs = ["furo (>=2021.8.17b43,<2021.9.dev0)", "sphinx (>=3.5.0)", "sphinx-notfound-page"]
-testing = ["coverage[toml] (>=5.0a4)", "pytest (>=4.6.11)"]
+develop = ["coverage[toml] (>=5.0a4)", "furo (>=2024.8.6)", "pytest (>=4.6.11)", "setuptools (>=71.0.0)", "sphinx (>=5.0)", "sphinx-copybutton", "sphinx-notfound-page"]
+docs = ["furo (>=2024.8.6)", "sphinx (>=5.0)", "sphinx-copybutton", "sphinx-notfound-page"]
+testing = ["coverage[toml] (>=5.0a4)", "pytest (>=4.6.11)", "setuptools (>=71.0.0)"]
 
 [[package]]
 name = "django-etc"
@@ -1799,18 +1814,15 @@ files = [
 
 [[package]]
 name = "django-extra-settings"
-version = "0.10.0"
+version = "0.15.0"
 description = "config and manage typed extra settings using just the django admin."
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "django-extra-settings-0.10.0.tar.gz", hash = "sha256:7cc512be11b50ea1a28d18cb6276863de5a0a965bd60a0bfdd7d30716eaa2a46"},
-    {file = "django_extra_settings-0.10.0-py3-none-any.whl", hash = "sha256:e7a0b2d75c0268055248f4955c4c2da8df89b283da275402bb0d688cfdd98be0"},
+    {file = "django_extra_settings-0.15.0-py3-none-any.whl", hash = "sha256:7ea164dc869fe6ff597b68709619c43c0bc3ea4b1ca67985ba9b38e088527e2b"},
+    {file = "django_extra_settings-0.15.0.tar.gz", hash = "sha256:ac14cd6568c206e6c889b5ab9d108a8c6d50bf4cc38b698d63f18948c6294828"},
 ]
-
-[package.dependencies]
-jsonfield = ">=3.0.0"
 
 [[package]]
 name = "django-filer"
@@ -2040,33 +2052,37 @@ testing = ["coveralls", "tox", "tox-gh-actions"]
 
 [[package]]
 name = "django-redis"
-version = "5.4.0"
+version = "7.0.0"
 description = "Full featured redis cache backend for Django."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "django-redis-5.4.0.tar.gz", hash = "sha256:6a02abaa34b0fea8bf9b707d2c363ab6adc7409950b2db93602e6cb292818c42"},
-    {file = "django_redis-5.4.0-py3-none-any.whl", hash = "sha256:ebc88df7da810732e2af9987f7f426c96204bf89319df4c6da6ca9a2942edd5b"},
+    {file = "django_redis-7.0.0-py3-none-any.whl", hash = "sha256:4b23aa6e0cd0937bb1242e9a463809e6004de3ca2150f34e986306bb6220d688"},
+    {file = "django_redis-7.0.0.tar.gz", hash = "sha256:e48491c862f4350b0747ceb1016700686fb93c4f4e0fb9c490fe6c6658ffd933"},
 ]
 
 [package.dependencies]
-Django = ">=3.2"
-redis = ">=3,<4.0.0 || >4.0.0,<4.0.1 || >4.0.1"
+Django = ">=5.2,<7.0"
+redis = ">=4.0.2"
+typing_extensions = {version = ">=4.12", markers = "python_version <= \"3.12\""}
 
 [package.extras]
-hiredis = ["redis[hiredis] (>=3,!=4.0.0,!=4.0.1)"]
+hiredis = ["redis[hiredis] (>=4.0.2)"]
+lz4 = ["lz4 (>=0.15)"]
+msgpack = ["msgpack (>=0.6.0)"]
+pyzstd = ["pyzstd (>=0.15)"]
 
 [[package]]
 name = "django-reversion"
-version = "5.1.0"
+version = "6.4.0"
 description = "An extension to the Django web framework that provides version control for model instances."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "django_reversion-5.1.0-py3-none-any.whl", hash = "sha256:084d4f117d9e2b4e8dfdfaad83ebb34410a03eed6071c96089e6811fdea82ad3"},
-    {file = "django_reversion-5.1.0.tar.gz", hash = "sha256:3309821e5b6fceedcce6b6975f1a9c7fab6ae7c7d0e1276a90e345946fa0dcb8"},
+    {file = "django_reversion-6.4.0-py3-none-any.whl", hash = "sha256:641a6630eedbdda7c6ebcc90881370ff6439bca1f12c8afe97af251fd7f67492"},
+    {file = "django_reversion-6.4.0.tar.gz", hash = "sha256:fce089d8bab8d64b4ec41e9db758ce552ba06a008e42a1c9e4eb2f5faaa01cbc"},
 ]
 
 [package.dependencies]
@@ -2089,19 +2105,19 @@ management-command = ["django-compressor (>=2.4)"]
 
 [[package]]
 name = "django-sekizai"
-version = "3.0.1"
+version = "4.1.0"
 description = "Django Sekizai"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "django-sekizai-3.0.1.tar.gz", hash = "sha256:c7d69af7601ae42b15abb6fdaf3ec0ca309305afa0638544a6119ebdaa7bcf81"},
-    {file = "django_sekizai-3.0.1-py3-none-any.whl", hash = "sha256:92c2a82e62d839dcb2ea77728559c9abcb8d135f51e1d592c37c362fddbeeda1"},
+    {file = "django-sekizai-4.1.0.tar.gz", hash = "sha256:2aca36cbae0b5c0cefed9565416ec442335767fb3145bff11e58622fc653cdad"},
+    {file = "django_sekizai-4.1.0-py3-none-any.whl", hash = "sha256:aa12e66ba0335fbe726b7d74cf4e8716b89a0be99a1304a9b9e8b191229e2e4a"},
 ]
 
 [package.dependencies]
-django = ">=2.2"
-django-classy-tags = ">=1"
+django = ">=3.2"
+django-classy-tags = ">=3.0"
 
 [[package]]
 name = "django-select2"
@@ -2195,18 +2211,19 @@ django-templatetag-sugar = ">=0.1"
 
 [[package]]
 name = "django-tagulous"
-version = "1.3.3"
+version = "2.2.3"
 description = "Fabulous Tagging for Django"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "django-tagulous-1.3.3.tar.gz", hash = "sha256:d445590ae1b5cb9b8c5a425f97bf5f01148a33419c19edeb721ebd9fdd6792fe"},
-    {file = "django_tagulous-1.3.3-py3-none-any.whl", hash = "sha256:ad3bb85f4cce83a47e4c0257143229cb92a294defa02fe661823b0442b35d478"},
+    {file = "django_tagulous-2.2.3-py3-none-any.whl", hash = "sha256:fdd66cd0d9003cc35827f2c74ca6729407272a94123ed936123fbf3f441b8966"},
+    {file = "django_tagulous-2.2.3.tar.gz", hash = "sha256:59c8262c014b07db12ac05f0c3ae1429375ba42a00dfdf4721efbcd341816534"},
 ]
 
 [package.dependencies]
-Django = ">=2.2"
+Django = ">=3.2"
+django-dropulous = ">=0.1"
 
 [[package]]
 name = "django-templatetag-sugar"
@@ -3232,21 +3249,6 @@ files = [
     {file = "json5-0.15.0-py3-none-any.whl", hash = "sha256:56636a30c0e8a4665fe2179c0212f32eae3796dea89ea6f649b9436ecdb39618"},
     {file = "json5-0.15.0.tar.gz", hash = "sha256:7424d1f1eb1d56da6e3d70643f53619862b4ce81440bdb8ecfd6f875e5ba4a71"},
 ]
-
-[[package]]
-name = "jsonfield"
-version = "3.2.0"
-description = "A reusable Django field that allows you to store validated JSON in your model."
-optional = false
-python-versions = ">=3.10"
-groups = ["main"]
-files = [
-    {file = "jsonfield-3.2.0-py3-none-any.whl", hash = "sha256:ca4f6bf89c819f293e77074d613c0021e3c4e8521be95c73d03caecb4372e1ee"},
-    {file = "jsonfield-3.2.0.tar.gz", hash = "sha256:ca53871bc3308ae4f4cddc3b4f99ed5c6fc6abb1832fbfb499bc6da566c70e4a"},
-]
-
-[package.dependencies]
-django = ">=4.2"
 
 [[package]]
 name = "jsonpatch"
@@ -7494,4 +7496,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "7c06376dacaed18a81a0d9397adbf090408fbf62c87fc629730e160ed6b5b9b0"
+content-hash = "fe8917c41737837db55e2f342e432af11fb5dc96b2703d1f5d986bfac28aaf37"

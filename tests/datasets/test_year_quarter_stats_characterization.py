@@ -1,5 +1,5 @@
 import pytest
-import pytz
+from zoneinfo import ZoneInfo
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -85,24 +85,24 @@ EXPECTED_QUARTER = {
 
 @pytest.fixture()
 def year_quarter_data(db):
-    tz = pytz.timezone("Europe/Vilnius")
+    tz = ZoneInfo("Europe/Vilnius")
 
     org = OrganizationFactory()
 
     ds_a = DatasetFactory(
         organization=org,
         is_public=True,
-        published=tz.localize(datetime(2022, 3, 15, 10, 0, 0)),
+        published=datetime(2022, 3, 15, 10, 0, 0).replace(tzinfo=tz),
     )
     ds_b = DatasetFactory(
         organization=org,
         is_public=True,
-        published=tz.localize(datetime(2023, 1, 10, 10, 0, 0)),
+        published=datetime(2023, 1, 10, 10, 0, 0).replace(tzinfo=tz),
     )
     ds_c = DatasetFactory(
         organization=org,
         is_public=True,
-        published=tz.localize(datetime(2022, 9, 5, 10, 0, 0)),
+        published=datetime(2022, 9, 5, 10, 0, 0).replace(tzinfo=tz),
     )
 
     DatasetStatsFactory(dataset_id=ds_a.pk, created=date(2022, 3, 15), object_count=10, request_count=5)

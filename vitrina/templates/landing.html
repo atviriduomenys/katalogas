@@ -75,10 +75,8 @@
     {% include "component/hero.html" %}
     {% include "component/categories.html" %}
     {% include "component/thematic_categories.html" %}
-    {% include "landing/datasets.html" %}
-    {% include "landing/requests.html" %}
     {% include "landing/projects.html" %}
-    {% include "landing/orgs.html" %}
+    {% include "landing/requests.html" %}
     {% include "landing/stats.html" %}
 {% endblock %}
 {% block scripts %}
@@ -165,6 +163,71 @@
             }
 
             autocomplete(document.getElementById("search-input"), suggestions)
+
+            {% for stat_route in stat_routes %}
+                fetch("{{ stat_route.url|escapejs }}")
+                    .then(response => {
+                        return response.text();
+                    })
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, "text/html");
+
+                        const canvas = document.getElementById("chart-{{ forloop.counter }}");
+
+                        if (!canvas) return;
+
+                        const timeChartData = doc.getElementById("timeChartData");
+                        const userChartData = doc.getElementById("chartData");
+
+                        let chartData;
+                        let chartOptions = {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                y: {
+                                    stacked: true
+                                }
+                            }
+                        };
+
+                        if (timeChartData) {
+                            chartData = {
+                                datasets: JSON.parse(timeChartData.textContent)
+                            };
+
+                            const graphTitle = doc.querySelector("#chart")
+                                ?.closest(".tab-content")
+                                ?.querySelector("canvas");
+
+                            chartOptions.plugins = {
+                                title: {
+                                    display: true,
+                                    text: doc.querySelector(".title")?.textContent.trim() || ""
+                                }
+                            };
+
+                            chartOptions.interaction = {
+                                intersect: false,
+                                mode: "nearest",
+                                axis: "xy"
+                            };
+
+                        } else if (userChartData) {
+                            chartData = JSON.parse(userChartData.textContent);
+                        } else {
+                            return;
+                        }
+
+                        new Chart(canvas.getContext("2d"), {
+                            type: "line",
+                            data: chartData,
+                            options: chartOptions
+                        });
+                    })
+                    .catch(error => console.error(error));
+            {% endfor %}
         })
     </script>
 {% endblock %}
+

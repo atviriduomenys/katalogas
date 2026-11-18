@@ -19,6 +19,12 @@ https://github.com/atviriduomenys/katalogas/issues/2846
   need ``_create_missing=true`` and drafts with structure need ``_replace_drafts=true``; without them
   the import is rejected with 400, listing them. A successful import returns 204, or 200 with the
   skipped datasets when some were skipped. Imports into other datasets still return 204.
+- Open the import into a DataService only to staff users on the website. Through the UAPI it is
+  rejected with 403 unless the ``dataservice_import_api`` feature flag is on (off by default).
+- Fill the required fields of the datasets an import creates: the description falls back to the
+  title, and the access rights come from the most open property access (a property without access
+  inherits it from its model, then its dataset; none at all gives "Konfidencialūs").
+- Allow a version number as a separate part of a DataService code name, e.g. ``.../uapi/1``.
 
 https://github.com/atviriduomenys/dvms/issues/513
 

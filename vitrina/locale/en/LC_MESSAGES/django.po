@@ -7735,6 +7735,15 @@ msgstr ""
 msgid "Duomenų rinkinys nepriklauso šiai duomenų paslaugai."
 msgstr "The dataset does not belong to this DataService."
 
+msgid ""
+"Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
+"(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais. Versijos "
+"numeris nurodomas atskira dalimi, pvz. uapi/1."
+msgstr ""
+"The code name must consist of lowercase Latin letters and/or underscores, "
+"with words separated by underscores. A version number is given as a separate "
+"part, e.g. uapi/1."
+
 #, python-format
 msgid ""
 "Duomenų rinkinys „%(name)s“ jau yra ne šioje duomenų paslaugoje, todėl "

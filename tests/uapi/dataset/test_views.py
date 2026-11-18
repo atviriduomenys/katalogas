@@ -1333,7 +1333,23 @@ def _post_dsa(app: DjangoTestApp, service: Dataset, manifest: str, token: str, *
 
 
 @pytest.mark.django_db
+def test_upload_into_dataservice_is_off_by_default(app: DjangoTestApp, organization: Organization, valid_token: str):
+    service = _dataservice(organization)
+    locations = _dataservice_child(service, organization, "locations")
+
+    response = _post_dsa(app, service, LOCATIONS, valid_token)
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json["code"] == "dataservice_import_disabled"
+    assert _names(locations, Model) == []
+    assert service.datasetstructure_set.count() == 0
+
+
 class TestActionUploadDataServiceStructure:
+    @pytest.fixture(autouse=True)
+    def enable_dataservice_import(self, settings):
+        settings.FLAGS = {**settings.FLAGS, "dataservice_import_api": [{"condition": "boolean", "value": True}]}
+
     def test_imports_datasets_and_returns_204(self, app: DjangoTestApp, organization: Organization, valid_token: str):
         service = _dataservice(organization)
         locations = _dataservice_child(service, organization, "locations")

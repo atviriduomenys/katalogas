@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
 from filer.models import File
+from flags.state import flag_enabled
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.serializers import Serializer
@@ -219,6 +220,17 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelView
                 template="The uploaded file is empty or contains only whitespace.",
                 message="CSV content is missing or invalid.",
                 status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        # On the website only staff users may import into a DataService, and an agent is not a user.
+        if dataset.subclass.name == DCATResourceSubclass.SERVICE and not flag_enabled(
+            "dataservice_import_api", request=request
+        ):
+            raise UAPIException(
+                code="dataservice_import_disabled",
+                type="DataServiceImportDisabled",
+                template="DSA import into a DataService is not available through the API.",
+                message="Import the DSA into the DataService on the Data catalog website.",
+                status_code=status.HTTP_403_FORBIDDEN,
             )
 
         # Mimics file upload done via DatasetStructureImportView.

@@ -474,6 +474,25 @@ class TestServiceResourceForm:
         assert "Įveskite tinkamą URL adresą." in form.errors["endpoint_url"]
         assert "Įveskite tinkamą URL adresą." in form.errors["endpoint_description"]
 
+    @pytest.mark.parametrize(
+        "name, valid",
+        [
+            ("uapi/1", True),
+            ("uapi/12/", True),
+            ("dvms_uapi/2", True),
+            ("1/uapi", False),
+            ("uapi1", False),
+            ("uapi/v1", False),
+        ],
+    )
+    def test_name_may_have_version_number(self, name: str, valid: bool):
+        organization = OrganizationFactory()
+
+        form = ServiceResourceForm(organization=organization, url_parent=None, data={"name": name})
+        form.is_valid()
+
+        assert ("name" not in form.errors) is valid
+
     def test_dynamic_help_text_applied(self):
         organization = OrganizationFactory()
         FormFieldTextFactory(

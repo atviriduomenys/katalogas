@@ -1520,6 +1520,9 @@ class DatasetStructureImportView(
 
     def has_permission(self):
         subclass = self.dataset.subclass
+        # Imports into a DataService are open only to staff users for now.
+        if subclass.name == DCATResourceSubclass.SERVICE and not self.request.user.is_staff:
+            return False
         return has_perm(
             self.request.user,
             Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
@@ -1626,7 +1629,8 @@ class DataServiceStructureImportConfirmView(LoginRequiredMixin, PermissionRequir
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.CREATE, DatasetStructure, self.dataset)
+        # Imports into a DataService are open only to staff users for now.
+        return self.request.user.is_staff and has_perm(self.request.user, Action.CREATE, DatasetStructure, self.dataset)
 
     def get(self, request, *args, **kwargs):
         self.result = import_dataservice_structure(self.structure, user=request.user, request=request, check_only=True)

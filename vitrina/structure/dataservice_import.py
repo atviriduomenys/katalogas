@@ -344,7 +344,9 @@ def _create_dataset(service: Dataset, meta: struct.Dataset, request: HttpRequest
     )
     dataset.set_current_language(get_language())
     dataset.title = meta.title or meta.name.rsplit("/", 1)[-1]
-    dataset.description = meta.description
+    # The dataset form requires a description.
+    dataset.description = meta.description or dataset.title
+    dataset.access_rights = _access_rights(meta)
     # Treebeard places the child by the parent's in-memory child count, so it must be fresh.
     service.refresh_from_db()
     dataset = service.add_child(instance=dataset)
@@ -365,3 +367,22 @@ def _create_dataset(service: Dataset, meta: struct.Dataset, request: HttpRequest
         create_tasks_and_notify_subscribers_about_dataset_creation(request, dataset)
     create_dataset_representative_and_attribution(dataset)
     return dataset
+
+
+# From the most open: the first access found among the properties decides.
+_ACCESS_RIGHTS = (
+    ("open", Dataset.PUBLIC),
+    ("public", Dataset.RESTRICTED),
+    ("protected", Dataset.NON_PUBLIC),
+    ("private", Dataset.CONFIDENTIAL),
+)
+
+
+def _access_rights(meta: struct.Dataset) -> str:
+    """Access rights of a new dataset: its most open property, which inherits access from its model and dataset."""
+    accesses = {
+        prop.access or model.access or meta.access
+        for model in meta.models.values()
+        for prop in model.properties.values()
+    }
+    return next((rights for access, rights in _ACCESS_RIGHTS if access in accesses), Dataset.CONFIDENTIAL)

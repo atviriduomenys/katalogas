@@ -435,13 +435,76 @@ def test_create_missing_creates_datasets_under_dataservice(rf):
         service.organization,
         False,
     )
-    assert (locations.title, locations.description, addresses.title) == ("Vietovės", "Vietovių sąrašas", "addresses")
+    assert (locations.title, locations.description) == ("Vietovės", "Vietovių sąrašas")
+    # Description is required on the dataset form, so the title stands in for a missing one.
+    assert (addresses.title, addresses.description) == ("addresses", "addresses")
+    assert (locations.access_rights, addresses.access_rights) == (Dataset.PUBLIC, Dataset.PUBLIC)
     assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
     assert Representative.objects.filter(
         content_type=ContentType.objects.get_for_model(Dataset),
         object_id=locations.pk,
         role=Representative.OPEN_DATA_MANAGER,
     ).exists()
+
+
+@pytest.mark.parametrize(
+    "dataset_access, model_access, property_access, expected",
+    [
+        ("", "", ("", ""), Dataset.CONFIDENTIAL),
+        ("", "", ("private", ""), Dataset.CONFIDENTIAL),
+        ("", "", ("private", "protected"), Dataset.NON_PUBLIC),
+        ("", "", ("protected", "public"), Dataset.RESTRICTED),
+        ("", "", ("private", "open"), Dataset.PUBLIC),
+        # The most open property decides, even when the dataset itself is private.
+        ("private", "", ("public", ""), Dataset.RESTRICTED),
+        # A property without access inherits it from its model, then from its dataset.
+        ("open", "", ("", ""), Dataset.PUBLIC),
+        ("open", "protected", ("", ""), Dataset.NON_PUBLIC),
+    ],
+)
+def test_new_dataset_access_rights_follow_its_most_open_property(
+    dataset_access: str, model_access: str, property_access: tuple[str, str], expected: str
+):
+    service = _service()
+    first, second = property_access
+
+    _import_service(
+        service,
+        HEADER + f"{SERVICE}/locations,,,,,{dataset_access}\n"
+        f",Location,,,id,{model_access}\n"
+        f",,id,integer,,{first}\n"
+        f",,name,string,,{second}\n",
+        create_missing=True,
+    )
+
+    assert Dataset.objects.get(metadata__name=f"{SERVICE}/locations").access_rights == expected
+
+
+def test_existing_dataset_access_rights_are_unchanged():
+    service = _service()
+    locations = _child(service, "locations")
+    Dataset.objects.filter(pk=locations.pk).update(access_rights=Dataset.CONFIDENTIAL)
+
+    _import_service(service, LOCATIONS)
+
+    assert Dataset.objects.get(pk=locations.pk).access_rights == Dataset.CONFIDENTIAL
+
+
+def test_dataservice_name_with_version_number():
+    service = DatasetServiceFactory(metadata=f"{SERVICE}/2")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/2/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n"
+        f"{SERVICE}/1/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n",
+        create_missing=True,
+    )
+
+    assert result.new == [f"{SERVICE}/2/locations"]
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/1/locations"]
+    locations = Dataset.objects.get(metadata__name=f"{SERVICE}/2/locations")
+    assert locations.is_child_of(service)
+    assert _names(locations, Model) == [f"{SERVICE}/2/locations/Location"]
 
 
 def test_user_without_permission_to_create_datasets_gets_an_error():
@@ -553,6 +616,36 @@ def test_website_import_into_dataset_is_unchanged(app):
     resp = _upload(app, dataset, HEADER + "datasets/gov/example,,,,,\n,City,,,id,\n,,id,integer,,open\n")
 
     assert "/confirm/" not in resp.location
+    assert _names(dataset, Model) == ["datasets/gov/example/City"]
+
+
+def test_website_import_into_dataservice_is_only_for_staff(app):
+    service = _service()
+    locations = _child(service, "locations")
+    user = UserFactory()
+    _representative(user, service)
+    app.set_user(user)
+    import_url = reverse("dataset-structure-import-no-version", args=[service.pk])
+    structure = _structure(service, LOCATIONS)
+
+    page = app.get(reverse("dataset-structure-no-version", args=[service.pk])).maybe_follow()
+
+    assert import_url not in page
+    assert app.get(import_url, expect_errors=True).status_code == 403
+    confirm_url = reverse("dataservice-structure-import-confirm", args=[service.pk, structure.pk])
+    assert app.post(confirm_url, expect_errors=True).status_code == 403
+    assert _names(locations, Model) == []
+
+
+def test_website_import_into_dataset_is_not_only_for_staff(app):
+    dataset = DatasetFactory(metadata="datasets/gov/example")
+    user = UserFactory()
+    _representative(user, dataset)
+    app.set_user(user)
+
+    resp = _upload(app, dataset, HEADER + "datasets/gov/example,,,,,\n,City,,,id,\n,,id,integer,,open\n")
+
+    assert resp.status_code == 302
     assert _names(dataset, Model) == ["datasets/gov/example/City"]
 
 

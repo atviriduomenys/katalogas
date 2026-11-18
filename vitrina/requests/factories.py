@@ -18,20 +18,13 @@ fake = faker.Faker()
 class RequestFactory(DjangoModelFactory):
     class Meta:
         model = Request
-        django_get_or_create = ("title",)
 
     version = 1
     is_existing = True
     is_public = True
     dataset = factory.SubFactory(DatasetFactory)
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        request = model_class(*args, **kwargs)
-        fake = faker.Faker()
-        request.title = fake.word()
-        request.save()
-        return request
+    # Lithuanian title; translations__title_lt / translations__title_en override it.
+    title = factory.Faker("catch_phrase")
 
     @factory.post_generation
     def organizations(self, create, extracted, **kwargs):
@@ -50,8 +43,9 @@ class RequestFactory(DjangoModelFactory):
             return
 
         # Lithuanian
+        default_title = obj.safe_translation_getter("title", any_language=True)
         obj.set_current_language("lt")
-        obj.title = kwargs.get("title_lt", fake.catch_phrase())
+        obj.title = kwargs.get("title_lt", default_title)
         obj.description = kwargs.get("description_lt", fake.text())
         obj.save()
 

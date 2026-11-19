@@ -22,7 +22,7 @@ from django.views.decorators.http import require_POST
 from reversion.models import Version, Revision
 
 from vitrina.classifiers.models import Category
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.datasets.services import build_dataset_rows
 from vitrina.projects.services import get_projects
 from vitrina.requests.models import Request
@@ -63,6 +63,10 @@ def home(request):
         representative__role__in=Representative.COORDINATOR_ROLES + Representative.MANAGER_ROLES
     ).count()
 
+    geoportal_catalog = Dataset.objects.filter(
+        subclass__name=DCATResourceSubclass.CATALOG, translations__title="Lietuvos erdvinės informacijos portalas"
+    ).first()
+
     return render(
         request,
         "landing.html",
@@ -89,6 +93,7 @@ def home(request):
                 .order_by("-datasets")[:cards_limit]
             ),
             "stat_routes": (StatRoute.objects.filter(featured=True).order_by("order")),
+            "geoportal_catalog": geoportal_catalog,
         },
     )
 

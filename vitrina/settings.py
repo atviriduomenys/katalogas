@@ -180,6 +180,7 @@ INSTALLED_APPS = [
     "vitrina.smart_contracts",
     "vitrina.identifiers",
     "vitrina.dcat",
+    "vitrina.sparql",
     "vitrina.search",
 ]
 
@@ -754,6 +755,8 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+FUSEKI_URL = env("FUSEKI_URL", default="")
 
 SELECT2_CACHE_BACKEND = "select2"
 

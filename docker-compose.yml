@@ -19,6 +19,7 @@ services:
       - STATIC_ROOT=/app/static
       - RUN_MODE=DEVELOPMENT
       - CELERY_BROKER_URL=redis://redis:6379/3
+      - FUSEKI_URL=http://fuseki:3030/katalogas
     ports:
       - 8000:8000
     env_file:
@@ -57,6 +58,18 @@ services:
       - ./var/redis/data:/root/redis
       - ./var/redis/redis.conf:/usr/local/etc/redis/redis.conf
 
+  fuseki:
+    image: secoresearch/fuseki:6.2.0
+    restart: always
+    command: ["java", "-cp", "*:/javalibs/*", "org.apache.jena.fuseki.main.cmds.FusekiServerCmd", "--timeout=10000"]
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx512m
+    volumes:
+      - ./docker/fuseki/assembler.ttl:/fuseki-base/configuration/assembler.ttl:ro
+      - fuseki-data:/fuseki-base/databases
+    ports:
+      - 127.0.0.1:3030:3030
+
   celery:
     image: vitrina-app:latest
     container_name: vitrina-celery
@@ -66,6 +79,7 @@ services:
       - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
       - DJANGO_SETTINGS_MODULE=vitrina.settings
       - CELERY_BROKER_URL=redis://redis:6379/3
+      - FUSEKI_URL=http://fuseki:3030/katalogas
     env_file:
       - .env
     volumes:
@@ -96,3 +110,6 @@ services:
       PGDATA: /var/lib/postgresql/data
     volumes:
       - ./var/umami-postgres:/var/lib/postgresql/data
+
+volumes:
+  fuseki-data:

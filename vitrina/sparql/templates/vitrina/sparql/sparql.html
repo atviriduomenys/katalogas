@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "SPARQL paieška" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "SPARQL paieška" %}{% endblock %}
+
+{% block current_title %}{% translate "SPARQL paieška" %}{% endblock %}
+
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <p>{% translate "SPARQL (SPARQL protokolo ir RDF užklausos kalbos santrumpa) tai duomenų bazių semantinė užklausų kalba, galinti nuskaityti ir valdyti duomenis, saugomus „Resource Description Framework“ (RDF) formatu." %}</p>
+        <p>{% translate "Paieška vykdoma tik viešų duomenų rinkinių DCAT-AP metaduomenyse. Duomenys atnaujinami kas 10 minučių." %}</p>
+        <p>{% translate "Pavyzdžiai:" %}</p>
+        <ul>
+            {% for title, example in examples %}
+                <li><a class="sparql-example" href="?query={{ example|urlencode }}">{{ title }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <form id="sparql-form" class="control" action="" method="get">
+        <div class="field control is-expanded">
+            <label for="textarea_query_box" class="has-text-weight-bold">{% translate "SPARQL paieškos laukas" %}</label>
+            <textarea class="textarea is-info is-fullwidth u-monospace" name="query" rows="12" id="textarea_query_box">{{ query }}</textarea>
+        </div>
+        <div class="field is-expanded">
+            <div class="control">
+                <button type="submit" class="button is-link is-fullwidth">{% translate "Atlikti paiešką" %}</button>
+            </div>
+        </div>
+    </form>
+    <br/>
+    {% if error %}
+        <article class="message is-danger">
+            <div class="message-body">{{ error }}</div>
+        </article>
+    {% elif columns %}
+        <div class="table-container">
+            <table class="table is-fullwidth is-striped is-narrow sparql-result">
+                <thead>
+                    <tr>{% for column in columns %}<th>{{ column }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            {% for cell in row %}
+                                <td>{% if cell.link %}<a href="{{ cell.value }}">{{ cell.value }}</a>{% else %}{{ cell.value }}{% endif %}</td>
+                            {% endfor %}
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="{{ columns|length }}">{% translate "Rezultatų nerasta." %}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif boolean is not None %}
+        <p class="sparql-boolean">{{ boolean|yesno:"true,false" }}</p>
+    {% elif text %}
+        <pre class="sparql-result">{{ text }}</pre>
+    {% endif %}
+{% endblock %}

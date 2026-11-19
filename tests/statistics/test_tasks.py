@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
+from django.utils.timezone import localdate
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.projects.factories import ProjectFactory
@@ -115,10 +116,10 @@ def test_build_dataset_stats_resets_project_count_after_soft_delete():
     project = ProjectFactory(datasets=[dataset])
     with patch("vitrina.statistics.services.requests.get", side_effect=requests.RequestException):
         build_dataset_stats()
-        assert DatasetStats.objects.get(dataset_id=dataset.pk, created=project.created.date()).project_count == 1
+        assert DatasetStats.objects.get(dataset_id=dataset.pk, created=localdate(project.created)).project_count == 1
 
         project.deleted = True
         project.save()
         build_dataset_stats()
 
-    assert DatasetStats.objects.get(dataset_id=dataset.pk, created=project.created.date()).project_count == 0
+    assert DatasetStats.objects.get(dataset_id=dataset.pk, created=localdate(project.created)).project_count == 0

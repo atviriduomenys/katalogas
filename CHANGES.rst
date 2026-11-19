@@ -96,6 +96,11 @@ https://github.com/atviriduomenys/katalogas/issues/2799
 https://github.com/atviriduomenys/katalogas/issues/2831
 - Remove like button and stats related to it.
 
+https://github.com/atviriduomenys/katalogas/issues/2847
+
+- Update ``djangorestframework`` to ``3.18``, ``oauthlib`` to ``4.0``, ``django-allauth`` to
+  ``65.21``, ``weasyprint`` to ``70.0`` and ``pillow`` to ``13.0``.
+
 v 1.27.0 (2026-10-23)
 ==================
 

@@ -4,6 +4,11 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2855
+
+- Allow the VIISP login origin in the CSP ``form-action`` directive. The login form redirects to
+  VIISP, and the browser blocked that redirect, so a VIISP login did not start.
+
 https://github.com/atviriduomenys/dvms/issues/513
 
 - Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)

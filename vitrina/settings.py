@@ -664,6 +664,9 @@ if _umami_url.netloc:
     CONTENT_SECURITY_POLICY["DIRECTIVES"]["script-src"].append(_umami_origin)
     CONTENT_SECURITY_POLICY["DIRECTIVES"]["connect-src"].append(_umami_origin)
 
+_viisp_url = urlsplit(VIISP_AUTHORIZE_URL)
+CONTENT_SECURITY_POLICY["DIRECTIVES"]["form-action"].append(f"{_viisp_url.scheme}://{_viisp_url.netloc}")
+
 # --- Strict (nonce-based) CSP, currently shipped REPORT-ONLY ------------------------------------
 # The block above is the ENFORCED policy and still allows 'unsafe-inline'. Below we derive the
 # target strict policy from it (single source of truth for the host allow-lists) and ship it as

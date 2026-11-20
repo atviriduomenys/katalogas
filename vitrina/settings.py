@@ -50,7 +50,7 @@ SECRET_KEY = env(
 )
 
 VIISP_AUTHORIZE_URL = env("VIISP_AUTHORIZE_URL")
-VIISP_LOGIN_URL = env("VIISP_LOGIN_URL", default="")
+VIISP_LOGIN_URL = env("VIISP_LOGIN_URL", default="https://ap-stage.epaslaugos.lt")
 VIISP_PROXY_AUTH = env("VIISP_PROXY_AUTH")
 VIISP_PID = env("VIISP_PID")
 

@@ -1073,7 +1073,9 @@ def test_comment_based_on_access_rights(app: DjangoTestApp, access_rights, expec
     )
 
     assert resp.status_code == expected_status_code
-    assert Comment.objects.filter(object_id=dataset2.pk).count() == (1 if expected_status_code == 302 else 0)
+    assert Comment.objects.filter(content_type=ct, object_id=dataset2.pk).count() == (
+        1 if expected_status_code == 302 else 0
+    )
 
 
 @pytest.mark.django_db
@@ -1107,7 +1109,7 @@ def test_comment_on_private_dataset_model(app: DjangoTestApp):
     )
 
     assert resp.status_code == 403
-    assert Comment.objects.filter(object_id=model.pk).count() == 0
+    assert Comment.objects.filter(content_type=ct, object_id=model.pk).count() == 0
 
 
 @pytest.mark.django_db
@@ -1127,7 +1129,7 @@ def test_comment_on_non_public_project(app: DjangoTestApp):
     )
 
     assert resp.status_code == 403
-    assert Comment.objects.filter(object_id=project.pk).count() == 0
+    assert Comment.objects.filter(content_type=ct, object_id=project.pk).count() == 0
 
 
 @pytest.mark.django_db
@@ -1167,7 +1169,7 @@ def test_comment_on_private_dataset_property(app: DjangoTestApp):
     )
 
     assert resp.status_code == 403
-    assert Comment.objects.filter(object_id=prop.pk).count() == 0
+    assert Comment.objects.filter(content_type=ct, object_id=prop.pk).count() == 0
 
 
 @pytest.mark.django_db

@@ -161,6 +161,7 @@ from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Metadata, Property, Model
+from vitrina.structure.dataservice_import import DataServiceImport, import_dataservice_structure
 from vitrina.structure.services import (
     create_structure_objects,
     get_model_name,
@@ -1519,6 +1520,9 @@ class DatasetStructureImportView(
 
     def has_permission(self):
         subclass = self.dataset.subclass
+        # Imports into a DataService are open only to staff users for now.
+        if subclass.name == DCATResourceSubclass.SERVICE and not self.request.user.is_staff:
+            return False
         return has_perm(
             self.request.user,
             Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
@@ -1552,6 +1556,8 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
+        if self.dataset.subclass.name == DCATResourceSubclass.SERVICE:
+            return self.import_into_dataservice()
         if self.metadata_version and not self.metadata_version.is_draft():
             form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
             return self.form_invalid(form)
@@ -1559,6 +1565,14 @@ class DatasetStructureImportView(
         self.metadata_version = create_structure_objects(self.object, self.metadata_version)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
+
+    def import_into_dataservice(self) -> HttpResponse:
+        # A DataService has no structure of its own: the file is imported into its datasets.
+        result = import_dataservice_structure(self.object, user=self.request.user, request=self.request)
+        if result.confirmable:
+            return redirect("dataservice-structure-import-confirm", pk=self.dataset.pk, structure_id=self.object.pk)
+        show_dataservice_import_result(self.request, result)
+        return redirect("dataset-structure-no-version", pk=self.dataset.pk)
 
     def get_plan_object(self):
         return self.dataset
@@ -1590,6 +1604,55 @@ class DatasetStructureImportView(
                     "pk": self.dataset.pk,
                 },
             )
+
+
+def show_dataservice_import_result(request: HttpRequest, result: DataServiceImport) -> None:
+    for error in result.errors:
+        messages.error(request, error)
+    if not result.errors:
+        messages.success(request, _("Duomenų struktūra importuota."))
+    for skipped in result.skipped:
+        messages.info(
+            request,
+            _("Duomenų rinkinys „%(name)s“ praleistas: %(reason)s") % {"name": skipped.name, "reason": skipped.reason},
+        )
+
+
+class DataServiceStructureImportConfirmView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    """Lists the new datasets and the drafts a DataService import would replace, and imports on confirmation."""
+
+    template_name = "vitrina/datasets/dataservice_structure_import_confirm.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs["pk"], subclass__name=DCATResourceSubclass.SERVICE)
+        self.structure = get_object_or_404(DatasetStructure, pk=kwargs["structure_id"], dataset=self.dataset)
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        # Imports into a DataService are open only to staff users for now.
+        return self.request.user.is_staff and has_perm(self.request.user, Action.CREATE, DatasetStructure, self.dataset)
+
+    def get(self, request, *args, **kwargs):
+        self.result = import_dataservice_structure(self.structure, user=request.user, request=request, check_only=True)
+        if not self.result.confirmable:
+            show_dataservice_import_result(request, self.result)
+            return redirect("dataset-structure-no-version", pk=self.dataset.pk)
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        result = import_dataservice_structure(
+            self.structure, user=request.user, request=request, create_missing=True, replace_drafts=True
+        )
+        show_dataservice_import_result(request, result)
+        return redirect("dataset-structure-no-version", pk=self.dataset.pk)
+
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            "current_title": _("Struktūros importo patvirtinimas"),
+            "result": self.result,
+            "cancel_url": reverse("dataset-structure-no-version", kwargs={"pk": self.dataset.pk}),
+        }
 
 
 class DatasetMembersView(

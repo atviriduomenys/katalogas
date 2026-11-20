@@ -45,14 +45,16 @@
             </a>
         {% endif %}
         {% if selected_version %}
-            <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
-                {% if is_disabled %}
-                    aria-disabled="true"
-                {% else %}
-                    href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}"
-                {% endif %}>
-                {% translate "Importuoti" %}
-            </a>
+            {% if dataset.subclass.name != "service" or request.user.is_staff %}
+                <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
+                    {% if is_disabled %}
+                        aria-disabled="true"
+                    {% else %}
+                        href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}"
+                    {% endif %}>
+                    {% translate "Importuoti" %}
+                </a>
+            {% endif %}
             <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
                 {% if is_disabled %}
                     aria-disabled="true"
@@ -72,9 +74,11 @@
                 </a>
             {% endif %}
         {% else %}
-            <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import-no-version' view.kwargs.pk %}">
-                {% translate "Importuoti" %}
-            </a>
+            {% if dataset.subclass.name != "service" or request.user.is_staff %}
+                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import-no-version' view.kwargs.pk %}">
+                    {% translate "Importuoti" %}
+                </a>
+            {% endif %}
             <a class="button is-primary mb-5 ml-2" href="{% url 'model-create-no-version' dataset.pk %}">
                 {% translate "Naujas modelis" %}
             </a>

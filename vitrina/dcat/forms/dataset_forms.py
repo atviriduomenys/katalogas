@@ -362,6 +362,18 @@ class ServiceResourceForm(ContactFormMixin, DatasetNameMixin, BaseResourceForm):
         self.fields["name"].help_text = _(
             "Institucijos vidinis duomenų paslaugos identifikatorius. Formatas: kod_pav. Atitinka dct:identifier."
         )
+        # A DataService name may carry its version as a number segment, e.g. "uapi/1".
+        self.fields["name"].validators = [
+            *(v for v in self.fields["name"].validators if not isinstance(v, RegexValidator)),
+            RegexValidator(
+                r"^[a-z_]+(\/([a-z_]+|[0-9]+))*\/?$",
+                message=_(
+                    "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir (arba) apatinių "
+                    "brūkšnių, žodžius atskiriant apatiniais brūkšniais. Versijos numeris nurodomas atskira "
+                    "dalimi, pvz. uapi/1."
+                ),
+            ),
+        ]
         self.fields["codename_preview"].label = _("Pilnas identifikatorius")
         self.fields["codename_preview"].help_text = _(
             "Pilnas identifikatorius, sudarytas iš tėvinio ištekliaus identifikatoriaus ir šios "

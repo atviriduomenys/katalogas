@@ -116,7 +116,7 @@ class ApplicableLegislationFactory(DjangoModelFactory):
         model = ApplicableLegislation
         django_get_or_create = ("url",)
 
-    url = factory.Faker("url")
+    url = factory.Sequence(lambda n: f"https://example.com/legislation/{n}")
     description = factory.Faker("sentence")
 
 
@@ -125,7 +125,7 @@ class DocumentationFactory(DjangoModelFactory):
         model = Documentation
         django_get_or_create = ("documentation_link",)
 
-    documentation_link = factory.Faker("url")
+    documentation_link = factory.Sequence(lambda n: f"https://example.com/documentation/{n}")
 
 
 class RuleFactory(DjangoModelFactory):

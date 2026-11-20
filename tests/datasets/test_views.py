@@ -56,6 +56,7 @@ from vitrina.datasets.models import (
     Type,
     Relation,
     Attribution,
+    DCATResourceSubclass,
 )
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
@@ -2469,10 +2470,21 @@ class TestDatasetCreateView:
         )
         assert res.status_code == 403
 
-    def test_create_child_catalog_for_non_staff(self, app: DjangoTestApp):
-        parent = DatasetFactory()
-        subclass = DCATResourceSubclassFactory(name="catalog")
+    @pytest.mark.parametrize(
+        ("subclass_name", "expected_status"),
+        [
+            (DCATResourceSubclass.CATALOG, 403),
+            (DCATResourceSubclass.DATASET, 200),
+            (DCATResourceSubclass.SERIES, 200),
+            (DCATResourceSubclass.SERVICE, 200),
+            (DCATResourceSubclass.IS_PUBLIC_SERVICE, 200),
+            (DCATResourceSubclass.INFORMATION_SYSTEM, 200),
+        ],
+    )
+    def test_create_child_dataset_for_non_staff(self, app: DjangoTestApp, subclass_name: str, expected_status: int):
         organization = OrganizationFactory()
+        parent = DatasetFactory(organization=organization)
+        subclass = DCATResourceSubclassFactory(name=subclass_name)
         user = UserFactory()
         RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(organization),
@@ -2489,7 +2501,7 @@ class TestDatasetCreateView:
             ),
             expect_errors=True,
         )
-        assert res.status_code == 403
+        assert res.status_code == expected_status
 
 
 class TestDatasetDeleteView:

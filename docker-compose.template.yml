@@ -7,6 +7,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: builder
     image: katalogas-${BRANCH}:latest
     command:
       - ./auto-entrypoint.sh
@@ -64,6 +65,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: builder
     image: katalogas-${BRANCH}:latest
     command: celery -A vitrina worker -l info
     environment:

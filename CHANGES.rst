@@ -94,7 +94,12 @@ https://github.com/atviriduomenys/katalogas/issues/2799
   locked itself.
 
 https://github.com/atviriduomenys/katalogas/issues/2831
+
 - Remove like button and stats related to it.
+
+https://github.com/atviriduomenys/katalogas/issues/2840
+
+- Metadata catalog can be created only by administrator.
 
 https://github.com/atviriduomenys/katalogas/issues/2847
 

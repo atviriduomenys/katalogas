@@ -40,6 +40,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.fields import DisabledCharField
 from vitrina.helpers import email, join_br
 from vitrina.orgs.models import Organization
+from vitrina.users.helpers import validate_person_name
 from vitrina.users.models import User, UserEmailDevice
 
 
@@ -248,16 +249,9 @@ class RegisterForm(UserCreationForm):
         first_name = cleaned_data.get("first_name", "")
         last_name = cleaned_data.get("last_name", "")
 
-        if len(first_name) < 3 or not first_name.isalpha():
-            self.add_error(
-                "first_name",
-                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
-            )
-        if len(last_name) < 3 or not last_name.isalpha():
-            self.add_error(
-                "last_name",
-                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
-            )
+        validate_person_name(self, first_name, False)
+        validate_person_name(self, last_name, True)
+
         if "agree_to_terms" in cleaned_data and not cleaned_data["agree_to_terms"]:
             self.add_error("agree_to_terms", _("Turite sutikti su naudojimo sąlygomis"))
         return cleaned_data
@@ -339,16 +333,9 @@ class UserCreationAdminForm(UserCreationForm):
         first_name = cleaned_data.get("first_name", "")
         last_name = cleaned_data.get("last_name", "")
 
-        if len(first_name) < 3 or not first_name.isalpha():
-            self.add_error(
-                "first_name",
-                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
-            )
-        if len(last_name) < 3 or not last_name.isalpha():
-            self.add_error(
-                "last_name",
-                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
-            )
+        validate_person_name(self, first_name, False)
+        validate_person_name(self, last_name, True)
+
         return cleaned_data
 
     def clean_email(self):
@@ -475,16 +462,9 @@ class UserChangeAdminForm(UserChangeForm):
         first_name = cleaned_data.get("first_name", "")
         last_name = cleaned_data.get("last_name", "")
 
-        if len(first_name) < 3 or not first_name.isalpha():
-            self.add_error(
-                "first_name",
-                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
-            )
-        if len(last_name) < 3 or not last_name.isalpha():
-            self.add_error(
-                "last_name",
-                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
-            )
+        validate_person_name(self, first_name, False)
+        validate_person_name(self, last_name, True)
+
         return cleaned_data
 
     def clean_email(self):
@@ -723,16 +703,9 @@ class UserProfileEditForm(ModelForm):
         first_name = cleaned_data.get("first_name", "")
         last_name = cleaned_data.get("last_name", "")
 
-        if first_name and len(first_name) < 3 or not first_name.isalpha():
-            self.add_error(
-                "first_name",
-                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
-            )
-        if last_name and len(last_name) < 3 or not last_name.isalpha():
-            self.add_error(
-                "last_name",
-                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
-            )
+        validate_person_name(self, first_name, False)
+        validate_person_name(self, last_name, True)
+
         return cleaned_data
 
     def clean_email(self):

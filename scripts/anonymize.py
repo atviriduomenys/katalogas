@@ -1,18 +1,23 @@
 import json
+import re
 import sys
 import uuid
+from datetime import datetime, timezone
 from typing import Set
 
 import dataset
 from dataset import Database, Table
 from faker import Faker
 from tqdm import tqdm
-from typer import Argument, Option, confirm, run
+from typer import Argument, Option, confirm, echo, run
 
 
 # The djangocms-blog schema is gone; only an upgrade that stopped half way leaves it standing.
 STORY_CONTENT_TABLE = "djangocms_stories_postcontent"
 LEGACY_STORY_TABLE = "djangocms_blog_post_translation"
+
+# Their rows are still walked with --keep-public-content: drafts are scrubbed, and so are bylines in kept text.
+PUBLIC_CONTENT_TABLES = (STORY_CONTENT_TABLE, "news_item", "adp_cms_page")
 
 
 def _story_content_table(db: Database) -> str:
@@ -36,6 +41,19 @@ def _story_content_table(db: Database) -> str:
 def main(
     uri: str = Argument(..., help=("Database URI (postgresql://user:pass@host:port/db)")),
     yes: bool = Option(False, help="Do not ask anything, just do it"),
+    keep_public_content: bool = Option(
+        False,
+        help=(
+            "Keep PUBLISHED editorial content readable: stories, news and old portal pages - "
+            "their texts, titles and slugs. Drafts, scheduled, expired, non-public and deleted rows are anonymized "
+            "as usual - only what the site already shows to everyone is spared. Bylines are "
+            "removed, including the one the old news migration wrote into the article text as "
+            "'<p>Autorius: NAME</p>'. WARNING: the kept text itself is NOT scanned, so it can "
+            "still contain names, e-mail addresses or phone numbers that an editor typed into "
+            "an article. Use this when someone has to REVIEW the content, e.g. after a CMS "
+            "migration - with every article replaced by 'example' such a review proves nothing."
+        ),
+    ),
 ):
     """
     Anonymize database.
@@ -44,6 +62,13 @@ def main(
     restore it. So before using this command, make sure to pass correct database
     connection string.
     """
+    if keep_public_content:
+        echo(
+            "WARNING! --keep-public-content leaves published article and page text as it is. "
+            "That text is not scanned, so it can still hold names, e-mail addresses or phone "
+            "numbers an editor typed in. Do not treat such a dump as fully anonymized."
+        )
+
     db = dataset.connect(uri)
 
     tables = (
@@ -106,9 +131,64 @@ def main(
     with pbar:
         for table in tables:
             func = sys.modules[__name__].__dict__[f"_anonymize_{table}"]
-            func(db, fake, pbar, users)
+            if keep_public_content and table in PUBLIC_CONTENT_TABLES:
+                func(db, fake, pbar, users, keep_public_content=True)
+            else:
+                func(db, fake, pbar, users)
 
-    _scrub_story_plugins(db)
+    _scrub_story_plugins(db, _published_story_content_ids(db) if keep_public_content else set())
+
+
+# The old news migration (scripts/migrate_news.py, now in git history) prepended "<p>Autorius: NAME</p>"
+# to the body and the summary, so the byline sits inside post_text / abstract too. Keeping the
+# article text therefore means keeping that name unless it is scrubbed out explicitly.
+_BYLINE_RE = re.compile(r"<p>Autorius:.*?</p>", re.S)
+
+
+def _scrub_byline(text: str | None) -> str | None:
+    if not text:
+        return text
+    return _BYLINE_RE.sub("<p>Autorius: example, example</p>", text)
+
+
+def _published_story_content_ids(db: Database) -> Set[int]:
+    """Ids of story contents the site shows: a published version of a post inside its publication window.
+
+    Drafts, unpublished and archived versions, scheduled and expired posts are not public, so their text is not spared.
+    """
+    if "djangocms_versioning_version" not in db.tables:
+        return set()
+
+    now = datetime.now(timezone.utc)
+
+    def _passed(value, future: bool) -> bool:
+        if value is None:
+            return True
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value > now if future else value <= now
+
+    published_versions = {
+        row["object_id"]
+        for row in db.query(
+            """
+            SELECT version.object_id
+            FROM djangocms_versioning_version version
+            JOIN django_content_type ct ON ct.id = version.content_type_id
+            WHERE ct.app_label = 'djangocms_stories' AND ct.model = 'postcontent' AND version.state = 'published'
+            """
+        )
+    }
+    public_posts = {
+        row["id"]
+        for row in db["djangocms_stories_post"].all()
+        if _passed(row.get("date_published"), future=False) and _passed(row.get("date_published_end"), future=True)
+    }
+    return {
+        row["id"]
+        for row in db[STORY_CONTENT_TABLE].all()
+        if row["id"] in published_versions and row.get("post_id") in public_posts
+    }
 
 
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
@@ -126,10 +206,23 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
         pbar.update(1)
 
 
-def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
+def _anonymize_story_content(db: Database, pbar: tqdm, table: str, keep_public_content: bool = False) -> None:
     objects: Table = db[table]
     pk_name = "id"
+    published = _published_story_content_ids(db) if keep_public_content else set()
     for record in objects.all():
+        if record[pk_name] in published:
+            # Published article: keep the text, but strip the byline embedded in it.
+            objects.update(
+                {
+                    pk_name: record[pk_name],
+                    "post_text": _scrub_byline(record.get("post_text")),
+                    "abstract": _scrub_byline(record.get("abstract")),
+                },
+                [pk_name],
+            )
+            pbar.update(1)
+            continue
         data = {
             pk_name: record[pk_name],
             "title": "example",
@@ -145,59 +238,93 @@ def _anonymize_story_content(db: Database, pbar: tqdm, table: str) -> None:
         pbar.update(1)
 
 
-# Empty on this portal - STORIES_USE_PLACEHOLDER is off, so article text lives
-# in post_text. A config with placeholders on keeps it here instead.
+# Empty unless a stories config has use_placeholder on (STORIES_USE_PLACEHOLDER is off
+# by default); such a config renders its article text from here instead of post_text.
 STORY_CONTENT_TYPES = (("djangocms_stories", "postcontent"),)
 
 
-def _scrub_story_plugins(db: Database) -> None:
+def _scrub_story_plugins(db: Database, kept_content_ids: Set[int] = frozenset()) -> None:
+    """Scrub story text plugins; those of kept story contents only lose their byline."""
     if "djangocms_text_text" not in db.tables:
         return
 
     conditions = " OR ".join(
         f"(ct.app_label = '{app_label}' AND ct.model = '{model}')" for app_label, model in STORY_CONTENT_TYPES
     )
-    db.query(
+    rows = db.query(
         f"""
-        UPDATE djangocms_text_text SET body = '<p>example</p>'
-        WHERE cmsplugin_ptr_id IN (
-            SELECT plugin.id
-            FROM cms_cmsplugin plugin
-            JOIN cms_placeholder placeholder ON placeholder.id = plugin.placeholder_id
-            JOIN django_content_type ct ON ct.id = placeholder.content_type_id
-            WHERE {conditions}
-        )
+        SELECT txt.cmsplugin_ptr_id, txt.body, placeholder.object_id
+        FROM djangocms_text_text txt
+        JOIN cms_cmsplugin plugin ON plugin.id = txt.cmsplugin_ptr_id
+        JOIN cms_placeholder placeholder ON placeholder.id = plugin.placeholder_id
+        JOIN django_content_type ct ON ct.id = placeholder.content_type_id
+        WHERE {conditions}
         """
     )
+    texts: Table = db["djangocms_text_text"]
+    for row in list(rows):
+        body = _scrub_byline(row["body"]) if row["object_id"] in kept_content_ids else "<p>example</p>"
+        texts.update({"cmsplugin_ptr_id": row["cmsplugin_ptr_id"], "body": body}, ["cmsplugin_ptr_id"])
 
 
 def _anonymize_djangocms_stories_postcontent(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
+    db: Database,
+    fake: Faker,
+    pbar: tqdm,
+    users: dict[str, dict[str, str | None]],
+    keep_public_content: bool = False,
 ) -> None:
     """Story text."""
-    _anonymize_story_content(db, pbar, STORY_CONTENT_TABLE)
+    _anonymize_story_content(db, pbar, STORY_CONTENT_TABLE, keep_public_content)
 
 
-def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+def _anonymize_news_item(
+    db: Database,
+    fake: Faker,
+    pbar: tqdm,
+    users: dict[str, dict[str, str | None]],
+    keep_public_content: bool = False,
+) -> None:
     objects: Table = db["news_item"]
     pk_name = "id"
     for record in objects.all():
-        data = {
-            pk_name: record[pk_name],
-            "body": "<p>example</p>",
-            "title": "example",
-            "slug": f"example-{uuid.uuid4()}",
-            "summary": "example",
-            "author_name": "example, example",
-        }
+        if keep_public_content and record.get("is_public") and not record.get("deleted"):
+            # Published item: keep the text, drop both byline columns and the byline
+            # that the old news migration wrote into the text itself.
+            data = {
+                pk_name: record[pk_name],
+                "author_name": "example, example",
+                "author": None,  # bytea in production, text in the canonical schema - None fits both
+                "body": _scrub_byline(record.get("body")),
+                "summary": _scrub_byline(record.get("summary")),
+            }
+        else:
+            data = {
+                pk_name: record[pk_name],
+                "body": "<p>example</p>",
+                "title": "example",
+                "slug": f"example-{uuid.uuid4()}",
+                "summary": "example",
+                "author_name": "example, example",
+                "author": None,  # bytea in production, text in the canonical schema - None fits both
+            }
         objects.update(data, [pk_name])
         pbar.update(1)
 
 
-def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+def _anonymize_adp_cms_page(
+    db: Database,
+    fake: Faker,
+    pbar: tqdm,
+    users: dict[str, dict[str, str | None]],
+    keep_public_content: bool = False,
+) -> None:
     objects: Table = db["adp_cms_page"]
     pk_name = "id"
     for record in objects.all():
+        if keep_public_content and record.get("published") and not record.get("deleted"):
+            pbar.update(1)
+            continue
         data = {
             pk_name: record[pk_name],
             "body": "<p>example</p>",

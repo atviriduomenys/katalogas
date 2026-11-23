@@ -15,6 +15,8 @@ from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
+from django.core.exceptions import ValidationError
+
 try:
     import magic
 except (ImportError, OSError):
@@ -382,6 +384,35 @@ def get_selected_value(
         except ValueError:
             return [] if multiple else None
     return selected_value
+
+
+def get_value_title(
+    filter_obj: Filter,
+    value: str,
+):
+    choices = filter_obj.choices
+    if choices:
+        for choice_value, label in choices.items():
+            if str(choice_value) == str(value):
+                return label
+
+    model = filter_obj.model
+    if model is not None:
+        try:
+            obj = model.objects.filter(pk=value).first()
+        except (ValueError, ValidationError):
+            obj = None
+
+        if obj is not None:
+            return str(obj) if filter_obj.use_str else obj.title
+
+    if filter_obj.is_int:
+        try:
+            value = int(value)
+        except ValueError:
+            return None
+
+    return value
 
 
 def get_filter_url(

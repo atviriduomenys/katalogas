@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import tagulous.models.fields
+import django_tagulous.models.fields
 
 
 class Migration(migrations.Migration):
@@ -76,7 +76,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dataset',
             name='tags',
-            field=tagulous.models.fields.TagField(_set_tag_meta=True, autocomplete_limit=20, autocomplete_settings={'width': '100%'}, autocomplete_view='autocomplete_tags', autocomplete_view_fulltext=True, blank=True, force_lowercase=True, help_text='Pateikite kableliu atskirtą sąrašą žymių.', space_delimiter=False, to='vitrina_datasets.Tagulous_Dataset_tags', verbose_name='Žymės'),
+            field=django_tagulous.models.fields.TagField(_set_tag_meta=True, autocomplete_limit=20, autocomplete_settings={'width': '100%'}, autocomplete_view='autocomplete_tags', autocomplete_view_fulltext=True, blank=True, force_lowercase=True, help_text='Pateikite kableliu atskirtą sąrašą žymių.', space_delimiter=False, to='vitrina_datasets.Tagulous_Dataset_tags', verbose_name='Žymės'),
         ),
         migrations.AddField(
             model_name='dataset',

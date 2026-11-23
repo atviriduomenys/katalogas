@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-import pytz
+from zoneinfo import ZoneInfo
 from allauth.account.models import EmailAddress
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout, Submit
@@ -417,7 +417,7 @@ class UserChangeAdminForm(UserChangeForm):
                 if "password" in self.fields:
                     self.fields["password2"].widget = HiddenInput()
 
-            tz = pytz.timezone(settings.TIME_ZONE)
+            tz = ZoneInfo(settings.TIME_ZONE)
             self.initial["created_date"] = instance.created.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
             if instance.last_login:
                 self.initial["last_login_date"] = instance.last_login.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")

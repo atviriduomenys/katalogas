@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django_recaptcha.client import RecaptchaResponse
 from freezegun import freeze_time
-import pytz
+from zoneinfo import ZoneInfo
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
@@ -37,12 +37,15 @@ from vitrina.requests.factories import RequestFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
 from vitrina.smart_contracts.models import SmartContractTemplate
+from vitrina.uapi.factories import AgentEnvironmentFactory, AgentFactory
+from vitrina.orgs.views import ConfirmOrganizationMergeView
+from vitrina.uapi.models import Agent, AgentEnvironment
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
 
 pytestmark = pytest.mark.django_db
-timezone = pytz.timezone(settings.TIME_ZONE)
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 def test_organization_detail_tab(app: DjangoTestApp):
@@ -89,13 +92,13 @@ MIGRATED_ORGANIZATION_PK = 1
 
 @pytest.fixture
 def organizations():
-    with freeze_time(timezone.localize(datetime(2022, 8, 22, 10, 30))):
+    with freeze_time(datetime(2022, 8, 22, 10, 30).replace(tzinfo=timezone)):
         organization1 = OrganizationFactory(
             slug="org1",
             title="Organization 1",
             jurisdiction=AreaOfManagement.objects.get(id=1),
         )
-    with freeze_time(timezone.localize(datetime(2022, 10, 22, 10, 30))):
+    with freeze_time(datetime(2022, 10, 22, 10, 30).replace(tzinfo=timezone)):
         jurisdiction2 = AreaOfManagementFactory(id=30)
         organization2 = OrganizationFactory(slug="org2", title="Organization 2", jurisdiction=jurisdiction2)
     with freeze_time(datetime(2022, 9, 22, 10, 30)):
@@ -764,6 +767,78 @@ def test_organization_merge(app: DjangoTestApp):
             content_type=ContentType.objects.get_for_model(merge_organization), object_id=merge_organization.pk
         )
     ) == [representative]
+
+
+def test_organization_merge_moves_agents(app: DjangoTestApp):
+    app.set_user(UserFactory(is_superuser=True))
+    organization = OrganizationFactory()
+    merge_organization = OrganizationFactory()
+    agent_environment = AgentEnvironmentFactory(agent__organization=organization, agent__title="Aktyvus")
+    archived_agent_environment = AgentEnvironmentFactory(
+        agent__organization=organization, agent__title="Archyvuotas", agent__is_archived=True
+    )
+    uris = {agent_environment.uri, archived_agent_environment.uri}
+
+    form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
+        "confirm-merge-form"
+    ]
+    form.submit()
+
+    environments = AgentEnvironment.objects.filter(agent__organization=merge_organization)
+    assert {environment.uri for environment in environments} == uris
+
+
+def test_organization_merge_refused_when_agent_codenames_clash(app: DjangoTestApp):
+    app.set_user(UserFactory(is_superuser=True))
+    organization = OrganizationFactory()
+    merge_organization = OrganizationFactory()
+    agent = AgentFactory(organization=organization, title="Agentas")
+    AgentFactory(organization=merge_organization, title="Agentas")
+    dataset = DatasetFactory(organization=organization)
+
+    form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
+        "confirm-merge-form"
+    ]
+    resp = form.submit()
+
+    assert resp.url == reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])
+    assert Organization.objects.filter(pk=organization.pk).exists()
+    agent.refresh_from_db()
+    dataset.refresh_from_db()
+    assert agent.organization == organization
+    assert dataset.organization == organization
+
+
+def test_organization_merge_refused_when_agent_codenames_clash_after_check(app: DjangoTestApp):
+    app.set_user(UserFactory(is_superuser=True))
+    organization = OrganizationFactory()
+    merge_organization = OrganizationFactory()
+    agent = AgentFactory(organization=organization, title="Agentas")
+    AgentFactory(organization=merge_organization, title="Agentas")
+    dataset = DatasetFactory(organization=organization)
+    form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
+        "confirm-merge-form"
+    ]
+
+    # The clashing agent appears after the check, as if another request created it, so only the constraint catches it.
+    find_clashing_agents = ConfirmOrganizationMergeView.clashing_agents
+    calls = []
+
+    def clashing_agents_after_check(view: ConfirmOrganizationMergeView):
+        calls.append(view)
+        return Agent.objects.none() if len(calls) == 1 else find_clashing_agents(view)
+
+    with patch.object(
+        ConfirmOrganizationMergeView, "clashing_agents", autospec=True, side_effect=clashing_agents_after_check
+    ):
+        resp = form.submit()
+
+    assert resp.url == reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])
+    assert Organization.objects.filter(pk=organization.pk).exists()
+    agent.refresh_from_db()
+    dataset.refresh_from_db()
+    assert agent.organization == organization
+    assert dataset.organization == organization
 
 
 def test_organization_open_plans(app: DjangoTestApp):

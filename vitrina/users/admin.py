@@ -2,7 +2,7 @@ import csv
 import secrets
 from datetime import datetime
 
-import pytz
+from zoneinfo import ZoneInfo
 from allauth.account.models import (
     EmailAddress,
     EmailConfirmation,
@@ -250,7 +250,7 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
 
     def created_display(self, obj):
         if obj.created:
-            tz = pytz.timezone(settings.TIME_ZONE)
+            tz = ZoneInfo(settings.TIME_ZONE)
             return obj.created.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
 
@@ -259,7 +259,7 @@ class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
 
     def last_login_display(self, obj):
         if obj.last_login:
-            tz = pytz.timezone(settings.TIME_ZONE)
+            tz = ZoneInfo(settings.TIME_ZONE)
             return obj.last_login.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
 

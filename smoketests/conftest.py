@@ -30,7 +30,7 @@ def login(page, email: str, password: str) -> bool:
     page.goto("/login/")
     page.fill('input[name="username"]', email)
     page.fill('input[name="password"]', password)
-    page.click('button[type="submit"], input[type="submit"]')
+    page.click('#login-form button[type="submit"], #login-form input[type="submit"]')
     page.wait_for_load_state("networkidle")
     return "/login/" not in page.url
 
@@ -124,7 +124,7 @@ def reset_password(page, admin_page, email: str, password: str) -> None:
     page.goto("/reset/")
     origin = re.match(r"(https?://[^/]+)", page.url).group(1)
     page.fill('input[name="email"]', email)
-    page.click('button[type="submit"], input[type="submit"]')
+    page.click('#password-reset-form button[type="submit"], #password-reset-form input[type="submit"]')
     page.wait_for_load_state("networkidle")
     content = _sent_mail_content(admin_page, email, "Slaptažodžio atstatymas")
     match = re.search(r"https?://[^\s\"'<>)]+/reset/[-\w]+/[-\w]+/?", content)
@@ -134,7 +134,7 @@ def reset_password(page, admin_page, email: str, password: str) -> None:
     page.goto(re.sub(r"^(https?://[^/]+)", origin, match.group(0)))
     page.fill('input[name="new_password1"]', password)
     page.fill('input[name="new_password2"]', password)
-    page.click('button[type="submit"], input[type="submit"]')
+    page.click('#password-reset-confirm-form button[type="submit"], #password-reset-confirm-form input[type="submit"]')
     page.wait_for_load_state("networkidle")
 
 

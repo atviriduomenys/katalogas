@@ -126,7 +126,7 @@ class TestContentSecurityPolicy:
         assert directives["object-src"] == ["'none'"]
         assert directives["base-uri"] == ["'self'"]
         assert directives["frame-ancestors"] == ["'self'"]
-        assert directives["form-action"] == ["'self'"]
+        assert directives["form-action"] == ["'self'", settings.VIISP_AUTHORIZE_URL, settings.VIISP_LOGIN_URL]
 
     def test_csp_script_and_style_src_restricted_to_self_and_allowlist(self):
         """script-src/style-src must at least be scoped to 'self' (never a bare '*')."""

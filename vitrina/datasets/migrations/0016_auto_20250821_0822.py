@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import tagulous.models.fields
+import django_tagulous.models.fields
 
 
 class Migration(migrations.Migration):
@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='dataset',
             name='tags',
-            field=tagulous.models.fields.TagField(_set_tag_meta=True, autocomplete_limit=20, autocomplete_settings={'width': '100%'}, autocomplete_view='autocomplete_tags', autocomplete_view_fulltext=True, blank=True, force_lowercase=True, help_text='Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka dcat:keyword.', space_delimiter=False, to='vitrina_datasets.Tagulous_Dataset_tags', verbose_name='Žymės'),
+            field=django_tagulous.models.fields.TagField(_set_tag_meta=True, autocomplete_limit=20, autocomplete_settings={'width': '100%'}, autocomplete_view='autocomplete_tags', autocomplete_view_fulltext=True, blank=True, force_lowercase=True, help_text='Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka dcat:keyword.', space_delimiter=False, to='vitrina_datasets.Tagulous_Dataset_tags', verbose_name='Žymės'),
         ),
         migrations.AlterField(
             model_name='datasettranslation',

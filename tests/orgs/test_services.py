@@ -5,7 +5,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Contact, Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm
+from vitrina.orgs.services import has_perm, Action, hash_api_key, pre_representative_delete, _has_dataset_perm
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory
@@ -2631,3 +2631,11 @@ def test_contact_wizard_permissions(role: str, action: Action, expected: bool):
     ct = ContentType.objects.get_for_model(organization)
     representative = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
     assert has_perm(representative.user, action, Contact, organization) is expected
+
+
+def test_hash_api_key_matches_keys_stored_before_django_upgrade():
+    # Keys are looked up by exact hash, so it must not change with Django's PBKDF2 default.
+    assert (
+        hash_api_key("test")
+        == "pbkdf2_sha256$600000$2LxpaW5qOe80xZjTPyzpgi$cdsLnNMxZzn7cwg7qjo2J1upIACAhdsOFtzdMn8Fq/E="
+    )

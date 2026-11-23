@@ -3,6 +3,7 @@ import pytest
 from datetime import timedelta
 
 from django.contrib.admin.options import get_content_type_for_model
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
@@ -891,12 +892,31 @@ class TestGroupRecipientsView:
         response = app.get(reverse("group-recipients"), expect_errors=True)
         assert response.status_code == 403
 
+    def test_get_recipients_with_add_permission(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        permission = Permission.objects.get(codename="add_massmail", content_type__app_label="vitrina_messages")
+        user.user_permissions.add(permission)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients"))
+        assert response.status_code == 200
+
+    def test_get_recipients_with_change_permission(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        permission = Permission.objects.get(codename="change_massmail", content_type__app_label="vitrina_messages")
+        user.user_permissions.add(permission)
+        app.set_user(user)
+
+        response = app.get(reverse("group-recipients"))
+        assert response.status_code == 200
+
     def test_get_organization_recipients(self, app: DjangoTestApp):
         OrganizationFactory(email="test@example.com")
         OrganizationFactory(email="Test@Example.com ")
         OrganizationFactory(email="")
+        OrganizationFactory(email="deleted@example.com", deleted=True)
 
-        user = UserFactory(is_staff=True)
+        user = UserFactory(is_superuser=True)
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.ORGANIZATIONS}")
@@ -927,8 +947,15 @@ class TestGroupRecipientsView:
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
         )
+        RepresentativeFactory(
+            email="deleted@example.com ",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            deleted=True,
+        )
 
-        user = UserFactory(is_staff=True)
+        user = UserFactory(is_superuser=True)
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.COORDINATORS}")
@@ -936,10 +963,11 @@ class TestGroupRecipientsView:
 
     def test_get_user_recipients(self, app: DjangoTestApp):
         UserFactory(email="Test@Example.com ")
+        UserFactory(email="deleted@example.com", deleted=True)
         UserFactory(email="")
         UserFactory(is_active=False)
 
-        user = UserFactory(is_staff=True, email="test@example.com")
+        user = UserFactory(is_superuser=True, email="test@example.com")
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.REGISTERED_USERS}")
@@ -972,8 +1000,14 @@ class TestGroupRecipientsView:
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
         )
+        SubscriptionFactory(
+            user=UserFactory(email="deleted@example.com", deleted=True),
+            sub_type=Subscription.ORGANIZATION,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
 
-        user = UserFactory(is_staff=True)
+        user = UserFactory(is_superuser=True)
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.SUBSCRIBERS}")
@@ -1005,8 +1039,15 @@ class TestGroupRecipientsView:
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
         )
+        RepresentativeFactory(
+            email="deleted@example.com",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            deleted=True,
+        )
 
-        user = UserFactory(is_staff=True)
+        user = UserFactory(is_superuser=True)
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.OPEN_DATA_COORDINATORS}")
@@ -1050,8 +1091,15 @@ class TestGroupRecipientsView:
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
         )
+        RepresentativeFactory(
+            email="deleted@example.com",
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            deleted=True,
+        )
 
-        user = UserFactory(is_staff=True)
+        user = UserFactory(is_superuser=True)
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.OPEN_DATA_COORDINATORS_AND_MANAGERS}")
@@ -1083,8 +1131,15 @@ class TestGroupRecipientsView:
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
         )
+        RepresentativeFactory(
+            email="deleted@example.com",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            deleted=True,
+        )
 
-        user = UserFactory(is_staff=True)
+        user = UserFactory(is_superuser=True)
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.RESOURCE_COORDINATORS}")
@@ -1128,8 +1183,15 @@ class TestGroupRecipientsView:
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
         )
+        RepresentativeFactory(
+            email="deleted@example.com",
+            role=Representative.RESOURCE_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            deleted=True,
+        )
 
-        user = UserFactory(is_staff=True)
+        user = UserFactory(is_superuser=True)
         app.set_user(user)
 
         response = app.get(reverse("group-recipients") + f"?group={MassMail.RESOURCE_COORDINATORS_AND_MANAGERS}")

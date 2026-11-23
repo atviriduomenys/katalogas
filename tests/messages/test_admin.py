@@ -38,7 +38,8 @@ class TestMassMailAdmin:
         assert len(mail.outbox) == 0
 
     def test_sends_emails_when_send_is_changed_to_true(self, app, admin_user, django_capture_on_commit_callbacks):
-        mass_mail = MassMailFactory(send=False, recipients="test@example.com")
+        recipients = "test@example.com"
+        mass_mail = MassMailFactory(send=False, recipients=recipients)
         app.set_user(admin_user)
 
         form = app.get(reverse("admin:vitrina_messages_massmail_change", args=[mass_mail.pk])).forms["massmail_form"]
@@ -52,7 +53,7 @@ class TestMassMailAdmin:
             assert len(callbacks) == 1
 
             callbacks[0]()
-            mock_delay.assert_called_once_with(mass_mail.pk)
+            mock_delay.assert_called_once_with(mass_mail.pk, [recipients])
 
     @pytest.mark.parametrize(
         ("recipient_count", "expected_batches"),
@@ -74,7 +75,7 @@ class TestMassMailAdmin:
         with (
             patch(
                 "vitrina.messages.admin.send_mass_mail.delay",
-                side_effect=lambda pk: send_mass_mail(pk),
+                side_effect=lambda pk, recipients: send_mass_mail(pk, recipients),
             ) as mock_delay,
             patch(
                 "vitrina.messages.tasks.send_mass_mail_batch.delay",
@@ -87,8 +88,41 @@ class TestMassMailAdmin:
             assert len(callbacks) == 1
             callbacks[0]()
 
-            mock_delay.assert_called_once_with(mass_mail.pk)
+            mock_delay.assert_called_once_with(mass_mail.pk, recipients)
 
         assert response.status_code == 302
         assert [len(message.bcc) for message in mail.outbox] == expected_batches
         assert sorted(email for message in mail.outbox for email in message.bcc) == sorted(recipients)
+
+    @pytest.mark.parametrize(
+        "recipients",
+        [
+            " test1@example.com; test2@example.com ",
+            " test1@example.com  test2@example.com ",
+            " test1@example.com, test2@example.com ",
+        ],
+    )
+    def test_validate_emails_is_valid(self, app, admin_user, django_capture_on_commit_callbacks, recipients):
+        mass_mail = MassMailFactory(send=False, recipients=recipients)
+        app.set_user(admin_user)
+
+        form = app.get(reverse("admin:vitrina_messages_massmail_change", args=[mass_mail.pk])).forms["massmail_form"]
+        response = form.submit()
+        assert response.status_code == 302
+
+    @pytest.mark.parametrize(
+        "recipients",
+        [
+            "@example.com",
+            "example.com",
+            "example",
+        ],
+    )
+    def test_validate_emails_is_invalid(self, app, admin_user, django_capture_on_commit_callbacks, recipients):
+        mass_mail = MassMailFactory(send=False, recipients=recipients)
+        app.set_user(admin_user)
+
+        form = app.get(reverse("admin:vitrina_messages_massmail_change", args=[mass_mail.pk])).forms["massmail_form"]
+        response = form.submit()
+        assert response.status_code == 200
+        assert "recipients" in response.context["adminform"].errors.keys()

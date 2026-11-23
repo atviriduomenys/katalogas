@@ -312,7 +312,16 @@ class NewsletterUnsubscribeView(View):
 class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def has_permission(self):
         user = self.request.user
-        return user.is_staff or user.is_superuser
+        return (
+            user.is_active
+            and user.is_superuser
+            or (
+                user.is_staff
+                and (
+                    user.has_perm("vitrina_messages.add_massmail") or user.has_perm("vitrina_messages.change_massmail")
+                )
+            )
+        )
 
     def get(self, request):
         group = request.GET.get("group")
@@ -323,6 +332,7 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 Organization.objects.filter(email__isnull=False)
                 .annotate(normalized_email=Lower(Trim("email")))
                 .exclude(normalized_email="")
+                .exclude(deleted=True)
                 .order_by()
                 .values_list("normalized_email", flat=True)
                 .distinct()
@@ -333,6 +343,9 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 Representative.objects.filter(email__isnull=False, role__in=Representative.COORDINATOR_ROLES)
                 .annotate(normalized_email=Lower(Trim("email")))
                 .exclude(normalized_email="")
+                .exclude(deleted=True)
+                .exclude(organization__deleted=True)
+                .exclude(user__deleted=True)
                 .values_list("normalized_email", flat=True)
                 .distinct()
             )
@@ -342,6 +355,7 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 User.objects.filter(email__isnull=False, is_active=True)
                 .annotate(normalized_email=Lower(Trim("email")))
                 .exclude(normalized_email="")
+                .exclude(deleted=True)
                 .values_list("normalized_email", flat=True)
                 .distinct()
             )
@@ -351,6 +365,7 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 Subscription.objects.filter(user__email__isnull=False, email_subscribed=True)
                 .annotate(normalized_email=Lower(Trim("user__email")))
                 .exclude(normalized_email="")
+                .exclude(user__deleted=True)
                 .values_list("normalized_email", flat=True)
                 .distinct()
             )
@@ -360,6 +375,9 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 Representative.objects.filter(email__isnull=False, role=Representative.OPEN_DATA_COORDINATOR)
                 .annotate(normalized_email=Lower(Trim("email")))
                 .exclude(normalized_email="")
+                .exclude(deleted=True)
+                .exclude(organization__deleted=True)
+                .exclude(user__deleted=True)
                 .values_list("normalized_email", flat=True)
                 .distinct()
             )
@@ -372,6 +390,9 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 )
                 .annotate(normalized_email=Lower(Trim("email")))
                 .exclude(normalized_email="")
+                .exclude(deleted=True)
+                .exclude(organization__deleted=True)
+                .exclude(user__deleted=True)
                 .values_list("normalized_email", flat=True)
                 .distinct()
             )
@@ -381,6 +402,9 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 Representative.objects.filter(email__isnull=False, role=Representative.RESOURCE_COORDINATOR)
                 .annotate(normalized_email=Lower(Trim("email")))
                 .exclude(normalized_email="")
+                .exclude(deleted=True)
+                .exclude(organization__deleted=True)
+                .exclude(user__deleted=True)
                 .values_list("normalized_email", flat=True)
                 .distinct()
             )
@@ -393,6 +417,9 @@ class GroupRecipientsView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 )
                 .annotate(normalized_email=Lower(Trim("email")))
                 .exclude(normalized_email="")
+                .exclude(deleted=True)
+                .exclude(organization__deleted=True)
+                .exclude(user__deleted=True)
                 .values_list("normalized_email", flat=True)
                 .distinct()
             )

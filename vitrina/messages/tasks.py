@@ -8,12 +8,11 @@ from vitrina.messages.models import MassMail, SentMail
 
 
 @shared_task
-def send_mass_mail(mass_mail_id: int) -> None:
+def send_mass_mail(mass_mail_id: int, recipients: list[str]) -> None:
     mail = MassMail.objects.filter(pk=mass_mail_id).first()
-    if not mail:
+    if not mail or not recipients:
         return
 
-    recipients = [recipient.strip() for recipient in mail.recipients.split(",") if recipient.strip()]
     batch_size = 50
 
     for i in range(0, len(recipients), batch_size):
@@ -66,7 +65,7 @@ def send_mass_mail_batch(self, mass_mail_id: int, batch: list) -> None:
         deleted=None,
         deleted_on=None,
         version=0,
-        recipient=batch,
+        recipient=",".join(batch),
         email_subject=mail.email_subject,
         email_content=mail.email_content,
         email_sent=email_send,

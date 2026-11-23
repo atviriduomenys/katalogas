@@ -1,7 +1,10 @@
+import re
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from django.core.exceptions import ValidationError
 from django import forms
+from django.core.validators import validate_email
 from django.forms import ModelForm
 from djangocms_text.fields import HTMLFormField
 
@@ -143,3 +146,12 @@ class MassMailAdminForm(ModelForm):
         super().__init__(*args, **kwargs)
         if self.initial.get("send"):
             self.initial["send"] = False
+
+    def clean_recipients(self):
+        recipients = self.cleaned_data.get("recipients", "")
+        recipient_list = [recipient.strip() for recipient in re.split(r"[,;\s]+", recipients) if recipient.strip()]
+
+        for recipient in recipient_list:
+            validate_email(recipient)
+
+        return recipients

@@ -1,4 +1,6 @@
-from django.contrib import admin
+import re
+
+from django.contrib import admin, messages
 from django.db import transaction
 from django.utils.html import format_html
 from django.utils.text import Truncator
@@ -110,7 +112,15 @@ class MassMailAdmin(RevisionCommentVersionAdmin):
         super().save_model(request, obj, form, change)
 
         if "send" in form.changed_data and obj.send:
-            transaction.on_commit(lambda: send_mass_mail.delay(obj.pk))
+            recipients = [recipient.strip() for recipient in re.split(r"[,;\s]+", obj.recipients) if recipient.strip()]
+
+            if recipients:
+                transaction.on_commit(lambda: send_mass_mail.delay(obj.pk, recipients))
+                messages.success(request, f"Laiškas buvo pridėtas į eilę: {len(recipients)} gavėjai.")
+            else:
+                obj.send = False
+                obj.save()
+                messages.error(request, "Gavėjų sąrašas tuščias. Laiškas nebuvo išsiųstas.")
 
 
 admin.site.register(Subscription, SubscriptionAdmin)

@@ -1,8 +1,14 @@
+import re
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from django.core.exceptions import ValidationError
+from django import forms
+from django.core.validators import validate_email
 from django.forms import ModelForm
-from vitrina.messages.models import Subscription
+from djangocms_text.fields import HTMLFormField
+
+from vitrina.messages.models import Subscription, MassMail
 
 from django.utils.translation import gettext_lazy as _
 
@@ -120,3 +126,32 @@ class SubscriptionForm(ModelForm):
             raise ValidationError(_("Būtina pasirinkti bent vieną prenumeratos tipą"))
 
         return self.cleaned_data
+
+
+class MassMailAdminForm(ModelForm):
+    email_content = HTMLFormField(label=_("Turinys"))
+    recipients = forms.CharField(widget=forms.Textarea, label=_("Gavėjai"), required=False)
+
+    class Meta:
+        model = MassMail
+        fields = (
+            "send",
+            "recipient_group",
+            "recipients",
+            "email_subject",
+            "email_content",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.initial.get("send"):
+            self.initial["send"] = False
+
+    def clean_recipients(self):
+        recipients = self.cleaned_data.get("recipients", "")
+        recipient_list = [recipient.strip() for recipient in re.split(r"[,;\s]+", recipients) if recipient.strip()]
+
+        for recipient in recipient_list:
+            validate_email(recipient)
+
+        return recipients

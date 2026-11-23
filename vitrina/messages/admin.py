@@ -1,11 +1,16 @@
-from django.contrib import admin
+import re
+
+from django.contrib import admin, messages
+from django.db import transaction
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.messages.models import Subscription, EmailTemplate, SentMail
+from vitrina.messages.forms import MassMailAdminForm
+from vitrina.messages.models import Subscription, EmailTemplate, SentMail, MassMail
 from django.template import Template
 from vitrina.admin import RevisionCommentVersionAdmin
+from vitrina.messages.tasks import send_mass_mail
 
 
 class SubscriptionAdmin(RevisionCommentVersionAdmin):
@@ -83,6 +88,42 @@ class SentMailAdmin(RevisionCommentVersionAdmin):
     email_content_shortened.short_description = _("Turinys")
 
 
+class MassMailAdmin(RevisionCommentVersionAdmin):
+    list_display = (
+        "send",
+        "recipient_group",
+        "email_subject",
+        "email_content_shortened",
+    )
+    ordering = ("-created",)
+    change_form_template = "vitrina/messages/admin/mass_mail_form.html"
+    list_display_links = ("recipient_group",)
+    form = MassMailAdminForm
+
+    def email_content_shortened(self, obj):
+        if len(obj.email_content) >= 50:
+            return obj.email_content[:50] + "..."
+        else:
+            return obj.email_content
+
+    email_content_shortened.short_description = _("Turinys")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        if "send" in form.changed_data and obj.send:
+            recipients = [recipient.strip() for recipient in re.split(r"[,;\s]+", obj.recipients) if recipient.strip()]
+
+            if recipients:
+                transaction.on_commit(lambda: send_mass_mail.delay(obj.pk, recipients))
+                messages.success(request, f"Laiškas buvo pridėtas į eilę: {len(recipients)} gavėjai.")
+            else:
+                obj.send = False
+                obj.save()
+                messages.error(request, "Gavėjų sąrašas tuščias. Laiškas nebuvo išsiųstas.")
+
+
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(EmailTemplate, EmailTemplateAdmin)
 admin.site.register(SentMail, SentMailAdmin)
+admin.site.register(MassMail, MassMailAdmin)

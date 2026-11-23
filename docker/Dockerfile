@@ -60,10 +60,7 @@ COPY webpack/package.json webpack/package-lock.json ./webpack/
 RUN cd webpack && npm ci
 
 COPY . .
-RUN poetry install --no-interaction --only main && \
-    mkdir -p /out/root-dist && \
-    mv /usr/local/lib/python3.11/site-packages/vitrina.pth \
-       /usr/local/lib/python3.11/site-packages/vitrina-*.dist-info /out/root-dist/
+RUN poetry install --no-interaction --only main
 
 ENV VITRINA_LOCALE_PATH="/app/vitrina/locale"
 ARG DATABASE_URL="postgres://build:build@127.0.0.1:5432/build"
@@ -125,7 +122,6 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --link --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --link --from=builder /out/root-dist/ /usr/local/lib/python3.11/site-packages/
 COPY --link --from=builder /usr/local/bin /usr/local/bin
 COPY --link --from=builder /out/app /app
 

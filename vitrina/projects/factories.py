@@ -15,7 +15,7 @@ class ProjectFactory(DjangoModelFactory):
         model = Project
         django_get_or_create = ("url",)
 
-    url = factory.Faker("url")
+    url = factory.Sequence(lambda n: f"https://example.com/project/{n}")
     version = 1
     title = factory.Faker("catch_phrase")
     image = factory.SubFactory(FilerImageFactory)

@@ -144,3 +144,19 @@ $primary: #007db2;
     border-left-color: $danger;
   }
 }
+
+/* Logout is a POST form; make its button look like the other dropdown links */
+.navbar-logout {
+  width: 100%;
+  padding-right: 3rem;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $navbar-dropdown-item-hover-background-color;
+    color: $navbar-dropdown-item-hover-color;
+  }
+}

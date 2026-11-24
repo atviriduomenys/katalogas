@@ -1,8 +1,10 @@
+import io
 import json
 from urllib.parse import parse_qs
 
 import pytest
 import requests
+import urllib3
 
 from vitrina.sparql import services
 
@@ -113,6 +115,20 @@ def test_unreachable_fuseki_shows_an_error(app, requests_mock):
     response = app.get("/sparql/", {"query": "ASK {}"}, headers=HTML)
 
     assert response.status_code == 200
+    assert response.html.select_one(".message-body").text.strip() == "SPARQL paslauga šiuo metu nepasiekiama."
+
+
+class BrokenBody(io.BytesIO):
+    def read(self, *args, **kwargs):
+        raise urllib3.exceptions.ProtocolError("Connection broken")
+
+
+@pytest.mark.django_db
+def test_broken_connection_while_reading_shows_an_error(app, requests_mock):
+    requests_mock.post(QUERY_URL, body=BrokenBody(), headers={"Content-Type": "text/turtle"})
+
+    response = app.get("/sparql/", {"query": "CONSTRUCT WHERE { ?s ?p ?o }"}, headers=HTML)
+
     assert response.html.select_one(".message-body").text.strip() == "SPARQL paslauga šiuo metu nepasiekiama."
 
 

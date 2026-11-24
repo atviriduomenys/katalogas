@@ -16,7 +16,9 @@ https://github.com/atviriduomenys/katalogas/issues/1419
   every 10 minutes. The page shows the results as a table and has example queries. A SPARQL client
   that sends a SPARQL ``Accept`` header gets the raw Fuseki response.
 - Fuseki is not open to the public: only Django sends queries to it. A query stops after 10 seconds,
-  and a result larger than 5 MB is refused.
+  a result larger than 5 MB is refused, and ``SERVICE`` calls to other endpoints are disabled.
+- Build Fuseki from ``docker/fuseki`` (the image holds its config) in ``docker-compose.yml`` and in
+  both drone compose files.
 - Set ``FUSEKI_URL`` (for example ``http://fuseki:3030/katalogas``) to turn the search on.
 
 https://github.com/atviriduomenys/dvms/issues/513

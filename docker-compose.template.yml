@@ -25,6 +25,7 @@ services:
       - USE_OTP_VALIDATION=False
       - META_SITE_PROTOCOL=https
       - META_SITE_DOMAIN=${BRANCH}.branch-test.data.gov.lt
+      - FUSEKI_URL=http://katalogas-${BRANCH}-fuseki:3030/katalogas
     networks:
       katalogas:
         aliases:
@@ -32,6 +33,7 @@ services:
     depends_on:
       - katalogas-${BRANCH}-database
       - katalogas-${BRANCH}-redis
+      - katalogas-${BRANCH}-fuseki
     volumes:
       - /tmp/${BRANCH}-static:/app/static
 
@@ -51,6 +53,14 @@ services:
   katalogas-${BRANCH}-redis:
     image: redis:latest
     restart: always
+    networks:
+      - katalogas
+
+  katalogas-${BRANCH}-fuseki:
+    build: docker/fuseki
+    restart: always
+    volumes:
+      - ${BRANCH}-fuseki:/fuseki-base/databases
     networks:
       - katalogas
 
@@ -82,6 +92,7 @@ services:
       - USE_OTP_VALIDATION=False
       - META_SITE_PROTOCOL=https
       - META_SITE_DOMAIN=${BRANCH}.branch-test.data.gov.lt
+      - FUSEKI_URL=http://katalogas-${BRANCH}-fuseki:3030/katalogas
     depends_on:
       - katalogas-${BRANCH}-redis
       - katalogas-${BRANCH}-database
@@ -93,6 +104,7 @@ services:
 
 volumes:
   ${BRANCH}-postgres:
+  ${BRANCH}-fuseki:
 
 networks:
   katalogas:

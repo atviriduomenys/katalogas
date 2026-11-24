@@ -59,13 +59,9 @@ services:
       - ./var/redis/redis.conf:/usr/local/etc/redis/redis.conf
 
   fuseki:
-    image: secoresearch/fuseki:6.2.0
+    build: docker/fuseki
     restart: always
-    command: ["java", "-cp", "*:/javalibs/*", "org.apache.jena.fuseki.main.cmds.FusekiServerCmd", "--timeout=10000"]
-    environment:
-      JAVA_TOOL_OPTIONS: -Xmx512m
     volumes:
-      - ./docker/fuseki/assembler.ttl:/fuseki-base/configuration/assembler.ttl:ro
       - fuseki-data:/fuseki-base/databases
     ports:
       - 127.0.0.1:3030:3030

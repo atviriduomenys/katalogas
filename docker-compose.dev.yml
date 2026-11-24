@@ -18,9 +18,11 @@ services:
       - SPINTA_SERVER_URL=https://test.data.gov.lt
       - SPINTA_SERVER_NAME='Test Data Gov'
       - USE_OTP_VALIDATION=False
+      - FUSEKI_URL=http://katalogas-fuseki:3030/katalogas
     depends_on:
       - katalogas-database
       - katalogas-redis
+      - katalogas-fuseki
     volumes:
       - /tmp/static:/app/static:Z
 
@@ -38,6 +40,12 @@ services:
   katalogas-redis:
     image: redis:latest
     restart: always
+
+  katalogas-fuseki:
+    build: docker/fuseki
+    restart: always
+    volumes:
+      - fuseki:/fuseki-base/databases
 
   katalogas-nginx:
     build:
@@ -66,6 +74,7 @@ services:
       - SPINTA_SERVER_URL=https://test.data.gov.lt
       - SPINTA_SERVER_NAME='Test Data Gov'
       - USE_OTP_VALIDATION=False
+      - FUSEKI_URL=http://katalogas-fuseki:3030/katalogas
     depends_on:
       - katalogas-redis
       - katalogas-database
@@ -73,3 +82,4 @@ services:
 
 volumes:
   postgres:
+  fuseki:

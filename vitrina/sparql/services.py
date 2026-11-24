@@ -33,7 +33,11 @@ def run_query(query: str, accept: str) -> SparqlResponse:
             timeout=QUERY_TIMEOUT_SECONDS,
             stream=True,
         ) as response:
-            body = response.raw.read(MAX_RESPONSE_BYTES + 1, decode_content=True)
+            body = bytearray()
+            for chunk in response.iter_content(64 * 1024):
+                body += chunk
+                if len(body) > MAX_RESPONSE_BYTES:
+                    break
     except requests.RequestException as error:
         raise unavailable from error
     if response.status_code == 503:
@@ -44,4 +48,4 @@ def run_query(query: str, accept: str) -> SparqlResponse:
         raise SparqlError(body.decode(errors="replace"), status=response.status_code)
     if len(body) > MAX_RESPONSE_BYTES:
         raise SparqlError(_("Užklausos rezultatas per didelis. Sumažinkite LIMIT reikšmę."), status=400)
-    return SparqlResponse(response.headers.get("Content-Type", "text/plain"), body)
+    return SparqlResponse(response.headers.get("Content-Type", "text/plain"), bytes(body))

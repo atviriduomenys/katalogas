@@ -68,19 +68,16 @@ def _mock_distribution_with_models(*full_names: str) -> MagicMock:
     return distribution
 
 
-def test_fetch_uses_changes_last_row_endpoint():
-    # Regression: :changes silently ignores sort()/limit() and returns _cid ASC,
-    # so the task must use :changes/-1/ to read the latest change, not a sort+limit query.
+def test_fetch_requests_normalized_changes_last_row_url():
     distribution = _mock_distribution_with_models("gov/vmi/ja_nepriemokos/NepriemokosSuma")
 
-    with patch("vitrina.resources.tasks.get_data_from_spinta") as mock_get:
-        mock_get.return_value = {"_data": [{"_created": "2026-05-14T06:12:15.722841"}]}
+    with patch("vitrina.structure.services.requests.get") as mock_get:
+        mock_get.return_value.content = b'{"_data": [{"_created": "2026-05-14T06:12:15.722841"}]}'
         _fetch_spinta_last_modified(distribution)
 
-    mock_get.assert_called_once()
-    args, _kwargs = mock_get.call_args
-    assert args[0] == "gov/vmi/ja_nepriemokos/NepriemokosSuma"
-    assert args[1] == ":changes/-1/"
+    requested_url = mock_get.call_args.args[0]
+    assert requested_url.endswith("/gov/vmi/ja_nepriemokos/NepriemokosSuma/:changes/-1/?")
+    assert "//" not in requested_url.split("://", 1)[1]
 
 
 def test_fetch_returns_max_across_all_models():

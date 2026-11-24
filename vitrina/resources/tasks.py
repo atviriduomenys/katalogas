@@ -118,7 +118,7 @@ def _model_names_from_url(url: str | None) -> list[str] | None:
 
 
 def _fetch_model_last_modified(model_full_name: str, distribution_pk: int) -> datetime | None:
-    data = get_data_from_spinta(model_full_name, ":changes/-1/", timeout=15)
+    data = get_data_from_spinta(model_full_name, ":changes/-1", timeout=15)
 
     if not data:
         return None

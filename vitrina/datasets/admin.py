@@ -312,7 +312,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
                     is_model_url = True
 
                 if is_model_url:
-                    latest_change = get_data_from_spinta(download_url.path, ":changes/-1/", timeout=10)
+                    latest_change = get_data_from_spinta(download_url.path, ":changes/-1", timeout=10)
                     latest_change = latest_change.get("_data")
                     modified = latest_change[0].get("_created") if latest_change else None
                 else:
@@ -321,7 +321,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
 
                     for model in models:
                         if model_name := model.get("name"):
-                            latest_change = get_data_from_spinta(model_name, ":changes/-1/", timeout=10)
+                            latest_change = get_data_from_spinta(model_name, ":changes/-1", timeout=10)
                             latest_change = latest_change.get("_data")
                             latest_change_date = latest_change[0].get("_created") if latest_change else None
 

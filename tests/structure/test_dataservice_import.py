@@ -1,0 +1,992 @@
+import csv
+import io
+import uuid
+from unittest.mock import patch
+
+import pytest
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
+from factory.django import FileField
+from webtest import Upload
+
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.comments.models import Comment
+from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory, DatasetStructureFactory
+from vitrina.datasets.models import Dataset
+from vitrina.datasets.structure import HEADER as FULL_HEADER
+from vitrina.orgs.factories import RepresentativeFactory
+from vitrina.orgs.models import Representative
+from vitrina.structure import VersionStatus
+from vitrina.structure.models import Metadata, Model, Property, PropertyList, Version
+from vitrina.structure.dataservice_import import import_dataservice_structure
+from vitrina.structure.services import create_structure_objects
+from vitrina.users.factories import UserFactory
+
+SERVICE = "datasets/gov/rc/ar/uapi"
+HEADER = "dataset,model,property,type,ref,access\n"
+
+pytestmark = pytest.mark.django_db
+
+
+def _service() -> Dataset:
+    return DatasetServiceFactory(metadata=SERVICE)
+
+
+def _child(service: Dataset, name: str) -> Dataset:
+    dataset = DatasetFactory(metadata=f"{SERVICE}/{name}")
+    # Treebeard moves by the parent's in-memory child count, so it must be fresh.
+    service.refresh_from_db()
+    dataset.move(service, pos="sorted-child")
+    service.refresh_from_db()
+    return Dataset.objects.get(pk=dataset.pk)
+
+
+def _full_header(manifest: str) -> str:
+    # The parser on devel needs every column, so the short test files are written out with the full header.
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=FULL_HEADER, restval="", lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(csv.DictReader(io.StringIO(manifest)))
+    return out.getvalue()
+
+
+def _structure(dataset: Dataset, manifest: str):
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=_full_header(manifest))), dataset=dataset
+    )
+    # Adding a root dataset re-sorts the roots by subclass, so the in-memory tree path may be stale.
+    dataset.refresh_from_db()
+    dataset.current_structure = structure
+    dataset.save()
+    return structure
+
+
+def _import_dataset(dataset: Dataset, manifest: str):
+    return create_structure_objects(_structure(dataset, manifest))
+
+
+def _import_service(service: Dataset, manifest: str, **options):
+    return import_dataservice_structure(_structure(service, manifest), **options)
+
+
+def _names(dataset: Dataset, model) -> list[str]:
+    return sorted(
+        Metadata.objects.filter(dataset=dataset, content_type=ContentType.objects.get_for_model(model)).values_list(
+            "name", flat=True
+        )
+    )
+
+
+def _errors() -> list[str]:
+    return list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).order_by("pk").values_list("body", flat=True))
+
+
+def test_imports_every_listed_dataset_into_its_own_dataset():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE},,,ns,,\n"
+        f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        f"{SERVICE}/addresses,,,,,\n"
+        ",Address,,,id,\n"
+        ",,id,integer,,open\n",
+    )
+
+    assert (result.errors, result.skipped, result.new) == ([], [], [])
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+    assert _names(service, Model) == []
+    assert _errors() == []
+
+
+def test_skips_other_dataservice_and_links_to_its_existing_model():
+    countries = DatasetFactory(metadata="datasets/gov/rc/geo/uapi/countries")
+    _import_dataset(
+        countries,
+        HEADER + "datasets/gov/rc/geo/uapi/countries,,,,,\n,Country,,,id,\n,,id,integer,,open\n,,code,string,,open\n",
+    )
+    service = _service()
+    cities = _child(service, "cities")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/cities,,,,,\n"
+        ",City,,,id,\n"
+        ",,id,integer,,open\n"
+        ",,country,ref,/datasets/gov/rc/geo/uapi/countries/Country,open\n"
+        "datasets/gov/rc/geo/uapi/countries,,,,,\n"
+        ",Country,,,id,\n"
+        ",,id,integer,,open\n",
+    )
+
+    assert result.errors == []
+    assert [skipped.name for skipped in result.skipped] == ["datasets/gov/rc/geo/uapi/countries"]
+    assert _names(countries, Property) == ["code", "id"]
+    country = Property.objects.get(model__dataset=cities, metadata__name="country")
+    assert country.ref_model.dataset == countries
+    assert _errors() == []
+
+
+def test_reference_to_missing_model_is_an_error_note():
+    service = _service()
+    cities = _child(service, "cities")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/cities,,,,,\n"
+        ",City,,,id,\n"
+        ",,id,integer,,open\n"
+        ",,country,ref,/datasets/gov/rc/geo/uapi/countries/Country,open\n",
+    )
+
+    assert result.errors == []
+    assert _names(cities, Property) == ["country", "id"]
+    assert len(_errors()) == 1 and "/datasets/gov/rc/geo/uapi/countries/Country" in _errors()[0]
+
+
+def test_datasets_refer_to_each_other_in_any_order():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/addresses,,,,,\n"
+        ",Address,,,id,\n"
+        ",,id,integer,,open\n"
+        f",,location,ref,/{SERVICE}/locations/Location,open\n"
+        f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        f",,address,ref,/{SERVICE}/addresses/Address,open\n",
+    )
+
+    assert result.errors == []
+    assert _errors() == []
+    location = Property.objects.get(model__dataset=addresses, metadata__name="location")
+    address = Property.objects.get(model__dataset=locations, metadata__name="address")
+    assert (location.ref_model.dataset, address.ref_model.dataset) == (locations, addresses)
+
+
+def test_datasets_not_in_file_are_unchanged():
+    service = _service()
+    locations = _child(service, "locations")
+    streets = _child(service, "streets")
+    _import_dataset(streets, HEADER + f"{SERVICE}/streets,,,,,\n,Street,,,id,\n,,id,integer,,open\n")
+
+    result = _import_service(service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n")
+
+    assert result.errors == []
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+    assert _names(streets, Model) == [f"{SERVICE}/streets/Street"]
+
+
+def test_existing_dataset_keeps_its_details_and_structure_is_replaced():
+    service = _service()
+    locations = _child(service, "locations")
+    locations.title = "Vietovės"
+    locations.save()
+    _import_service(
+        service,
+        HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n,,name,string,,open\n",
+    )
+
+    result = _import_service(
+        service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n", replace_drafts=True
+    )
+
+    locations.refresh_from_db()
+    assert result.errors == []
+    assert locations.title == "Vietovės"
+    assert _names(locations, Property) == ["id"]
+
+
+@pytest.mark.parametrize(
+    "manifest",
+    [
+        HEADER + f"{SERVICE},,,ns,,\n",
+        HEADER + "datasets/gov/rc/geo/uapi/countries,,,,,\n,Country,,,id,\n,,id,integer,,open\n",
+    ],
+)
+def test_file_without_dataset_of_this_dataservice_is_rejected(manifest: str):
+    service = _service()
+    _import_dataset(service, HEADER + f"{SERVICE},,,,,\n,Legacy,,,id,\n,,id,integer,,open\n")
+    locations = _child(service, "locations")
+    versions = Version.objects.count()
+
+    result = _import_service(service, manifest)
+
+    assert len(result.errors) == 1
+    assert _names(service, Model) == [f"{SERVICE}/Legacy"]
+    assert _names(locations, Model) == []
+    assert Version.objects.count() == versions
+
+
+def test_models_in_dataservice_entry_are_not_imported():
+    service = _service()
+    _import_dataset(service, HEADER + f"{SERVICE},,,,,\n,Legacy,,,id,\n,,id,integer,,open\n")
+    locations = _child(service, "locations")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE},,,ns,,\n"
+        ",City,,,id,\n"
+        ",,id,integer,,open\n"
+        f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n",
+    )
+
+    assert result.errors == []
+    assert _names(service, Model) == [f"{SERVICE}/Legacy"]
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+    assert len(_errors()) == 1 and f"„{SERVICE}“" in _errors()[0]
+
+
+def test_dataset_name_used_outside_dataservice_is_an_error_note():
+    service = _service()
+    locations = _child(service, "locations")
+    elsewhere = DatasetFactory(metadata=f"{SERVICE}/streets")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        f"{SERVICE}/streets,,,,,\n"
+        ",Street,,,id,\n"
+        ",,id,integer,,open\n",
+    )
+
+    assert result.errors == []
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+    assert _names(elsewhere, Model) == []
+    assert len(_errors()) == 1 and f"„{SERVICE}/streets“" in _errors()[0]
+
+
+def test_new_dataset_is_listed_and_import_is_rejected_until_confirmed():
+    service = _service()
+    locations = _child(service, "locations")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        f"{SERVICE}/addresses,,,,,\n"
+        ",Address,,,id,\n"
+        ",,id,integer,,open\n",
+    )
+
+    assert result.new == [f"{SERVICE}/addresses"]
+    assert len(result.errors) == 1
+    assert _names(locations, Model) == []
+    assert not service.get_children().filter(metadata__name=f"{SERVICE}/addresses").exists()
+
+
+LOCATIONS = HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n,,name,string,,open\n"
+
+
+def _drafts(dataset: Dataset) -> list[Version]:
+    return list(dataset.dataset_version.filter(status=VersionStatus.DRAFT).order_by("version"))
+
+
+def _release(dataset: Dataset) -> Version:
+    version = _drafts(dataset)[-1]
+    version.status = VersionStatus.STABLE
+    version.save()
+    return version
+
+
+def _uuid(dataset: Dataset, model, name: str, version: Version) -> str:
+    return Metadata.objects.get(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        name=name,
+        metadata_version=version,
+    ).uuid
+
+
+def test_empty_draft_from_dataset_creation_is_reused():
+    service = _service()
+    locations = _child(service, "locations")
+    drafts = _drafts(locations)
+
+    result = _import_service(service, LOCATIONS)
+
+    assert result.errors == []
+    assert _drafts(locations) == drafts
+
+
+def test_dataset_without_draft_gets_a_new_draft_and_released_version_is_unchanged():
+    service = _service()
+    locations = _child(service, "locations")
+    _import_service(service, LOCATIONS)
+    released = _release(locations)
+
+    result = _import_service(service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n")
+
+    assert result.errors == []
+    [draft] = _drafts(locations)
+    assert draft.version > released.version
+    assert sorted(
+        Metadata.objects.filter(metadata_version=released, content_type__model="property").values_list(
+            "name", flat=True
+        )
+    ) == ["id", "name"]
+    assert list(
+        Metadata.objects.filter(metadata_version=draft, content_type__model="property").values_list("name", flat=True)
+    ) == ["id"]
+    location = f"{SERVICE}/locations/Location"
+    assert _uuid(locations, Model, location, draft) == _uuid(locations, Model, location, released)
+
+
+def test_existing_draft_rejects_import_without_changes():
+    service = _service()
+    locations = _child(service, "locations")
+    _import_service(service, LOCATIONS)
+    [draft] = _drafts(locations)
+
+    result = _import_service(service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n")
+
+    assert result.drafts == [f"{SERVICE}/locations"]
+    assert len(result.errors) == 1
+    assert _drafts(locations) == [draft]
+    assert _names(locations, Property) == ["id", "name"]
+
+
+def test_draft_in_one_of_two_datasets_rejects_whole_import():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    _import_service(service, HEADER + f"{SERVICE}/addresses,,,,,\n,Address,,,id,\n,,id,integer,,open\n")
+
+    result = _import_service(
+        service,
+        LOCATIONS + f"{SERVICE}/addresses,,,,,\n,Address,,,id,\n,,id,integer,,open\n",
+    )
+
+    assert result.drafts == [f"{SERVICE}/addresses"]
+    assert _names(locations, Model) == []
+    assert _names(addresses, Property) == ["id"]
+
+
+def test_replacing_drafts_keeps_uuids_and_references_from_other_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    streets = _child(service, "streets")
+    _import_service(service, LOCATIONS)
+    [old_draft] = _drafts(locations)
+    location = f"{SERVICE}/locations/Location"
+    model_uuid = _uuid(locations, Model, location, old_draft)
+    _import_service(
+        service,
+        HEADER + f"{SERVICE}/streets,,,,,\n,Street,,,id,\n,,id,integer,,open\n,,location,ref,/{location},open\n",
+    )
+
+    result = _import_service(
+        service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n", replace_drafts=True
+    )
+
+    assert result.errors == []
+    [new_draft] = _drafts(locations)
+    assert new_draft != old_draft
+    assert not Version.objects.filter(pk=old_draft.pk).exists()
+    assert _uuid(locations, Model, location, new_draft) == model_uuid
+    assert _names(locations, Property) == ["id"]
+    street_location = Property.objects.get(model__dataset=streets, metadata__name="location")
+    assert street_location.ref_model.metadata_version == new_draft
+
+
+NEW_DATASETS = (
+    "dataset,model,property,type,ref,access,title,description\n"
+    f"{SERVICE}/locations,,,,,,Vietovės,Vietovių sąrašas\n"
+    ",Location,,,id,,,\n"
+    ",,id,integer,,open,,\n"
+    f"{SERVICE}/addresses,,,,,,,\n"
+    ",Address,,,id,,,\n"
+    ",,id,integer,,open,,\n"
+)
+
+
+def _representative(user, dataset: Dataset) -> None:
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+
+
+def test_create_missing_creates_datasets_under_dataservice(rf):
+    service = _service()
+
+    result = _import_service(service, NEW_DATASETS, create_missing=True, request=rf.get("/"))
+
+    assert (result.errors, result.new) == ([], [f"{SERVICE}/locations", f"{SERVICE}/addresses"])
+    locations = Dataset.objects.get(metadata__name=f"{SERVICE}/locations")
+    addresses = Dataset.objects.get(metadata__name=f"{SERVICE}/addresses")
+    assert locations.is_child_of(service) and addresses.is_child_of(service)
+    assert (locations.subclass.name, locations.organization, locations.is_public) == (
+        "dataset",
+        service.organization,
+        False,
+    )
+    assert (locations.title, locations.description) == ("Vietovės", "Vietovių sąrašas")
+    # Description is required on the dataset form, so the title stands in for a missing one.
+    assert (addresses.title, addresses.description) == ("addresses", "addresses")
+    assert (locations.access_rights, addresses.access_rights) == (Dataset.PUBLIC, Dataset.PUBLIC)
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+    assert Representative.objects.filter(
+        content_type=ContentType.objects.get_for_model(Dataset),
+        object_id=locations.pk,
+        role=Representative.OPEN_DATA_MANAGER,
+    ).exists()
+
+
+@pytest.mark.parametrize(
+    "dataset_access, model_access, property_access, expected",
+    [
+        ("", "", ("", ""), Dataset.CONFIDENTIAL),
+        ("", "", ("private", ""), Dataset.CONFIDENTIAL),
+        ("", "", ("private", "protected"), Dataset.NON_PUBLIC),
+        ("", "", ("protected", "public"), Dataset.RESTRICTED),
+        ("", "", ("private", "open"), Dataset.PUBLIC),
+        # The most open property decides, even when the dataset itself is private.
+        ("private", "", ("public", ""), Dataset.RESTRICTED),
+        # A property without access inherits it from its model, then from its dataset.
+        ("open", "", ("", ""), Dataset.PUBLIC),
+        ("open", "protected", ("", ""), Dataset.NON_PUBLIC),
+    ],
+)
+def test_new_dataset_access_rights_follow_its_most_open_property(
+    dataset_access: str, model_access: str, property_access: tuple[str, str], expected: str
+):
+    service = _service()
+    first, second = property_access
+
+    _import_service(
+        service,
+        HEADER + f"{SERVICE}/locations,,,,,{dataset_access}\n"
+        f",Location,,,id,{model_access}\n"
+        f",,id,integer,,{first}\n"
+        f",,name,string,,{second}\n",
+        create_missing=True,
+    )
+
+    assert Dataset.objects.get(metadata__name=f"{SERVICE}/locations").access_rights == expected
+
+
+def test_existing_dataset_access_rights_are_unchanged():
+    service = _service()
+    locations = _child(service, "locations")
+    Dataset.objects.filter(pk=locations.pk).update(access_rights=Dataset.CONFIDENTIAL)
+
+    _import_service(service, LOCATIONS)
+
+    assert Dataset.objects.get(pk=locations.pk).access_rights == Dataset.CONFIDENTIAL
+
+
+def test_dataservice_name_with_version_number():
+    service = DatasetServiceFactory(metadata=f"{SERVICE}/2")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/2/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n"
+        f"{SERVICE}/1/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n",
+        create_missing=True,
+    )
+
+    assert result.new == [f"{SERVICE}/2/locations"]
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/1/locations"]
+    locations = Dataset.objects.get(metadata__name=f"{SERVICE}/2/locations")
+    assert locations.is_child_of(service)
+    assert _names(locations, Model) == [f"{SERVICE}/2/locations/Location"]
+
+
+def test_user_without_permission_to_create_datasets_gets_an_error():
+    service = _service()
+
+    result = _import_service(service, NEW_DATASETS, create_missing=True, user=UserFactory())
+
+    assert len(result.errors) == 1
+    assert not service.get_children().exists()
+
+
+def test_user_may_change_only_some_of_the_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    user = UserFactory()
+    _representative(user, addresses)
+
+    result = _import_service(service, NEW_DATASETS, user=user)
+
+    assert result.errors == []
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/locations"]
+    assert _names(locations, Model) == []
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+
+
+def test_user_may_change_none_of_the_datasets_is_rejected():
+    service = _service()
+    locations = _child(service, "locations")
+    _child(service, "addresses")
+
+    result = _import_service(service, NEW_DATASETS, user=UserFactory())
+
+    assert len(result.errors) == 1
+    assert _names(locations, Model) == []
+
+
+def test_agent_organization_may_change_only_its_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    Dataset.objects.filter(pk=addresses.pk).update(organization=service.organization)
+
+    result = _import_service(service, NEW_DATASETS, organization=service.organization)
+
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/locations"]
+    assert _names(locations, Model) == []
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+
+
+def _upload(app, service: Dataset, manifest: str):
+    form = app.get(reverse("dataset-structure-import-no-version", args=[service.pk])).forms["dataset-structure-form"]
+    form["file"] = Upload("file.csv", _full_header(manifest).encode())
+    return form.submit()
+
+
+def _messages(resp) -> list[str]:
+    # The structure page without a version redirects to the latest version.
+    while resp.status_code == 302:
+        resp = resp.follow()
+    return [str(message) for message in resp.context["messages"]]
+
+
+def test_website_import_into_dataservice_shows_one_result(app, settings):
+    # Messages travel in a cookie that is Secure like the session cookie, and the test client uses plain HTTP.
+    settings.SESSION_COOKIE_SECURE = False
+    service = _service()
+    locations = _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(
+        app,
+        service,
+        LOCATIONS + "datasets/gov/rc/geo/uapi/countries,,,,,\n,Country,,,id,\n,,id,integer,,open\n",
+    )
+
+    assert resp.location == reverse("dataset-structure-no-version", args=[service.pk])
+    messages = _messages(resp)
+    assert len(messages) == 2 and "datasets/gov/rc/geo/uapi/countries" in messages[1]
+    assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
+
+
+def test_website_confirms_new_datasets_and_drafts_before_importing(app):
+    service = _service()
+    locations = _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+    _upload(app, service, LOCATIONS)
+
+    resp = _upload(app, service, NEW_DATASETS)
+
+    assert "/confirm/" in resp.location
+    page = resp.follow()
+    assert f"{SERVICE}/addresses" in page and f"{SERVICE}/locations" in page
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/addresses").exists()
+    assert _names(locations, Property) == ["id", "name"]
+
+    resp = page.forms["confirm-form"].submit()
+
+    assert resp.location == reverse("dataset-structure-no-version", args=[service.pk])
+    addresses = Dataset.objects.get(metadata__name=f"{SERVICE}/addresses")
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+    assert _names(locations, Property) == ["id"]
+
+
+def test_website_import_into_dataset_is_unchanged(app):
+    dataset = DatasetFactory(metadata="datasets/gov/example")
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(app, dataset, HEADER + "datasets/gov/example,,,,,\n,City,,,id,\n,,id,integer,,open\n")
+
+    assert "/confirm/" not in resp.location
+    assert _names(dataset, Model) == ["datasets/gov/example/City"]
+
+
+def test_website_import_into_dataservice_is_only_for_staff(app):
+    service = _service()
+    locations = _child(service, "locations")
+    user = UserFactory()
+    _representative(user, service)
+    app.set_user(user)
+    import_url = reverse("dataset-structure-import-no-version", args=[service.pk])
+    structure = _structure(service, LOCATIONS)
+
+    page = app.get(reverse("dataset-structure-no-version", args=[service.pk])).maybe_follow()
+
+    assert import_url not in page
+    assert app.get(import_url, expect_errors=True).status_code == 403
+    confirm_url = reverse("dataservice-structure-import-confirm", args=[service.pk, structure.pk])
+    assert app.post(confirm_url, expect_errors=True).status_code == 403
+    assert _names(locations, Model) == []
+
+
+def test_website_import_into_dataset_is_not_only_for_staff(app):
+    dataset = DatasetFactory(metadata="datasets/gov/example")
+    user = UserFactory()
+    _representative(user, dataset)
+    app.set_user(user)
+
+    resp = _upload(app, dataset, HEADER + "datasets/gov/example,,,,,\n,City,,,id,\n,,id,integer,,open\n")
+
+    assert resp.status_code == 302
+    assert _names(dataset, Model) == ["datasets/gov/example/City"]
+
+
+def test_unreadable_file_is_rejected_without_changes():
+    service = _service()
+    locations = _child(service, "locations")
+    versions = Version.objects.count()
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data="dataset;model\n" + f"{SERVICE}/locations;\n")),
+        dataset=service,
+    )
+
+    result = import_dataservice_structure(structure)
+
+    assert len(result.errors) == 1
+    assert _names(locations, Model) == []
+    assert Version.objects.count() == versions
+
+
+def test_invalid_property_gets_an_error_note_and_the_rest_is_imported():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        ",,code,integer bogus,,open\n"
+        f"{SERVICE}/addresses,,,,,\n"
+        ",Address,,,id,\n"
+        ",,id,integer,,open\n",
+    )
+
+    assert result.errors == []
+    assert _names(locations, Property) == ["id"]
+    assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
+    assert len(_errors()) == 1 and "bogus" in _errors()[0]
+
+
+def _pending(dataset: Dataset, data: str):
+    # An uploaded file the dataset does not point to yet.
+    return DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=data)), dataset=dataset
+    )
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        # A level that is not a number.
+        _full_header(f"dataset,model,property,type,level\n{SERVICE}/locations,,,,\n,Location,,,\n,,id,integer,x\n"),
+        # Columns the parser needs are missing.
+        f"dataset,model,property,type\n{SERVICE}/locations,,,\n,Location,,\n,,id,integer\n",
+    ],
+)
+def test_file_that_cannot_be_parsed_is_rejected_without_changes(data: str):
+    service = _service()
+    _child(service, "locations")
+    versions = Version.objects.count()
+
+    result = import_dataservice_structure(_pending(service, data))
+
+    assert len(result.errors) == 1 and not result.confirmable
+    assert Version.objects.count() == versions
+
+
+def test_dataservice_points_to_the_file_only_after_a_successful_import():
+    service = _service()
+    _child(service, "locations")
+    rejected = _pending(service, _full_header(HEADER + "datasets/gov/rc/geo/uapi/countries,,,,,\n"))
+    unconfirmed = _pending(service, _full_header(NEW_DATASETS))
+    imported = _pending(service, _full_header(LOCATIONS))
+
+    import_dataservice_structure(rejected)
+    import_dataservice_structure(unconfirmed)
+    service.refresh_from_db()
+    assert service.current_structure is None
+
+    import_dataservice_structure(imported)
+    service.refresh_from_db()
+    assert service.current_structure == imported
+
+
+def test_website_cancelled_confirmation_leaves_the_dataservice_file_unchanged(app):
+    service = _service()
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(app, service, NEW_DATASETS)
+
+    assert "/confirm/" in resp.location
+    service.refresh_from_db()
+    assert service.current_structure is None
+
+    resp.follow().forms["confirm-form"].submit()
+
+    service.refresh_from_db()
+    assert service.current_structure.dataset == service
+
+
+LEVELS = "dataset,model,property,type,ref,level\n"
+
+
+def test_replacing_a_draft_sets_the_level_from_the_new_draft():
+    service = _service()
+    locations = _child(service, "locations")
+    _import_service(service, LEVELS + f"{SERVICE}/locations,,,,,\n,Location,,,id,5\n,,id,integer,,5\n")
+
+    _import_service(
+        service, LEVELS + f"{SERVICE}/locations,,,,,\n,Location,,,id,1\n,,id,integer,,1\n", replace_drafts=True
+    )
+
+    assert Dataset.objects.get(pk=locations.pk).metadata.first().average_level == 1
+
+
+def test_replacing_a_draft_keeps_existing_uuids_when_the_file_gives_other_ids():
+    service = _service()
+    locations = _child(service, "locations")
+    ids = "id,dataset,model,property,type,ref,access\n"
+    model_id, property_id = str(uuid.uuid4()), str(uuid.uuid4())
+    _import_service(
+        service, ids + f",{SERVICE}/locations,,,,,\n{model_id},,Location,,,id,\n{property_id},,,id,integer,,open\n"
+    )
+
+    _import_service(
+        service,
+        ids + f",{SERVICE}/locations,,,,,\n{uuid.uuid4()},,Location,,,id,\n{uuid.uuid4()},,,id,integer,,open\n",
+        replace_drafts=True,
+    )
+
+    [draft] = _drafts(locations)
+    assert _uuid(locations, Model, f"{SERVICE}/locations/Location", draft) == model_id
+    assert _uuid(locations, Property, "id", draft) == property_id
+
+
+def _keys(prop: Property) -> list[Property]:
+    """The properties a reference names in brackets, e.g. `id` in `Location[id]`."""
+    items = PropertyList.objects.filter(content_type=ContentType.objects.get_for_model(Property), object_id=prop.pk)
+    return [item.property for item in items.order_by("order")]
+
+
+REFERENCE_WITH_KEY = (
+    HEADER + f"{SERVICE}/locations,,,,,\n"
+    ",Location,,,id,\n"
+    ",,id,integer,,open\n"
+    f"{SERVICE}/addresses,,,,,\n"
+    ",Address,,,id,\n"
+    ",,id,integer,,open\n"
+    f",,location,ref,/{SERVICE}/locations/Location[id],open\n"
+)
+
+
+def test_references_between_datasets_keep_their_keys():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    _import_service(service, REFERENCE_WITH_KEY)
+
+    location = Property.objects.get(model__dataset=addresses, metadata__name="location")
+    [key] = _keys(location)
+    assert (key.model.dataset, key.metadata.first().name) == (locations, "id")
+
+
+def test_replacing_a_draft_keeps_the_keys_of_references_from_other_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    _import_service(service, REFERENCE_WITH_KEY)
+
+    _import_service(
+        service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n", replace_drafts=True
+    )
+
+    [new_draft] = _drafts(locations)
+    location = Property.objects.get(model__dataset=addresses, metadata__name="location")
+    [key] = _keys(location)
+    assert key.metadata_version == new_draft
+
+
+def test_creation_notifications_are_sent_after_the_import_commits(rf, django_capture_on_commit_callbacks):
+    service = _service()
+    notify = "vitrina.structure.dataservice_import.create_tasks_and_notify_subscribers_about_dataset_creation"
+
+    with patch(notify) as notifier:
+        with django_capture_on_commit_callbacks(execute=True):
+            _import_service(service, NEW_DATASETS, create_missing=True, request=rf.get("/"))
+            assert notifier.call_count == 0
+
+        assert notifier.call_count == 2
+
+
+BASES = "dataset,base,model,property,type,ref,access\n"
+CROSS_DATASET_BASE = (
+    BASES + f"{SERVICE}/addresses,,,,,,\n"
+    f",{SERVICE}/locations/Location,,,,,\n"
+    ",,Address,,,id,\n"
+    ",,,id,integer,,open\n"
+    ",/,,,,,\n"
+    f"{SERVICE}/locations,,,,,,\n"
+    ",,Location,,,id,\n"
+    ",,,id,integer,,open\n"
+)
+
+
+def _base_model(dataset: Dataset, name: str) -> Model:
+    return Model.objects.get(dataset=dataset, metadata__name=name).base.model
+
+
+def test_base_from_another_dataset_of_the_file_is_linked():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    result = _import_service(service, CROSS_DATASET_BASE)
+
+    assert result.warnings == []
+    base = _base_model(addresses, f"{SERVICE}/addresses/Address")
+    assert (base.dataset, base.metadata_version) == (locations, _drafts(locations)[-1])
+
+
+def test_replacing_a_draft_keeps_bases_from_other_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    _import_service(service, CROSS_DATASET_BASE)
+
+    _import_service(
+        service, BASES + f"{SERVICE}/locations,,,,,,\n,,Location,,,id,\n,,,id,integer,,open\n", replace_drafts=True
+    )
+
+    [new_draft] = _drafts(locations)
+    assert _base_model(addresses, f"{SERVICE}/addresses/Address").metadata_version == new_draft
+
+
+def test_notes_and_dataset_errors_are_reported_in_the_result():
+    service = _service()
+    locations = _child(service, "locations")
+    other = DatasetFactory(metadata=f"{SERVICE}/elsewhere")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE},,,,,\n"
+        ",Ignored,,,id,\n"
+        f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        ",,code,integer bogus,,open\n"
+        f"{SERVICE}/elsewhere,,,,,\n",
+    )
+
+    assert result.errors == []
+    assert _names(locations, Property) == ["id"]
+    assert len(result.warnings) == 3
+    assert any("eilutėje nurodyti modeliai neįkelti" in warning for warning in result.warnings)
+    assert any("bogus" in warning for warning in result.warnings)
+    assert any(f"{other.name}" in warning for warning in result.warnings)
+
+
+def test_website_shows_the_warnings_of_an_import(app, settings):
+    settings.SESSION_COOKIE_SECURE = False
+    service = _service()
+    _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(app, service, LOCATIONS + ",,code,integer bogus,,open\n")
+
+    assert any("bogus" in message for message in _messages(resp))
+
+
+def _confirm_form(app, service: Dataset, manifest: str):
+    resp = _upload(app, service, manifest)
+    assert "/confirm/" in resp.location
+    return resp.follow().forms["confirm-form"]
+
+
+def test_website_refuses_to_confirm_an_older_upload(app):
+    service = _service()
+    app.set_user(UserFactory(is_staff=True))
+    older = _confirm_form(app, service, NEW_DATASETS)
+    _upload(app, service, HEADER + f"{SERVICE}/streets,,,,,\n,Street,,,id,\n,,id,integer,,open\n")
+
+    older.submit()
+
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/locations").exists()
+
+
+def test_website_refuses_to_confirm_when_the_datasets_changed(app):
+    service = _service()
+    app.set_user(UserFactory(is_staff=True))
+    form = _confirm_form(app, service, NEW_DATASETS)
+    # Someone creates one of the listed datasets after the page was shown.
+    _child(service, "addresses")
+
+    resp = form.submit()
+
+    assert "/confirm/" in resp.location
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/locations").exists()
+
+
+def test_website_confirm_page_of_an_imported_file_does_not_claim_an_import(app, settings):
+    settings.SESSION_COOKIE_SECURE = False
+    service = _service()
+    _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+    assert _messages(_upload(app, service, LOCATIONS)) == ["Duomenų struktūra importuota."]
+    service.refresh_from_db()
+
+    resp = app.get(reverse("dataservice-structure-import-confirm", args=[service.pk, service.current_structure.pk]))
+
+    assert _messages(resp) == ["Šis failas jau importuotas."]
+
+
+STREETS = f"{SERVICE}/streets,,,,,\n,Street,,,id,\n,,id,integer,,open\n"
+
+
+def test_dataset_of_a_dataservice_with_a_longer_name_is_skipped():
+    service = _service()
+    DatasetServiceFactory(metadata=f"{SERVICE}/1")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/1/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n" + STREETS,
+        create_missing=True,
+    )
+
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/1/locations"]
+    assert result.new == [f"{SERVICE}/streets"]
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/1/locations").exists()
+
+
+def test_name_of_a_deleted_dataset_is_skipped():
+    service = _service()
+    deleted = _child(service, "locations")
+    Dataset.objects.filter(pk=deleted.pk).update(deleted=True)
+
+    result = _import_service(service, LOCATIONS + STREETS, create_missing=True)
+
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/locations"]
+    assert result.new == [f"{SERVICE}/streets"]
+    assert list(Dataset.objects.filter(metadata__name=f"{SERVICE}/locations")) == [deleted]

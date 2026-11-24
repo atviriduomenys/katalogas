@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{{ current_title }}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-half">
+            <form id="confirm-form" method="post">
+                {% csrf_token %}
+                {% for name in result.new %}<input type="hidden" name="new" value="{{ name }}">{% endfor %}
+                {% for name in result.drafts %}<input type="hidden" name="drafts" value="{{ name }}">{% endfor %}
+                {% if result.new %}
+                    <p><strong>{% translate "Bus sukurti nauji duomenų rinkiniai:" %}</strong></p>
+                    <ul class="mb-4">
+                        {% for name in result.new %}<li>{{ name }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+                {% if result.drafts %}
+                    <p><strong>{% translate "Bus pakeisti šių duomenų rinkinių juodraščiai, o jų turinys ištrintas:" %}</strong></p>
+                    <ul class="mb-4">
+                        {% for name in result.drafts %}<li>{{ name }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+                {% if result.skipped %}
+                    <p><strong>{% translate "Šie duomenų rinkiniai bus praleisti:" %}</strong></p>
+                    <ul class="mb-4">
+                        {% for skipped in result.skipped %}<li>{{ skipped.name }}: {{ skipped.reason }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+                <a href="{{ cancel_url }}" class="button is-link">{% translate "Atšaukti" %}</a>
+                <input class="button is-primary" type="submit" value="{% translate 'Patvirtinti' %}">
+            </form>
+        </div>
+    </div>
+{% endblock %}

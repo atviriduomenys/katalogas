@@ -785,6 +785,10 @@ FLAGS = {
     "publish_button": [
         {"condition": "boolean", "value": False},
     ],
+    # DSA import into a DataService through the UAPI; on the website it is open to staff users only.
+    "dataservice_import_api": [
+        {"condition": "boolean", "value": False},
+    ],
 }
 
 # Force Tagulous to use same version of select2 as django admin.

@@ -4,6 +4,46 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2846
+
+- Import a DSA file into a DataService: every dataset of the DataService listed in the file is imported
+  into its own draft. Before, only the entry named like the DataService was imported, and a file with
+  only that entry deleted the DataService's models without an error.
+- Skip and list the datasets of other DataServices and the datasets the user may not change. Link
+  references between the datasets of the file in any order.
+- Ask for confirmation before creating new datasets under the DataService or replacing drafts that
+  already have structure. A replaced draft is removed with its content; models keep their UUIDs, and
+  references from other datasets are moved to the new models.
+- Never change the DataService's own models. Models in the DataService's own row get an error note.
+- Import into a DataService through the UAPI (``POST .../Dataset/{id}/dsa/``) the same way. New datasets
+  need ``_create_missing=true`` and drafts with structure need ``_replace_drafts=true``; without them
+  the import is rejected with 400, listing them. A successful import returns 204, or 200 with the
+  skipped datasets when some were skipped. Imports into other datasets still return 204.
+- Open the import into a DataService only to staff users on the website. Through the UAPI it is
+  rejected with 403 unless the ``dataservice_import_api`` feature flag is on (off by default).
+- Fill the required fields of the datasets an import creates: the description falls back to the
+  title, and the access rights come from the most open property access (a property without access
+  inherits it from its model, then its dataset; none at all gives "Konfidencialūs").
+- Allow a version number as a separate part of a DataService code name, e.g. ``.../uapi/1``.
+- Keep the keys of references between datasets, such as ``id`` in ``Location[id]``: look them up in the
+  referenced model's version, and move them to the new properties when a draft is replaced. This also
+  keeps the keys of references to another dataset in a single-dataset import.
+- When a model or property keeps its full name, keep its existing UUID even if the file gives another id.
+- Point the DataService to the uploaded file only after a successful import, also on the website.
+- Reject a file that cannot be parsed (for example a missing column or a level that is not a number)
+  with an error instead of a server error, send new-dataset notifications only after the import is
+  saved, and set the dataset's level after the replaced drafts are removed.
+- Link a ``base`` to a model of another dataset in the same file: the import's drafts are searched
+  before stable versions.
+- Report the parts of the file that were not imported, such as models in the DataService's own row or
+  errors found while loading a dataset, as warnings on the website and in the UAPI response (200 with
+  ``warnings`` next to ``skipped``).
+- Confirm only the latest upload of a DataService that is not imported yet, and only the new datasets
+  and drafts the confirmation page listed. Reopening the page of an imported file no longer reports an
+  import.
+- Skip a dataset that belongs to another DataService with a longer name (``uapi/1/locations`` when
+  importing into ``uapi``), and a dataset whose code name is still used by a deleted dataset.
+
 https://github.com/atviriduomenys/dvms/issues/513
 
 - Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)

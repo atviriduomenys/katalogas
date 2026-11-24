@@ -7711,3 +7711,119 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#, python-format
+msgid "Faile nėra nė vieno šios duomenų paslaugos „%(name)s“ duomenų rinkinio."
+msgstr "The file has no dataset of this DataService \"%(name)s\"."
+
+#, python-format
+msgid ""
+"Faile yra naujų duomenų rinkinių, kurių sukūrimas turi būti patvirtintas: "
+"%(names)s."
+msgstr "The file has new datasets whose creation must be confirmed: %(names)s."
+
+#, python-format
+msgid ""
+"Duomenų paslaugos „%(name)s“ eilutėje nurodyti modeliai neįkelti: duomenų "
+"paslauga neturi savo struktūros, todėl modelius importuokite į jos duomenų "
+"rinkinį."
+msgstr ""
+"The models given in the row of the DataService \"%(name)s\" were not "
+"imported: a DataService has no structure of its own, so import the models "
+"into one of its datasets."
+
+msgid "Duomenų rinkinys nepriklauso šiai duomenų paslaugai."
+msgstr "The dataset does not belong to this DataService."
+
+#, python-format
+msgid "Faile trūksta stulpelio %(column)s."
+msgstr "The file is missing the column %(column)s."
+
+#, python-format
+msgid "Failo nepavyko perskaityti: %(error)s"
+msgstr "The file could not be read: %(error)s"
+
+msgid ""
+"Duomenų rinkiniai pasikeitė nuo patvirtinimo puslapio atidarymo. Patikrinkite "
+"juos dar kartą."
+msgstr ""
+"The datasets have changed since the confirmation page was opened. Check them "
+"again."
+
+msgid "Šis failas jau importuotas."
+msgstr "This file is already imported."
+
+#, python-format
+msgid "Duomenų rinkinys priklauso duomenų paslaugai „%(name)s“."
+msgstr "The dataset belongs to the DataService \"%(name)s\"."
+
+msgid "Šį kodinį pavadinimą naudoja ištrintas duomenų rinkinys."
+msgstr "This code name is used by a deleted dataset."
+
+msgid ""
+"Po šio failo buvo įkeltas naujesnis, todėl šio failo importo patvirtinti "
+"negalima."
+msgstr ""
+"A newer file was uploaded after this one, so the import of this file can no "
+"longer be confirmed."
+
+msgid ""
+"Šiam failui patvirtinimo nebereikia. Įkelkite jį dar kartą, kad jis būtų "
+"importuotas."
+msgstr ""
+"This file no longer needs confirmation. Upload it again to import it."
+
+msgid ""
+"Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
+"(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais. Versijos "
+"numeris nurodomas atskira dalimi, pvz. uapi/1."
+msgstr ""
+"The code name must consist of lowercase Latin letters and/or underscores, "
+"with words separated by underscores. A version number is given as a separate "
+"part, e.g. uapi/1."
+
+#, python-format
+msgid ""
+"Duomenų rinkinys „%(name)s“ jau yra ne šioje duomenų paslaugoje, todėl "
+"neįkeltas."
+msgstr ""
+"The dataset \"%(name)s\" already exists outside this DataService, so it was "
+"not imported."
+
+#, python-format
+msgid ""
+"Šių duomenų rinkinių juodraščiai būtų pakeisti, todėl importas turi būti "
+"patvirtintas: %(names)s."
+msgstr ""
+"The drafts of these datasets would be replaced, so the import must be "
+"confirmed: %(names)s."
+
+msgid "Negalite keisti nė vieno faile nurodyto šios duomenų paslaugos duomenų rinkinio."
+msgstr "You may not change any dataset of this DataService listed in the file."
+
+#, python-format
+msgid "Neturite teisių kurti duomenų rinkinių šioje duomenų paslaugoje: %(names)s."
+msgstr "You may not create datasets in this DataService: %(names)s."
+
+msgid "Neturite teisių keisti šio duomenų rinkinio."
+msgstr "You may not change this dataset."
+
+msgid "Duomenų struktūra importuota."
+msgstr "The data structure was imported."
+
+#, python-format
+msgid "Duomenų rinkinys „%(name)s“ praleistas: %(reason)s"
+msgstr "The dataset \"%(name)s\" was skipped: %(reason)s"
+
+msgid "Struktūros importo patvirtinimas"
+msgstr "Confirm structure import"
+
+msgid "Bus sukurti nauji duomenų rinkiniai:"
+msgstr "These new datasets will be created:"
+
+msgid ""
+"Bus pakeisti šių duomenų rinkinių juodraščiai, o jų turinys ištrintas:"
+msgstr "The drafts of these datasets will be replaced, and their content deleted:"
+
+msgid "Šie duomenų rinkiniai bus praleisti:"
+msgstr "These datasets will be skipped:"

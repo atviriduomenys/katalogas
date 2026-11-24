@@ -206,7 +206,8 @@ def create_or_get_uapi_format():
     return format_obj
 
 
-def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version) -> None:
+def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version, link: bool = True) -> None:
+    """Load the manifest entry named like `dataset`; with link=False the caller links references later."""
     ct = ContentType.objects.get_for_model(dataset)
     existing_metadata = list(
         Metadata.objects.filter(content_type=ct, object_id=dataset.pk, metadata_version=metadata_version)
@@ -304,7 +305,8 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             )
             _load_models(meta, dataset, metadata_version, metadata_cache=metadata_cache)
             _link_distributions(meta, dataset, metadata_version, metadata_cache=metadata_cache)
-            _link_models(dataset, meta, metadata_version, metadata_cache=metadata_cache)
+            if link:
+                _link_models(dataset, meta, metadata_version, metadata_cache=metadata_cache)
             loaded_metadata.append(metadata)
 
         if errors := meta.errors:
@@ -1296,6 +1298,7 @@ def _link_models(
     dataset_meta: struct.Dataset,
     metadata_version: Version,
     metadata_cache: MetadataCache | None = None,
+    preferred_versions: list[Version] | None = None,
 ) -> None:
     model_ct = ContentType.objects.get_for_model(Model)
     prop_ct = ContentType.objects.get_for_model(Property)
@@ -1351,6 +1354,7 @@ def _link_models(
                 metadata_version,
                 existing_base_comments_by_object_id=base_comments_by_object_id,
                 metadata_cache=metadata_cache,
+                preferred_versions=preferred_versions,
             )
 
             if model_meta.ref and model_meta.ref_props:
@@ -1381,11 +1385,13 @@ def _link_models(
                             metadata_version=metadata_version,
                         )
 
-            _link_properties(dataset, model, model_meta, metadata_version)
+            _link_properties(dataset, model, model_meta, metadata_version, preferred_versions)
             model.update_level()
 
 
-def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) -> Model | None:
+def resolve_base_model(
+    base_metadata: struct.Base, metadata_version: Version, preferred_versions: list[Version] | None = None
+) -> Model | None:
     """Retrieves a base model based on metadata, prioritizing specific version or stable status.
 
     This function attempts to find a Model object associated with a given base_metadata.
@@ -1395,6 +1401,8 @@ def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) ->
         2.  Model imported after being referenced as Base: If the model is defined in a separate file and then
             referenced as a base, their `metadata_version`s might differ. In this scenario,
             the function falls back to searching for the newest `STABLE` version of the model.
+        3.  A DataService import loads each dataset into its own draft, so the drafts in `preferred_versions`
+            are searched before the `STABLE` versions.
     """
     model_content_type = ContentType.objects.get_for_model(Model)
     base_filter = Q(metadata__content_type=model_content_type, metadata__name=base_metadata.name)
@@ -1402,6 +1410,7 @@ def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) ->
     queryset = Model.objects.filter(base_filter).order_by("-created")
     return (
         queryset.filter(metadata_version=metadata_version).first()
+        or (preferred_versions and queryset.filter(metadata_version__in=preferred_versions).first())
         or queryset.filter(metadata_version__status=VersionStatus.STABLE).first()
     )
 
@@ -1413,12 +1422,13 @@ def _link_base(
     metadata_version: Version,
     existing_base_comments_by_object_id: dict[int, list[Comment]] | None = None,
     metadata_cache: MetadataCache = None,
+    preferred_versions: list[Version] | None = None,
 ):
     if meta:
         if meta.errors:
             _create_errors(meta.errors, model)
         else:
-            if base_model := resolve_base_model(meta, metadata_version):
+            if base_model := resolve_base_model(meta, metadata_version, preferred_versions):
                 if base_object := Base.objects.filter(
                     metadata__content_type=ContentType.objects.get_for_model(Base),
                     metadata__name=meta.name,
@@ -1470,6 +1480,7 @@ def _link_properties(
     model: Model,
     model_meta: struct.Model,
     metadata_version: Version,
+    preferred_versions: list[Version] | None = None,
 ):
     ct = ContentType.objects.get_for_model(Property)
     model_ct = ContentType.objects.get_for_model(Model)
@@ -1504,10 +1515,17 @@ def _link_properties(
                 property_meta_ref = prop_meta.ref.lstrip("/")
                 # Resolve via Model↔Metadata join (not Metadata-only + in_bulk): batching that path
                 # missed valid targets and left ref_model unset, breaking dependent export / Spinta.
-                if ref_model := Model.objects.filter(
+                ref_models = Model.objects.filter(
                     metadata__name=property_meta_ref,
                     metadata__content_type=model_ct,
-                ).first():
+                )
+                # A DataService import links its datasets together, so their new drafts come first.
+                if (
+                    ref_model := (
+                        preferred_versions and ref_models.filter(metadata_version__in=preferred_versions).first()
+                    )
+                    or ref_models.first()
+                ):
                     prop.ref_model = ref_model
                     prop.save()
 
@@ -1516,10 +1534,11 @@ def _link_properties(
                         ref_props_map = ref_model_props_by_name.setdefault(ref_model.pk, {})
                         missing_names = [n for n in set(ref_props_needed) if n not in ref_props_map]
                         if missing_names:
+                            # The keys belong to the referenced model's version, which differs for another dataset.
                             ref_prop_metadata = Metadata.objects.filter(
                                 content_type=ct,
                                 name__in=missing_names,
-                                metadata_version=metadata_version,
+                                metadata_version=ref_model.metadata_version or metadata_version,
                                 object_id__in=Property.objects.filter(model=ref_model).values_list("id", flat=True),
                             ).only("name", "object_id")
                             ref_prop_rows = list(ref_prop_metadata.values("name", "object_id"))

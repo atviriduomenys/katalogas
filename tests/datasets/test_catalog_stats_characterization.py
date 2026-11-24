@@ -55,13 +55,14 @@ STATS_DATE = datetime.fromisoformat(FROZEN_NOW) - timedelta(days=30)
 @pytest.fixture
 def catalog_stats_data(db):
     organization = OrganizationFactory()
-    subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
-    catalog_a = DatasetFactory(organization=organization, subclass=subclass)
-    catalog_b = DatasetFactory(organization=organization, subclass=subclass)
+    catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+    dataset_subclass = DCATResourceSubclassFactory()
+    catalog_a = DatasetFactory(organization=organization, subclass=catalog_subclass)
+    catalog_b = DatasetFactory(organization=organization, subclass=catalog_subclass)
 
-    ds_a1 = DatasetFactory(slug="ds-a1-catalog", organization=organization)
-    ds_a2 = DatasetFactory(slug="ds-a2-catalog", organization=organization)
-    ds_b = DatasetFactory(slug="ds-b-catalog", organization=organization)
+    ds_a1 = DatasetFactory(slug="ds-a1-catalog", organization=organization, subclass=dataset_subclass)
+    ds_a2 = DatasetFactory(slug="ds-a2-catalog", organization=organization, subclass=dataset_subclass)
+    ds_b = DatasetFactory(slug="ds-b-catalog", organization=organization, subclass=dataset_subclass)
 
     relation = RelationFactory(name=Relation.CATALOG)
     DatasetRelationFactory(relation=relation, dataset=ds_a1, part_of=catalog_a)
@@ -140,13 +141,14 @@ DOWNLOAD_EXPECTED = {
 def catalog_download_stats_data(db):
     organization = OrganizationFactory()
 
-    subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
-    catalog_a = DatasetFactory(organization=organization, subclass=subclass)
-    catalog_b = DatasetFactory(organization=organization, subclass=subclass)
+    catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+    dataset_subclass = DCATResourceSubclassFactory()
+    catalog_a = DatasetFactory(organization=organization, subclass=catalog_subclass)
+    catalog_b = DatasetFactory(organization=organization, subclass=catalog_subclass)
 
-    ds_a1 = DatasetFactory(slug="ds-a1-dl", organization=organization)
-    ds_a2 = DatasetFactory(slug="ds-a2-dl", organization=organization)
-    ds_b = DatasetFactory(slug="ds-b-dl", organization=organization)
+    ds_a1 = DatasetFactory(slug="ds-a1-dl", organization=organization, subclass=dataset_subclass)
+    ds_a2 = DatasetFactory(slug="ds-a2-dl", organization=organization, subclass=dataset_subclass)
+    ds_b = DatasetFactory(slug="ds-b-dl", organization=organization, subclass=dataset_subclass)
 
     relation = RelationFactory(name=Relation.CATALOG)
 

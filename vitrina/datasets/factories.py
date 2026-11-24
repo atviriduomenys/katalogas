@@ -77,7 +77,6 @@ class DatasetTranslationFactory(DjangoModelFactory):
 class DatasetFactory(DjangoModelFactory):
     class Meta:
         model = Dataset
-        django_get_or_create = ("organization", "is_public")
 
     organization = factory.SubFactory(OrganizationFactory)
     uuid = factory.Faker("uuid4")

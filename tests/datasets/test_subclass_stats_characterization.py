@@ -109,13 +109,10 @@ def test_subclass_stats_query_count(subclass_stats_data):
             )
 
     stats_queries = [
-        q for q in ctx.captured_queries
-        if "dataset_statistic" in q["sql"] and "SELECT" in q["sql"].upper()
+        q for q in ctx.captured_queries if "dataset_statistic" in q["sql"] and "SELECT" in q["sql"].upper()
     ]
 
-    assert len(stats_queries) <= 2, (
-        f"Expected ≤2 dataset_statistic SELECT queries but got {len(stats_queries)}."
-    )
+    assert len(stats_queries) <= 2, "Expected ≤2 dataset_statistic SELECT queries but got {len(stats_queries)}."
 
 
 DOWNLOAD_EXPECTED = {
@@ -188,11 +185,7 @@ def test_subclass_download_stats_query_count(subclass_download_stats_data):
             )
 
     download_queries = [
-        q for q in ctx.captured_queries
-        if "model_download_statistic" in q["sql"]
-        and "SELECT" in q["sql"].upper()
+        q for q in ctx.captured_queries if "model_download_statistic" in q["sql"] and "SELECT" in q["sql"].upper()
     ]
 
-    assert len(download_queries) <= 2, (
-        f"Expected ≤2 model_download_statistic SELECTs but got {len(download_queries)}."
-    )
+    assert len(download_queries) <= 2, f"Expected ≤2 model_download_statistic SELECTs but got {len(download_queries)}."

@@ -284,8 +284,9 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelView
                 context={"errors": errors, "new": result.new, "drafts": result.drafts, "skipped": skipped},
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        if skipped:
-            return Response({"skipped": skipped}, status=status.HTTP_200_OK)
+        if skipped or result.warnings:
+            warnings = [str(warning) for warning in result.warnings]
+            return Response({"skipped": skipped, "warnings": warnings}, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["get"], url_path="dsa")

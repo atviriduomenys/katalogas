@@ -1616,6 +1616,8 @@ def show_dataservice_import_result(request: HttpRequest, result: DataServiceImpo
             request,
             _("Duomenų rinkinys „%(name)s“ praleistas: %(reason)s") % {"name": skipped.name, "reason": skipped.reason},
         )
+    for warning in result.warnings:
+        messages.warning(request, warning)
 
 
 class DataServiceStructureImportConfirmView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
@@ -1633,17 +1635,54 @@ class DataServiceStructureImportConfirmView(LoginRequiredMixin, PermissionRequir
         return self.request.user.is_staff and has_perm(self.request.user, Action.CREATE, DatasetStructure, self.dataset)
 
     def get(self, request, *args, **kwargs):
+        if response := self.refuse_outdated_upload():
+            return response
         self.result = import_dataservice_structure(self.structure, user=request.user, request=request, check_only=True)
         if not self.result.confirmable:
-            show_dataservice_import_result(request, self.result)
-            return redirect("dataset-structure-no-version", pk=self.dataset.pk)
+            return self.nothing_to_confirm()
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        if response := self.refuse_outdated_upload():
+            return response
+        check = import_dataservice_structure(self.structure, user=request.user, request=request, check_only=True)
+        if not check.confirmable:
+            return self.nothing_to_confirm(check)
+        # Import only what the page listed: the datasets may have changed since it was shown.
+        if sorted(check.new) != sorted(request.POST.getlist("new")) or sorted(check.drafts) != sorted(
+            request.POST.getlist("drafts")
+        ):
+            messages.warning(
+                request,
+                _("Duomenų rinkiniai pasikeitė nuo patvirtinimo puslapio atidarymo. Patikrinkite juos dar kartą."),
+            )
+            return redirect(request.path)
         result = import_dataservice_structure(
             self.structure, user=request.user, request=request, create_missing=True, replace_drafts=True
         )
         show_dataservice_import_result(request, result)
+        return redirect("dataset-structure-no-version", pk=self.dataset.pk)
+
+    def refuse_outdated_upload(self) -> HttpResponse | None:
+        """Only the latest upload of the DataService that is not imported yet may be confirmed."""
+        if self.dataset.current_structure_id == self.structure.pk:
+            messages.info(self.request, _("Šis failas jau importuotas."))
+        elif DatasetStructure.objects.filter(dataset=self.dataset).latest("pk") != self.structure:
+            messages.warning(
+                self.request, _("Po šio failo buvo įkeltas naujesnis, todėl šio failo importo patvirtinti negalima.")
+            )
+        else:
+            return None
+        return redirect("dataset-structure-no-version", pk=self.dataset.pk)
+
+    def nothing_to_confirm(self, result: DataServiceImport | None = None) -> HttpResponse:
+        result = result or self.result
+        if result.errors:
+            show_dataservice_import_result(self.request, result)
+        else:
+            messages.info(
+                self.request, _("Šiam failui patvirtinimo nebereikia. Įkelkite jį dar kartą, kad jis būtų importuotas.")
+            )
         return redirect("dataset-structure-no-version", pk=self.dataset.pk)
 
     def get_context_data(self, **kwargs):

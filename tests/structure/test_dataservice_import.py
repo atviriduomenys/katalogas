@@ -839,3 +839,154 @@ def test_creation_notifications_are_sent_after_the_import_commits(rf, django_cap
             assert notifier.call_count == 0
 
         assert notifier.call_count == 2
+
+
+BASES = "dataset,base,model,property,type,ref,access\n"
+CROSS_DATASET_BASE = (
+    BASES + f"{SERVICE}/addresses,,,,,,\n"
+    f",{SERVICE}/locations/Location,,,,,\n"
+    ",,Address,,,id,\n"
+    ",,,id,integer,,open\n"
+    ",/,,,,,\n"
+    f"{SERVICE}/locations,,,,,,\n"
+    ",,Location,,,id,\n"
+    ",,,id,integer,,open\n"
+)
+
+
+def _base_model(dataset: Dataset, name: str) -> Model:
+    return Model.objects.get(dataset=dataset, metadata__name=name).base.model
+
+
+def test_base_from_another_dataset_of_the_file_is_linked():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    result = _import_service(service, CROSS_DATASET_BASE)
+
+    assert result.warnings == []
+    base = _base_model(addresses, f"{SERVICE}/addresses/Address")
+    assert (base.dataset, base.metadata_version) == (locations, _drafts(locations)[-1])
+
+
+def test_replacing_a_draft_keeps_bases_from_other_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    _import_service(service, CROSS_DATASET_BASE)
+
+    _import_service(
+        service, BASES + f"{SERVICE}/locations,,,,,,\n,,Location,,,id,\n,,,id,integer,,open\n", replace_drafts=True
+    )
+
+    [new_draft] = _drafts(locations)
+    assert _base_model(addresses, f"{SERVICE}/addresses/Address").metadata_version == new_draft
+
+
+def test_notes_and_dataset_errors_are_reported_in_the_result():
+    service = _service()
+    locations = _child(service, "locations")
+    other = DatasetFactory(metadata=f"{SERVICE}/elsewhere")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE},,,,,\n"
+        ",Ignored,,,id,\n"
+        f"{SERVICE}/locations,,,,,\n"
+        ",Location,,,id,\n"
+        ",,id,integer,,open\n"
+        ",,code,integer bogus,,open\n"
+        f"{SERVICE}/elsewhere,,,,,\n",
+    )
+
+    assert result.errors == []
+    assert _names(locations, Property) == ["id"]
+    assert len(result.warnings) == 3
+    assert any("eilutėje nurodyti modeliai neįkelti" in warning for warning in result.warnings)
+    assert any("bogus" in warning for warning in result.warnings)
+    assert any(f"{other.name}" in warning for warning in result.warnings)
+
+
+def test_website_shows_the_warnings_of_an_import(app, settings):
+    settings.SESSION_COOKIE_SECURE = False
+    service = _service()
+    _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(app, service, LOCATIONS + ",,code,integer bogus,,open\n")
+
+    assert any("bogus" in message for message in _messages(resp))
+
+
+def _confirm_form(app, service: Dataset, manifest: str):
+    resp = _upload(app, service, manifest)
+    assert "/confirm/" in resp.location
+    return resp.follow().forms["confirm-form"]
+
+
+def test_website_refuses_to_confirm_an_older_upload(app):
+    service = _service()
+    app.set_user(UserFactory(is_staff=True))
+    older = _confirm_form(app, service, NEW_DATASETS)
+    _upload(app, service, HEADER + f"{SERVICE}/streets,,,,,\n,Street,,,id,\n,,id,integer,,open\n")
+
+    older.submit()
+
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/locations").exists()
+
+
+def test_website_refuses_to_confirm_when_the_datasets_changed(app):
+    service = _service()
+    app.set_user(UserFactory(is_staff=True))
+    form = _confirm_form(app, service, NEW_DATASETS)
+    # Someone creates one of the listed datasets after the page was shown.
+    _child(service, "addresses")
+
+    resp = form.submit()
+
+    assert "/confirm/" in resp.location
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/locations").exists()
+
+
+def test_website_confirm_page_of_an_imported_file_does_not_claim_an_import(app, settings):
+    settings.SESSION_COOKIE_SECURE = False
+    service = _service()
+    _child(service, "locations")
+    app.set_user(UserFactory(is_staff=True))
+    assert _messages(_upload(app, service, LOCATIONS)) == ["Duomenų struktūra importuota."]
+    service.refresh_from_db()
+
+    resp = app.get(reverse("dataservice-structure-import-confirm", args=[service.pk, service.current_structure.pk]))
+
+    assert _messages(resp) == ["Šis failas jau importuotas."]
+
+
+STREETS = f"{SERVICE}/streets,,,,,\n,Street,,,id,\n,,id,integer,,open\n"
+
+
+def test_dataset_of_a_dataservice_with_a_longer_name_is_skipped():
+    service = _service()
+    DatasetServiceFactory(metadata=f"{SERVICE}/1")
+
+    result = _import_service(
+        service,
+        HEADER + f"{SERVICE}/1/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n" + STREETS,
+        create_missing=True,
+    )
+
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/1/locations"]
+    assert result.new == [f"{SERVICE}/streets"]
+    assert not Dataset.objects.filter(metadata__name=f"{SERVICE}/1/locations").exists()
+
+
+def test_name_of_a_deleted_dataset_is_skipped():
+    service = _service()
+    deleted = _child(service, "locations")
+    Dataset.objects.filter(pk=deleted.pk).update(deleted=True)
+
+    result = _import_service(service, LOCATIONS + STREETS, create_missing=True)
+
+    assert [skipped.name for skipped in result.skipped] == [f"{SERVICE}/locations"]
+    assert result.new == [f"{SERVICE}/streets"]
+    assert list(Dataset.objects.filter(metadata__name=f"{SERVICE}/locations")) == [deleted]

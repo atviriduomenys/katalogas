@@ -1354,6 +1354,7 @@ def _link_models(
                 metadata_version,
                 existing_base_comments_by_object_id=base_comments_by_object_id,
                 metadata_cache=metadata_cache,
+                preferred_versions=preferred_versions,
             )
 
             if model_meta.ref and model_meta.ref_props:
@@ -1388,7 +1389,9 @@ def _link_models(
             model.update_level()
 
 
-def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) -> Model | None:
+def resolve_base_model(
+    base_metadata: struct.Base, metadata_version: Version, preferred_versions: list[Version] | None = None
+) -> Model | None:
     """Retrieves a base model based on metadata, prioritizing specific version or stable status.
 
     This function attempts to find a Model object associated with a given base_metadata.
@@ -1398,6 +1401,8 @@ def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) ->
         2.  Model imported after being referenced as Base: If the model is defined in a separate file and then
             referenced as a base, their `metadata_version`s might differ. In this scenario,
             the function falls back to searching for the newest `STABLE` version of the model.
+        3.  A DataService import loads each dataset into its own draft, so the drafts in `preferred_versions`
+            are searched before the `STABLE` versions.
     """
     model_content_type = ContentType.objects.get_for_model(Model)
     base_filter = Q(metadata__content_type=model_content_type, metadata__name=base_metadata.name)
@@ -1405,6 +1410,7 @@ def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) ->
     queryset = Model.objects.filter(base_filter).order_by("-created")
     return (
         queryset.filter(metadata_version=metadata_version).first()
+        or (preferred_versions and queryset.filter(metadata_version__in=preferred_versions).first())
         or queryset.filter(metadata_version__status=VersionStatus.STABLE).first()
     )
 
@@ -1416,12 +1422,13 @@ def _link_base(
     metadata_version: Version,
     existing_base_comments_by_object_id: dict[int, list[Comment]] | None = None,
     metadata_cache: MetadataCache = None,
+    preferred_versions: list[Version] | None = None,
 ):
     if meta:
         if meta.errors:
             _create_errors(meta.errors, model)
         else:
-            if base_model := resolve_base_model(meta, metadata_version):
+            if base_model := resolve_base_model(meta, metadata_version, preferred_versions):
                 if base_object := Base.objects.filter(
                     metadata__content_type=ContentType.objects.get_for_model(Base),
                     metadata__name=meta.name,

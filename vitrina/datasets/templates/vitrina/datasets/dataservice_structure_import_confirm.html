@@ -8,6 +8,8 @@
         <div class="column is-half">
             <form id="confirm-form" method="post">
                 {% csrf_token %}
+                {% for name in result.new %}<input type="hidden" name="new" value="{{ name }}">{% endfor %}
+                {% for name in result.drafts %}<input type="hidden" name="drafts" value="{{ name }}">{% endfor %}
                 {% if result.new %}
                     <p><strong>{% translate "Bus sukurti nauji duomenų rinkiniai:" %}</strong></p>
                     <ul class="mb-4">

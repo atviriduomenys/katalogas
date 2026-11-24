@@ -1359,6 +1359,16 @@ class TestActionUploadDataServiceStructure:
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert _names(locations, Model) == [f"{SERVICE}/locations/Location"]
 
+    def test_lists_warnings_with_200(self, app: DjangoTestApp, organization: Organization, valid_token: str):
+        service = _dataservice(organization)
+        _dataservice_child(service, organization, "locations")
+
+        response = _post_dsa(app, service, LOCATIONS + ",,code,integer bogus,,open\n", valid_token)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json["skipped"] == []
+        assert len(response.json["warnings"]) == 1 and "bogus" in response.json["warnings"][0]
+
     def test_lists_skipped_datasets_with_200(self, app: DjangoTestApp, organization: Organization, valid_token: str):
         service = _dataservice(organization)
         _dataservice_child(service, organization, "locations")

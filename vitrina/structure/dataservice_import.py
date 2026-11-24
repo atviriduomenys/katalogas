@@ -11,6 +11,7 @@ from django.http import HttpRequest
 from django.utils.translation import get_language, gettext_lazy as _
 
 import vitrina.datasets.structure as struct
+from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.datasets.view_helpers import (
@@ -55,6 +56,8 @@ class DataServiceImport:
     drafts: list[str] = field(default_factory=list)
     # True when the only errors are new datasets or drafts that the user can confirm.
     confirmable: bool = False
+    # Parts of the file that were not imported, stored as error notes too.
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -144,6 +147,7 @@ def import_dataservice_structure(
         return result
 
     with transaction.atomic():
+        last_comment = Comment.objects.order_by("-pk").values_list("pk", flat=True).first() or 0
         for name in result.new:
             meta = state.manifest.datasets[name]
             targets.append(_Target(_create_dataset(service, meta, request), meta))
@@ -152,6 +156,12 @@ def import_dataservice_structure(
             target.dataset = Dataset.objects.get(pk=target.dataset.pk)
         _apply(state, structure, targets, replace_drafts)
         _create_errors(notes, structure)
+        # Errors found while loading are stored on the object they concern, so they are gathered from this import.
+        result.warnings = list(
+            Comment.objects.filter(type=Comment.STRUCTURE_ERROR, pk__gt=last_comment)
+            .order_by("pk")
+            .values_list("body", flat=True)
+        )
         # The DataService points to the file only once it is imported; an update keeps its tree path untouched.
         Dataset.objects.filter(pk=service.pk).update(current_structure=structure)
     return result
@@ -177,6 +187,7 @@ def _read_file(structure: DatasetStructure, result: DataServiceImport) -> struct
 
 def _plan(state: struct.State, service: Dataset, result: DataServiceImport, notes: list[str]) -> list[_Target]:
     targets = []
+    nested = _nested_dataservices(service)
     for name, meta in state.manifest.datasets.items():
         if name == service.name:
             # The DataService has no structure of its own; its own rows never change its models.
@@ -190,8 +201,19 @@ def _plan(state: struct.State, service: Dataset, result: DataServiceImport, note
                 )
         elif not _belongs_to(name, service.name):
             result.skipped.append(SkippedDataset(name, _("Duomenų rinkinys nepriklauso šiai duomenų paslaugai.")))
+        elif owners := [other for other in nested if _belongs_to(name, other)]:
+            result.skipped.append(
+                SkippedDataset(
+                    name, _("Duomenų rinkinys priklauso duomenų paslaugai „%(name)s“.") % {"name": max(owners, key=len)}
+                )
+            )
         elif (dataset := _find_dataset(name, service)) is None:
-            result.new.append(name)
+            if _used_by_deleted_dataset(name):
+                result.skipped.append(
+                    SkippedDataset(name, _("Šį kodinį pavadinimą naudoja ištrintas duomenų rinkinys."))
+                )
+            else:
+                result.new.append(name)
         elif not dataset.is_descendant_of(service):
             notes.append(
                 _("Duomenų rinkinys „%(name)s“ jau yra ne šioje duomenų paslaugoje, todėl neįkeltas.") % {"name": name}
@@ -216,6 +238,26 @@ def _changeable(targets: list[_Target], access: _Access, result: DataServiceImpo
 def _belongs_to(name: str, service_name: str) -> bool:
     # Whole path segments only: "uapi/locations" belongs to "uapi", "uapi2/locations" does not.
     return name.startswith(service_name.rstrip("/") + "/")
+
+
+def _nested_dataservices(service: Dataset) -> list[str]:
+    """Names of other DataServices under this one's name, such as `uapi/1` under `uapi`."""
+    services = Dataset.objects.filter(subclass__name=DCATResourceSubclass.SERVICE).exclude(deleted=True)
+    return list(
+        Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            name__startswith=service.name.rstrip("/") + "/",
+            object_id__in=services.values("pk"),
+        ).values_list("name", flat=True)
+    )
+
+
+def _used_by_deleted_dataset(name: str) -> bool:
+    # The name check while loading counts deleted datasets too, so their names cannot be reused.
+    ids = Metadata.objects.filter(content_type=ContentType.objects.get_for_model(Dataset), name=name).values(
+        "object_id"
+    )
+    return Dataset.objects.filter(pk__in=ids, deleted=True).exists()
 
 
 def _find_dataset(name: str, service: Dataset) -> Dataset | None:

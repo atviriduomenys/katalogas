@@ -33,6 +33,16 @@ https://github.com/atviriduomenys/katalogas/issues/2846
 - Reject a file that cannot be parsed (for example a missing column or a level that is not a number)
   with an error instead of a server error, send new-dataset notifications only after the import is
   saved, and set the dataset's level after the replaced drafts are removed.
+- Link a ``base`` to a model of another dataset in the same file: the import's drafts are searched
+  before stable versions.
+- Report the parts of the file that were not imported, such as models in the DataService's own row or
+  errors found while loading a dataset, as warnings on the website and in the UAPI response (200 with
+  ``warnings`` next to ``skipped``).
+- Confirm only the latest upload of a DataService that is not imported yet, and only the new datasets
+  and drafts the confirmation page listed. Reopening the page of an imported file no longer reports an
+  import.
+- Skip a dataset that belongs to another DataService with a longer name (``uapi/1/locations`` when
+  importing into ``uapi``), and a dataset whose code name is still used by a deleted dataset.
 
 https://github.com/atviriduomenys/dvms/issues/513
 

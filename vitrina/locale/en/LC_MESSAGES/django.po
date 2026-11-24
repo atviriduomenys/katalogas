@@ -7744,6 +7744,36 @@ msgid "Failo nepavyko perskaityti: %(error)s"
 msgstr "The file could not be read: %(error)s"
 
 msgid ""
+"Duomenų rinkiniai pasikeitė nuo patvirtinimo puslapio atidarymo. Patikrinkite "
+"juos dar kartą."
+msgstr ""
+"The datasets have changed since the confirmation page was opened. Check them "
+"again."
+
+msgid "Šis failas jau importuotas."
+msgstr "This file is already imported."
+
+#, python-format
+msgid "Duomenų rinkinys priklauso duomenų paslaugai „%(name)s“."
+msgstr "The dataset belongs to the DataService \"%(name)s\"."
+
+msgid "Šį kodinį pavadinimą naudoja ištrintas duomenų rinkinys."
+msgstr "This code name is used by a deleted dataset."
+
+msgid ""
+"Po šio failo buvo įkeltas naujesnis, todėl šio failo importo patvirtinti "
+"negalima."
+msgstr ""
+"A newer file was uploaded after this one, so the import of this file can no "
+"longer be confirmed."
+
+msgid ""
+"Šiam failui patvirtinimo nebereikia. Įkelkite jį dar kartą, kad jis būtų "
+"importuotas."
+msgstr ""
+"This file no longer needs confirmation. Upload it again to import it."
+
+msgid ""
 "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
 "(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais. Versijos "
 "numeris nurodomas atskira dalimi, pvz. uapi/1."

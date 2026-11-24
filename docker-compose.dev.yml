@@ -61,7 +61,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       target: builder
-    command: celery -A vitrina worker -l info
+    command: celery -A vitrina worker -B -l info
     environment:
       - REDIS_URL=redis://katalogas-redis:6379/
       - DATABASE_URL=postgres://admin:admin123@katalogas-database:5432/katalogas

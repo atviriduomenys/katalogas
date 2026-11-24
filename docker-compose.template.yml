@@ -77,7 +77,7 @@ services:
       dockerfile: docker/Dockerfile
       target: builder
     image: katalogas-${BRANCH}:latest
-    command: celery -A vitrina worker -l info
+    command: celery -A vitrina worker -B -l info
     environment:
       - REDIS_URL=redis://katalogas-${BRANCH}-redis:6379/
       - DATABASE_URL=postgres://admin:admin123@katalogas-${BRANCH}-database:5432/katalogas

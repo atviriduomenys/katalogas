@@ -19,6 +19,8 @@ https://github.com/atviriduomenys/katalogas/issues/1419
   a result larger than 5 MB is refused, and ``SERVICE`` calls to other endpoints are disabled.
 - Build Fuseki from ``docker/fuseki`` (the image holds its config) in ``docker-compose.yml`` and in
   both drone compose files.
+- Run Celery beat inside the celery worker (``-B``) in both drone compose files, so the scheduled
+  tasks, the SPARQL sync among them, also run on devel and branch deployments.
 - Set ``FUSEKI_URL`` (for example ``http://fuseki:3030/katalogas``) to turn the search on.
 
 https://github.com/atviriduomenys/dvms/issues/513

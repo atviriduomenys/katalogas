@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
+from django.http import QueryDict
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
@@ -56,6 +57,8 @@ from vitrina.datasets.models import (
     Type,
     Relation,
     Attribution,
+    DCATResourceSubclass,
+    DatasetGroup,
 )
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
@@ -1100,6 +1103,61 @@ class TestDatasetListView:
         assert len(response.context["object_list"]) == 1
         for ds in response.context["object_list"]:
             assert ds.get_creators() == [creator2.pk]
+
+    def test_hvd_group_select(self, app: DjangoTestApp):
+        hvd_group = DatasetGroupFactory(name=DatasetGroup.HVD)
+        category = CategoryFactory()
+        DatasetGroupCategoryUriFactory(group=hvd_group, category=category)
+        hvd_dataset = DatasetFactory(title="Test 1", status=Dataset.HAS_DATA)
+        hvd_dataset.category.add(category)
+        hvd_dataset.save()
+
+        dataset = DatasetFactory(title="Test 2", status=Dataset.HAS_DATA)
+
+        response = app.get(reverse("dataset-list") + f"?selected_facets=status_exact:{Dataset.HAS_DATA}&q=Test")
+
+        assert response.context["hvd_group_selected"] is False
+        assert QueryDict(response.context["hvd_group_url"].lstrip("?")) == QueryDict(
+            f"selected_facets=status_exact:{Dataset.HAS_DATA}&selected_facets=groups_exact:{hvd_group.pk}&q=Test"
+        )
+        assert sorted([obj.pk for obj in response.context["object_list"]]) == sorted([hvd_dataset.pk, dataset.pk])
+
+        response = response.click(linkid="hvd-group")
+
+        assert response.context["hvd_group_selected"] is True
+        assert QueryDict(response.context["hvd_group_url"].lstrip("?")) == QueryDict(
+            f"selected_facets=status_exact:{Dataset.HAS_DATA}&q=Test"
+        )
+        assert sorted([obj.pk for obj in response.context["object_list"]]) == sorted([hvd_dataset.pk])
+
+    def test_hvd_group_deselect(self, app: DjangoTestApp):
+        hvd_group = DatasetGroupFactory(name=DatasetGroup.HVD)
+        category = CategoryFactory()
+        DatasetGroupCategoryUriFactory(group=hvd_group, category=category)
+        hvd_dataset = DatasetFactory(title="Test 1", status=Dataset.HAS_DATA)
+        hvd_dataset.category.add(category)
+        hvd_dataset.save()
+
+        dataset = DatasetFactory(title="Test 2", status=Dataset.HAS_DATA)
+
+        response = app.get(
+            reverse("dataset-list")
+            + f"?selected_facets=status_exact:{Dataset.HAS_DATA}&selected_facets=groups_exact:{hvd_group.pk}&q=Test"
+        )
+
+        assert response.context["hvd_group_selected"] is True
+        assert QueryDict(response.context["hvd_group_url"].lstrip("?")) == QueryDict(
+            f"selected_facets=status_exact:{Dataset.HAS_DATA}&q=Test"
+        )
+        assert sorted([obj.pk for obj in response.context["object_list"]]) == sorted([hvd_dataset.pk])
+
+        response = response.click(linkid="hvd-group")
+
+        assert response.context["hvd_group_selected"] is False
+        assert QueryDict(response.context["hvd_group_url"].lstrip("?")) == QueryDict(
+            f"selected_facets=status_exact:{Dataset.HAS_DATA}&selected_facets=groups_exact:{hvd_group.pk}&q=Test"
+        )
+        assert sorted([obj.pk for obj in response.context["object_list"]]) == sorted([hvd_dataset.pk, dataset.pk])
 
 
 class TestDatasetUpdateView:
@@ -5135,3 +5193,67 @@ def test_autocomplete_tags_without_limit(app: DjangoTestApp, monkeypatch):
     app.set_user(UserFactory())
     resp = app.get(reverse("autocomplete_tags"), {"q": "wat"})
     assert resp.json == {"options": [{"value": "water", "label": "water"}], "more": False}
+
+
+@pytest.mark.django_db
+def test_dataset_get_catalogs(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    dataset_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+    is_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+    catalog_subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
+
+    dataset = DatasetFactory(organization=organization, subclass=dataset_subclass)
+    is_dataset = DatasetFactory(organization=organization, subclass=is_subclass)
+    catalog_dataset = DatasetFactory(organization=organization, subclass=catalog_subclass)
+
+    relation = RelationFactory(name=Relation.CATALOG)
+    DatasetRelationFactory(relation=relation, dataset=dataset, part_of=catalog_dataset)
+    DatasetRelationFactory(relation=relation, dataset=dataset, part_of=is_dataset)
+
+    assert dataset.get_catalogs() == [catalog_dataset.pk]
+
+
+class TestUpdateDatasetCreatorFilters:
+    def test_filters_creators_no_datasets(self, app: DjangoTestApp):
+        resp = app.get(reverse("update-dataset-creator-filters") + "?term=test")
+        assert len(resp.context["filter_items"]) == 0
+
+    def test_filters_creators_case_insensitive(self, app: DjangoTestApp):
+        organization = OrganizationFactory(title="Test Organization")
+        dataset = DatasetFactory()
+        attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        DatasetAttributionFactory(dataset=dataset, attribution=attribution, organization=organization)
+        dataset.save()
+        resp = app.get(reverse("update-dataset-creator-filters") + "?term=TEST")
+
+        assert [item.title for item in resp.context["filter_items"]] == [organization.title]
+
+    def test_excludes_non_matching_creators(self, app: DjangoTestApp):
+        organization = OrganizationFactory(title="Test Organization")
+        dataset = DatasetFactory()
+        attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        DatasetAttributionFactory(dataset=dataset, attribution=attribution, organization=organization)
+        dataset.save()
+        resp = app.get(reverse("update-dataset-creator-filters") + "?term=xyz")
+
+        assert len(resp.context["filter_items"]) == 0
+
+    def test_does_not_return_filter_items_when_term_too_short(self, app: DjangoTestApp):
+        organization = OrganizationFactory(title="Test Organization")
+        dataset = DatasetFactory()
+        attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        DatasetAttributionFactory(dataset=dataset, attribution=attribution, organization=organization)
+        dataset.save()
+        resp = app.get(reverse("update-dataset-creator-filters") + "?term=Te")
+
+        assert len(resp.context["filter_items"]) == 0
+
+    def test_does_not_return_filter_items_without_term(self, app: DjangoTestApp):
+        organization = OrganizationFactory(title="Test Organization")
+        dataset = DatasetFactory()
+        attribution = Attribution.objects.get(name=Attribution.CREATOR)
+        DatasetAttributionFactory(dataset=dataset, attribution=attribution, organization=organization)
+        dataset.save()
+        resp = app.get(reverse("update-dataset-creator-filters"))
+
+        assert len(resp.context["filter_items"]) == 0

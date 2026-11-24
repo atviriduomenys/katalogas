@@ -339,6 +339,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedListView):
                     is_int=False,
                     use_str=True,
                     default_item_count=0,
+                    expand=False,
                 ),
                 Filter(
                     *filter_args,
@@ -3472,10 +3473,6 @@ class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
             self.object.save()
             self.object.dataset.part_of.add(self.object)
 
-            # need to save to update search index
-            self.object.dataset.save()
-            self.object.part_of.save()
-
         return redirect(self.dataset.get_absolute_url())
 
 
@@ -3493,8 +3490,6 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
-        self.object.dataset.save()
-        self.object.part_of.save()
         add_to_revision(self.object)
         return super().form_valid(form)
 
@@ -3758,6 +3753,7 @@ class UpdateDatasetCreatorFilters(DatasetFilterItemsView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         term = self.request.GET.get("term")
+        items = []
         if term and len(term) > 2:
             facet_fields = context.get("facets").get("fields")
             form = context.get("form")
@@ -3772,13 +3768,12 @@ class UpdateDatasetCreatorFilters(DatasetFilterItemsView):
                 remove_search_query=True,
             )
 
-            items = []
             for item in creator_filter.items():
                 if term.lower() in item.title.lower():
                     items.append(item)
-            extra_context = {"filter_items": items}
-            context.update(extra_context)
-            return context
+        extra_context = {"filter_items": items}
+        context.update(extra_context)
+        return context
 
 
 class UpdateDatasetCategoryFilters(DatasetFilterItemsView):

@@ -101,6 +101,18 @@ https://github.com/atviriduomenys/katalogas/issues/2847
 - Update ``djangorestframework`` to ``3.18``, ``oauthlib`` to ``4.0``, ``django-allauth`` to
   ``65.21``, ``weasyprint`` to ``70.0`` and ``pillow`` to ``13.0``.
 
+https://github.com/atviriduomenys/katalogas/issues/2830
+
+- Add search option for ``Dataset`` ``creator`` filter.
+- Add ``Dataset`` ``subclass`` statistics view.
+- For ``Dataset`` ``tags`` filter leave only search field.
+- Combine ``Dataset`` ``creator`` and ``publisher`` filters with tabs.
+- Show only 5 top values in filters.
+- Move ``HVD`` filter to top section as a button.
+- Remove ``My organization datasets`` link.
+- Add ``Metadata catalog`` filter and its statistics view.
+- Add ``Geoportal`` themed category to landing page.
+
 https://github.com/atviriduomenys/katalogas/issues/2867
 
 - Add ``VIISP_LOGIN_URL`` to .env.

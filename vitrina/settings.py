@@ -816,3 +816,5 @@ MIGRATION_LINTER_OPTIONS = {
         "0010_alter_agentenvironment_uri",
     ],
 }
+
+GEOPORTAL_ID = env("GEOPORTAL_ID", default=3820)

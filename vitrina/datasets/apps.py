@@ -6,3 +6,6 @@ class DatasetsConfig(AppConfig):
     name = "vitrina.datasets"
     label = "vitrina_datasets"
     verbose_name = _("Datasets")
+
+    def ready(self):
+        import vitrina.datasets.signals  # noqa

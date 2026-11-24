@@ -1191,6 +1191,15 @@ class Dataset(Resource):
             ).values_list("organization__pk", flat=True)
         )
 
+    def get_catalogs(self):
+        return [
+            relation.part_of_id
+            for relation in self.dataset_relations.all()
+            if relation.relation.name == Relation.CATALOG
+            and relation.part_of_id is not None
+            and relation.part_of.subclass.is_catalog
+        ]
+
     def published_created_sort(self):
         return self.published or self.created
 

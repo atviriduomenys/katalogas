@@ -152,6 +152,8 @@ def import_dataservice_structure(
             target.dataset = Dataset.objects.get(pk=target.dataset.pk)
         _apply(state, structure, targets, replace_drafts)
         _create_errors(notes, structure)
+        # The DataService points to the file only once it is imported; an update keeps its tree path untouched.
+        Dataset.objects.filter(pk=service.pk).update(current_structure=structure)
     return result
 
 
@@ -161,7 +163,14 @@ def _read_file(structure: DatasetStructure, result: DataServiceImport) -> struct
         result.errors.extend(errors)
         return None
     with open(structure.file.path, encoding=encoding, errors="replace") as f:
-        state = read(csv.DictReader(f))
+        try:
+            state = read(csv.DictReader(f))
+        except KeyError as error:
+            result.errors.append(_("Faile trūksta stulpelio %(column)s.") % {"column": error})
+            return None
+        except ValueError as error:
+            result.errors.append(_("Failo nepavyko perskaityti: %(error)s") % {"error": error})
+            return None
     result.errors.extend(state.errors)
     return state
 
@@ -252,11 +261,13 @@ def _apply(state: struct.State, structure: DatasetStructure, targets: list[_Targ
     versions = [target.version for target in targets]
     for target in targets:
         _link_models(target.dataset, target.meta, target.version, preferred_versions=versions)
-        target.dataset.update_level()
 
     if replaced:
         _move_references(replaced, versions)
         _delete_drafts(replaced)
+    # The level averages every version, so it is set once the replaced drafts are gone.
+    for target in targets:
+        target.dataset.update_level()
 
 
 def _drafts(dataset: Dataset) -> list[Version]:
@@ -277,7 +288,11 @@ def _new_draft(dataset: Dataset) -> Version:
 
 
 def _reuse_ids(dataset: Dataset, meta: struct.Dataset) -> None:
-    """Give the dataset, models and properties without an id the UUID they have in the latest version."""
+    """Give the dataset, models and properties the UUID they have in the latest version.
+
+    An object is identified by its full name, so an existing UUID wins over the file's id. The file's id is kept
+    only for objects that are new.
+    """
     dataset_ct, model_ct = ContentType.objects.get_for_model(Dataset), ContentType.objects.get_for_model(Model)
     property_ct = ContentType.objects.get_for_model(Property)
     rows = (
@@ -302,11 +317,11 @@ def _reuse_ids(dataset: Dataset, meta: struct.Dataset) -> None:
         if model_name := model_names.get(property_models.get(object_id)):
             ids.setdefault((property_ct.pk, model_name, name), uid)
 
-    meta.id = meta.id or ids.get((dataset_ct.pk, meta.name), "")
+    meta.id = ids.get((dataset_ct.pk, meta.name)) or meta.id
     for model_meta in meta.models.values():
-        model_meta.id = model_meta.id or ids.get((model_ct.pk, model_meta.name), "")
+        model_meta.id = ids.get((model_ct.pk, model_meta.name)) or model_meta.id
         for prop_meta in model_meta.properties.values():
-            prop_meta.id = prop_meta.id or ids.get((property_ct.pk, model_meta.name, prop_meta.name), "")
+            prop_meta.id = ids.get((property_ct.pk, model_meta.name, prop_meta.name)) or prop_meta.id
 
 
 def _move_references(replaced: list[Version], versions: list[Version]) -> None:
@@ -326,6 +341,30 @@ def _move_references(replaced: list[Version], versions: list[Version]) -> None:
         if new_id := new_ids.get(old_names.get(base.model_id)):
             base.model_id = new_id
             base.save(update_fields=["model"])
+
+    # Reference keys, such as `id` in `Location[id]`, would be deleted with the old properties.
+    old_keys = _property_keys(replaced, old_names)
+    new_model_names = {model_id: name for name, model_id in new_ids.items()}
+    new_props = {key: prop_id for prop_id, key in _property_keys(versions, new_model_names).items()}
+    for item in PropertyList.objects.filter(property_id__in=old_keys).exclude(metadata_version__in=replaced):
+        if new_id := new_props.get(old_keys[item.property_id]):
+            item.property_id = new_id
+            item.save(update_fields=["property"])
+
+
+def _property_keys(versions: list[Version], model_names: dict[int, str]) -> dict[int, tuple[str, str]]:
+    """Map the properties of `versions` to their model's full name and their own name."""
+    property_ct = ContentType.objects.get_for_model(Property)
+    names = dict(
+        Metadata.objects.filter(content_type=property_ct, metadata_version__in=versions).values_list(
+            "object_id", "name"
+        )
+    )
+    return {
+        prop_id: (model_names[model_id], names[prop_id])
+        for prop_id, model_id in Property.objects.filter(pk__in=names).values_list("pk", "model_id")
+        if model_id in model_names
+    }
 
 
 def _delete_drafts(replaced: list[Version]) -> None:
@@ -364,7 +403,8 @@ def _create_dataset(service: Dataset, meta: struct.Dataset, request: HttpRequest
         metadata_version=version,
     )
     if request is not None:
-        create_tasks_and_notify_subscribers_about_dataset_creation(request, dataset)
+        # Sent only if the whole import succeeds, so nobody is told about a dataset that was rolled back.
+        transaction.on_commit(lambda: create_tasks_and_notify_subscribers_about_dataset_creation(request, dataset))
     create_dataset_representative_and_attribution(dataset)
     return dataset
 

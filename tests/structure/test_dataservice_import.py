@@ -1,5 +1,7 @@
 import csv
 import io
+import uuid
+from unittest.mock import patch
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -15,7 +17,7 @@ from vitrina.datasets.structure import HEADER as FULL_HEADER
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.structure import VersionStatus
-from vitrina.structure.models import Metadata, Model, Property, Version
+from vitrina.structure.models import Metadata, Model, Property, PropertyList, Version
 from vitrina.structure.dataservice_import import import_dataservice_structure
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
@@ -685,3 +687,155 @@ def test_invalid_property_gets_an_error_note_and_the_rest_is_imported():
     assert _names(locations, Property) == ["id"]
     assert _names(addresses, Model) == [f"{SERVICE}/addresses/Address"]
     assert len(_errors()) == 1 and "bogus" in _errors()[0]
+
+
+def _pending(dataset: Dataset, data: str):
+    # An uploaded file the dataset does not point to yet.
+    return DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=data)), dataset=dataset
+    )
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        # A level that is not a number.
+        _full_header(f"dataset,model,property,type,level\n{SERVICE}/locations,,,,\n,Location,,,\n,,id,integer,x\n"),
+        # Columns the parser needs are missing.
+        f"dataset,model,property,type\n{SERVICE}/locations,,,\n,Location,,\n,,id,integer\n",
+    ],
+)
+def test_file_that_cannot_be_parsed_is_rejected_without_changes(data: str):
+    service = _service()
+    _child(service, "locations")
+    versions = Version.objects.count()
+
+    result = import_dataservice_structure(_pending(service, data))
+
+    assert len(result.errors) == 1 and not result.confirmable
+    assert Version.objects.count() == versions
+
+
+def test_dataservice_points_to_the_file_only_after_a_successful_import():
+    service = _service()
+    _child(service, "locations")
+    rejected = _pending(service, _full_header(HEADER + "datasets/gov/rc/geo/uapi/countries,,,,,\n"))
+    unconfirmed = _pending(service, _full_header(NEW_DATASETS))
+    imported = _pending(service, _full_header(LOCATIONS))
+
+    import_dataservice_structure(rejected)
+    import_dataservice_structure(unconfirmed)
+    service.refresh_from_db()
+    assert service.current_structure is None
+
+    import_dataservice_structure(imported)
+    service.refresh_from_db()
+    assert service.current_structure == imported
+
+
+def test_website_cancelled_confirmation_leaves_the_dataservice_file_unchanged(app):
+    service = _service()
+    app.set_user(UserFactory(is_staff=True))
+
+    resp = _upload(app, service, NEW_DATASETS)
+
+    assert "/confirm/" in resp.location
+    service.refresh_from_db()
+    assert service.current_structure is None
+
+    resp.follow().forms["confirm-form"].submit()
+
+    service.refresh_from_db()
+    assert service.current_structure.dataset == service
+
+
+LEVELS = "dataset,model,property,type,ref,level\n"
+
+
+def test_replacing_a_draft_sets_the_level_from_the_new_draft():
+    service = _service()
+    locations = _child(service, "locations")
+    _import_service(service, LEVELS + f"{SERVICE}/locations,,,,,\n,Location,,,id,5\n,,id,integer,,5\n")
+
+    _import_service(
+        service, LEVELS + f"{SERVICE}/locations,,,,,\n,Location,,,id,1\n,,id,integer,,1\n", replace_drafts=True
+    )
+
+    assert Dataset.objects.get(pk=locations.pk).metadata.first().average_level == 1
+
+
+def test_replacing_a_draft_keeps_existing_uuids_when_the_file_gives_other_ids():
+    service = _service()
+    locations = _child(service, "locations")
+    ids = "id,dataset,model,property,type,ref,access\n"
+    model_id, property_id = str(uuid.uuid4()), str(uuid.uuid4())
+    _import_service(
+        service, ids + f",{SERVICE}/locations,,,,,\n{model_id},,Location,,,id,\n{property_id},,,id,integer,,open\n"
+    )
+
+    _import_service(
+        service,
+        ids + f",{SERVICE}/locations,,,,,\n{uuid.uuid4()},,Location,,,id,\n{uuid.uuid4()},,,id,integer,,open\n",
+        replace_drafts=True,
+    )
+
+    [draft] = _drafts(locations)
+    assert _uuid(locations, Model, f"{SERVICE}/locations/Location", draft) == model_id
+    assert _uuid(locations, Property, "id", draft) == property_id
+
+
+def _keys(prop: Property) -> list[Property]:
+    """The properties a reference names in brackets, e.g. `id` in `Location[id]`."""
+    items = PropertyList.objects.filter(content_type=ContentType.objects.get_for_model(Property), object_id=prop.pk)
+    return [item.property for item in items.order_by("order")]
+
+
+REFERENCE_WITH_KEY = (
+    HEADER + f"{SERVICE}/locations,,,,,\n"
+    ",Location,,,id,\n"
+    ",,id,integer,,open\n"
+    f"{SERVICE}/addresses,,,,,\n"
+    ",Address,,,id,\n"
+    ",,id,integer,,open\n"
+    f",,location,ref,/{SERVICE}/locations/Location[id],open\n"
+)
+
+
+def test_references_between_datasets_keep_their_keys():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+
+    _import_service(service, REFERENCE_WITH_KEY)
+
+    location = Property.objects.get(model__dataset=addresses, metadata__name="location")
+    [key] = _keys(location)
+    assert (key.model.dataset, key.metadata.first().name) == (locations, "id")
+
+
+def test_replacing_a_draft_keeps_the_keys_of_references_from_other_datasets():
+    service = _service()
+    locations = _child(service, "locations")
+    addresses = _child(service, "addresses")
+    _import_service(service, REFERENCE_WITH_KEY)
+
+    _import_service(
+        service, HEADER + f"{SERVICE}/locations,,,,,\n,Location,,,id,\n,,id,integer,,open\n", replace_drafts=True
+    )
+
+    [new_draft] = _drafts(locations)
+    location = Property.objects.get(model__dataset=addresses, metadata__name="location")
+    [key] = _keys(location)
+    assert key.metadata_version == new_draft
+
+
+def test_creation_notifications_are_sent_after_the_import_commits(rf, django_capture_on_commit_callbacks):
+    service = _service()
+    notify = "vitrina.structure.dataservice_import.create_tasks_and_notify_subscribers_about_dataset_creation"
+
+    with patch(notify) as notifier:
+        with django_capture_on_commit_callbacks(execute=True):
+            _import_service(service, NEW_DATASETS, create_missing=True, request=rf.get("/"))
+            assert notifier.call_count == 0
+
+        assert notifier.call_count == 2

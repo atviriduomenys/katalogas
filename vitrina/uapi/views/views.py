@@ -284,7 +284,6 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelView
                 context={"errors": errors, "new": result.new, "drafts": result.drafts, "skipped": skipped},
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        Dataset.objects.filter(pk=service.pk).update(current_structure=structure)
         if skipped:
             return Response({"skipped": skipped}, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_204_NO_CONTENT)

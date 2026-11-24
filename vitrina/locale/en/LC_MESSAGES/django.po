@@ -7735,6 +7735,14 @@ msgstr ""
 msgid "Duomenų rinkinys nepriklauso šiai duomenų paslaugai."
 msgstr "The dataset does not belong to this DataService."
 
+#, python-format
+msgid "Faile trūksta stulpelio %(column)s."
+msgstr "The file is missing the column %(column)s."
+
+#, python-format
+msgid "Failo nepavyko perskaityti: %(error)s"
+msgstr "The file could not be read: %(error)s"
+
 msgid ""
 "Kodinis pavadinimas turi būti sudarytas iš mažųjų lotyniškų raidžių ir "
 "(arba) apatinių brūkšnių, žodžius atskiriant apatiniais brūkšniais. Versijos "

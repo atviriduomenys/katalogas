@@ -25,6 +25,14 @@ https://github.com/atviriduomenys/katalogas/issues/2846
   title, and the access rights come from the most open property access (a property without access
   inherits it from its model, then its dataset; none at all gives "Konfidencialūs").
 - Allow a version number as a separate part of a DataService code name, e.g. ``.../uapi/1``.
+- Keep the keys of references between datasets, such as ``id`` in ``Location[id]``: look them up in the
+  referenced model's version, and move them to the new properties when a draft is replaced. This also
+  keeps the keys of references to another dataset in a single-dataset import.
+- When a model or property keeps its full name, keep its existing UUID even if the file gives another id.
+- Point the DataService to the uploaded file only after a successful import, also on the website.
+- Reject a file that cannot be parsed (for example a missing column or a level that is not a number)
+  with an error instead of a server error, send new-dataset notifications only after the import is
+  saved, and set the dataset's level after the replaced drafts are removed.
 
 https://github.com/atviriduomenys/dvms/issues/513
 

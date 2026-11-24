@@ -1527,10 +1527,11 @@ def _link_properties(
                         ref_props_map = ref_model_props_by_name.setdefault(ref_model.pk, {})
                         missing_names = [n for n in set(ref_props_needed) if n not in ref_props_map]
                         if missing_names:
+                            # The keys belong to the referenced model's version, which differs for another dataset.
                             ref_prop_metadata = Metadata.objects.filter(
                                 content_type=ct,
                                 name__in=missing_names,
-                                metadata_version=metadata_version,
+                                metadata_version=ref_model.metadata_version or metadata_version,
                                 object_id__in=Property.objects.filter(model=ref_model).values_list("id", flat=True),
                             ).only("name", "object_id")
                             ref_prop_rows = list(ref_prop_metadata.values("name", "object_id"))

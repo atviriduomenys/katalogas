@@ -1554,10 +1554,10 @@ class DatasetStructureImportView(
         self.object = form.save(commit=False)
         self.object.dataset = self.dataset
         self.object.save()
-        self.object.dataset.current_structure = self.object
-        self.object.dataset.save()
         if self.dataset.subclass.name == DCATResourceSubclass.SERVICE:
             return self.import_into_dataservice()
+        self.object.dataset.current_structure = self.object
+        self.object.dataset.save()
         if self.metadata_version and not self.metadata_version.is_draft():
             form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
             return self.form_invalid(form)

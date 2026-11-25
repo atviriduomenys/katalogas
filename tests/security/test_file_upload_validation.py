@@ -99,6 +99,31 @@ def test_xml_with_stylesheet_pi_is_denied(file_name):
         validate_file(ContentFile(XML_STYLESHEET, name=file_name))
 
 
+XSD_SCHEMA = b'<?xml version="1.0"?>\n<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>\n'
+WSDL_SCHEMA = b'<?xml version="1.0"?>\n<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"/>\n'
+YAML_SCHEMA = b"openapi: 3.0.0\ninfo:\n  title: Test\n  version: 1.0.0\npaths: {}\n"
+
+
+@pytest.mark.parametrize(
+    "file_name, content",
+    [
+        ("schema.xsd", XSD_SCHEMA),
+        ("service.wsdl", WSDL_SCHEMA),
+        ("openapi.yaml", YAML_SCHEMA),
+        ("openapi.yml", YAML_SCHEMA),
+        ("schema.json", b'{"$schema": "https://json-schema.org/draft/2020-12/schema"}'),
+    ],
+)
+def test_schema_uploads_are_allowed(file_name, content):
+    validate_file(ContentFile(content, name=file_name))
+
+
+@pytest.mark.parametrize("file_name", ["schema.xsd", "service.wsdl"])
+def test_schema_with_stylesheet_pi_is_denied(file_name):
+    with pytest.raises(FileValidationError):
+        validate_file(ContentFile(XML_STYLESHEET, name=file_name))
+
+
 def test_xml_stylesheet_pi_past_a_padded_prolog_is_denied():
     # The PI is only honoured before the root element, so padding the prolog with
     # a large comment must not push it out of the scan window (>8 KiB here).

@@ -419,6 +419,7 @@ FILER_MIME_TYPE_WHITELIST = [
     "application/json",
     "application/ld+json",
     "application/geo+json",
+    "application/yaml",  # .yaml/.yml, registered in vitrina.helpers.validate_file
     "application/xml",
     "text/xml",
     "application/rdf+xml",

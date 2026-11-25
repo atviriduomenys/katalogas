@@ -2502,3 +2502,64 @@ class TestOrganizationBasedAgreementNegotiateSign:
         agreement.refresh_from_db()
         # Status should not change because the wrong user tried to sign
         assert agreement.status == AgreementStatuses.INITIATED
+
+
+class TestNavOrganizationSearchView:
+    def test_search_organizations_without_term(self, app: DjangoTestApp):
+        for i in range(6):
+            OrganizationFactory(title=f"Test organization{i}")
+
+        resp = app.get(reverse("nav-organization-search"))
+
+        organizations = resp.json["organizations"]
+        assert len(organizations) == 5
+
+    def test_search_organizations_case_insensitive(self, app: DjangoTestApp):
+        organization = OrganizationFactory(title="Test Organization")
+        DatasetFactory(organization=organization)
+        DatasetFactory(organization=organization)
+
+        resp = app.get(reverse("nav-organization-search") + "?q=TEST")
+
+        organizations = resp.json["organizations"]
+        assert len(organizations) == 1
+        assert organizations[0]["title"] == organization.title
+        assert organizations[0]["url"] == organization.get_absolute_url()
+        assert organizations[0]["dataset_count"] == 2
+
+    def test_search_organizations_with_term_more_than_5(self, app: DjangoTestApp):
+        excluded_org = OrganizationFactory()
+        for i in range(6):
+            OrganizationFactory(title=f"Test organization{i}")
+
+        resp = app.get(reverse("nav-organization-search") + "?q=Test")
+
+        organizations = resp.json["organizations"]
+        assert len(organizations) == 6
+        assert excluded_org.title not in [org["title"] for org in organizations]
+
+    def test_search_organizations_dataset_count_order(self, app: DjangoTestApp):
+        organization1 = OrganizationFactory(title="Organization 1")
+        DatasetFactory(organization=organization1)
+
+        organization2 = OrganizationFactory(title="Organization 2")
+        DatasetFactory(organization=organization2)
+        DatasetFactory(organization=organization2)
+
+        resp = app.get(reverse("nav-organization-search"))
+
+        organizations = resp.json["organizations"]
+        organizations = [org for org in organizations if org["title"] in [organization1.title, organization2.title]]
+        assert len(organizations) == 2
+        assert organizations == [
+            {
+                "title": organization2.title,
+                "url": organization2.get_absolute_url(),
+                "dataset_count": 2,
+            },
+            {
+                "title": organization1.title,
+                "url": organization1.get_absolute_url(),
+                "dataset_count": 1,
+            },
+        ]

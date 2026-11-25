@@ -816,3 +816,7 @@ MIGRATION_LINTER_OPTIONS = {
         "0010_alter_agentenvironment_uri",
     ],
 }
+
+MORE_PAGE_REVERSE_ID = env("MORE_PAGE_REVERSE_ID", default="more")
+HELP_PAGE_REVERSE_ID = env("HELP_PAGE_REVERSE_ID", default="help")
+DATASET_PAGE_REVERSE_ID = env("DATASET_PAGE_REVERSE_ID", default="datasets")

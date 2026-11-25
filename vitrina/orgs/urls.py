@@ -34,6 +34,7 @@ from vitrina.orgs.views import (
     OrganizationBasedAgreementApproveView,
     OrganizationBasedAgreementFormView,
     OrganizationBasedAgreementSignView,
+    NavOrganizationSearchView,
 )
 from vitrina.orgs.views import (
     OrganizationDetailView,
@@ -340,4 +341,5 @@ urlpatterns = [
         OrganizationWizardCreateRedirectView.as_view(),
         name="organization-wizard-create",
     ),
+    path("orgs/nav/search/", NavOrganizationSearchView.as_view(), name="nav-organization-search"),
 ]

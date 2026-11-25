@@ -28,7 +28,10 @@
         {# DYNAMIC CMS MENU #}
         <div id="navbarBasic" class="navbar-menu">
             <div class="navbar-start">
-                <a class="navbar-item" href="#main-content">
+                <a class="navbar-item" href="{% url 'home' %}" aria-label="{% translate 'Į pagrindinį puslapį' %}" title="{% translate 'Į pagrindinį puslapį' %}">
+                    <i class="fa fa-home" aria-hidden="true"></i>
+                </a>
+                <a class="navbar-item main-content-link is-sr-only" href="#main-content">
                     {% translate "Į pagrindinį turinį" %}
                 </a>
             </div>
@@ -57,8 +60,20 @@
                 <div class="navbar-item">
                     {% if user.is_authenticated %}
                         <div class="navbar-item has-dropdown is-hoverable">
-                            <a class="navbar-link"><strong>{{ user }}</strong></a>
+                            <a class="navbar-link user-menu-link" aria-label="{% translate 'Naudotojo meniu' %}">
+                                <span class="icon">
+                                    <i class="fa fa-user" aria-hidden="true"></i>
+                                </span>
+                            </a>
                             <div class="navbar-dropdown">
+                                <div class="pl-3">
+                                    <span>{% translate "Prisijungta kaip" %}<br></span>
+                                    <strong>{{ user }}<br></strong>
+                                    <span>{{ user.organization|default:"" }}</span>
+                                </div>
+
+                                <hr class="navbar-divider">
+
                                 <a href="{% url 'user-profile' pk=user.pk %}" class="navbar-item">
                                     {% translate "Profilis" %}
                                 </a>

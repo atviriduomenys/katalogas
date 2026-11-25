@@ -106,6 +106,14 @@ https://github.com/atviriduomenys/katalogas/issues/2867
 - Add ``VIISP_LOGIN_URL`` to .env.
 - Update ``setings.py`` ``CONTENT_SECURITY_POLICY`` to allow form submissions to VIISP.
 
+https://github.com/atviriduomenys/katalogas/issues/2826
+
+- Add home button to navbar.
+- Main content button is hidden until it gets focus.
+- For data providers and More navbar items are grouped together.
+- User navbar item shows icon instead of user name.
+- Add search for Organization navbar item.
+
 v 1.27.0 (2026-10-23)
 ==================
 

@@ -93,6 +93,19 @@ https://github.com/atviriduomenys/katalogas/issues/2799
   ``MIGRATION_LINTER_OPTIONS``. It adds NOT NULL and a unique index to a small table it has filled and
   locked itself.
 
+https://github.com/atviriduomenys/katalogas/issues/2831
+- Remove like button and stats related to it.
+
+https://github.com/atviriduomenys/katalogas/issues/2847
+
+- Update ``djangorestframework`` to ``3.18``, ``oauthlib`` to ``4.0``, ``django-allauth`` to
+  ``65.21``, ``weasyprint`` to ``70.0`` and ``pillow`` to ``13.0``.
+
+https://github.com/atviriduomenys/katalogas/issues/2867
+
+- Add ``VIISP_LOGIN_URL`` to .env.
+- Update ``setings.py`` ``CONTENT_SECURITY_POLICY`` to allow form submissions to VIISP.
+
 https://github.com/atviriduomenys/katalogas/issues/2858
 
 - Remove Dataset and Publisher sections from the landing page.

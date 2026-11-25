@@ -8,6 +8,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import get_language
 
 from vitrina.orgs.models import Organization
+from vitrina.settings import MORE_PAGE_REVERSE_ID, HELP_PAGE_REVERSE_ID, DATASET_PAGE_REVERSE_ID
 
 register = template.Library()
 
@@ -36,15 +37,16 @@ def _render_menu(language: str) -> str:
     published_ids = _published_nav_page_ids(language)
     pages = Page.objects.filter(pk__in=published_ids, parent__isnull=True).order_by("path")
 
-    help_pages = pages.filter(Q(pagecontent_set__title="Daugiau") | Q(pagecontent_set__title="Pagalba atvėrėjams"))
+    help_pages = pages.filter(Q(reverse_id=MORE_PAGE_REVERSE_ID) | Q(reverse_id=HELP_PAGE_REVERSE_ID))
     help_page_ids = set(help_pages.values_list("pk", flat=True))
 
     organization_count = Organization.public.count()
-    organizations = (
-        Organization.public.filter(dataset__search_doc__isnull=False)
-        .annotate(dataset_count=Count("dataset"))
-        .order_by("-dataset_count")
-    )
+    organizations = Organization.public.annotate(
+        dataset_count=Count(
+            "dataset",
+            filter=Q(dataset__search_doc__isnull=False),
+        )
+    ).order_by("-dataset_count")[:5]
 
     return render_to_string(
         "menu.html",
@@ -58,6 +60,7 @@ def _render_menu(language: str) -> str:
             "help_pages": {page: page.children.filter(pk__in=published_ids).order_by("path") for page in help_pages},
             "organization_count": organization_count,
             "organizations": organizations,
+            "dataset_page_reverse_id": DATASET_PAGE_REVERSE_ID,
         },
     )
 

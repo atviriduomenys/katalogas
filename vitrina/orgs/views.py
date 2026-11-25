@@ -3174,3 +3174,30 @@ def check_organization(request):
     company_code = request.GET.get("company_code")
     exists = Organization.objects.filter(company_code=company_code).exists()
     return JsonResponse({"exists": exists})
+
+
+class NavOrganizationSearchView(View):
+    def get(self, request):
+        query = request.GET.get("q", "").strip()
+        organizations = Organization.public.annotate(
+            dataset_count=Count(
+                "dataset",
+                filter=Q(dataset__search_doc__isnull=False),
+            )
+        )
+
+        if query:
+            organizations = organizations.filter(title__icontains=query).order_by("-dataset_count")
+        else:
+            organizations = organizations.order_by("-dataset_count")[:5]
+
+        results = [
+            {
+                "title": organization.title,
+                "url": organization.get_absolute_url(),
+                "dataset_count": organization.dataset_count,
+            }
+            for organization in organizations
+        ]
+
+        return JsonResponse({"organizations": results})

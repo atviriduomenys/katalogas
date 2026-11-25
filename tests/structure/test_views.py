@@ -29,7 +29,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.orgs.models import Representative, Organization
 from vitrina.resources.factories import DatasetDistributionFactory
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, DistributionSchemaFile
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import VersionStatus, UMLDiagramStatus
 from vitrina.structure.factories import (
@@ -9121,3 +9121,60 @@ class TestModelScopeDelete:
 
         assert post_resp.status_code == HTTPStatus.FOUND
         assert ModelScope.objects.filter(pk=scope.pk).exists()
+
+
+@pytest.mark.django_db
+def test_dataset_structure_shows_distribution_schema_files(app: DjangoTestApp):
+    version = VersionFactory()
+    dataset = version.dataset
+    distribution = DatasetDistributionFactory(dataset=dataset, metadata_version=version, title="Šaltinis")
+    schema = FilerFileFactory(
+        file=FileField(filename="schema.xsd", data=b"<schema/>"),
+        original_filename="schema.xsd",
+    )
+    DistributionSchemaFile.objects.create(distribution=distribution, file=schema)
+
+    resp = app.get(reverse("dataset-structure", args=[dataset.pk, version.pk]))
+
+    link = resp.html.find("a", href=schema.url)
+    assert link is not None
+    assert link.text.strip() == "schema.xsd"
+    assert "Šaltinis" in resp.html.find(id="distribution-schemas").text
+
+
+@pytest.mark.django_db
+def test_new_version_copies_distribution_schema_files(app: DjangoTestApp):
+    app.set_user(UserFactory(is_staff=True))
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset_meta.metadata_version
+    distribution = DatasetDistributionFactory(dataset=dataset, metadata_version=version)
+    distribution_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(distribution),
+        object_id=distribution.pk,
+        dataset=dataset,
+        name="test/dataset/sql",
+        metadata_version=version,
+    )
+    model = ModelFactory(dataset=dataset, metadata_version=version, distribution=distribution)
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    schema = FilerFileFactory(file=FileField(filename="schema.xsd", data=b"<schema/>"))
+    DistributionSchemaFile.objects.create(distribution=distribution, file=schema)
+
+    form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
+    form["released"] = datetime.date.today() + datetime.timedelta(days=14)
+    form["version_type"] = "MAJOR"
+    form["metadata"] = [dataset_meta.pk, model_meta.pk, distribution_meta.pk]
+    form["description"] = "Publish"
+    form.submit()
+
+    published = _Version.objects.exclude(status=VersionStatus.DRAFT).get()
+    published_distribution = DatasetDistribution.objects.get(dataset=dataset, metadata_version=published)
+    assert list(published_distribution.schema_files.values_list("file", flat=True)) == [schema.pk]
+    assert list(distribution.schema_files.values_list("file", flat=True)) == [schema.pk]

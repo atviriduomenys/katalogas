@@ -10,7 +10,7 @@ from parler.forms import TranslatedField, TranslatableModelForm
 from vitrina.classifiers.models import Licence, Concept
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerFileField, StringListField, URIFormField
+from vitrina.fields import FilerFileField, MultipleFilerField, StringListField, URIFormField
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import AccessType
 from django.db.models import Case, When, IntegerField
@@ -102,6 +102,16 @@ class DatasetResourceForm(TranslatableModelForm):
             "duomenų failus, galima talpinti ir kataloge."
         ),
         required=False,
+    )
+    schema_files = MultipleFilerField(
+        label=_("Schemos failas"),
+        help_text=_(
+            "Formato, kuriuo teikiami duomenys, schema (JSON Schema, XSD, WSDL, OpenAPI), "
+            "jei duomenys teikiami ne pagal UDTS specifikaciją."
+        ),
+        required=False,
+        upload_to=DatasetDistribution.UPLOAD_TO,
+        allow_empty_file=True,
     )
     data_service = forms.ModelChoiceField(
         label=_("Duomenų paslauga"),
@@ -201,6 +211,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("status"),
             Field("file", placeholder=_("Pateikties failas")),
             Field("download_url"),
+            Field("schema_files"),
             Field("imported"),
             Field("data_service"),
             Field("upload_to_storage"),
@@ -220,6 +231,7 @@ class DatasetResourceForm(TranslatableModelForm):
             self.initial["applicable_legislation"] = list(
                 self.resource.applicable_legislation.values_list("url", flat=True)
             )
+            self.initial["schema_files"] = list(self.resource.schema_files.values_list("file", flat=True))
 
         if self.resource and self.resource.metadata.first():
             metadata = self.resource.metadata.first()

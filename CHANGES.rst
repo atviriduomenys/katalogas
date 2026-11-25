@@ -30,6 +30,16 @@ https://github.com/atviriduomenys/katalogas/issues/1419
   tasks, the SPARQL sync among them, also run on devel and branch deployments.
 - Set ``FUSEKI_URL`` (for example ``http://fuseki:3030/katalogas``) to turn the search on.
 
+https://github.com/atviriduomenys/katalogas/issues/2870
+
+- Let a user attach one or more schema files (JSON Schema, XSD, WSDL, OpenAPI) to a distribution
+  (DSA resource) in the distribution form and in the DCAT wizard. The structure page shows the
+  attached schemas in a new "Šaltiniai" section, with a download link for each file.
+- Copy the schema files to the new distribution when a structure version is published. A new DSA
+  import into the same version keeps them, because the import reuses the distribution row.
+- Accept ``.xsd``, ``.wsdl``, ``.yaml`` and ``.yml`` uploads. XSD and WSDL are checked as XML, so a
+  file with an ``<?xml-stylesheet?>`` instruction is rejected.
+
 https://github.com/atviriduomenys/dvms/issues/513
 
 - Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)

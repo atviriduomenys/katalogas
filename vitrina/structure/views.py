@@ -45,7 +45,7 @@ from vitrina.helpers import get_current_domain, email, none_to_string, object_to
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, DistributionSchemaFile
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import spyna
 from vitrina.structure.forms import (
@@ -292,6 +292,17 @@ class DatasetStructureView(
         context["version"] = dataset.dataset_version.filter(deployed__isnull=False).order_by("-deployed").first()
         context["version_id"] = self.metadata_version.pk if self.metadata_version else None
         context["has_structure"] = self.models.exists()
+        context["schema_distributions"] = (
+            DatasetDistribution.objects.filter(
+                dataset=dataset,
+                metadata_version=self.metadata_version,
+                schema_files__isnull=False,
+            )
+            .distinct()
+            .prefetch_related("translations", "schema_files__file")
+            if self.metadata_version
+            else []
+        )
         return context
 
     def get_structure_url(self):
@@ -3793,6 +3804,10 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         new_related_instance.save()
 
         if isinstance(old_related_instance, DatasetDistribution):
+            DistributionSchemaFile.objects.bulk_create(
+                DistributionSchemaFile(distribution=new_related_instance, file_id=schema_file.file_id)
+                for schema_file in old_related_instance.schema_files.all()
+            )
             for translation in old_related_instance.translations.all():
                 lang = translation.language_code
                 title = getattr(translation, "title", "") or ""

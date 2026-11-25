@@ -146,6 +146,7 @@ class ResourceCreateView(
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             resource.update_applicable_legislation(applicable_legislation_urls)
 
+        resource.add_schema_files(form.cleaned_data.get("schema_files", []))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -211,6 +212,7 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
         if "applicable_legislation" in form.changed_data:
             resource.update_applicable_legislation(applicable_legislation_urls)
 
+        resource.add_schema_files(form.cleaned_data.get("schema_files", []))
         resource.save()
         return redirect(resource.get_absolute_url())
 

@@ -10,7 +10,7 @@ from vitrina.classifiers.models import Concept, FormFieldText, Licence
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.fields import StringListField, URIFormField
+from vitrina.fields import MultipleFilerField, StringListField, URIFormField
 from vitrina.resources.models import (
     DatasetDistribution,
     DISTRIBUTION_STANDARD_URI,
@@ -26,6 +26,16 @@ class DatasetDistributionForm(TranslatableModelForm):
         help_text=_("Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."),
         required=False,
         unique=True,
+    )
+    schema_files = MultipleFilerField(
+        label=_("Schemos failas"),
+        help_text=_(
+            "Formato, kuriuo teikiami duomenys, schema (JSON Schema, XSD, WSDL, OpenAPI), "
+            "jei duomenys teikiami ne pagal UDTS specifikaciją."
+        ),
+        required=False,
+        upload_to=DatasetDistribution.UPLOAD_TO,
+        allow_empty_file=True,
     )
 
     class Meta:
@@ -117,6 +127,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             Field("languages"),
             Field("conforms_to"),
             Field("documentation"),
+            Field("schema_files"),
             Field("conditions"),
             Field("rights_relation"),
             Field("spatial_resolution"),
@@ -171,6 +182,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             )
             if resource_metadata := self.resource.metadata.first():
                 self.initial["name"] = resource_metadata.name
+            self.initial["schema_files"] = list(self.resource.schema_files.values_list("file", flat=True))
 
         apply_dynamic_help_texts(self, FormFieldText.DCAT_DISTRIBUTION)
 

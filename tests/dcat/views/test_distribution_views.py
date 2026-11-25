@@ -8,6 +8,7 @@ from vitrina.structure import VersionStatus
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from webtest import Upload
 
 from vitrina.classifiers.factories import ConceptFactory, LicenceFactory
 from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI
@@ -515,6 +516,26 @@ class TestDcatDistributionUpdateView:
         response = form.submit()
 
         assert response.status_code == 200
+
+    def test_post_adds_schema_files(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org, is_public=False)
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        distribution = DatasetDistributionFactory(
+            dataset=dataset, availability=ConceptFactory(concept_schemas=[availability_schema])
+        )
+        app.set_user(UserFactory(is_staff=True))
+
+        url = reverse(
+            "dcat-distribution-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk, "distribution_id": distribution.pk},
+        )
+        form = app.get(url).forms["wizard-fragment-form"]
+        form["access_url"] = "https://example.com/updated"
+        form["schema_files"] = [Upload("service.wsdl", b'<?xml version="1.0"?>\n<definitions/>\n')]
+        form.submit()
+
+        assert list(distribution.schema_files.values_list("file__original_filename", flat=True)) == ["service.wsdl"]
 
     def test_post_updates_metadata_when_it_exists(self, app: DjangoTestApp):
         org = OrganizationFactory()

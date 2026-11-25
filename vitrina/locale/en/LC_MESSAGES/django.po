@@ -7737,3 +7737,18 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#: vitrina/dcat/forms/distribution_forms.py
+#: vitrina/resources/forms.py
+#: vitrina/resources/models.py
+msgid "Schemos failas"
+msgstr "Schema file"
+
+#: vitrina/dcat/forms/distribution_forms.py
+#: vitrina/resources/forms.py
+msgid "Formato, kuriuo teikiami duomenys, schema (JSON Schema, XSD, WSDL, OpenAPI), jei duomenys teikiami ne pagal UDTS specifikaciją."
+msgstr "The schema of the format in which the data is provided (JSON Schema, XSD, WSDL, OpenAPI), if the data is not provided according to the UDTS specification."
+
+#: vitrina/structure/templates/vitrina/structure/dataset_structure.html
+msgid "Šaltiniai"
+msgstr "Sources"

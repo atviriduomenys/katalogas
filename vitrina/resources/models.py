@@ -654,3 +654,23 @@ class DatasetDistribution(TranslatableModel):
             self.metadata_version = None
             self.save()
             self.metadata.all().delete()
+
+    def add_schema_files(self, files: list) -> None:
+        for file in files:
+            DistributionSchemaFile.objects.get_or_create(distribution=self, file=file)
+
+
+class DistributionSchemaFile(models.Model):
+    distribution = models.ForeignKey(
+        DatasetDistribution,
+        verbose_name=_("Pateiktis"),
+        on_delete=models.CASCADE,
+        related_name="schema_files",
+    )
+    file = FilerFileField(verbose_name=_("Schemos failas"), on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "distribution_schema_file"
+
+    def filename_without_path(self) -> str:
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""

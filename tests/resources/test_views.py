@@ -2,6 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from webtest import Upload
 from unittest.mock import patch
 
 from vitrina import settings
@@ -1056,3 +1057,49 @@ def test_datatable_renders_when_data_last_updated_is_null(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-detail", kwargs={"pk": resource.dataset_id})).follow()
     assert resp.status_code == 200
+
+
+XSD_SCHEMA = b'<?xml version="1.0"?>\n<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>\n'
+
+
+@pytest.mark.django_db
+def test_add_form_with_schema_files(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension="URL")
+    app.set_user(UserFactory(is_staff=True, organization=dataset.organization))
+    form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
+    form["format"] = file_format.id
+    form["download_url"] = "http://www.google.lt"
+    form["schema_files"] = [Upload("schema.xsd", XSD_SCHEMA), Upload("openapi.yaml", b"openapi: 3.0.0\n")]
+    resp = form.submit()
+    assert resp.status_code == 302
+    distribution = DatasetDistribution.objects.get()
+    assert sorted(distribution.schema_files.values_list("file__original_filename", flat=True)) == [
+        "openapi.yaml",
+        "schema.xsd",
+    ]
+
+
+@pytest.mark.django_db
+def test_change_form_with_schema_files(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    app.set_user(UserFactory(is_staff=True, organization=resource.dataset.organization))
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": resource.id})).forms["resource-form"]
+    form["schema_files"] = [Upload("schema.xsd", XSD_SCHEMA)]
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert list(resource.schema_files.values_list("file__original_filename", flat=True)) == ["schema.xsd"]
+
+
+@pytest.mark.django_db
+def test_change_form_rejects_schema_with_stylesheet(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    app.set_user(UserFactory(is_staff=True, organization=resource.dataset.organization))
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": resource.id})).forms["resource-form"]
+    form["schema_files"] = [
+        Upload("schema.xsd", b'<?xml version="1.0"?>\n<?xml-stylesheet type="text/xsl" href="e.xsl"?>\n<root/>\n')
+    ]
+    resp = form.submit()
+    assert resp.status_code == 200
+    assert "schema_files" in resp.context["form"].errors
+    assert not resource.schema_files.exists()

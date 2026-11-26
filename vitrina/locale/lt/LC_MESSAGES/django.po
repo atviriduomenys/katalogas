@@ -542,17 +542,10 @@ msgstr ""
 msgid "SPARQL paieška"
 msgstr ""
 
-msgid "SPARQL Punktas"
-msgstr ""
-
 msgid ""
 "SPARQL (SPARQL protokolo ir RDF užklausos kalbos santrumpa) tai duomenų "
 "bazių semantinė užklausų kalba, galinti nuskaityti ir valdyti duomenis, "
 "saugomus „Resource Description Framework“ (RDF) formatu."
-msgstr ""
-
-msgid ""
-"Naudodamiesi šia forma, galite sukonfigūruoti savo užklausas SPARQL kalba."
 msgstr ""
 
 msgid "SPARQL paieškos laukas"

@@ -5,7 +5,6 @@ from vitrina.cms.views import (
     PolicyView,
     PostDetailView,
     LearningMaterialDetailView,
-    SparqlView,
     ReportDetailView,
 )
 
@@ -36,7 +35,6 @@ urlpatterns = [
         name="learning-material-detail",
     ),
     path("reports/<int:pk>/", ReportDetailView.as_view(), name="report-detail"),
-    path("sparql/", SparqlView.as_view(), name="sparql"),
     # @GetMapping("/other")
     # @GetMapping("/opening")
     # @GetMapping("/opening/tips")

@@ -583,9 +583,6 @@ msgstr "Published reports"
 msgid "SPARQL paieška"
 msgstr "SPARQL search"
 
-msgid "SPARQL Punktas"
-msgstr "SPARQL Punkt"
-
 msgid ""
 "SPARQL (SPARQL protokolo ir RDF užklausos kalbos santrumpa) tai duomenų "
 "bazių semantinė užklausų kalba, galinti nuskaityti ir valdyti duomenis, "
@@ -595,12 +592,41 @@ msgstr ""
 "semantic query language capable of retrieving and managing data stored in "
 "the \"Resource Description Framework\" (RDF) format."
 
-msgid ""
-"Naudodamiesi šia forma, galite sukonfigūruoti savo užklausas SPARQL kalba."
-msgstr "Use this form to configure your queries in SPARQL language."
-
 msgid "SPARQL paieškos laukas"
 msgstr "SPARQL search field"
+
+msgid ""
+"Paieška vykdoma tik viešų duomenų rinkinių DCAT-AP metaduomenyse. Duomenys "
+"atnaujinami kas 10 minučių."
+msgstr ""
+"The search covers only the DCAT-AP metadata of public datasets. The data is "
+"updated every 10 minutes."
+
+msgid "Pavyzdžiai:"
+msgstr "Examples:"
+
+msgid "Rezultatų nerasta."
+msgstr "No results found."
+
+msgid "Duomenų rinkiniai ir jų pavadinimai"
+msgstr "Datasets and their titles"
+
+msgid "Transporto duomenų rinkiniai su CC BY 4.0 licencija"
+msgstr "Transport datasets with the CC BY 4.0 licence"
+
+msgid "Organizacijos pagal duomenų rinkinių skaičių"
+msgstr "Organizations by number of datasets"
+
+msgid ""
+"Užklausa vykdoma per ilgai. Supaprastinkite užklausą arba sumažinkite LIMIT "
+"reikšmę."
+msgstr "The query takes too long. Make the query simpler or use a smaller LIMIT value."
+
+msgid "SPARQL paslauga šiuo metu nepasiekiama."
+msgstr "The SPARQL service is not available at the moment."
+
+msgid "Užklausos rezultatas per didelis. Sumažinkite LIMIT reikšmę."
+msgstr "The query result is too large. Use a smaller LIMIT value."
 
 msgid "Atlikti paiešką"
 msgstr "Search"

@@ -49,7 +49,3 @@ class ReportDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context.update({"lines": [{"cols": item.split("&&&")} for item in self.object.data.split("\n")]})
         return context
-
-
-class SparqlView(TemplateView):
-    template_name = "vitrina/cms/sparql.html"

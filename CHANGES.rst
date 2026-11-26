@@ -9,6 +9,21 @@ v 1.28.0 (current)
   column in the dataset report admin got no dates. The admin column also strips the slashes from the
   download URL path.
 
+https://github.com/atviriduomenys/katalogas/issues/1419
+
+- Add a SPARQL search at ``/sparql/``. An Apache Jena Fuseki service keeps the DCAT-AP metadata of
+  public datasets, and a Celery task replaces the whole graph from the ``edp/dcat-ap.rdf`` output
+  every 10 minutes. The page shows the results as a table and has example queries. A SPARQL client
+  that sends a SPARQL ``Accept`` header gets the raw Fuseki response.
+- Fuseki is not open to the public: only Django sends queries to it. A query stops after 10 seconds,
+  a result larger than 5 MB is refused, and ``SERVICE`` calls to other endpoints are disabled.
+- Limit Fuseki to 2 CPU cores, so a burst of heavy queries cannot take all the CPU on the host.
+- Build Fuseki from ``docker/fuseki`` (the image holds its config) in ``docker-compose.yml`` and in
+  both drone compose files.
+- Run Celery beat inside the celery worker (``-B``) in both drone compose files, so the scheduled
+  tasks, the SPARQL sync among them, also run on devel and branch deployments.
+- Set ``FUSEKI_URL`` (for example ``http://fuseki:3030/katalogas``) to turn the search on.
+
 https://github.com/atviriduomenys/dvms/issues/513
 
 - Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)

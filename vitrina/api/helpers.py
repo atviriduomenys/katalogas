@@ -112,15 +112,27 @@ def _encode_xml_control_chars(content: str) -> str:
     return content.replace("\t", "&#x9;")
 
 
+def render_rdf(
+    datasets: QuerySet[Dataset],
+    only_link_rendered_datasets: bool = False,
+    request: HttpRequest | None = None,
+    context: dict | None = None,
+) -> str:
+    content = render_to_string(
+        DCAT_AP_RDF_TEMPLATE_NAME,
+        {
+            "datasets": get_datasets_for_rdf(datasets, only_link_rendered_datasets=only_link_rendered_datasets),
+            **(context or {}),
+        },
+        request=request,
+    )
+    return _encode_xml_control_chars(content).lstrip()
+
+
 def render_rdf_response(
     request: HttpRequest, datasets: QuerySet[Dataset], only_link_rendered_datasets: bool = False
 ) -> HttpResponse:
-    content = render_to_string(
-        DCAT_AP_RDF_TEMPLATE_NAME,
-        {"datasets": get_datasets_for_rdf(datasets, only_link_rendered_datasets=only_link_rendered_datasets)},
-        request=request,
-    )
-    content = _encode_xml_control_chars(content).lstrip()
+    content = render_rdf(datasets, only_link_rendered_datasets=only_link_rendered_datasets, request=request)
     return HttpResponse(content, content_type="application/rdf+xml")
 
 

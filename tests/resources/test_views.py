@@ -17,7 +17,11 @@ from vitrina.resources.factories import (
     CompressionFormatFactory,
     PackagingFormatFactory,
 )
-from vitrina.resources.models import DatasetDistribution
+from factory.django import FileField
+from filer.models import File as FilerFile
+
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.resources.models import DatasetDistribution, DistributionSchemaFile
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import MetadataFactory, ModelFactory, VersionFactory
 from vitrina.structure import VersionStatus
@@ -1108,3 +1112,34 @@ def test_change_form_rejects_schema_with_stylesheet(app: DjangoTestApp):
     assert resp.status_code == 200
     assert "schema_files" in resp.context["form"].errors
     assert not resource.schema_files.exists()
+
+
+def _attach_schema(distribution: DatasetDistribution, name: str) -> DistributionSchemaFile:
+    file = FilerFileFactory(file=FileField(filename=name, data=b"<schema/>"), original_filename=name)
+    return DistributionSchemaFile.objects.create(distribution=distribution, file=file)
+
+
+@pytest.mark.django_db
+def test_detail_shows_schema_files(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    schema = _attach_schema(resource, "schema.xsd")
+    resp = app.get(resource.get_absolute_url())
+    link = resp.html.find(id="schema-files").find("a", href=schema.file.url)
+    assert link.text.strip() == "schema.xsd"
+
+
+@pytest.mark.django_db
+def test_change_form_removes_one_schema_file(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    kept = _attach_schema(resource, "kept.xsd")
+    removed = _attach_schema(resource, "removed.xsd")
+    storage_name = removed.file.file.name
+    app.set_user(UserFactory(is_staff=True, organization=resource.dataset.organization))
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": resource.id})).forms["resource-form"]
+    assert "schema_files-clear" not in form.fields
+    form.get("remove_schema_files", index=1).checked = True
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert list(resource.schema_files.values_list("pk", flat=True)) == [kept.pk]
+    assert not FilerFile.objects.filter(pk=removed.file_id).exists()
+    assert not kept.file.file.storage.exists(storage_name)

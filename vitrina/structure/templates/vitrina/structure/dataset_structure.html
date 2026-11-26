@@ -97,14 +97,7 @@
         {% for distribution in schema_distributions %}
             <div class="mb-3">
                 <a href="{{ distribution.get_absolute_url }}">{{ distribution.display_title }}</a>
-                <ul class="ml-4">
-                    {% for schema_file in distribution.schema_files.all %}
-                        <li>
-                            <span class="icon"><i class="fas fa-file-code"></i></span>
-                            <a href="{{ schema_file.file.url }}" download>{{ schema_file.filename_without_path }}</a>
-                        </li>
-                    {% endfor %}
-                </ul>
+                {% include "vitrina/resources/_schema_files.html" with distribution=distribution %}
             </div>
         {% endfor %}
     </div>

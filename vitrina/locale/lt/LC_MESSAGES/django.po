@@ -7120,3 +7120,7 @@ msgstr ""
 #: vitrina/structure/templates/vitrina/structure/dataset_structure.html
 msgid "Šaltiniai"
 msgstr ""
+
+#: vitrina/resources/forms.py
+msgid "Pašalinti schemas"
+msgstr ""

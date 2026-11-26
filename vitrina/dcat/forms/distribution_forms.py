@@ -10,7 +10,8 @@ from vitrina.classifiers.models import Concept, FormFieldText, Licence
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.fields import SchemaFilesField, StringListField, URIFormField
+from vitrina.fields import StringListField, URIFormField
+from vitrina.resources.forms import add_schema_file_fields
 from vitrina.resources.models import (
     DatasetDistribution,
     DISTRIBUTION_STANDARD_URI,
@@ -27,7 +28,6 @@ class DatasetDistributionForm(TranslatableModelForm):
         required=False,
         unique=True,
     )
-    schema_files = SchemaFilesField()
 
     class Meta:
         model = DatasetDistribution
@@ -89,6 +89,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.resource = self.instance if self.instance and self.instance.pk else None
+        add_schema_file_fields(self, self.resource)
 
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -119,6 +120,7 @@ class DatasetDistributionForm(TranslatableModelForm):
             Field("conforms_to"),
             Field("documentation"),
             Field("schema_files"),
+            Field("remove_schema_files"),
             Field("conditions"),
             Field("rights_relation"),
             Field("spatial_resolution"),
@@ -173,7 +175,6 @@ class DatasetDistributionForm(TranslatableModelForm):
             )
             if resource_metadata := self.resource.metadata.first():
                 self.initial["name"] = resource_metadata.name
-            self.initial["schema_files"] = list(self.resource.schema_files.values_list("file", flat=True))
 
         apply_dynamic_help_texts(self, FormFieldText.DCAT_DISTRIBUTION)
 

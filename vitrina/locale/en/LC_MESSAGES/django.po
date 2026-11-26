@@ -7752,3 +7752,7 @@ msgstr "The schema of the format in which the data is provided (JSON Schema, XSD
 #: vitrina/structure/templates/vitrina/structure/dataset_structure.html
 msgid "Šaltiniai"
 msgstr "Sources"
+
+#: vitrina/resources/forms.py
+msgid "Pašalinti schemas"
+msgstr "Remove schemas"

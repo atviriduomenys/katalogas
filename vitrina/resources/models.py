@@ -655,8 +655,10 @@ class DatasetDistribution(TranslatableModel):
             self.save()
             self.metadata.all().delete()
 
-    def add_schema_files(self, files: list) -> None:
-        for file in files:
+    def update_schema_files(self, added: list, removed: list) -> None:
+        for schema_file in removed:
+            schema_file.file.delete()
+        for file in added:
             DistributionSchemaFile.objects.get_or_create(distribution=self, file=file)
 
 

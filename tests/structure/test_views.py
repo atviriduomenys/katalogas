@@ -9182,7 +9182,7 @@ def test_new_version_copies_distribution_schema_files(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_clearing_draft_schema_files_keeps_published_ones(app: DjangoTestApp):
+def test_removing_draft_schema_files_keeps_published_ones(app: DjangoTestApp):
     app.set_user(UserFactory(is_staff=True))
     dataset = DatasetFactory(metadata="test/dataset")
     dataset_meta = dataset.metadata.first()
@@ -9215,7 +9215,7 @@ def test_clearing_draft_schema_files_keeps_published_ones(app: DjangoTestApp):
     form.submit()
 
     form = app.get(reverse("resource-change", args=[distribution.pk, version.pk])).forms["resource-form"]
-    form["schema_files-clear"] = True
+    form["remove_schema_files"] = [str(distribution.schema_files.get().pk)]
     form.submit()
 
     published = _Version.objects.exclude(status=VersionStatus.DRAFT).get()

@@ -4,6 +4,17 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2877
+
+- When generating agreements, the data recipient can also choose a model's scopes
+  (``uapi:/{dataset}/{Model}/@{scope}/:{action}``), so that the agreement gives access only to the rows
+  and columns the scope allows. A use case's client can then get such a permission from an active
+  agreement.
+- The actions offered for a dataset and for a scope are ``getall``, ``getone`` and ``search``, instead
+  of ``getall``, ``search`` and ``select``.
+- A scope cannot have the name of a property of its model, because ``Model/@{name}`` already names
+  that property's permission: the scope form refuses it, and a DSA import skips it with an error note.
+
 https://github.com/atviriduomenys/katalogas/issues/2878
 
 - On a model's data tab, choose one of the model's scopes (``Model/@scope``) to see only the rows and

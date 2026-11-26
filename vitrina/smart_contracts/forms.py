@@ -13,7 +13,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 import zipfile
 
-from vitrina.datasets.models import Contact
+from vitrina.datasets.models import Contact, Dataset
 from vitrina.orgs.models import Organization
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.models import (
@@ -22,7 +22,7 @@ from vitrina.smart_contracts.models import (
     Agreement,
 )
 from vitrina.smart_contracts.services import get_signers_from_adoc, validate_adoc, validate_signatures
-from vitrina.structure.models import Metadata
+from vitrina.structure.models import Metadata, Model, ModelScope
 from vitrina.users.models import User
 
 
@@ -55,15 +55,36 @@ class SmartContractForm(forms.ModelForm):
             if not metadata.name:
                 continue
 
-            choice_name = metadata.name
+            # The whole dataset, then each of its models' scopes, which limit the rows and columns given.
+            resources = [metadata.name, *_model_scope_names(metadata.dataset)]
             choices.extend(
-                [
-                    (f"uapi:/{choice_name}/:getall", f"uapi:/{choice_name}/:getall"),
-                    (f"uapi:/{choice_name}/:search", f"uapi:/{choice_name}/:search"),
-                    (f"uapi:/{choice_name}/:select", f"uapi:/{choice_name}/:select"),
-                ]
+                (f"uapi:/{resource}/:{action}", f"uapi:/{resource}/:{action}")
+                for resource in resources
+                for action in SCOPE_ACTIONS
             )
         return choices
+
+
+SCOPE_ACTIONS = ("getall", "getone", "search")
+
+
+def _model_scope_names(dataset: Dataset | None) -> list[str]:
+    """`Model/@scope` names of the dataset's models' scopes in its latest version."""
+    if dataset is None or (version := dataset.latest_version()) is None:
+        return []
+    model_names = dict(
+        Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Model), metadata_version=version
+        ).values_list("object_id", "name")
+    )
+    scope_refs = dict(
+        Metadata.objects.filter(content_type=ContentType.objects.get_for_model(ModelScope), metadata_version=version)
+        .exclude(ref__isnull=True)
+        .exclude(ref="")
+        .values_list("object_id", "ref")
+    )
+    scopes = ModelScope.objects.filter(pk__in=scope_refs, model_id__in=model_names).values_list("pk", "model_id")
+    return sorted(f"{model_names[model_id]}/@{scope_refs[scope_id]}" for scope_id, model_id in scopes)
 
 
 class BaseAgreementForm(forms.ModelForm):

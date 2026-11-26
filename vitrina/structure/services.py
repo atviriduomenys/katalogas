@@ -673,7 +673,9 @@ def _load_models(
                 metadata_cache=local_cache,
             )
             _load_params(dataset, meta.params, model, metadata_version, metadata_cache=local_cache)
-            _load_scopes(dataset, meta.scopes, model, metadata_version, metadata_cache=local_cache)
+            _load_scopes(
+                dataset, _scopes_not_named_like_properties(meta), model, metadata_version, metadata_cache=local_cache
+            )
             _load_properties(dataset, meta, model, metadata_version, metadata_cache=local_cache)
             loaded_models.append(model)
             _create_errors(meta.errors, model)
@@ -682,6 +684,23 @@ def _load_models(
     removed_model_ids = [model.pk for model in set(existing_models) - set(loaded_models)]
     if removed_model_ids:
         Model.objects.filter(pk__in=removed_model_ids).delete()
+
+
+def _scopes_not_named_like_properties(meta: struct.Model) -> List[struct.Scope]:
+    """`Model/@{name}` already names a property's scope, so a scope with a property's name is not loaded."""
+    scopes = []
+    for scope in meta.scopes:
+        if scope.ref in meta.properties:
+            meta.errors.append(
+                _(
+                    "Leidimas „%(ref)s“ neįkeltas: jo kodinis pavadinimas sutampa su modelio savybės pavadinimu, "
+                    "o „%(model)s/@%(ref)s“ jau reiškia tos savybės leidimą."
+                )
+                % {"ref": scope.ref, "model": meta.name}
+            )
+        else:
+            scopes.append(scope)
+    return scopes
 
 
 def _load_scopes(

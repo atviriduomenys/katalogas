@@ -1528,4 +1528,16 @@ class ModelScopeForm(forms.ModelForm):
                 )
             elif not ref.isascii():
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+            elif Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Property),
+                object_id__in=self.model.model_properties.values("pk"),
+                name=ref,
+            ).exists():
+                raise ValidationError(
+                    _(
+                        "Leidimo kodinis pavadinimas negali sutapti su modelio savybės pavadinimu, "
+                        "nes „Modelis/@%(ref)s“ jau reiškia tos savybės leidimą."
+                    )
+                    % {"ref": ref}
+                )
         return ref

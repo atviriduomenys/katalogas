@@ -111,6 +111,13 @@ https://github.com/atviriduomenys/katalogas/issues/2867
 - Add ``VIISP_LOGIN_URL`` to .env.
 - Update ``setings.py`` ``CONTENT_SECURITY_POLICY`` to allow form submissions to VIISP.
 
+https://github.com/atviriduomenys/katalogas/issues/2858
+
+- Remove Dataset and Publisher sections from the landing page.
+- Fix image display issues in the Projects section.
+- Redesign the Requests section on the landing page.
+- Replace images in the Statistics section with real-time graphs.
+
 v 1.27.0 (2026-10-23)
 ==================
 

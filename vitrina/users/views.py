@@ -3,6 +3,8 @@ from datetime import datetime
 
 from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
 from django.contrib.sites.models import Site
+from django.core.cache import cache
+from django.http import JsonResponse
 from django_otp.views import LoginView as BaseLoginView
 from pandas import period_range
 from django.contrib import messages
@@ -31,6 +33,7 @@ from vitrina.helpers import email
 from vitrina.messages.models import Subscription, NewsletterSubscriber
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
+from vitrina.settings import STATS_CACHE_TIME
 from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import (
     LoginForm,
@@ -466,9 +469,26 @@ class UserStatsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        data = self.get_data()
-        context["data"] = data
+
+        if self.request.GET.get("format") == "json":
+            cache_key = "user_stats_chart_data"
+            data = cache.get(cache_key)
+
+            if data is None:
+                data = self.get_data()
+                cache.set(cache_key, data, timeout=STATS_CACHE_TIME)
+
+            context["data"] = data
+        else:
+            data = self.get_data()
+            context["data"] = data
         return context
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get("format") == "json":
+            return JsonResponse({"data": context.get("data")})
+
+        return super().render_to_response(context, **response_kwargs)
 
 
 class ConfirmEmailView(BaseConfirmEmailView):

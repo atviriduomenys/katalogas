@@ -145,6 +145,12 @@ $primary: #007db2;
   }
 }
 
+.landing-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
 /* Logout is a POST form; make its button look like the other dropdown links */
 .navbar-logout {
   width: 100%;

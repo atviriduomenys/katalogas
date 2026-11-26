@@ -75,10 +75,8 @@
     {% include "component/hero.html" %}
     {% include "component/categories.html" %}
     {% include "component/thematic_categories.html" %}
-    {% include "landing/datasets.html" %}
-    {% include "landing/requests.html" %}
     {% include "landing/projects.html" %}
-    {% include "landing/orgs.html" %}
+    {% include "landing/requests.html" %}
     {% include "landing/stats.html" %}
 {% endblock %}
 {% block scripts %}
@@ -165,6 +163,38 @@
             }
 
             autocomplete(document.getElementById("search-input"), suggestions)
+
+            {% for stat_route in stat_routes %}
+                var url = new URL("{{ stat_route.url|escapejs }}", window.location.origin);
+                url.searchParams.set("format", "json");
+
+                fetch(url)
+                    .then(response => {
+                        return response.json();
+                    })
+                    .then(data => {
+                        var canvas = document.getElementById("chart-{{ forloop.counter }}");
+                        if (!canvas) return;
+
+                        var chartData = data.data || { datasets: data.datasets };
+
+                        new Chart(canvas.getContext("2d"), {
+                            type: "line",
+                            data: chartData,
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                scales: {
+                                    y: {
+                                        stacked: true
+                                    }
+                                }
+                            }
+                        });
+                    })
+                    .catch(error => console.error(error));
+            {% endfor %}
         })
     </script>
 {% endblock %}
+

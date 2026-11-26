@@ -4,6 +4,12 @@ Changes
 v 1.28.0 (current)
 ==================
 
+- Update ``authlib`` to 1.9.10, ``oauthlib`` to 4.0.1, ``joserfc`` to 1.8.0, ``soupsieve`` to 4.1.3 and
+  ``certifi`` to 2026.11.20 to fix the open Dependabot alerts. Raise the Python floor to 3.11.5,
+  because ``soupsieve`` 4 does not support older 3.11 releases.
+
+https://github.com/atviriduomenys/katalogas/issues/2883
+
 - Request ``:changes/-1`` from Spinta without a double slash. Spinta now rejects ``//`` with
   ``InvalidRequestPath``, so the Saugykla data date task and the "Duomenys atnaujinti saugykloje"
   column in the dataset report admin got no dates. The admin column also strips the slashes from the

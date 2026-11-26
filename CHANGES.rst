@@ -17,6 +17,7 @@ https://github.com/atviriduomenys/katalogas/issues/1419
   that sends a SPARQL ``Accept`` header gets the raw Fuseki response.
 - Fuseki is not open to the public: only Django sends queries to it. A query stops after 10 seconds,
   a result larger than 5 MB is refused, and ``SERVICE`` calls to other endpoints are disabled.
+- Limit Fuseki to 2 CPU cores, so a burst of heavy queries cannot take all the CPU on the host.
 - Build Fuseki from ``docker/fuseki`` (the image holds its config) in ``docker-compose.yml`` and in
   both drone compose files.
 - Run Celery beat inside the celery worker (``-B``) in both drone compose files, so the scheduled

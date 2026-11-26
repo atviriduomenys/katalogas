@@ -59,6 +59,7 @@ services:
   katalogas-${BRANCH}-fuseki:
     build: docker/fuseki
     restart: always
+    cpus: 2
     volumes:
       - ${BRANCH}-fuseki:/fuseki-base/databases
     networks:

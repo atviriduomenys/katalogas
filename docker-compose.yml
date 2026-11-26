@@ -61,6 +61,7 @@ services:
   fuseki:
     build: docker/fuseki
     restart: always
+    cpus: 2
     volumes:
       - fuseki-data:/fuseki-base/databases
     ports:

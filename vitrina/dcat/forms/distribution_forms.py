@@ -10,7 +10,7 @@ from vitrina.classifiers.models import Concept, FormFieldText, Licence
 from vitrina.dcat.form_helpers import apply_dynamic_help_texts
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.fields import MultipleFilerField, StringListField, URIFormField
+from vitrina.fields import SchemaFilesField, StringListField, URIFormField
 from vitrina.resources.models import (
     DatasetDistribution,
     DISTRIBUTION_STANDARD_URI,
@@ -27,16 +27,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         required=False,
         unique=True,
     )
-    schema_files = MultipleFilerField(
-        label=_("Schemos failas"),
-        help_text=_(
-            "Formato, kuriuo teikiami duomenys, schema (JSON Schema, XSD, WSDL, OpenAPI), "
-            "jei duomenys teikiami ne pagal UDTS specifikaciją."
-        ),
-        required=False,
-        upload_to=DatasetDistribution.UPLOAD_TO,
-        allow_empty_file=True,
-    )
+    schema_files = SchemaFilesField()
 
     class Meta:
         model = DatasetDistribution

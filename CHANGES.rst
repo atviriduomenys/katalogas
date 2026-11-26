@@ -35,8 +35,11 @@ https://github.com/atviriduomenys/katalogas/issues/2870
 - Let a user attach one or more schema files (JSON Schema, XSD, WSDL, OpenAPI) to a distribution
   (DSA resource) in the distribution form and in the DCAT wizard. The structure page shows the
   attached schemas in a new "Šaltiniai" section, with a download link for each file.
-- Copy the schema files to the new distribution when a structure version is published. A new DSA
-  import into the same version keeps them, because the import reuses the distribution row.
+- Copy the schema files to the new distribution when a structure version is published. Each version
+  gets its own filer ``File`` row for the same stored file, so a clear of the schemas in a draft does
+  not remove them from a published version. A new DSA import into the same version keeps them,
+  because the import reuses the distribution row.
+- Store the schema files in the ``data/schemas`` folder.
 - Accept ``.xsd``, ``.wsdl``, ``.yaml`` and ``.yml`` uploads. XSD and WSDL are checked as XML, so a
   file with an ``<?xml-stylesheet?>`` instruction is rejected.
 

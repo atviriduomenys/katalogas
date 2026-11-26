@@ -1070,12 +1070,17 @@ def test_add_form_with_schema_files(app: DjangoTestApp):
     form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
     form["format"] = file_format.id
     form["download_url"] = "http://www.google.lt"
-    form["schema_files"] = [Upload("schema.xsd", XSD_SCHEMA), Upload("openapi.yaml", b"openapi: 3.0.0\n")]
+    form["schema_files"] = [
+        Upload("schema.xsd", XSD_SCHEMA),
+        Upload("openapi.yaml", b"openapi: 3.0.0\n"),
+        Upload("schema.json", b'{"$schema": "https://json-schema.org/draft/2020-12/schema"}'),
+    ]
     resp = form.submit()
     assert resp.status_code == 302
     distribution = DatasetDistribution.objects.get()
     assert sorted(distribution.schema_files.values_list("file__original_filename", flat=True)) == [
         "openapi.yaml",
+        "schema.json",
         "schema.xsd",
     ]
 

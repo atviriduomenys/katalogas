@@ -37,6 +37,7 @@ from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from shapely.wkt import loads
 from flags.state import flag_enabled
+from filer.models import File as FilerFile
 
 from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
@@ -299,6 +300,7 @@ class DatasetStructureView(
                 schema_files__isnull=False,
             )
             .distinct()
+            .select_related("dataset", "metadata_version")
             .prefetch_related("translations", "schema_files__file")
             if self.metadata_version
             else []
@@ -3804,10 +3806,14 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         new_related_instance.save()
 
         if isinstance(old_related_instance, DatasetDistribution):
-            DistributionSchemaFile.objects.bulk_create(
-                DistributionSchemaFile(distribution=new_related_instance, file_id=schema_file.file_id)
-                for schema_file in old_related_instance.schema_files.all()
-            )
+            for schema_file in old_related_instance.schema_files.select_related("file"):
+                file_copy = FilerFile.objects.create(
+                    file=schema_file.file.file.name,
+                    original_filename=schema_file.file.original_filename,
+                    folder_id=schema_file.file.folder_id,
+                    is_public=schema_file.file.is_public,
+                )
+                DistributionSchemaFile.objects.create(distribution=new_related_instance, file=file_copy)
             for translation in old_related_instance.translations.all():
                 lang = translation.language_code
                 title = getattr(translation, "title", "") or ""

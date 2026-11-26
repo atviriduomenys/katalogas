@@ -10,7 +10,7 @@ from parler.forms import TranslatedField, TranslatableModelForm
 from vitrina.classifiers.models import Licence, Concept
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerFileField, MultipleFilerField, StringListField, URIFormField
+from vitrina.fields import FilerFileField, SchemaFilesField, StringListField, URIFormField
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import AccessType
 from django.db.models import Case, When, IntegerField
@@ -103,16 +103,7 @@ class DatasetResourceForm(TranslatableModelForm):
         ),
         required=False,
     )
-    schema_files = MultipleFilerField(
-        label=_("Schemos failas"),
-        help_text=_(
-            "Formato, kuriuo teikiami duomenys, schema (JSON Schema, XSD, WSDL, OpenAPI), "
-            "jei duomenys teikiami ne pagal UDTS specifikaciją."
-        ),
-        required=False,
-        upload_to=DatasetDistribution.UPLOAD_TO,
-        allow_empty_file=True,
-    )
+    schema_files = SchemaFilesField()
     data_service = forms.ModelChoiceField(
         label=_("Duomenų paslauga"),
         required=False,

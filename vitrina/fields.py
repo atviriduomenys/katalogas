@@ -218,6 +218,21 @@ class MultipleFilerField(FileField):
         return data
 
 
+class SchemaFilesField(MultipleFilerField):
+    def __init__(self, **kwargs):
+        super().__init__(
+            label=_("Schemos failas"),
+            help_text=_(
+                "Formato, kuriuo teikiami duomenys, schema (JSON Schema, XSD, WSDL, OpenAPI), "
+                "jei duomenys teikiami ne pagal UDTS specifikaciją."
+            ),
+            required=False,
+            upload_to="data/schemas",
+            allow_empty_file=True,
+            **kwargs,
+        )
+
+
 class TranslatedFileInput(ClearableFileInput):
     template_name = "component/clearable_file_input.html"
     file_input_text = None

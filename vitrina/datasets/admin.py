@@ -305,23 +305,23 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
             ):
                 modified = None
                 is_model_url = False
-                download_url = urlparse(distribution.download_url)
-                path_parts = [p for p in download_url.path.split("/") if p]
+                spinta_path = urlparse(distribution.download_url).path.strip("/")
+                path_parts = [part for part in spinta_path.split("/") if part]
 
                 if path_parts and path_parts[-1] != ":ns" and path_parts[-1][0].isupper():
                     is_model_url = True
 
                 if is_model_url:
-                    latest_change = get_data_from_spinta(download_url.path, ":changes/-1/", timeout=10)
+                    latest_change = get_data_from_spinta(spinta_path, ":changes/-1", timeout=10)
                     latest_change = latest_change.get("_data")
                     modified = latest_change[0].get("_created") if latest_change else None
                 else:
-                    models = get_data_from_spinta(download_url.path)
+                    models = get_data_from_spinta(spinta_path)
                     models = models.get("_data", [])
 
                     for model in models:
                         if model_name := model.get("name"):
-                            latest_change = get_data_from_spinta(model_name, ":changes/-1/", timeout=10)
+                            latest_change = get_data_from_spinta(model_name, ":changes/-1", timeout=10)
                             latest_change = latest_change.get("_data")
                             latest_change_date = latest_change[0].get("_created") if latest_change else None
 

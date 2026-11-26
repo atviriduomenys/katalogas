@@ -4,6 +4,11 @@ Changes
 v 1.28.0 (current)
 ==================
 
+- Request ``:changes/-1`` from Spinta without a double slash. Spinta now rejects ``//`` with
+  ``InvalidRequestPath``, so the Saugykla data date task and the "Duomenys atnaujinti saugykloje"
+  column in the dataset report admin got no dates. The admin column also strips the slashes from the
+  download URL path.
+
 https://github.com/atviriduomenys/dvms/issues/513
 
 - Escape Mermaid/HTML-structural characters (`` ` ``, ``"``, ``{``, ``}``, ``<``, ``>`` and newlines)

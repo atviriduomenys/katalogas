@@ -165,64 +165,31 @@
             autocomplete(document.getElementById("search-input"), suggestions)
 
             {% for stat_route in stat_routes %}
-                fetch("{{ stat_route.url|escapejs }}")
+                var url = new URL("{{ stat_route.url|escapejs }}", window.location.origin);
+                url.searchParams.set("format", "json");
+
+                fetch(url)
                     .then(response => {
-                        return response.text();
+                        return response.json();
                     })
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, "text/html");
-
-                        const canvas = document.getElementById("chart-{{ forloop.counter }}");
-
+                    .then(data => {
+                        var canvas = document.getElementById("chart-{{ forloop.counter }}");
                         if (!canvas) return;
 
-                        const timeChartData = doc.getElementById("timeChartData");
-                        const userChartData = doc.getElementById("chartData");
-
-                        let chartData;
-                        let chartOptions = {
-                            responsive: true,
-                            maintainAspectRatio: true,
-                            scales: {
-                                y: {
-                                    stacked: true
-                                }
-                            }
-                        };
-
-                        if (timeChartData) {
-                            chartData = {
-                                datasets: JSON.parse(timeChartData.textContent)
-                            };
-
-                            const graphTitle = doc.querySelector("#chart")
-                                ?.closest(".tab-content")
-                                ?.querySelector("canvas");
-
-                            chartOptions.plugins = {
-                                title: {
-                                    display: true,
-                                    text: doc.querySelector(".title")?.textContent.trim() || ""
-                                }
-                            };
-
-                            chartOptions.interaction = {
-                                intersect: false,
-                                mode: "nearest",
-                                axis: "xy"
-                            };
-
-                        } else if (userChartData) {
-                            chartData = JSON.parse(userChartData.textContent);
-                        } else {
-                            return;
-                        }
+                        var chartData = data.data || { datasets: data.datasets };
 
                         new Chart(canvas.getContext("2d"), {
                             type: "line",
                             data: chartData,
-                            options: chartOptions
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                scales: {
+                                    y: {
+                                        stacked: true
+                                    }
+                                }
+                            }
                         });
                     })
                     .catch(error => console.error(error));

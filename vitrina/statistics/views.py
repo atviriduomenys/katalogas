@@ -1,6 +1,8 @@
 from datetime import datetime
 
 import pandas as pd
+from django.core.cache import cache
+from django.http import JsonResponse
 from django.views.generic import ListView
 from django.template.defaultfilters import date as _date
 from django.utils.translation import gettext_lazy as _
@@ -14,6 +16,7 @@ from vitrina.datasets.services import (
 )
 from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.search.queries import apply_selected_facets
+from vitrina.settings import STATS_CACHE_TIME
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import StatRoute
 
@@ -47,10 +50,33 @@ class StatsMixin:
     default_sort = "sort-desc"
     default_duration = "duration-yearly"
 
+    def get_stats_cache_key(self):
+        params = self.request.GET.copy()
+        params.pop("format", None)
+
+        key = f"stats_chart_data:{self.request.path}"
+        if params:
+            key += f"?{params.urlencode()}"
+
+        return key
+
     def get_context_data(self, **kwargs):
+        is_json = self.request.GET.get("format") == "json"
+        cache_key = self.get_stats_cache_key()
+
+        if is_json:
+            cached_data = cache.get(cache_key)
+
+            if cached_data is not None:
+                return {"time_chart_data": cached_data}
+
         context = super().get_context_data(**kwargs)
         context = self.update_context_data(context)
         context["parent_links"] = self.get_parent_links()
+
+        if is_json:
+            cache.set(cache_key, context["time_chart_data"], timeout=STATS_CACHE_TIME)
+
         return context
 
     def update_context_data(self, context: dict) -> dict:
@@ -217,3 +243,13 @@ class StatsMixin:
         if data:
             return data[-1]["y"]
         return 0
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get("format") == "json":
+            return JsonResponse(
+                {
+                    "datasets": context["time_chart_data"],
+                }
+            )
+
+        return super().render_to_response(context, **response_kwargs)

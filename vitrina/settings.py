@@ -808,6 +808,8 @@ try:
 except ImportError:
     pass
 
+STATS_CACHE_TIME = env("STATS_CACHE_TIME", default=3600)
+
 # Reviewed exceptions to `lintmigrations`.
 MIGRATION_LINTER_OPTIONS = {
     "ignore_name": [

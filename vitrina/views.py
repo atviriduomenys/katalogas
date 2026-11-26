@@ -2,7 +2,7 @@ from typing import Type, Any
 from importlib.metadata import version, PackageNotFoundError
 import json
 import logging
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlparse, urlunparse
 
 from django.core.exceptions import ImproperlyConfigured
 from django.core.paginator import Paginator
@@ -50,6 +50,11 @@ def home(request):
         representative__role__in=Representative.COORDINATOR_ROLES + Representative.MANAGER_ROLES
     ).count()
 
+    stat_routes = StatRoute.objects.filter(featured=True).order_by("order")
+    for stat_route in stat_routes:
+        parsed_url = urlparse(stat_route.url)
+        stat_route.url = urlunparse(("", "", parsed_url.path, parsed_url.params, parsed_url.query, ""))
+
     return render(
         request,
         "landing.html",
@@ -66,7 +71,7 @@ def home(request):
             "thematic_categories": (Category.objects.filter(thematic=True).order_by("title")),
             "requests": Request.public.prefetch_related("organizations").order_by("-created")[:cards_limit],
             "projects": get_projects(request.user, limit=cards_limit, require_images=True),
-            "stat_routes": (StatRoute.objects.filter(featured=True).order_by("order")),
+            "stat_routes": stat_routes,
         },
     )
 

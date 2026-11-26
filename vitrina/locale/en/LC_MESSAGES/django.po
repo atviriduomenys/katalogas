@@ -4232,6 +4232,12 @@ msgstr "Client name"
 msgid "Leidimas"
 msgstr "Permission"
 
+msgid "Visi duomenys"
+msgstr "All data"
+
+msgid "Netinkamas leidimo pavadinimas."
+msgstr "Invalid permission name."
+
 msgid "Pasirinkite leidimą"
 msgstr "Select a scope"
 

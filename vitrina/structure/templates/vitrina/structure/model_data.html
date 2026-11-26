@@ -22,11 +22,26 @@
         {% include 'vitrina/structure/side_menu.html' %}
     </div>
 
-    <div id="model-data-table" class="column is-three-quarters">
-        <div class="columns no-margin-bottom">
-            <div class="column is-4"></div>
-            <div class="column is-3 mt-6"><progress class="progress is-small is-primary" max="100"></progress></div>
-            <div class="column is-5"></div>
+    <div class="column is-three-quarters">
+        {% if scopes %}
+            <div class="field is-grouped is-align-items-center mb-3">
+                <label class="label mb-0 mr-3" for="scope-select">{% translate "Leidimas" %}</label>
+                <div class="select is-small">
+                    <select id="scope-select">
+                        <option value="">{% translate "Visi duomenys" %}</option>
+                        {% for scope in scopes %}
+                            <option value="{{ scope }}"{% if scope == selected_scope %} selected{% endif %}>@{{ scope }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        {% endif %}
+        <div id="model-data-table">
+            <div class="columns no-margin-bottom">
+                <div class="column is-4"></div>
+                <div class="column is-3 mt-6"><progress class="progress is-small is-primary" max="100"></progress></div>
+                <div class="column is-5"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -37,6 +52,16 @@
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         const MODEL_DATA_TABLE_URL = "{% url 'model-data-table' pk=dataset.pk version_id=version_id model=model.name %}";
         $(function () {
+            // Reading through a scope shows only the rows and columns the scope allows.
+            $('#scope-select').on('change', function () {
+                let url = new URL(location.href);
+                if (this.value) {
+                    url.searchParams.set('_scope', this.value);
+                } else {
+                    url.searchParams.delete('_scope');
+                }
+                location.href = url.href;
+            });
             let datasetId = {{ dataset.pk }};
             let modelFullName = "{{model.full_name}}";
             modelFullName = modelFullName.replaceAll('/', '-')

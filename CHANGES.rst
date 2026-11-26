@@ -4,6 +4,12 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2878
+
+- On a model's data tab, choose one of the model's scopes (``Model/@scope``) to see only the rows and
+  columns it allows. The table, the count and the download read through it, and the scope stays when
+  filters are added. Only a scope name is accepted.
+
 - Update ``authlib`` to 1.9.10, ``oauthlib`` to 4.0.1, ``joserfc`` to 1.8.0, ``soupsieve`` to 4.1.3 and
   ``certifi`` to 2026.11.20 to fix the open Dependabot alerts. Raise the Python floor to 3.11.5,
   because ``soupsieve`` 4 does not support older 3.11 releases.

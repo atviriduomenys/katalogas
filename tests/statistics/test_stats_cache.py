@@ -71,14 +71,14 @@ def test_stats_are_not_cached(app: DjangoTestApp, rf: RequestFactory):
     cache.clear()
 
     url = reverse("dataset-stats-status")
+    original_method = DatasetStatsView.update_context_data
 
     with patch.object(
         DatasetStatsView,
         "update_context_data",
         autospec=True,
+        side_effect=original_method,
     ) as update_context:
-        update_context.side_effect = lambda self, context: context
-
         app.get(url)
         app.get(url)
 

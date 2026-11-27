@@ -4,6 +4,13 @@ Changes
 v 1.28.0 (current)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2889
+
+- Switching a use case client's permission on or off now sends the auth server the client's
+  permissions after the change. Before, the list from before the change was sent, so a permission
+  switched on did not reach the client's tokens, and one switched off stayed in them. If the auth
+  server update fails, the change is not saved.
+
 - Update ``authlib`` to 1.9.10, ``oauthlib`` to 4.0.1, ``joserfc`` to 1.8.0, ``soupsieve`` to 4.1.3 and
   ``certifi`` to 2026.11.20 to fix the open Dependabot alerts. Raise the Python floor to 3.11.5,
   because ``soupsieve`` 4 does not support older 3.11 releases.

@@ -3,6 +3,7 @@ import uuid
 from urllib.parse import parse_qs
 
 import pytest
+import requests
 import requests_mock
 import reversion
 from PIL import Image
@@ -653,6 +654,40 @@ def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
         data = parse_qs(post_req.text)
         assert data.get("grant_type") == ["client_credentials"]
         assert data.get("scope") == [oauth_settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE]
+
+
+@pytest.mark.parametrize("was_active, sent", [(False, ["kept", "toggled"]), (True, ["kept"])])
+def test_client_scope_toggle_sends_the_scopes_after_the_toggle(app: DjangoTestApp, oauth_settings, was_active, sent):
+    with requests_mock.Mocker() as m:
+        mock_oauth_endpoints(m, oauth_settings)
+        representative = ViispRepresentativeFactory()
+        app.set_user(representative.user)
+        project = ProjectFactory(organization=representative.content_object)
+        client: UseCaseClient = UseCaseClientFactory(use_case=project)
+        client.scopes.create(scope="kept", action="getall", resource="dataset", is_active=True)
+        scope = client.scopes.create(scope="toggled", action="getall", resource="dataset", is_active=was_active)
+
+        app.post(reverse("project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk]))
+
+        patch = next(req for req in m.request_history if req.method == "PATCH")
+        assert sorted(patch.json()["scopes"]) == sent
+
+
+def test_client_scope_toggle_is_undone_when_the_oauth_server_fails(app: DjangoTestApp, oauth_settings):
+    with requests_mock.Mocker() as m:
+        mock_oauth_endpoints(m, oauth_settings)
+        m.patch(requests_mock.ANY, status_code=500)
+        representative = ViispRepresentativeFactory()
+        app.set_user(representative.user)
+        project = ProjectFactory(organization=representative.content_object)
+        client: UseCaseClient = UseCaseClientFactory(use_case=project)
+        scope = client.scopes.create(scope="toggled", action="getall", resource="dataset", is_active=False)
+
+        with pytest.raises(requests.HTTPError):
+            app.post(reverse("project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk]))
+
+    scope.refresh_from_db()
+    assert scope.is_active is False
 
 
 @pytest.fixture

@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse, resolve
+from django.utils import translation
 from django.utils.html import escape
 from django_webtest import DjangoTestApp
 from django.test import RequestFactory
@@ -16,6 +17,7 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     ResourceSubclassTypeField,
     PlanChoiceField,
+    AddRequestForm,
 )
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
@@ -25,7 +27,7 @@ from vitrina.users.factories import UserFactory
 from vitrina.uapi.factories import AgentFactory
 from vitrina.users.models import User
 from vitrina.resources.models import Format
-
+from vitrina.requests.factories import RequestFactory as DatasetRequestFactory
 
 XSS_PAYLOAD = "<script>alert('xss')</script>"
 
@@ -467,3 +469,59 @@ class TestPlanChoiceFieldDatasetsXSS:
 
         assert XSS_PAYLOAD not in str(result)
         assert escape(XSS_PAYLOAD) in str(result)
+
+
+@pytest.mark.django_db
+class TestAddRequestForm:
+    def test_request_list_order_lt(self):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+
+        request_1 = DatasetRequestFactory(translations__title_lt="Testas A", translations__title_en="Test C")
+        request_2 = DatasetRequestFactory(translations__title_lt="Testas B", translations__title_en="Test B")
+        request_3 = DatasetRequestFactory(translations__title_lt="Testas C", translations__title_en="Test A")
+
+        with translation.override("lt"):
+            form = AddRequestForm(user=user, dataset=dataset)
+
+        assert list(form.fields["requests"].queryset) == [
+            request_1,
+            request_2,
+            request_3,
+        ]
+
+    def test_request_list_order_en(self):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+
+        request_1 = DatasetRequestFactory(translations__title_lt="Testas A", translations__title_en="Test C")
+        request_2 = DatasetRequestFactory(translations__title_lt="Testas B", translations__title_en="Test B")
+        request_3 = DatasetRequestFactory(translations__title_lt="Testas C", translations__title_en="Test A")
+
+        with translation.override("en"):
+            form = AddRequestForm(user=user, dataset=dataset)
+
+        assert list(form.fields["requests"].queryset) == [
+            request_3,
+            request_2,
+            request_1,
+        ]
+
+    def test_request_list_order_title_missing_for_language(self):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+
+        request_1 = DatasetRequestFactory(translations__title_lt="Testas A", translations__title_en="Test C")
+        request_2 = DatasetRequestFactory(translations__title_lt="Testas B", translations__title_en="Test B")
+        request_3 = DatasetRequestFactory(translations__title_lt="Testas C", translations__title_en="Test A")
+
+        request_1.translations.get(language_code="en").delete()
+
+        with translation.override("en"):
+            form = AddRequestForm(user=user, dataset=dataset)
+
+        assert list(form.fields["requests"].queryset) == [
+            request_3,
+            request_1,
+            request_2,
+        ]

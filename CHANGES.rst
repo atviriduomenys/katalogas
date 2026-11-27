@@ -122,6 +122,11 @@ https://github.com/atviriduomenys/katalogas/issues/2799
 https://github.com/atviriduomenys/katalogas/issues/2831
 - Remove like button and stats related to it.
 
+https://github.com/atviriduomenys/katalogas/issues/2534
+
+- Add search for requests in ``AddRequestForm``.
+- Order requests by title in ``AddRequestForm``.
+
 https://github.com/atviriduomenys/katalogas/issues/2847
 
 - Update ``djangorestframework`` to ``3.18``, ``oauthlib`` to ``4.0``, ``django-allauth`` to

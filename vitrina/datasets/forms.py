@@ -4,7 +4,7 @@ from typing import Any
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.validators import RegexValidator
-from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
+from django.db.models import Value, CharField as _CharField, Case, When, Count, Q, OuterRef, Subquery
 from django.db.models.functions import Concat
 from django.utils.html import format_html
 from django_select2.forms import ModelSelect2Widget, Select2MultipleWidget, Select2Widget
@@ -21,10 +21,12 @@ from django.forms import (
     CheckboxSelectMultiple,
     HiddenInput,
 )
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, get_language
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout, HTML
+
+from vitrina.requests.models import Request
 from vitrina.search.models import DatasetSearchDoc, DatasetSearchFacet
 from vitrina.search.forms import SearchForm
 from vitrina.search.queries import text_query
@@ -855,12 +857,16 @@ class AddProjectForm(forms.ModelForm):
 
 
 class AddRequestForm(forms.ModelForm):
+    search = forms.CharField(
+        label=_("Paieška"),
+        required=False,
+    )
     requests = ModelMultipleChoiceField(
         label=_("Poreikiai"),
         queryset=None,
+        widget=forms.CheckboxSelectMultiple,
         required=True,
         help_text=_("Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų rinkinys."),
-        widget=Select2MultipleWidget(),
     )
 
     class Meta:
@@ -874,8 +880,29 @@ class AddRequestForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-add-request-form"
-        self.fields["requests"].queryset = get_requests(self.user, self.dataset)
+
+        translations = Request._parler_meta.root_model.objects.filter(master_id=OuterRef("pk"))
+        self.fields["requests"].queryset = (
+            get_requests(self.user, self.dataset)
+            .annotate(
+                sort_title=Subquery(
+                    translations.order_by(
+                        Case(
+                            When(language_code=get_language(), then=0),
+                            default=1,
+                        ),
+                        "title",
+                    ).values("title")[:1]
+                )
+            )
+            .order_by("sort_title")
+        )
         self.helper.layout = Layout(
+            Field("search"),
+            HTML(
+                f'<div class="mt-4 mb-3"><input type="checkbox" id="show_selected_id"/>'
+                f"<strong>{_('Rodyti pasirinktus poreikius')}</strong></div>"
+            ),
             Field("requests"),
             Submit("submit", _("Pridėti"), css_class="button is-primary"),
         )

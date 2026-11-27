@@ -210,7 +210,7 @@ class TestAgreementCreateView:
         form["form-0-scopes"] = [
             "uapi:/test/dataset1/:getall",
             "uapi:/test/dataset2/:search",
-            "uapi:/test/dataset2/:select",
+            "uapi:/test/dataset2/:getone",
         ]
         form["form-1-scopes"] = ["uapi:/datasets/gov/org/dataset/:getall"]
         response = form.submit()
@@ -222,7 +222,7 @@ class TestAgreementCreateView:
         assert set(AgreementScope.objects.filter(agreement__assigner=organization).values_list("scope", flat=True)) == {
             "uapi:/test/dataset1/:getall",
             "uapi:/test/dataset2/:search",
-            "uapi:/test/dataset2/:select",
+            "uapi:/test/dataset2/:getone",
         }
         assert set(
             AgreementScope.objects.filter(agreement__assigner=diff_organization).values_list("scope", flat=True)

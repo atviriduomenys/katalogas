@@ -4232,6 +4232,29 @@ msgstr "Client name"
 msgid "Leidimas"
 msgstr "Permission"
 
+msgid "Visi duomenys"
+msgstr "All data"
+
+#, python-format
+msgid ""
+"Leidimo kodinis pavadinimas negali sutapti su modelio savybės pavadinimu, "
+"nes „Modelis/@%(ref)s“ jau reiškia tos savybės leidimą."
+msgstr ""
+"A permission's code name cannot be the name of a property of the model, "
+"because \"Model/@%(ref)s\" already names that property's permission."
+
+#, python-format
+msgid ""
+"Leidimas „%(ref)s“ neįkeltas: jo kodinis pavadinimas sutampa su modelio "
+"savybės pavadinimu, o „%(model)s/@%(ref)s“ jau reiškia tos savybės leidimą."
+msgstr ""
+"The permission \"%(ref)s\" was not imported: its code name is the name of a "
+"property of the model, and \"%(model)s/@%(ref)s\" already names that "
+"property's permission."
+
+msgid "Netinkamas leidimo pavadinimas."
+msgstr "Invalid permission name."
+
 msgid "Pasirinkite leidimą"
 msgstr "Select a scope"
 

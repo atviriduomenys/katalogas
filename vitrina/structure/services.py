@@ -1,6 +1,7 @@
 import csv
 import json
 import logging
+import re
 import uuid
 from io import StringIO
 from json import JSONDecodeError
@@ -672,7 +673,9 @@ def _load_models(
                 metadata_cache=local_cache,
             )
             _load_params(dataset, meta.params, model, metadata_version, metadata_cache=local_cache)
-            _load_scopes(dataset, meta.scopes, model, metadata_version, metadata_cache=local_cache)
+            _load_scopes(
+                dataset, _scopes_not_named_like_properties(meta), model, metadata_version, metadata_cache=local_cache
+            )
             _load_properties(dataset, meta, model, metadata_version, metadata_cache=local_cache)
             loaded_models.append(model)
             _create_errors(meta.errors, model)
@@ -681,6 +684,23 @@ def _load_models(
     removed_model_ids = [model.pk for model in set(existing_models) - set(loaded_models)]
     if removed_model_ids:
         Model.objects.filter(pk__in=removed_model_ids).delete()
+
+
+def _scopes_not_named_like_properties(meta: struct.Model) -> List[struct.Scope]:
+    """`Model/@{name}` already names a property's scope, so a scope with a property's name is not loaded."""
+    scopes = []
+    for scope in meta.scopes:
+        if scope.ref in meta.properties:
+            meta.errors.append(
+                _(
+                    "Leidimas „%(ref)s“ neįkeltas: jo kodinis pavadinimas sutampa su modelio savybės pavadinimu, "
+                    "o „%(model)s/@%(ref)s“ jau reiškia tos savybės leidimą."
+                )
+                % {"ref": scope.ref, "model": meta.name}
+            )
+        else:
+            scopes.append(scope)
+    return scopes
 
 
 def _load_scopes(
@@ -1611,11 +1631,20 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
 
 RQL_SAFE_CHARS = "()[]<>=!*,:@'\"/.-_~"
 
+# The data preview's parameter naming the model's scope (`Model/@scope`) to read through; it is not an RQL query part.
+SCOPE_PARAM = "_scope"
+SCOPE_NAME = re.compile(r"^[a-z_][a-z0-9_]*$")
+
+
+def scoped_model_path(model: Union[Model, str], scope: str | None = None) -> str:
+    """Spinta path of `model`, read through its `scope` if one is given."""
+    return f"{model}/@{scope}" if scope else str(model)
+
 
 def build_rql_query(params, exclude=(), skip_prefixes=()):
     parts = []
     for key, val in params.items():
-        if key in exclude or any(key.startswith(prefix) for prefix in skip_prefixes):
+        if key in exclude or key == SCOPE_PARAM or any(key.startswith(prefix) for prefix in skip_prefixes):
             continue
         if val == "":
             parts.append(quote(key, safe=RQL_SAFE_CHARS))
@@ -1624,11 +1653,13 @@ def build_rql_query(params, exclude=(), skip_prefixes=()):
     return "&".join(parts)
 
 
-def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30):
+def get_data_from_spinta(
+    model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30, scope: str | None = None
+):
     if uuid:
         url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
     else:
-        url = f"{SPINTA_SERVER_URL}/{model}/?{query}"
+        url = f"{SPINTA_SERVER_URL}/{scoped_model_path(model, scope)}/?{query}"
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
@@ -1645,11 +1676,13 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
         return {"errors": [gettext("Gautas neteisingas duomenų formatas iš Saugyklos")]}
 
 
-async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30):
+async def get_data_from_spinta_async(
+    model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30, scope: str | None = None
+):
     if uuid:
         url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
     else:
-        url = f"{SPINTA_SERVER_URL}/{model}/?{query}"
+        url = f"{SPINTA_SERVER_URL}/{scoped_model_path(model, scope)}/?{query}"
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:

@@ -87,6 +87,9 @@ from vitrina.structure.services import (
     get_data_from_spinta_async,
     get_allowed_visibilities,
     build_rql_query,
+    SCOPE_NAME,
+    SCOPE_PARAM,
+    scoped_model_path,
 )
 from vitrina.datasets.structure import read as read_structure
 from vitrina.structure.utils import TYPE_CHECKER_MAP
@@ -845,11 +848,21 @@ class PropertyStructureView(
         return None
 
 
+def _invalid_scope(request: HttpRequest) -> JsonResponse | None:
+    """The selected scope ends up in Spinta's URL path, so only a scope name is accepted."""
+    scope = request.GET.get(SCOPE_PARAM)
+    if scope and not SCOPE_NAME.match(scope):
+        return JsonResponse({"errors": [_("Netinkamas leidimo pavadinimas.")]}, status=400)
+    return None
+
+
 async def get_model_data(request, *args, **kwargs):
+    if response := _invalid_scope(request):
+        return response
     model = kwargs.get("model", "").replace("-", "/")
     query = build_rql_query(request.GET)
     query = f"limit(100)&{query}" if query else "limit(100)"
-    data = await get_data_from_spinta_async(model, query=query)
+    data = await get_data_from_spinta_async(model, query=query, scope=request.GET.get(SCOPE_PARAM))
     return JsonResponse(data)
 
 
@@ -939,6 +952,8 @@ class ModelDataTableView(PermissionRequiredMixin, View):
                 else:
                     key, val = param, ""
 
+                if key == SCOPE_PARAM:
+                    continue
                 if key.startswith("select("):
                     select = key
                     cols = select.replace("select(", "").replace(")", "")
@@ -994,15 +1009,18 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
 
 async def get_model_data_count(request, *args, **kwargs):
+    if response := _invalid_scope(request):
+        return response
     model = kwargs.get("model", "").replace("-", "/")
+    scope = request.GET.get(SCOPE_PARAM)
     count_query = build_rql_query(request.GET, skip_prefixes=("select(", "sort("))
     count_query = f"count()&{count_query}" if count_query else "count()"
 
     total_count = 0
-    path = f"{model}/?{count_query}"
+    path = f"{scoped_model_path(model, scope)}/?{count_query}"
 
     if not cache.get(path):
-        count_data = await get_data_from_spinta_async(model, query=count_query)
+        count_data = await get_data_from_spinta_async(model, query=count_query, scope=scope)
         count_data = count_data.get("_data")
         if count_data and count_data[0].get("count()"):
             total_count = count_data[0].get("count()")
@@ -1094,7 +1112,10 @@ class ModelDataView(
         return super().dispatch(request, *args, **kwargs)
 
     def _build_spinta_download_url(self, request: HttpRequest, fmt: str) -> str:
-        url = f"{SPINTA_SERVER_URL}/{self.model}/:format/{fmt}"
+        scope = request.GET.get(SCOPE_PARAM)
+        if scope not in self.get_scopes():
+            scope = None
+        url = f"{SPINTA_SERVER_URL}/{scoped_model_path(self.model, scope)}/:format/{fmt}"
         query = build_rql_query(request.GET, exclude=("format",))
         if query:
             url = f"{url}?{query}"
@@ -1142,6 +1163,10 @@ class ModelDataView(
         context["model"] = self.model
         context["models"] = self.models
         context["version_id"] = self.metadata_version.pk
+        context["scopes"] = self.get_scopes()
+        context["selected_scope"] = (
+            self.request.GET.get(SCOPE_PARAM) if self.request.GET.get(SCOPE_PARAM) in context["scopes"] else None
+        )
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -1149,6 +1174,20 @@ class ModelDataView(
             self.object,
         )
         return context
+
+    def get_scopes(self) -> list[str]:
+        """Names of the model's scopes in this version, for reading its data through one of them."""
+        return sorted(
+            Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(ModelScope),
+                object_id__in=ModelScope.objects.filter(
+                    model=self.model, metadata_version=self.metadata_version
+                ).values("pk"),
+            )
+            .exclude(ref__isnull=True)
+            .exclude(ref="")
+            .values_list("ref", flat=True)
+        )
 
     def get_structure_url(self):
         if self.model.name:

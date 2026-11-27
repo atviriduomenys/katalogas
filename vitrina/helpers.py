@@ -832,6 +832,10 @@ def validate_file(file: File) -> None:
     mimetypes.add_type("text/n3", ".n3")  # N3
     mimetypes.add_type("text/tab-separated-values", ".tsv")  # TSV
     mimetypes.add_type("application/x-7z-compressed", ".7z")  # 7z
+    mimetypes.add_type("application/xml", ".xsd")  # XML Schema
+    mimetypes.add_type("application/xml", ".wsdl")  # WSDL
+    mimetypes.add_type("application/yaml", ".yaml")  # OpenAPI
+    mimetypes.add_type("application/yaml", ".yml")  # OpenAPI
     # Security: pin XHTML to application/xhtml+xml so it reliably hits the deny
     # rule, instead of falling back to a whitelisted type (e.g. application/xml)
     # or an unregistered None on hosts with a different mimetypes table.

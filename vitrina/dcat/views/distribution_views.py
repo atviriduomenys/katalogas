@@ -93,6 +93,10 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         if "languages" in form.changed_data:
             distribution.languages.set(form.cleaned_data["languages"])
 
+        distribution.update_schema_files(
+            form.cleaned_data.get("schema_files", []), form.cleaned_data.get("remove_schema_files", [])
+        )
+
         messages.success(self.request, _("Pateiktis sukurta sėkmingai!"))
 
         distribution.set_current_language(get_language())
@@ -194,6 +198,10 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
         if "languages" in form.changed_data:
             distribution.languages.set(form.cleaned_data["languages"])
+
+        distribution.update_schema_files(
+            form.cleaned_data.get("schema_files", []), form.cleaned_data.get("remove_schema_files", [])
+        )
 
         messages.success(self.request, _("Pateiktis atnaujinta sėkmingai!"))
 

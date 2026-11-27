@@ -89,6 +89,12 @@
                                     <th>{% translate "Formatas" %}</th>
                                     <td>{{ resource.get_format|default:"" }}</td>
                                 </tr>
+                                {% if resource.schema_files.all %}
+                                <tr id="schema-files">
+                                    <th>{% translate "Schemos failas" %}</th>
+                                    <td>{% include "vitrina/resources/_schema_files.html" with distribution=resource %}</td>
+                                </tr>
+                                {% endif %}
 
                                 {% if resource.temporal_resolution %}
                                 <tr>

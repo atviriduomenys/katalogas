@@ -16,7 +16,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import ViispRepresentativeFactory, OrganizationFactory, WhitelistedCodeNameFactory
 from vitrina.orgs.models import WhitelistedCodeName
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, DistributionSchemaFile
 from vitrina.structure import VersionStatus
 from vitrina.structure.factories import VersionFactory
 from vitrina.structure.models import (
@@ -3705,3 +3705,38 @@ def test_generate_mermaid_click_link_escapes_malicious_name(app: DjangoTestApp):
         f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Bad/"'
     ) in result
     assert "ev}il" not in result
+
+
+@pytest.mark.django_db
+def test_structure_reimport_keeps_distribution_schema_files(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,,resource,,,,,,http://www.example.com,,,,,,,,,,\n"
+        "2,,,,City,,,,,,,,,,,,,,\n"
+        "3,,,,,id,integer,,,,5,,,open,,,,,\n"
+    )
+    new_manifest = manifest + "4,,,,,title,string,,,,5,,,open,,,,,\n"
+    dataset = DatasetFactory()
+    metadata_version = VersionFactory(dataset=dataset)
+
+    structure = DatasetStructureFactory(
+        dataset=dataset, file=FilerFileFactory(file=FileField(filename="v1.csv", data=manifest))
+    )
+    dataset.current_structure = structure
+    dataset.save()
+    create_structure_objects(structure, metadata_version)
+
+    distribution = DatasetDistribution.objects.get(dataset=dataset, metadata_version=metadata_version)
+    schema = FilerFileFactory(file=FileField(filename="schema.xsd", data=b"<schema/>"))
+    DistributionSchemaFile.objects.create(distribution=distribution, file=schema)
+
+    new_structure = DatasetStructureFactory(
+        dataset=dataset, file=FilerFileFactory(file=FileField(filename="v2.csv", data=new_manifest))
+    )
+    dataset.current_structure = new_structure
+    dataset.save()
+    create_structure_objects(new_structure, metadata_version)
+
+    distribution = DatasetDistribution.objects.get(dataset=dataset, metadata_version=metadata_version)
+    assert list(distribution.schema_files.values_list("file", flat=True)) == [schema.pk]

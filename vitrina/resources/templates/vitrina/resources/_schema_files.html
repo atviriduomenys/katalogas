@@ -1,0 +1,8 @@
+<ul class="ml-4 mt-0">
+    {% for schema_file in distribution.schema_files.all %}
+        <li>
+            <span class="icon"><i class="fas fa-file-code"></i></span>
+            <a href="{{ schema_file.file.url }}" download>{{ schema_file.filename_without_path }}</a>
+        </li>
+    {% endfor %}
+</ul>

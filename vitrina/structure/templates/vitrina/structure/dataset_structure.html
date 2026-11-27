@@ -91,6 +91,18 @@
         </a>
     {% endif %}
 
+    {% if schema_distributions %}
+    <div class="mb-5" id="distribution-schemas">
+        <h4 class="custom-title is-size-4-mobile">{% translate "Šaltiniai" %}</h4>
+        {% for distribution in schema_distributions %}
+            <div class="mb-3">
+                <a href="{{ distribution.get_absolute_url }}">{{ distribution.display_title }}</a>
+                {% include "vitrina/resources/_schema_files.html" with distribution=distribution %}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     {% if models %}
     <div class="mb-5">
         <h4 class="custom-title is-size-4-mobile">{% translate "Keitimų žurnalas" %}</h4>

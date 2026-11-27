@@ -2,6 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from webtest import Upload
 from unittest.mock import patch
 
 from vitrina import settings
@@ -16,7 +17,11 @@ from vitrina.resources.factories import (
     CompressionFormatFactory,
     PackagingFormatFactory,
 )
-from vitrina.resources.models import DatasetDistribution
+from factory.django import FileField
+from filer.models import File as FilerFile
+
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.resources.models import DatasetDistribution, DistributionSchemaFile
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import MetadataFactory, ModelFactory, VersionFactory
 from vitrina.structure import VersionStatus
@@ -1056,3 +1061,85 @@ def test_datatable_renders_when_data_last_updated_is_null(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-detail", kwargs={"pk": resource.dataset_id})).follow()
     assert resp.status_code == 200
+
+
+XSD_SCHEMA = b'<?xml version="1.0"?>\n<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>\n'
+
+
+@pytest.mark.django_db
+def test_add_form_with_schema_files(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension="URL")
+    app.set_user(UserFactory(is_staff=True, organization=dataset.organization))
+    form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
+    form["format"] = file_format.id
+    form["download_url"] = "http://www.google.lt"
+    form["schema_files"] = [
+        Upload("schema.xsd", XSD_SCHEMA),
+        Upload("openapi.yaml", b"openapi: 3.0.0\n"),
+        Upload("schema.json", b'{"$schema": "https://json-schema.org/draft/2020-12/schema"}'),
+    ]
+    resp = form.submit()
+    assert resp.status_code == 302
+    distribution = DatasetDistribution.objects.get()
+    assert sorted(distribution.schema_files.values_list("file__original_filename", flat=True)) == [
+        "openapi.yaml",
+        "schema.json",
+        "schema.xsd",
+    ]
+
+
+@pytest.mark.django_db
+def test_change_form_with_schema_files(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    app.set_user(UserFactory(is_staff=True, organization=resource.dataset.organization))
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": resource.id})).forms["resource-form"]
+    form["schema_files"] = [Upload("schema.xsd", XSD_SCHEMA)]
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert list(resource.schema_files.values_list("file__original_filename", flat=True)) == ["schema.xsd"]
+
+
+@pytest.mark.django_db
+def test_change_form_rejects_schema_with_stylesheet(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    app.set_user(UserFactory(is_staff=True, organization=resource.dataset.organization))
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": resource.id})).forms["resource-form"]
+    form["schema_files"] = [
+        Upload("schema.xsd", b'<?xml version="1.0"?>\n<?xml-stylesheet type="text/xsl" href="e.xsl"?>\n<root/>\n')
+    ]
+    resp = form.submit()
+    assert resp.status_code == 200
+    assert "schema_files" in resp.context["form"].errors
+    assert not resource.schema_files.exists()
+
+
+def _attach_schema(distribution: DatasetDistribution, name: str) -> DistributionSchemaFile:
+    file = FilerFileFactory(file=FileField(filename=name, data=b"<schema/>"), original_filename=name)
+    return DistributionSchemaFile.objects.create(distribution=distribution, file=file)
+
+
+@pytest.mark.django_db
+def test_detail_shows_schema_files(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    schema = _attach_schema(resource, "schema.xsd")
+    resp = app.get(resource.get_absolute_url())
+    link = resp.html.find(id="schema-files").find("a", href=schema.file.url)
+    assert link.text.strip() == "schema.xsd"
+
+
+@pytest.mark.django_db
+def test_change_form_removes_one_schema_file(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    kept = _attach_schema(resource, "kept.xsd")
+    removed = _attach_schema(resource, "removed.xsd")
+    storage_name = removed.file.file.name
+    app.set_user(UserFactory(is_staff=True, organization=resource.dataset.organization))
+    form = app.get(reverse("resource-change-no-version", kwargs={"pk": resource.id})).forms["resource-form"]
+    assert "schema_files-clear" not in form.fields
+    form.get("remove_schema_files", index=1).checked = True
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert list(resource.schema_files.values_list("pk", flat=True)) == [kept.pk]
+    assert not FilerFile.objects.filter(pk=removed.file_id).exists()
+    assert not kept.file.file.storage.exists(storage_name)

@@ -7105,3 +7105,22 @@ msgstr[2] ""
 "Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %d simbolių."
 msgstr[3] ""
 "Šis slaptažodis yra per trumpas. Jį turi sudaryti bent %d simbolių."
+
+#: vitrina/dcat/forms/distribution_forms.py
+#: vitrina/resources/forms.py
+#: vitrina/resources/models.py
+msgid "Schemos failas"
+msgstr ""
+
+#: vitrina/dcat/forms/distribution_forms.py
+#: vitrina/resources/forms.py
+msgid "Formato, kuriuo teikiami duomenys, schema (JSON Schema, XSD, WSDL, OpenAPI), jei duomenys teikiami ne pagal UDTS specifikaciją."
+msgstr ""
+
+#: vitrina/structure/templates/vitrina/structure/dataset_structure.html
+msgid "Šaltiniai"
+msgstr ""
+
+#: vitrina/resources/forms.py
+msgid "Pašalinti schemas"
+msgstr ""

@@ -10,12 +10,26 @@ from parler.forms import TranslatedField, TranslatableModelForm
 from vitrina.classifiers.models import Licence, Concept
 from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerFileField, StringListField, URIFormField
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.fields import FilerFileField, SchemaFilesField, StringListField, URIFormField
+from vitrina.resources.models import DatasetDistribution, DistributionSchemaFile, Format
 from vitrina.structure import AccessType
 from django.db.models import Case, When, IntegerField
 
 CODE_ORDER = ["COMPLETED", "DEVELOP", "PLANNED", "DEPRECATED", "WITHDRAWN"]
+
+
+def add_schema_file_fields(form: forms.BaseForm, distribution: DatasetDistribution | None) -> None:
+    schema_files = (
+        distribution.schema_files.select_related("file") if distribution else DistributionSchemaFile.objects.none()
+    )
+    form.fields["schema_files"] = SchemaFilesField()
+    form.fields["remove_schema_files"] = forms.ModelMultipleChoiceField(
+        label=_("Pašalinti schemas"),
+        queryset=schema_files,
+        required=False,
+        widget=forms.CheckboxSelectMultiple if schema_files.exists() else forms.MultipleHiddenInput,
+    )
+    form.fields["remove_schema_files"].label_from_instance = lambda schema_file: schema_file.filename_without_path()
 
 
 def _get_level_title(title, description=None):
@@ -161,6 +175,7 @@ class DatasetResourceForm(TranslatableModelForm):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.resource = self.instance if self.instance and self.instance.pk else None
+        add_schema_file_fields(self, self.resource)
         button = _("Redaguoti") if self.resource else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -201,6 +216,8 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("status"),
             Field("file", placeholder=_("Pateikties failas")),
             Field("download_url"),
+            Field("schema_files"),
+            Field("remove_schema_files"),
             Field("imported"),
             Field("data_service"),
             Field("upload_to_storage"),

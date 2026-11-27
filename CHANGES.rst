@@ -1,7 +1,12 @@
 Changes
 #######
 
-v 1.28.0 (current)
+v 1.29.0 (current)
+==================
+
+
+
+v 1.28.0 (2026-11-27)
 ==================
 
 - Update ``authlib`` to 1.9.10, ``oauthlib`` to 4.0.1, ``joserfc`` to 1.8.0, ``soupsieve`` to 4.1.3 and

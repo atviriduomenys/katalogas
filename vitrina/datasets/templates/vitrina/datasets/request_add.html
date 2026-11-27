@@ -1,0 +1,48 @@
+{% extends "base_form.html" %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
+        $(document).ready(function () {
+            const $searchInput = $("#id_search");
+            const $requestsContainer = $("#div_id_requests");
+            const $showSelected = $("#show_selected_id");
+
+            if (!$searchInput.length || !$requestsContainer.length) {
+                return;
+            }
+
+            function normalize(text) {
+                return text
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
+            }
+
+            function filterRequests() {
+                const query = normalize($searchInput.val().trim());
+                const showSelected = $showSelected.is(":checked");
+
+                $requestsContainer.find("label.checkbox").each(function () {
+                    const $label = $(this);
+                    const $checkbox = $label.find('input[type="checkbox"]');
+
+                    const matchesSearch = normalize($label.text()).includes(query);
+                    const isSelected = $checkbox.is(":checked");
+
+                    const shouldShow = matchesSearch && (!showSelected || isSelected);
+
+                    $label.closest(".control").toggle(shouldShow);
+                });
+            }
+
+            $searchInput.on("input", filterRequests);
+            $showSelected.on("change", filterRequests);
+            $requestsContainer.on("change", 'input[type="checkbox"]', function () {
+                if ($showSelected.is(":checked")) {
+                    filterRequests();
+                }
+            });
+        });
+    </script>
+{% endblock %}
